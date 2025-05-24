@@ -1,0 +1,2 @@
+pyinstaller==6.13.0
+PySide6==6.9.0
