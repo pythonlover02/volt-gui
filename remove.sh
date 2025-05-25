@@ -5,12 +5,19 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# remove the executable from /usr/local/bin/
+# remove the executables and scripts from /usr/local/bin/
 if [ -f "/usr/local/bin/volt-gui" ]; then
   rm /usr/local/bin/volt-gui
-  echo "Removed executable from /usr/local/bin/"
+  echo "Removed volt-gui executable from /usr/local/bin/"
 else
-  echo "Executable not found in /usr/local/bin/"
+  echo "volt-gui executable not found in /usr/local/bin/"
+fi
+
+if [ -f "/usr/local/bin/volt" ]; then
+  rm /usr/local/bin/volt
+  echo "Removed volt script from /usr/local/bin/"
+else
+  echo "volt script not found in /usr/local/bin/"
 fi
 
 # remove desktop entry
