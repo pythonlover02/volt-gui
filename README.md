@@ -1,6 +1,6 @@
 # volt-gui
 
-A graphical user interface for configuring GPU related environment variables and system optimizations for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
+A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
 
 ## What you can do?
 
