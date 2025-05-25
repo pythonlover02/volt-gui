@@ -1,1 +1,79 @@
 # volt-gui
+
+A graphical user interface for configuring GPU related environment variables and system optimizations for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
+
+## What you can do?
+
+- CPU Management
+  - Governor Selection: Choose from available CPU governors
+  - Scheduler Configuration: Select CPU pluggable schedulers (requires `scx` and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`)
+  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab
+- GPU Configuration
+  - Mesa Drivers: Configure Mesa Drivers specific environment variables
+  - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
+  - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
+  - All those GPU settings will be added to the `volt` script
+
+- Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
+  ```
+  gamemoderun PROTON_USE_WINED3D=1
+  ```
+- Extras
+  - Useful Links for the average Linux Gamer
+  - Useful Programs for the average Linux Gamer
+- Options
+  - Options for the program itself
+
+## Requirements
+
+- Python 3.9 or higher
+- Pip package manager
+- Linux operating system
+
+## Installation
+
+### Quick Install
+1. Run the build script to create the application:
+   ```bash
+   ./build.sh
+   ```
+   *Note: Uses Python virtual environment to avoid system wide package installation using pip*
+
+2. Install the application system wide:
+   ```bash
+   sudo ./install.sh
+   ```
+   This will:
+   - Copy the executable to `/usr/local/bin/`
+   - Create a desktop entry at `/usr/share/applications/volt-gui.desktop`
+
+### Removal
+1. To uninstall volt-gui:
+   ```bash
+   sudo ./remove.sh
+   ```
+   This will:
+   - Remove the `volt-gui` executable from `/usr/local/bin/`
+   - Remove the `volt` bash script from `/usr/local/bin/`
+   - Remove the desktop entry `/usr/share/applications/volt-gui.desktop`
+
+## Usage
+
+Launch volt-gui from your application menu or run `volt-gui` from the terminal. The `GPU` and `Launch Options` settings are saved on the `volt` script, this script must be called on your launcher launch options or before the program, example for Steam:
+
+```
+volt %command%
+```
+
+## Technical References
+
+The GPU environment variables are based on official documentation:
+
+- [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
+- [NVIDIA 570 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
+- [NVIDIA 470 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
+- [NVIDIA 390 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
+
+## Contributing
+
+Contributions are welcome. Please ensure any changes maintain compatibility with the supported Python versions and follow the existing code structure.
