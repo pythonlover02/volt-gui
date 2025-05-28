@@ -7,12 +7,20 @@ A graphical user interface for configuring GPU related environment variables and
 - CPU Management
   - Governor Selection: Choose from available CPU governors
   - Scheduler Configuration: Select CPU pluggable schedulers (requires `scx` and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`)
-  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab
+  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 - GPU Configuration
   - Mesa Drivers: Configure Mesa Drivers specific environment variables
   - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
   - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
   - All those GPU settings will be added to the `volt` script
+- Kernel Configuration
+  - Chose compaction_proactiveness value
+  - Chose watermark_boost_factor value
+  - Chose min_free_kbytes value
+  - Chose swappiness value
+  - Chose zone_reclaim_mode value
+  - Chose page_lock_unfairness value
+  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
   ```
@@ -27,7 +35,7 @@ A graphical user interface for configuring GPU related environment variables and
 ## Requirements
 
 - Python 3.9 or higher
-- Pip package manager
+- Pip
 - Linux operating system
 
 ## Installation
@@ -45,6 +53,7 @@ A graphical user interface for configuring GPU related environment variables and
    ```
    This will:
    - Copy the executable to `/usr/local/bin/`
+   - Copy the helper scripts to `/usr/local/bin/`
    - Create a desktop entry at `/usr/share/applications/volt-gui.desktop`
 
 ### Removal
@@ -54,6 +63,7 @@ A graphical user interface for configuring GPU related environment variables and
    ```
    This will:
    - Remove the `volt-gui` executable from `/usr/local/bin/`
+   - Remove the helper scripts from `/usr/local/bin/`
    - Remove the `volt` bash script from `/usr/local/bin/`
    - Remove the desktop entry `/usr/share/applications/volt-gui.desktop`
 

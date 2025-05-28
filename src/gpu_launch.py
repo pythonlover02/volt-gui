@@ -235,7 +235,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
+        button_layout.setContentsMargins(10, 10, 10, 10)
 
         widgets[apply_button_name] = QPushButton("Apply")
         widgets[apply_button_name].setMinimumSize(100, 30)
@@ -341,7 +341,7 @@ class GPULaunchManager:
         launch_options_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         launch_options_input = QLineEdit()
-        launch_options_input.setPlaceholderText("Enter programs to be launched with the game and environment variables, ej: gamemoderun PROTON_USE_WINED3D=1")
+        launch_options_input.setPlaceholderText("enter programs to be launched with the game and environment variables, ej: gamemoderun PROTON_USE_WINED3D=1")
         launch_options_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         launch_options_layout.addWidget(launch_options_label)

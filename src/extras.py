@@ -13,8 +13,8 @@ class ExtrasManager:
         extras_layout.setSpacing(10)
         
         extras_subtabs = QTabWidget()
-        useful_links_tab = ExtrasManager.create_useful_links_tab()
-        useful_programs_tab = ExtrasManager.create_useful_programs_tab()
+        useful_links_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_links())
+        useful_programs_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_programs())
         
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
         extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
@@ -23,22 +23,8 @@ class ExtrasManager:
         return extras_tab, extras_subtabs
     
     @staticmethod
-    def create_useful_links_tab():
-        links_tab = QWidget()
-        main_layout = QVBoxLayout(links_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
-        scroll_widget = QWidget()
-        scroll_widget.setProperty("scrollContainer", True)
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
-        
-        links = [
+    def _get_useful_links():
+        return [
             {
                 "label": "Arch Wiki", 
                 "description": "Arch Linux Wiki, might help with extra information even if you dont use Arch.",
@@ -65,63 +51,10 @@ class ExtrasManager:
                 "url": "https://appdb.winehq.org/"
             },
         ]
-        
-        for link_info in links:
-            container = QWidget()
-            container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setSpacing(5)
-            
-            title_label = QLabel(link_info["label"])
-            title_label.setAlignment(Qt.AlignCenter)
-            title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-            container_layout.addWidget(title_label)
-            
-            desc_label = QLabel(link_info["description"])
-            desc_label.setAlignment(Qt.AlignCenter)
-            desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("color: #999; font-weight: 300;")
-            container_layout.addWidget(desc_label)
-            
-            button = QPushButton("Open")
-            button.setMinimumHeight(30)
-            button.setMinimumWidth(100)
-            button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            button.clicked.connect(lambda checked, url=link_info["url"]: ExtrasManager.open_url(url))
-            
-            button_container = QWidget()
-            button_container_layout = QHBoxLayout(button_container)
-            button_container_layout.setContentsMargins(0, 0, 0, 0)
-            button_container_layout.addStretch()
-            button_container_layout.addWidget(button)
-            button_container_layout.addStretch()
-            
-            container_layout.addWidget(button_container)
-            scroll_layout.addWidget(container)
-        
-        scroll_layout.addStretch(1)
-        scroll_area.setWidget(scroll_widget)
-        main_layout.addWidget(scroll_area)
-        
-        return links_tab
     
     @staticmethod
-    def create_useful_programs_tab():
-        programs_tab = QWidget()
-        main_layout = QVBoxLayout(programs_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
-        scroll_widget = QWidget()
-        scroll_widget.setProperty("scrollContainer", True)
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
-        
-        programs = [
+    def _get_useful_programs():
+        return [
             {
                 "label": "Gamemode Github", 
                 "description": "Daemon/lib combo for Linux that allows games to request a set of optimisations be temporarily applied to the host OS and/or a game process.",
@@ -140,12 +73,12 @@ class ExtrasManager:
             {
                 "label": "ProtonPlus Github", 
                 "description": "A modern compatibility tools manager for Linux.",
-                "url": "https://github.com/ValveSoftware/Proton"
+                "url": "https://github.com/Vysp3r/ProtonPlus"
             },
             {
                 "label": "ProtonUp-Qt Github", 
                 "description": "Install and manage GE-Proton, Luxtorpeda & more for Steam and Wine-GE & more for Lutris with this graphical user interface.",
-                "url": "https://github.com/ValveSoftware/Proton"
+                "url": "https://github.com/DavidoTek/ProtonUp-Qt"
             },
             {
                 "label": "Proton Github", 
@@ -160,7 +93,7 @@ class ExtrasManager:
             {
                 "label": "Proton-Sarek Github", 
                 "description": "Community focused fork of Proton with additional patches and improvements for older PCs.",
-                "url": "https://github.com/ValveSoftware/sarek"
+                "url": "https://github.com/ValveSoftware/Proton/tree/experimental_sarek"
             },
             {
                 "label": "DXVK Github", 
@@ -170,7 +103,7 @@ class ExtrasManager:
             {
                 "label": "DXVK-Sarek Github", 
                 "description": "Vulkan-based translation layer for Direct3D 8/9/10/11 for older PCs.",
-                "url": "https://github.com/ValveSoftware/dxvk-sarek"
+                "url": "https://github.com/doitsujin/dxvk/tree/sarek"
             },
             {
                 "label": "VKD3D Proton Github", 
@@ -178,45 +111,66 @@ class ExtrasManager:
                 "url": "https://github.com/HansKristian-Work/vkd3d-proton"
             },
         ]
+    
+    @staticmethod
+    def _create_scrollable_tab(items):
+        tab = QWidget()
+        main_layout = QVBoxLayout(tab)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
-        for program_info in programs:
-            container = QWidget()
-            container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setSpacing(5)
-            
-            title_label = QLabel(program_info["label"])
-            title_label.setAlignment(Qt.AlignCenter)
-            title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-            container_layout.addWidget(title_label)
-            
-            desc_label = QLabel(program_info["description"])
-            desc_label.setAlignment(Qt.AlignCenter)
-            desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("color: #999; font-weight: 300;")
-            container_layout.addWidget(desc_label)
-            
-            button = QPushButton("Open")
-            button.setMinimumHeight(30)
-            button.setMinimumWidth(100)
-            button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            button.clicked.connect(lambda checked, url=program_info["url"]: ExtrasManager.open_url(url))
-            
-            button_container = QWidget()
-            button_container_layout = QHBoxLayout(button_container)
-            button_container_layout.setContentsMargins(0, 0, 0, 0)
-            button_container_layout.addStretch()
-            button_container_layout.addWidget(button)
-            button_container_layout.addStretch()
-            
-            container_layout.addWidget(button_container)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        scroll_widget = QWidget()
+        scroll_widget.setProperty("scrollContainer", True)
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(15)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        
+        for item in items:
+            container = ExtrasManager._create_item_container(item)
             scroll_layout.addWidget(container)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        return programs_tab
+        return tab
+    
+    @staticmethod
+    def _create_item_container(item_info):
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(5)
+        
+        title_label = QLabel(item_info["label"])
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        container_layout.addWidget(title_label)
+        
+        desc_label = QLabel(item_info["description"])
+        desc_label.setAlignment(Qt.AlignCenter)
+        desc_label.setWordWrap(True)
+        desc_label.setStyleSheet("color: #999; font-weight: 300;")
+        container_layout.addWidget(desc_label)
+        
+        button = QPushButton("Open")
+        button.setMinimumHeight(30)
+        button.setMinimumWidth(100)
+        button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        button.clicked.connect(lambda checked, url=item_info["url"]: ExtrasManager.open_url(url))
+        
+        button_container = QWidget()
+        button_container_layout = QHBoxLayout(button_container)
+        button_container_layout.setContentsMargins(0, 0, 0, 0)
+        button_container_layout.addStretch()
+        button_container_layout.addWidget(button)
+        button_container_layout.addStretch()
+        
+        container_layout.addWidget(button_container)
+        return container
     
     @staticmethod
     def open_url(url):

@@ -1,32 +1,40 @@
 #!/bin/bash
-# check if running with sudo
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root (use sudo)"
+
+# Exit on errors
+set -eu
+
+# Check if running with sudo
+if [[ $EUID -ne 0 ]]; then
+  echo -e "\033[31mError: Please run this script as root (use sudo)\033[0m" >&2
   exit 1
 fi
 
-# remove the executables and scripts from /usr/local/bin/
-if [ -f "/usr/local/bin/volt-gui" ]; then
-  rm /usr/local/bin/volt-gui
-  echo "Removed volt-gui executable from /usr/local/bin/"
-else
-  echo "volt-gui executable not found in /usr/local/bin/"
-fi
-
-if [ -f "/usr/local/bin/volt" ]; then
-  rm /usr/local/bin/volt
-  echo "Removed volt script from /usr/local/bin/"
-else
-  echo "volt script not found in /usr/local/bin/"
-fi
-
-# remove desktop entry
+# Configuration
+INSTALL_DIR="/usr/local/bin"
+TARGETS=("volt-gui" "volt-cpu" "volt-kernel")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
-if [ -f "$DESKTOP_FILE" ]; then
-  rm "$DESKTOP_FILE"
-  echo "Removed desktop entry from $DESKTOP_FILE"
+
+# Remove installed files
+echo -e "\033[34mRemoving installed files...\033[0m"
+
+# Remove main executable and helpers
+for target in "${TARGETS[@]}"; do
+  file="$INSTALL_DIR/$target"
+  if [[ -f "$file" ]]; then
+    rm -v "$file"
+  else
+    echo -e "\033[33mWarning: $file not found\033[0m"
+  fi
+done
+
+# Remove desktop entry
+if [[ -f "$DESKTOP_FILE" ]]; then
+  rm -v "$DESKTOP_FILE"
+  # Update desktop database
+  echo -e "\n\033[34mUpdating desktop database...\033[0m"
+  update-desktop-database "$(dirname "$DESKTOP_FILE")"
 else
-  echo "Desktop entry not found at $DESKTOP_FILE"
+  echo -e "\033[33mWarning: Desktop entry $DESKTOP_FILE not found\033[0m"
 fi
 
-echo "Removal completed successfully."
+echo -e "\n\033[32mRemoval completed successfully!\033[0m"

@@ -3,7 +3,7 @@ import re
 import subprocess
 import os
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, 
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QScrollArea, QFrame, QSizePolicy
 )
 from PySide6.QtCore import Qt, QProcess
@@ -122,32 +122,15 @@ class CPUManager:
     @staticmethod
     def get_current_governor():
         try:
-            result = subprocess.run(
-                ["cat", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"],
-                capture_output=True, 
-                text=True, 
-                check=True
-            )
-            return result.stdout.strip()
-        except subprocess.CalledProcessError:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r") as f:
+                return f.read().strip()
+        except Exception:
             return CPUManager.DEFAULT_GOVERNOR
 
     @staticmethod
     def get_current_scheduler():
         try:
-            result = subprocess.run(
-                ["ps", "-eo", "comm"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            for line in result.stdout.strip().split('\n'):
-                process_name = line.strip()
-                if process_name.startswith("scx_"):
-                    return process_name
-            
-            return "none"
+            return CPUManager._find_running_scheduler()
         except subprocess.CalledProcessError:
             return "none"
     
@@ -193,7 +176,6 @@ class CPUManager:
                     governor = f.read().strip()
             except Exception as e:
                 governor = "unknown"
-                print(f"Error reading governor for CPU{cpu_num}: {e}")
             
             label = QLabel(f"cpu{cpu_num}: {governor}")
             cpu_governor_labels[cpu_num] = label
@@ -208,16 +190,14 @@ class CPUManager:
             running_scheduler = CPUManager._find_running_scheduler()
             
             if running_scheduler != "none" and running_scheduler not in schedulers:
-                print(f"Found unlisted scheduler: {running_scheduler}")
                 schedulers.append(running_scheduler)
                 sched_combo.clear()
                 sched_combo.addItems(schedulers)
             
-            current_sched_value.setText(f"Current: {running_scheduler}")
+            current_sched_value.setText(f"current: {running_scheduler}")
             return running_scheduler
             
-        except Exception as e:
-            print(f"Error checking current scheduler: {e}")
+        except Exception:
             current_sched_value.setText("Error")
             return None
     
@@ -229,123 +209,5 @@ class CPUManager:
             text=True,
             check=True
         )
-        
-        for line in result.stdout.strip().split('\n'):
-            process_name = line.strip()
-            if process_name.startswith("scx_"):
-                return process_name
-        
-        return "none"
-    
-    @staticmethod
-    def create_cpu_scripts():
-        return CPUManager._create_apply_script(), CPUManager._create_reset_script()
-    
-    @staticmethod
-    def _create_apply_script():
-        return """#!/bin/bash
-
-apply_governor() {
-    local governor="$1"
-    if [ "$governor" != "unset" ]; then
-        echo "Applying CPU governor: $governor"
-        for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-            echo "$governor" > "$CPU_PATH"
-            echo "  Applied to $CPU_PATH"
-        done
-    else
-        echo "Governor set to unset, skipping governor application"
-    fi
-}
-
-handle_scheduler() {
-    local scheduler="$1"
-    
-    if [ "$scheduler" != "unset" ]; then
-        echo "Terminating existing SCX schedulers..."
-        for proc in $(ps -eo comm | grep "^scx_"); do
-            echo "Attempting to terminate $proc"
-            pkill -INT -f "$proc"
-            sleep 0.5
-            
-            if pgrep -f "$proc" > /dev/null; then
-                pkill -TERM -f "$proc"
-                sleep 0.5
-                
-                if pgrep -f "$proc" > /dev/null; then
-                    pkill -KILL -f "$proc"
-                    sleep 0.2
-                fi
-            fi
-        done
-        
-        if [ "$scheduler" != "none" ]; then
-            echo "Starting scheduler: $scheduler"
-            "$scheduler" &
-        fi
-    else
-        echo "Scheduler set to unset, skipping scheduler changes"
-    fi
-}
-
-GOVERNOR="$1"
-SCHEDULER="$2"
-
-apply_governor "$GOVERNOR"
-handle_scheduler "$SCHEDULER"
-
-exit 0
-"""
-    
-    @staticmethod
-    def _create_reset_script():
-        return """#!/bin/bash
-
-apply_governor() {
-    local governor="$1"
-    echo "Resetting CPU governor to: $governor"
-    for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-        echo "$governor" > "$CPU_PATH"
-        echo "  Reset on $CPU_PATH"
-    done
-}
-
-terminate_schedulers() {
-    echo "Terminating all SCX schedulers..."
-    for proc in $(ps -eo comm | grep "^scx_"); do
-        echo "Attempting to terminate $proc"
-        pkill -INT -f "$proc"
-        sleep 0.5
-        
-        if pgrep -f "$proc" > /dev/null; then
-            pkill -TERM -f "$proc"
-            sleep 0.5
-            
-            if pgrep -f "$proc" > /dev/null; then
-                pkill -KILL -f "$proc"
-                sleep 0.2
-            fi
-        fi
-    done
-}
-
-GOVERNOR="$1"
-
-apply_governor "$GOVERNOR"
-terminate_schedulers
-
-exit 0
-"""
-    
-    @staticmethod
-    def write_and_execute_script(script_content, script_name, args):
-        script_path = f"/tmp/{script_name}"
-        
-        with open(script_path, "w") as f:
-            f.write(script_content)
-        
-        os.chmod(script_path, 0o755)
-        
-        process = QProcess()
-        process.start("pkexec", [script_path] + args)
-        return process
+        processes = result.stdout.strip().splitlines()
+        return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")

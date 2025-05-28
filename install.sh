@@ -1,38 +1,70 @@
 #!/bin/bash
-# check if running with sudo
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root (use sudo)"
-  exit 1
-fi
-# check if the release directory exists
-if [ ! -d "release" ]; then
-  echo "Release directory not found. Run build.sh first."
-  exit 1
-fi
-# check if the executable exists
-if [ ! -f "release/volt-gui" ]; then
-  echo "Executable not found in release directory. Run build.sh first."
-  exit 1
-fi
-# copy the executable to /usr/local/bin/
-cp release/volt-gui /usr/local/bin/
-# make it executable
-chmod +x /usr/local/bin/volt-gui
 
-# create desktop entry for all users
+# Exit on errors and unset variables
+set -eu
+
+# Check if running with sudo
+if [[ $EUID -ne 0 ]]; then
+  echo -e "\033[31mError: Please run this script as root (use sudo)\033[0m" >&2
+  exit 1
+fi
+
+# Configuration
+INSTALL_DIR="/usr/local/bin"
+RELEASE_DIR="release"
+EXECUTABLE="$RELEASE_DIR/volt-gui"
+HELPER_SCRIPTS=("scripts/volt-cpu" "scripts/volt-kernel")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
-cat > "$DESKTOP_FILE" << 'EOF'
+
+# Check release directory
+if [[ ! -d "$RELEASE_DIR" ]]; then
+  echo -e "\033[31mError: Release directory not found. Run build.sh first.\033[0m" >&2
+  exit 1
+fi
+
+# Check main executable
+if [[ ! -f "$EXECUTABLE" ]]; then
+  echo -e "\033[31mError: Executable 'volt-gui' not found in release directory. Run build.sh first.\033[0m" >&2
+  exit 1
+fi
+
+# Check helper scripts
+for script in "${HELPER_SCRIPTS[@]}"; do
+  if [[ ! -f "$script" ]]; then
+    echo -e "\033[31mError: Helper script $script not found.\033[0m" >&2
+    exit 1
+  fi
+done
+
+# Install main executable
+echo -e "\033[34mInstalling main executable...\033[0m"
+install -v -m 755 -T "$EXECUTABLE" "$INSTALL_DIR/volt-gui"
+
+# Install helper scripts
+echo -e "\n\033[34mInstalling helper scripts...\033[0m"
+for script in "${HELPER_SCRIPTS[@]}"; do
+  install -v -m 755 -T "$script" "$INSTALL_DIR/$(basename "$script")"
+done
+
+# Create desktop entry
+echo -e "\n\033[34mCreating desktop entry...\033[0m"
+cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
-Exec=volt-gui
+Version=1.0
 Name=volt-gui
-NoDisplay=false
-StartupNotify=true
+Comment=Utility
+Exec=volt-gui
+Icon=preferences-system
 Terminal=false
 Type=Application
+Categories=Utility;
 EOF
 
-# make desktop file executable
-chmod 644 "$DESKTOP_FILE"
-
-echo "Installation completed successfully. You can now run 'volt-gui' from anywhere."
 echo "Desktop entry created at $DESKTOP_FILE"
+
+# Update desktop database
+echo -e "\n\033[34mUpdating desktop database...\033[0m"
+update-desktop-database "$(dirname "$DESKTOP_FILE")"
+
+echo -e "\n\033[32mInstallation completed successfully!\033[0m"
+echo "You can now run 'volt-gui' from the terminal or application menu."

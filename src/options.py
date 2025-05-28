@@ -1,12 +1,12 @@
+import os
+import configparser
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea,
     QPushButton, QSizePolicy
 )
 from PySide6.QtCore import Qt
 from theme import ThemeManager
-import configparser
 from pathlib import Path
-import os
 from PySide6.QtWidgets import QApplication
 
 class OptionsManager:
@@ -33,6 +33,9 @@ class OptionsManager:
         config['CPUBehavior'] = {
             'restore_on_close': self.widgets['restore_cpu_combo'].currentText()
         }
+        config['KernelBehavior'] = {
+            'restore_on_close': self.widgets['restore_kernel_combo'].currentText()
+        }
         
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         
@@ -45,11 +48,26 @@ class OptionsManager:
             self.apply_theme_settings()
             self.apply_start_minimized_settings()
             self.apply_restore_cpu_settings()
+            self.apply_restore_kernel_settings()
             
     def apply_system_tray_settings(self):
         if self.main_window and hasattr(self.main_window, 'use_system_tray'):
             run_in_tray = self.widgets['tray_combo'].currentText() == 'enable'
+            old_setting = self.main_window.use_system_tray
             self.main_window.use_system_tray = run_in_tray
+            
+            if old_setting != run_in_tray:
+                if run_in_tray:
+                    if not hasattr(self.main_window, 'tray_icon'):
+                        self.main_window.setup_system_tray()
+                else:
+                    if hasattr(self.main_window, 'tray_icon'):
+                        self.main_window.tray_icon.hide()
+                        self.main_window.tray_icon.deleteLater()
+                        delattr(self.main_window, 'tray_icon')
+                        if not self.main_window.isVisible():
+                            self.main_window.show_and_activate()
+            
             print(f"System tray setting applied: {run_in_tray}")
             
     def apply_transparency_settings(self):
@@ -79,12 +97,19 @@ class OptionsManager:
             self.main_window.restore_cpu_on_close = restore_cpu
             print(f"CPU restore setting applied: {restore_cpu}")
     
+    def apply_restore_kernel_settings(self):
+        if self.main_window and hasattr(self.main_window, 'restore_kernel_on_close'):
+            restore_kernel = self.widgets['restore_kernel_combo'].currentText() == 'enable'
+            self.main_window.restore_kernel_on_close = restore_kernel
+            print(f"Kernel restore setting applied: {restore_kernel}")
+    
     def load_settings(self):
         self.widgets['theme_combo'].setCurrentText("amd")
         self.widgets['tray_combo'].setCurrentText("enable")
         self.widgets['transparency_combo'].setCurrentText("enable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
         self.widgets['restore_cpu_combo'].setCurrentText("enable")
+        self.widgets['restore_kernel_combo'].setCurrentText("enable")
         
         if not self.config_path.exists():
             self.save_settings()
@@ -107,12 +132,16 @@ class OptionsManager:
             
         if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
             self.widgets['restore_cpu_combo'].setCurrentText(config['CPUBehavior']['restore_on_close'])
+            
+        if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
+            self.widgets['restore_kernel_combo'].setCurrentText(config['KernelBehavior']['restore_on_close'])
         
         self.apply_system_tray_settings()
         self.apply_transparency_settings()
         self.apply_theme_settings()
         self.apply_start_minimized_settings()
         self.apply_restore_cpu_settings()
+        self.apply_restore_kernel_settings()
 
 class OptionsTab(QWidget):
     def __init__(self, parent=None, main_window=None):
@@ -203,6 +232,20 @@ class OptionsTab(QWidget):
         restore_cpu_layout.addWidget(self.restore_cpu_combo)
         scroll_layout.addLayout(restore_cpu_layout)
         
+        restore_kernel_layout = QHBoxLayout()
+        restore_kernel_label = QLabel("Restore Kernel Settings on Close:")
+        restore_kernel_label.setWordWrap(True)
+        restore_kernel_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.restore_kernel_combo = QComboBox()
+        self.restore_kernel_combo.addItems(["enable", "disable"])
+        self.restore_kernel_combo.setCurrentText("enable")
+        self.restore_kernel_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        restore_kernel_layout.addWidget(restore_kernel_label)
+        restore_kernel_layout.addWidget(self.restore_kernel_combo)
+        scroll_layout.addLayout(restore_kernel_layout)
+        
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
@@ -230,6 +273,7 @@ class OptionsTab(QWidget):
             'transparency_combo': self.transparency_combo,
             'start_minimized_combo': self.start_minimized_combo,
             'restore_cpu_combo': self.restore_cpu_combo,
+            'restore_kernel_combo': self.restore_kernel_combo,
             'apply_button': self.apply_button
         }
         
