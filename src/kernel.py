@@ -18,8 +18,8 @@ class KernelManager:
     @staticmethod
     def create_kernel_tab():
         kernel_tab = QWidget()
-        main_layout = QVBoxLayout(kernel_tab)
-        main_layout.addSpacing(10)
+        kernel_layout = QVBoxLayout(kernel_tab)
+        widgets = {}
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -28,30 +28,16 @@ class KernelManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setContentsMargins(0, 0, 0, 10)
         
-        widgets = {}
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
             KernelManager._create_setting_section(scroll_layout, widgets, setting_name, setting_info)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
-        main_layout.addWidget(scroll_area)
+        kernel_layout.addWidget(scroll_area)
         
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
-        
-        widgets['kernel_apply_button'] = QPushButton("Apply")
-        widgets['kernel_apply_button'].setMinimumSize(100, 30)
-        widgets['kernel_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        
-        button_layout.addStretch(1)
-        button_layout.addWidget(widgets['kernel_apply_button'])
-        button_layout.addStretch(1)
-        
-        main_layout.addWidget(button_container)
+        KernelManager._create_apply_button(kernel_layout, widgets)
         
         return kernel_tab, widgets
 
@@ -77,6 +63,23 @@ class KernelManager:
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
+    def _create_apply_button(kernel_layout, widgets):
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 5)
+        
+        widgets['kernel_apply_button'] = QPushButton("Apply")
+        widgets['kernel_apply_button'].setMinimumSize(100, 30)
+        widgets['kernel_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets['kernel_apply_button'])
+        button_layout.addStretch(1)
+        
+        kernel_layout.addWidget(button_container)
+
+    @staticmethod
     def get_current_value(setting_path):
         try:
             with open(setting_path, 'r') as f:
@@ -94,7 +97,7 @@ class KernelManager:
         try:
             for name, info in KernelManager.KERNEL_SETTINGS.items():
                 current = KernelManager.get_current_value(info['path'])
-                widgets[f'{name}_current_value'].setText(f"current value: {current}")
+                widgets[f'{name}_current_value'].setText(f"current: {current}")
         finally:
             widgets['kernel_apply_button'].setEnabled(True)
 

@@ -381,9 +381,7 @@ class MainWindow(QMainWindow):
         self.gov_combo = self.cpu_widgets['gov_combo']
         self.sched_combo = self.cpu_widgets['sched_combo']
         self.cpu_apply_button = self.cpu_widgets['cpu_apply_button']
-        self.governors_layout = self.cpu_widgets['governors_layout']
         self.current_sched_value = self.cpu_widgets['current_sched_value']
-        self.sched_status_layout = self.cpu_widgets['sched_status_layout']
 
         self.cpu_apply_button.clicked.connect(lambda: self.button_clicked_animation(self.cpu_apply_button))
         self.schedulers = ["none", "scx_bpfland", "scx_flash", "scx_lavd", "scx_rusty"]
@@ -436,42 +434,6 @@ class MainWindow(QMainWindow):
         self.refresh_timer.timeout.connect(self.refresh_kernel_values)
         self.refresh_timer.start(5000)
     
-    def setup_system_tray(self):
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
-        
-        tray_menu = QMenu()
-        tray_menu.addAction(QAction("Show", self, triggered=self.show_and_activate))
-        
-        governor_menu = QMenu("CPU Governor", self)
-        self.governor_actions = {
-            g: QAction(g, self, checkable=True, triggered=lambda _, g=g: self.handle_governor_selection(g))
-            for g in CPUManager.get_available_governors()
-        }
-        for action in self.governor_actions.values():
-            governor_menu.addAction(action)
-        tray_menu.addMenu(governor_menu)
-        
-        scheduler_menu = QMenu("Pluggable CPU Scheduler", self)
-        self.scheduler_actions = {
-            s: QAction(s, self, checkable=True, triggered=lambda _, s=s: self.handle_scheduler_selection(s))
-            for s in CPUManager.get_available_schedulers()
-        }
-        for action in self.scheduler_actions.values():
-            scheduler_menu.addAction(action)
-        tray_menu.addMenu(scheduler_menu)
-        
-        tray_menu.addAction(QAction("Apply CPU Settings", self, triggered=self.apply_cpu_settings))
-        tray_menu.addAction(QAction("Apply Kernel Settings", self, 
-            triggered=lambda: KernelManager.apply_kernel_settings(self.kernel_widgets)))
-        tray_menu.addSeparator()
-        tray_menu.addAction(QAction("Quit", self, triggered=self.quit_application))
-        
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
-        self.tray_icon.activated.connect(self.tray_icon_activated)
-        self.update_tray_menu_state()
-    
     def show_and_activate(self):
         self.showMaximized()
         self.activateWindow()
@@ -517,6 +479,26 @@ class MainWindow(QMainWindow):
         governor = self.gov_combo.currentText()
         scheduler = self.sched_combo.currentText()
 
+        current_running_scheduler = CPUManager.get_current_scheduler()
+
+        if scheduler != "unset" and scheduler == current_running_scheduler:
+            current_governor = CPUManager.get_current_governor()
+            if governor != "unset" and governor != current_governor:
+                self.animate_button_click(self.cpu_apply_button)
+                self.cpu_apply_button.setEnabled(False)
+                self.process = QProcess()
+                self.process.start("pkexec", ["/usr/local/bin/volt-cpu", governor, "unset"])
+                self.process.finished.connect(self.on_process_finished)
+                self.is_process_running = True
+                self.cpu_settings_applied = True
+                self.save_settings()
+            else:
+                self.save_settings()
+                if hasattr(self, 'tray_icon'):
+                    self.tray_icon.showMessage("volt-gui", "Settings already applied", 
+                        QSystemTrayIcon.MessageIcon.Information, 2000)
+            return
+
         self.animate_button_click(self.cpu_apply_button)
         self.cpu_apply_button.setEnabled(False)
 
@@ -535,12 +517,11 @@ class MainWindow(QMainWindow):
             process.waitForFinished()
 
     def refresh_cpu_governors(self):
-        CPUManager.refresh_cpu_governors(self.governors_layout, self.cpu_governor_labels)
+        CPUManager.refresh_cpu_governors(self.cpu_widgets)
         self.update_tray_menu_state()
-    
+
     def refresh_current_scheduler(self):
-        self.current_scheduler = CPUManager.refresh_current_scheduler(
-            self.current_sched_value, self.schedulers, self.sched_combo)
+        self.current_scheduler = CPUManager.refresh_current_scheduler(self.cpu_widgets)
         self.update_tray_menu_state()
     
     def refresh_kernel_values(self):
@@ -553,12 +534,14 @@ class MainWindow(QMainWindow):
         try:
             script_path = GPULaunchManager.write_volt_script_with_all_settings(
                 self.mesa_widgets, self.nvidia_widgets)
-            self.tray_icon.showMessage("volt-gui", f"Settings applied and saved to {script_path}", 
-                QSystemTrayIcon.MessageIcon.Information, 2000)
+            if hasattr(self, 'tray_icon'):
+                self.tray_icon.showMessage("volt-gui", f"Settings applied and saved to {script_path}", 
+                    QSystemTrayIcon.MessageIcon.Information, 2000)
             self.save_settings()
         except Exception as e:
-            self.tray_icon.showMessage("volt-gui", f"Error: {e}", 
-                QSystemTrayIcon.MessageIcon.Critical, 2000)
+            if hasattr(self, 'tray_icon'):
+                self.tray_icon.showMessage("volt-gui", f"Error: {e}", 
+                    QSystemTrayIcon.MessageIcon.Critical, 2000)
     
     def on_process_finished(self, exit_code, exit_status):
         self.is_process_running = False
@@ -569,10 +552,11 @@ class MainWindow(QMainWindow):
         self.refresh_cpu_governors()
         self.refresh_current_scheduler()
         
-        self.tray_icon.showMessage("volt-gui", 
-            "Settings applied successfully" if exit_code == 0 else "Error applying settings",
-            QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
-            2000)
+        if hasattr(self, 'tray_icon'):
+            self.tray_icon.showMessage("volt-gui", 
+                "Settings applied successfully" if exit_code == 0 else "Error applying settings",
+                QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
+                2000)
         
         if self.process:
             self.process.deleteLater()
@@ -628,6 +612,9 @@ class MainWindow(QMainWindow):
         self.show_and_activate()
 
     def update_tray_menu_state(self):
+        if not hasattr(self, 'governor_actions') or not hasattr(self, 'scheduler_actions'):
+            return
+            
         current_governor = self.gov_combo.currentText()
         for governor, action in self.governor_actions.items():
             action.setChecked(governor == current_governor)

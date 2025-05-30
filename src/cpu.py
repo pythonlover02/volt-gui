@@ -41,23 +41,10 @@ class CPUManager:
         gov_layout.addWidget(gov_label)
         gov_layout.addWidget(widgets['gov_combo'])
         
-        cpu_governors_layout = QVBoxLayout()
-        governors_scroll = QScrollArea()
-        governors_scroll.setWidgetResizable(True)
-        governors_scroll.setFrameShape(QFrame.NoFrame)
+        widgets['current_gov_value'] = QLabel("Updating...")
         
-        governors_container = QWidget()
-        governors_container.setProperty("statusContainer", "true")
-        widgets['governors_layout'] = QVBoxLayout(governors_container)
-        widgets['governors_layout'].setSpacing(5)
-        widgets['governors_layout'].setContentsMargins(8, 8, 8, 8)
-        
-        governors_scroll.setWidget(governors_container)
-        governors_scroll.setMaximumHeight(150)
-        
-        cpu_governors_layout.addWidget(governors_scroll)
         cpu_layout.addLayout(gov_layout)
-        cpu_layout.addLayout(cpu_governors_layout)
+        cpu_layout.addWidget(widgets['current_gov_value'])
 
     @staticmethod
     def _create_scheduler_section(cpu_layout, widgets):
@@ -73,26 +60,10 @@ class CPUManager:
         sched_layout.addWidget(sched_label)
         sched_layout.addWidget(widgets['sched_combo'])
         
-        sched_status_layout = QVBoxLayout()
-        sched_status_scroll = QScrollArea()
-        sched_status_scroll.setWidgetResizable(True)
-        sched_status_scroll.setFrameShape(QFrame.NoFrame)
+        widgets['current_sched_value'] = QLabel("Updating...")
         
-        sched_status_container = QWidget()
-        sched_status_container.setProperty("statusContainer", "true")
-        widgets['sched_status_layout'] = QVBoxLayout(sched_status_container)
-        widgets['sched_status_layout'].setSpacing(5)
-        widgets['sched_status_layout'].setContentsMargins(8, 8, 8, 8)
-        
-        widgets['current_sched_value'] = QLabel("Checking...")
-        widgets['sched_status_layout'].addWidget(widgets['current_sched_value'])
-        
-        sched_status_scroll.setWidget(sched_status_container)
-        sched_status_scroll.setMaximumHeight(48)
-        
-        sched_status_layout.addWidget(sched_status_scroll)
         cpu_layout.addLayout(sched_layout)
-        cpu_layout.addLayout(sched_status_layout)
+        cpu_layout.addWidget(widgets['current_sched_value'])
     
     @staticmethod
     def _create_apply_button(cpu_layout, widgets):
@@ -135,71 +106,37 @@ class CPUManager:
             return "none"
     
     @staticmethod
-    def refresh_cpu_governors(governors_layout, cpu_governor_labels):
-        CPUManager._clear_governor_labels(governors_layout, cpu_governor_labels)
-        path_info = CPUManager._get_cpu_core_paths()
-        cpu_count = CPUManager._create_governor_status_labels(governors_layout, cpu_governor_labels, path_info)
-        
-        if cpu_count == 0:
-            label = QLabel("No CPU governors found")
-            cpu_governor_labels[-1] = label
-            governors_layout.addWidget(label)
+    def refresh_cpu_governors(widgets):
+        widgets['current_gov_value'].setText("Updating...")
+        try:
+            current_governor = CPUManager.get_current_governor()
+            widgets['current_gov_value'].setText(f"current: {current_governor}")
+        except Exception:
+            widgets['current_gov_value'].setText("Error")
     
     @staticmethod
-    def _clear_governor_labels(governors_layout, cpu_governor_labels):
-        if cpu_governor_labels:
-            for label in cpu_governor_labels.values():
-                governors_layout.removeWidget(label)
-                label.deleteLater()
-            cpu_governor_labels.clear()
-    
-    @staticmethod
-    def _get_cpu_core_paths():
-        cpu_paths = glob.glob(CPUManager.CPU_GOVERNOR_PATH)
-        path_info = []
-        
-        for cpu_path in cpu_paths:
-            match = re.search(r'cpu(\d+)', cpu_path)
-            if match:
-                cpu_num = int(match.group(1))
-                path_info.append((cpu_num, cpu_path))
-        
-        return sorted(path_info)
-    
-    @staticmethod
-    def _create_governor_status_labels(governors_layout, cpu_governor_labels, path_info):
-        cpu_count = 0
-        
-        for cpu_num, cpu_path in path_info:
-            try:
-                with open(cpu_path, 'r') as f:
-                    governor = f.read().strip()
-            except Exception as e:
-                governor = "unknown"
-            
-            label = QLabel(f"cpu{cpu_num}: {governor}")
-            cpu_governor_labels[cpu_num] = label
-            governors_layout.addWidget(label)
-            cpu_count += 1
-        
-        return cpu_count
-    
-    @staticmethod
-    def refresh_current_scheduler(current_sched_value, schedulers, sched_combo):
+    def refresh_current_scheduler(widgets):
+        widgets['current_sched_value'].setText("Updating...")
         try:
             running_scheduler = CPUManager._find_running_scheduler()
-            
+            schedulers = CPUManager.AVAILABLE_SCHEDULERS.copy()
             if running_scheduler != "none" and running_scheduler not in schedulers:
                 schedulers.append(running_scheduler)
-                sched_combo.clear()
-                sched_combo.addItems(schedulers)
+                widgets['sched_combo'].clear()
+                widgets['sched_combo'].addItems(schedulers)
             
-            current_sched_value.setText(f"current: {running_scheduler}")
+            widgets['current_sched_value'].setText(f"current: {running_scheduler}")
             return running_scheduler
             
         except Exception:
-            current_sched_value.setText("Error")
+            widgets['current_sched_value'].setText("Error")
             return None
+    
+    @staticmethod
+    def refresh_values(widgets):
+        """Refresh all CPU values - similar to kernel manager"""
+        CPUManager.refresh_cpu_governors(widgets)
+        CPUManager.refresh_current_scheduler(widgets)
     
     @staticmethod
     def _find_running_scheduler():
