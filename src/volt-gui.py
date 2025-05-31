@@ -258,10 +258,6 @@ class MainWindow(QMainWindow):
 
     def load_options_settings(self):
         """Load options settings early in initialization"""
-        from pathlib import Path
-        import configparser
-        import os
-        
         config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         
         if not config_path.exists():
@@ -274,7 +270,11 @@ class MainWindow(QMainWindow):
             self.use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
         
         if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-            self.start_minimized = config['StartupBehavior']['start_minimized'] == 'enable'
+            # Only start minimized if system tray is enabled
+            if self.use_system_tray:
+                self.start_minimized = config['StartupBehavior']['start_minimized'] == 'enable'
+            else:
+                self.start_minimized = False
         
         if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
             self.restore_cpu_on_close = config['CPUBehavior']['restore_on_close'] == 'enable'
