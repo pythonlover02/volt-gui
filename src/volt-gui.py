@@ -313,7 +313,8 @@ class MainWindow(QMainWindow):
         
         tray_menu.addAction(QAction("Apply CPU Settings", self, triggered=self.apply_cpu_settings))
         tray_menu.addAction(QAction("Apply Kernel Settings", self, 
-            triggered=lambda: KernelManager.apply_kernel_settings(self.kernel_widgets)))
+            triggered=lambda: KernelManager.apply_kernel_settings(self.kernel_widgets, self)))
+        
         tray_menu.addSeparator()
         tray_menu.addAction(QAction("Quit", self, triggered=self.quit_application))
         
@@ -408,7 +409,7 @@ class MainWindow(QMainWindow):
         self.kernel_apply_button = self.kernel_widgets['kernel_apply_button']
         self.kernel_apply_button.clicked.connect(lambda: (
             self.button_clicked_animation(self.kernel_apply_button),
-            KernelManager.apply_kernel_settings(self.kernel_widgets)
+            KernelManager.apply_kernel_settings(self.kernel_widgets, self)
         ))
         
         for setting_name in KernelManager.KERNEL_SETTINGS.keys():

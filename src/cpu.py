@@ -120,6 +120,12 @@ class CPUManager:
         try:
             running_scheduler = CPUManager._find_running_scheduler()
             schedulers = CPUManager.AVAILABLE_SCHEDULERS.copy()
+            
+            # Filter out zombie processes (<defunc>)
+            if running_scheduler != "none" and "<defunc>" in running_scheduler:
+                running_scheduler = "none"
+            
+            # Only add new scheduler if it's not a zombie and not already in the list
             if running_scheduler != "none" and running_scheduler not in schedulers:
                 schedulers.append(running_scheduler)
                 widgets['sched_combo'].clear()

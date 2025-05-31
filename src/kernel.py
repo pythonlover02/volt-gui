@@ -103,7 +103,7 @@ class KernelManager:
             widgets['kernel_apply_button'].setEnabled(True)
 
     @staticmethod
-    def apply_kernel_settings(widgets):
+    def apply_kernel_settings(widgets, main_window=None):
         try:
             settings = []
             originals = {}
@@ -123,9 +123,33 @@ class KernelManager:
                 if process.exitCode() == 0:
                     widgets['original_values'] = originals
                     KernelManager.refresh_values(widgets)
-
+                    
+                    # Show success message in tray if available
+                    if main_window and hasattr(main_window, 'tray_icon') and main_window.tray_icon:
+                        main_window.tray_icon.showMessage(
+                            "volt-gui",
+                            "Kernel settings applied successfully",
+                            main_window.tray_icon.MessageIcon.Information,
+                            2000
+                        )
+                else:
+                    # Show error message
+                    if main_window and hasattr(main_window, 'tray_icon') and main_window.tray_icon:
+                        main_window.tray_icon.showMessage(
+                            "volt-gui",
+                            "Failed to apply kernel settings",
+                            main_window.tray_icon.MessageIcon.Critical,
+                            2000
+                        )
         except Exception as e:
             print(f"Apply error: {str(e)}")
+            if main_window and hasattr(main_window, 'tray_icon') and main_window.tray_icon:
+                main_window.tray_icon.showMessage(
+                    "volt-gui",
+                    f"Error applying kernel settings: {str(e)}",
+                    main_window.tray_icon.MessageIcon.Critical,
+                    2000
+                )
 
     @staticmethod
     def restore_kernel_settings(widgets):
