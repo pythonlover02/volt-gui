@@ -28,7 +28,7 @@ class KernelManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 10)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
         
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
             KernelManager._create_setting_section(scroll_layout, widgets, setting_name, setting_info)
@@ -46,6 +46,7 @@ class KernelManager:
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
         setting_layout = QVBoxLayout(setting_container)
+        setting_layout.setContentsMargins(0, 10, 0, 0)
         
         path_label = QLabel(f"{setting_info['path']}:")
         path_label.setWordWrap(True)

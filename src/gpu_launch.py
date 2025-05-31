@@ -209,7 +209,7 @@ class GPULaunchManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setContentsMargins(0, 10, 0, 0)
         
         widgets = {}
         
@@ -262,7 +262,7 @@ class GPULaunchManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 0, 10, 10)
+        scroll_layout.setContentsMargins(0, 10, 0, 0)
         
         widgets = {}
         
