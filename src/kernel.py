@@ -170,6 +170,33 @@ class KernelManager:
             widgets['kernel_apply_button'].setEnabled(True)
 
     @staticmethod
+    def check_if_settings_already_applied(widgets):
+        """
+        Check if the kernel settings that have values entered are already applied.
+        Args:
+            widgets: Dictionary containing UI widgets with entered values
+        Returns:
+            bool: True if all non-empty settings match current values, False otherwise
+        """
+        settings_to_check = []
+        
+        # Get all settings that have values entered
+        for name, info in KernelManager.KERNEL_SETTINGS.items():
+            value = widgets[f'{name}_input'].text().strip()
+            if value:
+                current_value = KernelManager.get_current_value(info['path'])
+                if current_value != "Error" and current_value != value:
+                    return False
+                settings_to_check.append((name, value, current_value))
+        
+        # If no settings have values entered, return False (nothing to apply)
+        if not settings_to_check:
+            return False
+            
+        # All settings with values match current values
+        return True
+
+    @staticmethod
     def apply_kernel_settings(widgets, main_window=None):
         """
         Applies the kernel settings using privilege escalation.        
@@ -181,6 +208,7 @@ class KernelManager:
             settings = []
             originals = {}
             
+            # Collect settings that have values entered
             for name, info in KernelManager.KERNEL_SETTINGS.items():
                 value = widgets[f'{name}_input'].text().strip()
                 if value:
@@ -188,30 +216,52 @@ class KernelManager:
                     originals[name] = KernelManager.get_current_value(path)
                     settings.append(f"{path}:{value}")
             
-            if settings:
-                process = QProcess()
-                process.start("pkexec", ["volt-kernel"] + settings)
-                process.waitForFinished()
+            # If no settings to apply, return early
+            if not settings:
+                if main_window and hasattr(main_window, 'tray_icon'):
+                    main_window.tray_icon.showMessage(
+                        "volt-gui",
+                        "No kernel settings to apply",
+                        main_window.tray_icon.MessageIcon.Information,
+                        2000
+                    )
+                return
+            
+            # Check if settings are already applied
+            if KernelManager.check_if_settings_already_applied(widgets):
+                if main_window and hasattr(main_window, 'tray_icon'):
+                    main_window.tray_icon.showMessage(
+                        "volt-gui",
+                        "Settings already applied",
+                        main_window.tray_icon.MessageIcon.Information,
+                        2000
+                    )
+                return
+            
+            # Apply the settings
+            process = QProcess()
+            process.start("pkexec", ["volt-kernel"] + settings)
+            process.waitForFinished()
+            
+            if process.exitCode() == 0:
+                widgets['original_values'] = originals
+                KernelManager.refresh_values(widgets)
                 
-                if process.exitCode() == 0:
-                    widgets['original_values'] = originals
-                    KernelManager.refresh_values(widgets)
-                    
-                    if main_window and hasattr(main_window, 'tray_icon'):
-                        main_window.tray_icon.showMessage(
-                            "volt-gui",
-                            "Kernel settings applied successfully",
-                            main_window.tray_icon.MessageIcon.Information,
-                            2000
-                        )
-                else:
-                    if main_window and hasattr(main_window, 'tray_icon'):
-                        main_window.tray_icon.showMessage(
-                            "volt-gui",
-                            "Failed to apply kernel settings",
-                            main_window.tray_icon.MessageIcon.Critical,
-                            2000
-                        )
+                if main_window and hasattr(main_window, 'tray_icon'):
+                    main_window.tray_icon.showMessage(
+                        "volt-gui",
+                        "Kernel settings applied successfully",
+                        main_window.tray_icon.MessageIcon.Information,
+                        2000
+                    )
+            else:
+                if main_window and hasattr(main_window, 'tray_icon'):
+                    main_window.tray_icon.showMessage(
+                        "volt-gui",
+                        "Failed to apply kernel settings",
+                        main_window.tray_icon.MessageIcon.Critical,
+                        2000
+                    )
         except Exception as e:
             print(f"Apply error: {str(e)}")
             if main_window and hasattr(main_window, 'tray_icon'):
