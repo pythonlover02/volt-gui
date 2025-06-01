@@ -393,30 +393,10 @@ class MainWindow(QMainWindow):
         # Add show action
         tray_menu.addAction(QAction("Show", self, triggered=self.show_and_activate))
         
-        # Add CPU governor menu
-        governor_menu = QMenu("CPU Governor", self)
-        self.governor_actions = {
-            g: QAction(g, self, checkable=True, triggered=lambda _, g=g: self.handle_governor_selection(g))
-            for g in CPUManager.get_available_governors()
-        }
-        for action in self.governor_actions.values():
-            governor_menu.addAction(action)
-        tray_menu.addMenu(governor_menu)
-        
-        # Add CPU scheduler menu
-        scheduler_menu = QMenu("Pluggable CPU Scheduler", self)
-        self.scheduler_actions = {
-            s: QAction(s, self, checkable=True, triggered=lambda _, s=s: self.handle_scheduler_selection(s))
-            for s in CPUManager.get_available_schedulers()
-        }
-        for action in self.scheduler_actions.values():
-            scheduler_menu.addAction(action)
-        tray_menu.addMenu(scheduler_menu)
-        
         # Add apply actions
         tray_menu.addAction(QAction("Apply CPU Settings", self, triggered=self.apply_cpu_settings))
-        tray_menu.addAction(QAction("Apply Kernel Settings", self, 
-            triggered=lambda: KernelManager.apply_kernel_settings(self.kernel_widgets, self)))
+        tray_menu.addAction(QAction("Apply Kernel Settings", self, triggered=lambda: KernelManager.apply_kernel_settings(self.kernel_widgets, self)))
+        tray_menu.addAction(QAction("Create `volt` Script", self, triggered=self.apply_gpu_settings))
         
         # Add quit action
         tray_menu.addSeparator()
