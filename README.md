@@ -77,8 +77,11 @@ volt %command%
 
 ## Technical References
 
-The GPU environment variables are based on official documentation:
+Documentation used:
 
+- [Improving performance - Arch Linux Wiki](https://wiki.archlinux.org/title/Improving_performance)
+- [Gaming - Arch Linux Wiki](https://wiki.archlinux.org/title/Gaming#Improving_performance)
+- [sched-ext tutorial - CachyOs Wiki](https://wiki.cachyos.org/configuration/sched-ext/)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
 - [NVIDIA 570 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
 - [NVIDIA 470 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
