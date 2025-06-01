@@ -1,19 +1,35 @@
+"""
+GPU Launch Manager Module
+
+This module provides functionality to manage GPU settings for both Mesa and NVIDIA drivers,
+including environment variable configuration and render device selection.
+"""
+
 import os
 import re
 import tempfile
 import subprocess
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, 
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QSpinBox, QDoubleSpinBox, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
 )
 from PySide6.QtCore import Qt
 
+
 class GPULaunchManager:
+    """
+    Main class for managing GPU launch settings and configurations.
+    Provides functionality to create UI tabs for Mesa, NVIDIA, and render selector settings,
+    generate environment variable scripts, and manage the configuration file.
+    """
+    
+    # Mesa driver settings configuration
     MESA_SETTINGS = [
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "on", "off"]),
         ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "on", "off"]),
         ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
-        ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
+        ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', 
+         ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
         ("Texture Dithering:", 'mesa_dither_combo', ["unset", "on", "off"]),
         ("Shader Cache:", 'mesa_shader_cache_combo', ["unset", "on", "off"]),
         ("Shader Cache Size (GB):", 'mesa_cache_size_combo', ["unset"] + [str(i) for i in range(1, 11)]),
@@ -23,6 +39,7 @@ class GPULaunchManager:
         ("GLSL Version Spoofing:", 'mesa_fake_glsl_combo', ["unset", "330", "460"]),
     ]
     
+    # NVIDIA driver settings configuration
     NVIDIA_SETTINGS = [
         ("OpenGL Vsync:", 'nvidia_vsync_gl_combo', ["unset", "on", "off"]),
         ("OpenGL G-SYNC:", 'nvidia_gsync_combo', ["unset", "on", "off"]),
@@ -47,6 +64,7 @@ class GPULaunchManager:
         ("Use Unofficial GLX Protocol:", 'nvidia_glx_combo', ["unset", "on", "off"])
     ]
     
+    # Mapping between Mesa UI widgets and environment variables
     MESA_ENV_MAPPINGS = {
         'mesa_vsync_gl_combo': {
             'var_name': 'vblank_mode',
@@ -98,6 +116,7 @@ class GPULaunchManager:
         }
     }
     
+    # Mapping between NVIDIA UI widgets and environment variables
     NVIDIA_ENV_MAPPINGS = {
         'nvidia_vsync_gl_combo': {
             'var_name': '__GL_SYNC_TO_VBLANK',
@@ -145,15 +164,20 @@ class GPULaunchManager:
         }
     }
     
+    # Path to the volt script
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
+    
+    # Dictionary to store render selector widgets
     render_selector_widgets = {}
     
+    # OpenGL render device options
     OPENGL_RENDER_OPTIONS = [
         "dedicated gpu",
         "integrated gpu",
         "llvmpipe (Software Rendering)"
     ]
 
+    # Mapping between OpenGL render options and environment variables
     OPENGL_RENDER_MAPPINGS = {
         "dedicated gpu": {
             "DRI_PRIME": "1",
@@ -171,6 +195,12 @@ class GPULaunchManager:
     
     @staticmethod
     def create_gpu_tab():
+        """
+        Creates the main GPU tab with subtabs for Mesa, NVIDIA, and render selector.
+        Returns:
+            tuple: (QWidget, QTabWidget, dict, dict) The main tab widget, subtabs widget,
+                   Mesa widgets dict, and NVIDIA widgets dict
+        """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
         gpu_layout.setSpacing(10)
@@ -189,14 +219,32 @@ class GPULaunchManager:
 
     @staticmethod
     def create_mesa_tab():
+        """
+        Creates the Mesa settings tab.
+        Returns:
+            tuple: (QWidget, dict) The Mesa tab widget and its widgets dictionary
+        """
         return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
 
     @staticmethod
     def create_nvidia_tab():
+        """
+        Creates the NVIDIA settings tab.
+        Returns:
+            tuple: (QWidget, dict) The NVIDIA tab widget and its widgets dictionary
+        """
         return GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
     
     @staticmethod
     def _create_settings_tab(settings_layouts, apply_button_name):
+        """
+        Helper method to create a settings tab with the specified configuration.
+        Args:
+            settings_layouts: List of setting configurations
+            apply_button_name: Name for the apply button widget
+        Returns:
+            tuple: (QWidget, dict) The created tab widget and its widgets dictionary
+        """
         tab = QWidget()
         main_layout = QVBoxLayout(tab)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -250,6 +298,11 @@ class GPULaunchManager:
 
     @staticmethod
     def create_render_selector_tab():
+        """
+        Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
+        Returns:
+            QWidget: The created render selector tab widget
+        """
         render_tab = QWidget()
         main_layout = QVBoxLayout(render_tab)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -319,6 +372,11 @@ class GPULaunchManager:
 
     @staticmethod
     def create_launch_options_tab():
+        """
+        Creates the launch options tab for specifying additional launch commands.
+        Returns:
+            QWidget: The created launch options tab widget
+        """
         launch_tab = QWidget()
         main_layout = QVBoxLayout(launch_tab)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -341,7 +399,10 @@ class GPULaunchManager:
         launch_options_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         launch_options_input = QLineEdit()
-        launch_options_input.setPlaceholderText("enter programs to be launched with the game and environment variables, ej: gamemoderun PROTON_USE_WINED3D=1")
+        launch_options_input.setPlaceholderText(
+            "Enter programs to be launched with the game and environment variables, "
+            "example: gamemoderun PROTON_USE_WINED3D=1"
+        )
         launch_options_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         launch_options_layout.addWidget(launch_options_label)
@@ -377,6 +438,11 @@ class GPULaunchManager:
 
     @staticmethod
     def get_vulkan_icd_options():
+        """
+        Gets available Vulkan ICD (Installable Client Driver) options.
+        Returns:
+            list: Available Vulkan ICD options
+        """
         icd_dir = "/usr/share/vulkan/icd.d/"
         options = []
         
@@ -408,6 +474,13 @@ class GPULaunchManager:
 
     @staticmethod
     def generate_render_selector_env_vars(render_widgets):
+        """
+        Generates environment variables for render selector settings.
+        Args:
+            render_widgets: Dictionary containing render selector widgets
+        Returns:
+            list: Generated environment variable strings
+        """
         env_vars = []
         
         opengl_selection = render_widgets['opengl_render_combo'].currentText()
@@ -446,6 +519,13 @@ class GPULaunchManager:
 
     @staticmethod
     def generate_mesa_script_content(mesa_widgets):
+        """
+        Generates script content for Mesa environment variables.
+        Args:
+            mesa_widgets: Dictionary containing Mesa settings widgets
+        Returns:
+            str: Generated script content
+        """
         env_vars = []
         
         for widget_key, mapping in GPULaunchManager.MESA_ENV_MAPPINGS.items():
@@ -476,6 +556,13 @@ class GPULaunchManager:
 
     @staticmethod
     def generate_nvidia_script_content(nvidia_widgets):
+        """
+        Generates script content for NVIDIA environment variables.
+        Args:
+            nvidia_widgets: Dictionary containing NVIDIA settings widgets
+        Returns:
+            list: Generated environment variable strings
+        """
         env_vars = []
         
         for widget_key, mapping in GPULaunchManager.NVIDIA_ENV_MAPPINGS.items():
@@ -502,6 +589,11 @@ class GPULaunchManager:
 
     @staticmethod
     def generate_launch_options_env_vars():
+        """
+        Generates environment variables for launch options.
+        Returns:
+            list: Generated environment variable strings
+        """
         if not hasattr(GPULaunchManager, 'launch_options_widgets'):
             return []
             
@@ -513,6 +605,15 @@ class GPULaunchManager:
 
     @staticmethod
     def write_volt_script(script_content):
+        """
+        Writes the volt script to the specified path with root permissions.
+        Args:
+            script_content: Content to write to the script
+        Returns:
+            str: Path to the written script
+        Raises:
+            RuntimeError: If script writing fails
+        """
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
             temp_file.write(script_content)
             temp_path = temp_file.name
@@ -534,6 +635,11 @@ class GPULaunchManager:
 
     @staticmethod
     def read_volt_script():
+        """
+        Reads and parses the volt script.        
+        Returns:
+            dict: Dictionary of environment variables from the script, or None if reading fails
+        """
         if not os.path.exists(GPULaunchManager.VOLT_SCRIPT_PATH):
             return None
         
@@ -555,6 +661,14 @@ class GPULaunchManager:
 
     @staticmethod
     def write_volt_script_with_all_settings(mesa_widgets, nvidia_widgets):
+        """
+        Writes a volt script combining all settings (Mesa, NVIDIA, render selector).
+        Args:
+            mesa_widgets: Dictionary containing Mesa settings widgets
+            nvidia_widgets: Dictionary containing NVIDIA settings widgets
+        Returns:
+            str: Path to the written script
+        """
         mesa_env_vars = []
         if mesa_widgets is not None:
             mesa_content = GPULaunchManager.generate_mesa_script_content(mesa_widgets)
@@ -568,7 +682,9 @@ class GPULaunchManager:
         
         render_env_vars = []
         if GPULaunchManager.render_selector_widgets:
-            render_env_vars = GPULaunchManager.generate_render_selector_env_vars(GPULaunchManager.render_selector_widgets)
+            render_env_vars = GPULaunchManager.generate_render_selector_env_vars(
+                GPULaunchManager.render_selector_widgets
+            )
             
         launch_options = ""
         if hasattr(GPULaunchManager, 'launch_options_widgets'):
@@ -591,6 +707,13 @@ class GPULaunchManager:
     
     @staticmethod
     def sync_mesa_widgets_with_script(mesa_widgets):
+        """
+        Synchronizes Mesa widgets with values from the volt script.
+        Args:
+            mesa_widgets: Dictionary containing Mesa settings widgets
+        Returns:
+            bool: True if synchronization was successful, False otherwise
+        """
         env_vars = GPULaunchManager.read_volt_script()
         if not env_vars:
             return False
@@ -619,6 +742,13 @@ class GPULaunchManager:
 
     @staticmethod
     def sync_nvidia_widgets_with_script(nvidia_widgets):
+        """
+        Synchronizes NVIDIA widgets with values from the volt script.
+        Args:
+            nvidia_widgets: Dictionary containing NVIDIA settings widgets
+        Returns:
+            bool: True if synchronization was successful, False otherwise
+        """
         env_vars = GPULaunchManager.read_volt_script()
         if not env_vars:
             return False

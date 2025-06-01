@@ -5,16 +5,31 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+
 class ExtrasManager:
+    """
+    Manager class for creating and managing the extras tab with useful resources.    
+    Provides static methods to create UI elements and handle link opening.
+    """
+    
     @staticmethod
     def create_extras_tab():
+        """
+        Creates and returns the extras tab widget with subtabs for links and programs.
+        Returns:
+            tuple: (QWidget, QTabWidget) The main tab widget and subtabs widget
+        """
         extras_tab = QWidget()
         extras_layout = QVBoxLayout(extras_tab)
         extras_layout.setSpacing(10)
         
         extras_subtabs = QTabWidget()
-        useful_links_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_links())
-        useful_programs_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_programs())
+        useful_links_tab = ExtrasManager._create_scrollable_tab(
+            ExtrasManager._get_useful_links()
+        )
+        useful_programs_tab = ExtrasManager._create_scrollable_tab(
+            ExtrasManager._get_useful_programs()
+        )
         
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
         extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
@@ -24,6 +39,11 @@ class ExtrasManager:
     
     @staticmethod
     def _get_useful_links():
+        """
+        Returns a list of dictionaries containing useful link information.
+        Returns:
+            list: List of dictionaries with label, description and url for each link
+        """
         return [
             {
                 "label": "Arch Wiki", 
@@ -54,20 +74,25 @@ class ExtrasManager:
     
     @staticmethod
     def _get_useful_programs():
+        """
+        Returns a list of dictionaries containing useful program information.
+        Returns:
+            list: List of dictionaries with label, description and url for each program
+        """
         return [
             {
                 "label": "Gamemode Github", 
-                "description": "Daemon/lib combo for Linux that allows games to request a set of optimisations be temporarily applied to the host OS and/or a game process.",
+                "description": "Daemon/lib combo for Linux that allows games to request optimizations.",
                 "url": "https://github.com/FeralInteractive/gamemode"
             },
             {
                 "label": "Mangohud Github", 
-                "description": "A Vulkan and OpenGL overlay for monitoring FPS, temperatures, CPU/GPU load and more.",
+                "description": "A Vulkan and OpenGL overlay for monitoring FPS, temperatures, etc.",
                 "url": "https://github.com/flightlessmango/MangoHud"
             },
             {
                 "label": "SCX Github", 
-                "description": "Linux kernel feature which enables implementing kernel thread schedulers in BPF and dynamically loading them.",
+                "description": "Linux kernel feature for implementing thread schedulers in BPF.",
                 "url": "https://github.com/sched-ext/scx"
             },
             {
@@ -77,7 +102,7 @@ class ExtrasManager:
             },
             {
                 "label": "ProtonUp-Qt Github", 
-                "description": "Install and manage GE-Proton, Luxtorpeda & more for Steam and Wine-GE & more for Lutris with this graphical user interface.",
+                "description": "Install and manage GE-Proton, Luxtorpeda for Steam and Lutris.",
                 "url": "https://github.com/DavidoTek/ProtonUp-Qt"
             },
             {
@@ -87,12 +112,12 @@ class ExtrasManager:
             },
             {
                 "label": "Proton-GE Github", 
-                "description": "Community focused fork of Proton with additional patches and improvements.",
+                "description": "Community fork of Proton with additional patches.",
                 "url": "https://github.com/GloriousEggroll/proton-ge-custom"
             },
             {
                 "label": "Proton-Sarek Github", 
-                "description": "Community focused fork of Proton with additional patches and improvements for older PCs.",
+                "description": "Proton fork with improvements for older PCs.",
                 "url": "https://github.com/ValveSoftware/Proton/tree/experimental_sarek"
             },
             {
@@ -102,18 +127,25 @@ class ExtrasManager:
             },
             {
                 "label": "DXVK-Sarek Github", 
-                "description": "Vulkan-based translation layer for Direct3D 8/9/10/11 for older PCs.",
+                "description": "DXVK version for older PCs.",
                 "url": "https://github.com/doitsujin/dxvk/tree/sarek"
             },
             {
                 "label": "VKD3D Proton Github", 
-                "description": "Vulkan based translation layer for Direct3D 12, used on Proton.",
+                "description": "Vulkan translation layer for Direct3D 12, used on Proton.",
                 "url": "https://github.com/HansKristian-Work/vkd3d-proton"
             },
         ]
     
     @staticmethod
     def _create_scrollable_tab(items):
+        """
+        Creates a scrollable tab widget containing the provided items.
+        Args:
+            items: List of items to display in the scrollable area
+        Returns:
+            QWidget: The created tab widget
+        """
         tab = QWidget()
         main_layout = QVBoxLayout(tab)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -140,6 +172,13 @@ class ExtrasManager:
     
     @staticmethod
     def _create_item_container(item_info):
+        """
+        Creates a container widget for an individual link/program item.
+        Args:
+            item_info: Dictionary containing item information
+        Returns:
+            QWidget: The created container widget
+        """
         container = QWidget()
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
@@ -160,7 +199,8 @@ class ExtrasManager:
         button.setMinimumHeight(30)
         button.setMinimumWidth(100)
         button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        button.clicked.connect(lambda checked, url=item_info["url"]: ExtrasManager.open_url(url))
+        button.clicked.connect(
+            lambda checked, url=item_info["url"]: ExtrasManager.open_url(url))
         
         button_container = QWidget()
         button_container_layout = QHBoxLayout(button_container)
@@ -174,4 +214,9 @@ class ExtrasManager:
     
     @staticmethod
     def open_url(url):
+        """
+        Opens the specified URL in the system's default web browser.
+        Args:
+            url: The URL to open
+        """
         webbrowser.open(url)

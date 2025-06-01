@@ -2,7 +2,15 @@ from PySide6.QtGui import QPalette, QColor
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+
 class ThemeManager:
+    """
+    Manages application themes including colors, stylesheets and palettes.    
+    Provides class methods to apply themes, get style information, and manage
+    theme-related settings across the application.
+    """
+    
+    # AMD brand color scheme
     AMD_COLORS = {
         'bg_color': "#141414",
         'darker_bg': "#0A0A0A",
@@ -16,6 +24,7 @@ class ThemeManager:
         'disabled_text': "#777777",
     }
     
+    # Intel brand color scheme
     INTEL_COLORS = {
         'bg_color': "#141414",
         'darker_bg': "#0A0A0A",
@@ -29,6 +38,7 @@ class ThemeManager:
         'disabled_text': "#777777",
     }
     
+    # NVIDIA brand color scheme
     NVIDIA_COLORS = {
         'bg_color': "#141414",
         'darker_bg': "#0A0A0A",
@@ -42,29 +52,43 @@ class ThemeManager:
         'disabled_text': "#777777",
     }
     
+    # Available themes mapping
     THEMES = {
         "amd": AMD_COLORS,
         "intel": INTEL_COLORS,
         "nvidia": NVIDIA_COLORS
     }
     
+    # Current theme settings
     COLORS = AMD_COLORS
     CURRENT_THEME = "amd"
 
     @classmethod
     def set_theme(cls, theme_name):
+        """
+        Set the current application theme.
+        Args:
+            theme_name: Name of the theme to set (amd, intel, nvidia)
+        """
         theme_name = theme_name.lower()
         if theme_name in cls.THEMES:
             cls.COLORS = cls.THEMES[theme_name]
             cls.CURRENT_THEME = theme_name
         else:
+            # Fallback to AMD theme if invalid name provided
             cls.COLORS = cls.AMD_COLORS
             cls.CURRENT_THEME = "amd"
             
     @classmethod
     def get_theme_style_sheet(cls):
+        """
+        Generate the Qt stylesheet for the current theme.
+        Returns:
+            str: CSS-like stylesheet string for the current theme
+        """
         c = cls.COLORS
         return f"""
+        /* Base widget styling */
         QWidget {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -72,12 +96,14 @@ class ThemeManager:
             font-family: "Segoe UI", sans-serif;
         }}
         
+        /* Label styling */
         QLabel {{
             color: {c['text_color']};
             background-color: transparent;
             qproperty-wordWrap: true;
         }}
         
+        /* Scroll area styling */
         QScrollArea {{
             border: none;
             background-color: transparent;
@@ -87,6 +113,7 @@ class ThemeManager:
             background-color: transparent;
         }}
         
+        /* Custom widget properties */
         QWidget[scrollContainer="true"], 
         QWidget[buttonContainer="true"] {{
             background-color: transparent;
@@ -96,6 +123,7 @@ class ThemeManager:
             min-height: 50px;
         }}
         
+        /* Main window and tab styling */
         QMainWindow, QTabWidget, QTabWidget::pane {{
             background-color: {c['bg_color']};
             border: none;
@@ -120,6 +148,7 @@ class ThemeManager:
             border-bottom: 3px solid {c['accent_color']};
         }}
         
+        /* Vertical scrollbar styling */
         QScrollBar:vertical {{
             background: {c['bg_color']};
             width: 8px;
@@ -141,6 +170,7 @@ class ThemeManager:
             height: 0px;
         }}
         
+        /* Horizontal scrollbar styling */
         QScrollBar:horizontal {{
             background: {c['bg_color']};
             height: 8px;
@@ -162,6 +192,7 @@ class ThemeManager:
             width: 0px;
         }}
         
+        /* Button styling */
         QPushButton {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -186,6 +217,7 @@ class ThemeManager:
             color: {c['accent_hover']};
         }}
         
+        /* Input controls styling */
         QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -224,6 +256,7 @@ class ThemeManager:
             selection-color: white;
         }}
         
+        /* Spin box buttons */
         QSpinBox::up-button, QDoubleSpinBox::up-button,
         QSpinBox::down-button, QDoubleSpinBox::down-button {{
             background-color: {c['lighter_bg']};
@@ -236,11 +269,13 @@ class ThemeManager:
             background-color: {c['accent_color']};
         }}
         
+        /* Line edit selection */
         QLineEdit {{
             selection-background-color: {c['accent_color']};
             selection-color: white;
         }}
         
+        /* Header labels */
         QLabel[isHeader="true"] {{
             font-weight: bold;
             color: {c['accent_color']};
@@ -249,6 +284,7 @@ class ThemeManager:
             padding-bottom: 5px;
         }}
         
+        /* Checkbox styling */
         QCheckBox {{
             color: {c['text_color']};
             spacing: 8px;
@@ -270,6 +306,7 @@ class ThemeManager:
             border: 1px solid {c['accent_color']};
         }}
 
+        /* Status container styling */
         QWidget[statusContainer="true"] {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -285,9 +322,15 @@ class ThemeManager:
 
     @classmethod
     def get_theme_palette(cls):
+        """
+        Generate the QPalette for the current theme.
+        Returns:
+            QPalette: Configured palette for the current theme
+        """
         palette = QPalette()
         c = cls.COLORS
         
+        # Set palette colors for various UI states
         palette.setColor(QPalette.Window, QColor(c['bg_color']))
         palette.setColor(QPalette.WindowText, QColor(c['text_color']))
         palette.setColor(QPalette.Base, QColor(c['bg_color']))
@@ -301,6 +344,7 @@ class ThemeManager:
         palette.setColor(QPalette.Highlight, QColor(c['accent_color']))
         palette.setColor(QPalette.HighlightedText, QColor("#FFFFFF"))
         
+        # Disabled state colors
         palette.setColor(QPalette.Disabled, QPalette.Text, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.Window, QColor(c['disabled_bg']))
@@ -310,6 +354,12 @@ class ThemeManager:
 
     @classmethod
     def apply_theme(cls, app, theme_name=None):
+        """
+        Apply the specified theme to the application.
+        Args:
+            app: QApplication instance to apply the theme to
+            theme_name: Name of the theme to apply (optional)
+        """
         if theme_name:
             cls.set_theme(theme_name)
             
@@ -319,4 +369,9 @@ class ThemeManager:
 
     @classmethod
     def get_available_themes(cls):
+        """
+        Get list of available theme names.
+        Returns:
+            list: Names of available themes
+        """
         return list(cls.THEMES.keys())
