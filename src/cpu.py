@@ -53,7 +53,7 @@ class CPUManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 0)  # Added horizontal margins here
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         widgets = {}
         
@@ -73,7 +73,7 @@ class CPUManager:
         scroll_layout.addLayout(gov_layout)
         
         widgets['current_gov_value'] = QLabel("Updating...")
-        widgets['current_gov_value'].setContentsMargins(0, 0, 0, 10)  # Added bottom margin
+        widgets['current_gov_value'].setContentsMargins(0, 0, 0, 10)
         scroll_layout.addWidget(widgets['current_gov_value'])
         
         # Scheduler section
@@ -92,7 +92,7 @@ class CPUManager:
         scroll_layout.addLayout(sched_layout)
         
         widgets['current_sched_value'] = QLabel("Updating...")
-        widgets['current_sched_value'].setContentsMargins(0, 0, 0, 10)  # Added bottom margin
+        widgets['current_sched_value'].setContentsMargins(0, 0, 0, 10)
         scroll_layout.addWidget(widgets['current_sched_value'])
         
         # Finalize scroll area
@@ -104,7 +104,7 @@ class CPUManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 10)  # Consistent with other tabs
+        button_layout.setContentsMargins(10, 10, 10, 16)
 
         widgets['cpu_apply_button'] = QPushButton("Apply")
         widgets['cpu_apply_button'].setMinimumSize(100, 30)
