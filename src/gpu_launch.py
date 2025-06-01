@@ -1,10 +1,3 @@
-"""
-GPU Launch Manager Module
-
-This module provides functionality to manage GPU settings for both Mesa and NVIDIA drivers,
-including environment variable configuration and render device selection.
-"""
-
 import os
 import re
 import tempfile
