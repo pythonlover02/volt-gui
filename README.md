@@ -38,14 +38,28 @@ A graphical user interface for configuring GPU related environment variables and
 - Pip
 - Linux operating system
 
+### Additional requirements in the case you use Nuitka:
+
+- C/C++ Compiler
+- patchelf
+- ccache (for optimizing compiling times)
+
 ## Installation
 
 ### Quick Install
-1. Run the build script to create the application:
+1. Run one of the builds scripts avaliable to create the application:
+   
+   Using Pyinstaller:
    ```bash
-   ./build.sh
+   ./build-pyinstaller.sh
    ```
-   *Note: Uses Python virtual environment to avoid system wide package installation using pip*
+   
+   Using Nuitka:
+   ```bash
+   ./build-nuitka.sh
+   ```
+
+   *Note: Both use a Python virtual environment to avoid system wide package installation using pip*
 
 2. Install the application system wide:
    ```bash

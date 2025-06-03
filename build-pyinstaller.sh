@@ -18,12 +18,16 @@ SRC_FILE="src/volt-gui.py"
 RELEASE_DIR="release"
 BASE_FILENAME=$(basename "$SRC_FILE" .py)
 SPEC_FILE="$BASE_FILENAME.spec"
-PYINSTALLER_OPTS=("--onefile" "--name=volt-gui")
+
+# PyInstaller options for the application
+PYINSTALLER_OPTS=(
+    "--onefile" 
+    "--name=volt-gui"
+)
 
 # Cleanup function
 cleanup() {
-    echo -e "\n${CYAN}Cleaning up...${NC}"
-    rm -rfv dist/ build/ __pycache__/ "${SPEC_FILE}"
+    rm -rf dist/ build/ **__pycache__*/ "${SPEC_FILE}" 2>/dev/null || true
 }
 
 # Check for required commands
@@ -69,7 +73,9 @@ update_dependencies() {
 
 # Main build process
 build_executable() {
-    echo -e "${CYAN}Building executable...${NC}"
+    echo -e "${CYAN}Building executable with PyInstaller...${NC}"
+    echo -e "${YELLOW}PyInstaller options: ${PYINSTALLER_OPTS[*]}${NC}"
+
     if ! pyinstaller "${PYINSTALLER_OPTS[@]}" "$SRC_FILE"; then
         echo -e "${RED}Error: PyInstaller failed to build executable${NC}" >&2
         exit 1
@@ -78,12 +84,8 @@ build_executable() {
 
 # Move to release directory
 move_to_release() {
-    echo -e "\n${CYAN}Preparing release...${NC}"
     mkdir -p "$RELEASE_DIR"
-    if ! cp -v "dist/$BASE_FILENAME" "$RELEASE_DIR/"; then
-        echo -e "${RED}Error: Failed to copy executable to release directory${NC}" >&2
-        exit 1
-    fi
+    mv "dist/$BASE_FILENAME" "$RELEASE_DIR/" 2>/dev/null || true
 }
 
 # Main execution
@@ -103,6 +105,12 @@ main() {
 
     echo -e "\n${GREEN}Build successful!${NC}"
     echo -e "Executable: ${YELLOW}$RELEASE_DIR/$BASE_FILENAME${NC}"
+    
+    # Show file size
+    if command -v du &> /dev/null; then
+        local size=$(du -h "$RELEASE_DIR"/* 2>/dev/null | cut -f1 || echo "Unknown")
+        echo -e "File size: ${YELLOW}$size${NC}"
+    fi
 }
 
 # Run main function
