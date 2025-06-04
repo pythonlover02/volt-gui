@@ -120,7 +120,7 @@ class KernelManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
+        button_layout.setContentsMargins(10, 10, 10, 0)
         
         widgets['kernel_apply_button'] = QPushButton("Apply")
         widgets['kernel_apply_button'].setMinimumSize(100, 30)

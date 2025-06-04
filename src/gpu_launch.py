@@ -276,7 +276,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
+        button_layout.setContentsMargins(10, 10, 10, 0)
 
         widgets[apply_button_name] = QPushButton("Apply")
         widgets[apply_button_name].setMinimumSize(100, 30)
@@ -348,7 +348,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
+        button_layout.setContentsMargins(10, 10, 10, 0)
 
         widgets['render_selector_apply_button'] = QPushButton("Apply")
         widgets['render_selector_apply_button'].setMinimumSize(100, 30)
@@ -382,7 +382,7 @@ class GPULaunchManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         scroll_layout.addSpacing(10)
         
@@ -409,7 +409,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
+        button_layout.setContentsMargins(10, 10, 10, 0)
 
         apply_button = QPushButton("Apply")
         apply_button.setMinimumSize(100, 30)
