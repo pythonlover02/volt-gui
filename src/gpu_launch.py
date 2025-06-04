@@ -519,20 +519,20 @@ class GPULaunchManager:
             return False
 
     @staticmethod
-    def apply_gpu_launch_settings(self):
+    def apply_gpu_launch_settings(tray_icon):
         """
         Apply GPU launch settings and show system tray notifications.
         Returns:
             bool: True if settings were applied successfully, False otherwise
         """
         try:
-            script_path = self._write_volt_script_with_all_settings(
-                self.mesa_widgets, 
-                self.nvidia_widgets
+            script_path = GPULaunchManager._write_volt_script_with_all_settings(
+                GPULaunchManager.mesa_widgets, 
+                GPULaunchManager.nvidia_widgets
             )
             
-            if hasattr(self, 'tray_icon') and self.tray_icon:
-                self.tray_icon.showMessage(
+            if tray_icon:
+                tray_icon.showMessage(
                     "volt-gui",
                     f"GPU launch settings applied and saved to {script_path}",
                     QSystemTrayIcon.MessageIcon.Information,
@@ -542,8 +542,8 @@ class GPULaunchManager:
             return True
                 
         except Exception as e:
-            if hasattr(self, 'tray_icon') and self.tray_icon:
-                self.tray_icon.showMessage(
+            if tray_icon:
+                tray_icon.showMessage(
                     "volt-gui",
                     f"Error applying GPU launch settings: {e}",
                     QSystemTrayIcon.MessageIcon.Critical,

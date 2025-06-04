@@ -472,11 +472,9 @@ class MainWindow(QMainWindow):
         """
         Apply GPU and launch settings.
         """
-        success = self.gpu_manager.apply_gpu_launch_settings(
+        success = GPULaunchManager.apply_gpu_launch_settings(
             self.tray_icon if hasattr(self, 'tray_icon') else None
         )
-        if success:
-            self.save_settings()
     
     def apply_dark_theme(self):
         """
