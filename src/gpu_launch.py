@@ -4,7 +4,8 @@ import tempfile
 import subprocess
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QSpinBox, QDoubleSpinBox, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
+    QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit,
+    QSystemTrayIcon
 )
 from PySide6.QtCore import Qt
 
@@ -12,7 +13,7 @@ from PySide6.QtCore import Qt
 class GPULaunchManager:
     """
     Main class for managing GPU launch settings and configurations.
-    Provides functionality to create UI tabs for Mesa, NVIDIA, and render selector settings,
+    Provides functionality to create UI tabs for Mesa, NVIDIA, render selector, and launch options,
     generate environment variable scripts, and manage the configuration file.
     """
     
@@ -102,9 +103,9 @@ class GPULaunchManager:
         'mesa_extension_override_combo': {
             'var_name': 'MESA_EXTENSION_OVERRIDE',
             'values': {
-                'disable anisotropic': '-GL_EXT_texture_filter_anisotropic',
-                'disable antialiasing': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled',
-                'disable both': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled -GL_EXT_texture_filter_anisotropic'
+                'try to disable anisotropic': '-GL_EXT_texture_filter_anisotropic',
+                'try to disable antialiasing': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled',
+                'try to disable both': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled -GL_EXT_texture_filter_anisotropic'
             }
         }
     }
@@ -157,12 +158,6 @@ class GPULaunchManager:
         }
     }
     
-    # Path to the volt script
-    VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
-    
-    # Dictionary to store render selector widgets
-    render_selector_widgets = {}
-    
     # OpenGL render device options
     OPENGL_RENDER_OPTIONS = [
         "dedicated gpu",
@@ -186,12 +181,52 @@ class GPULaunchManager:
         }
     }
     
+    # Path to the volt script
+    VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
+    
+    # Class variables to store widgets
+    mesa_widgets = {}
+    nvidia_widgets = {}
+    render_selector_widgets = {}
+    launch_options_widgets = {}
+    tray_icon = None
+
     @staticmethod
-    def create_gpu_tab():
+    def create_gpu_launch_tab():
         """
-        Creates the main GPU tab with subtabs for Mesa, NVIDIA, and render selector.
+        Creates the main GPU launch tab containing GPU settings and Launch Options subtabs.
         Returns:
-            tuple: (QWidget, QTabWidget, dict, dict) The main tab widget, subtabs widget,
+            QWidget: The main GPU launch tab widget
+        """
+        main_tab = QWidget()
+        main_layout = QVBoxLayout(main_tab)
+        main_layout.setSpacing(10)
+        
+        # Create tab widget for subtabs
+        subtabs = QTabWidget()
+        
+        # Create GPU settings tab
+        gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets = GPULaunchManager._create_gpu_settings_tab()
+        GPULaunchManager.mesa_widgets = mesa_widgets
+        GPULaunchManager.nvidia_widgets = nvidia_widgets
+        
+        # Create Launch Options tab
+        launch_options_tab = GPULaunchManager._create_launch_options_tab()
+        
+        # Add tabs
+        subtabs.addTab(gpu_tab, "GPU Settings")
+        subtabs.addTab(launch_options_tab, "Launch Options")
+        
+        main_layout.addWidget(subtabs)
+        
+        return main_tab
+
+    @staticmethod
+    def _create_gpu_settings_tab():
+        """
+        Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
+        Returns:
+            tuple: (QWidget, QTabWidget, dict, dict) The GPU tab widget, subtabs widget,
                    Mesa widgets dict, and NVIDIA widgets dict
         """
         gpu_tab = QWidget()
@@ -199,9 +234,9 @@ class GPULaunchManager:
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab, mesa_widgets = GPULaunchManager.create_mesa_tab()
-        nvidia_tab, nvidia_widgets = GPULaunchManager.create_nvidia_tab()
-        render_selector_tab = GPULaunchManager.create_render_selector_tab()
+        mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
+        nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
+        render_selector_tab = GPULaunchManager._create_render_selector_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -211,7 +246,7 @@ class GPULaunchManager:
         return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets
 
     @staticmethod
-    def create_mesa_tab():
+    def _create_mesa_tab():
         """
         Creates the Mesa settings tab.
         Returns:
@@ -220,7 +255,7 @@ class GPULaunchManager:
         return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
 
     @staticmethod
-    def create_nvidia_tab():
+    def _create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
         Returns:
@@ -290,7 +325,7 @@ class GPULaunchManager:
         return tab, widgets
 
     @staticmethod
-    def create_render_selector_tab():
+    def _create_render_selector_tab():
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         Returns:
@@ -332,7 +367,7 @@ class GPULaunchManager:
         vulkan_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         widgets['vulkan_render_combo'] = QComboBox()
-        vulkan_options = ["unset"] + GPULaunchManager.get_vulkan_icd_options()
+        vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
         widgets['vulkan_render_combo'].addItems(vulkan_options)
         widgets['vulkan_render_combo'].setCurrentText("unset")
         widgets['vulkan_render_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -364,7 +399,7 @@ class GPULaunchManager:
         return render_tab
 
     @staticmethod
-    def create_launch_options_tab():
+    def _create_launch_options_tab():
         """
         Creates the launch options tab for specifying additional launch commands.
         Returns:
@@ -430,7 +465,94 @@ class GPULaunchManager:
         return launch_tab
 
     @staticmethod
-    def get_vulkan_icd_options():
+    def create_gpu_launch_apply_button(self):
+        """
+        Creates and connects apply button signals for all GPU launch settings.
+        This should be called after the tab is created to connect signals.
+        """
+        if self.mesa_widgets and 'mesa_apply_button' in self.mesa_widgets:
+            self.mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
+        
+        if self.nvidia_widgets and 'nvidia_apply_button' in self.nvidia_widgets:
+            self.nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
+        
+        if self.render_selector_widgets and 'render_selector_apply_button' in self.render_selector_widgets:
+            self.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
+        
+        if self.launch_options_widgets and 'apply_button' in self.launch_options_widgets:
+            self.launch_options_widgets['apply_button'].clicked.connect(self.apply_gpu_launch_settings)
+
+    @staticmethod
+    def check_if_gpu_launch_settings_already_applied():
+        """
+        Checks if GPU launch settings are already applied by reading the volt script.
+        Returns:
+            bool: True if settings are already applied, False otherwise
+        """
+        if not os.path.exists(GPULaunchManager.VOLT_SCRIPT_PATH):
+            return False
+        
+        if not os.access(GPULaunchManager.VOLT_SCRIPT_PATH, os.R_OK):
+            return False
+        
+        try:
+            with open(GPULaunchManager.VOLT_SCRIPT_PATH, "r") as f:
+                content = f.read()
+                
+            # Check if any environment variables are set
+            env_vars_found = bool(re.search(r'export\s+\w+=', content))
+            
+            # Check launch options
+            launch_options = ""
+            if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
+                launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
+            
+            launch_options_applied = False
+            if launch_options:
+                launch_options_applied = launch_options in content
+            else:
+                launch_options_applied = True
+            
+            return env_vars_found or launch_options_applied
+            
+        except Exception:
+            return False
+
+    @staticmethod
+    def apply_gpu_launch_settings(self):
+        """
+        Apply GPU launch settings and show system tray notifications.
+        Returns:
+            bool: True if settings were applied successfully, False otherwise
+        """
+        try:
+            script_path = self._write_volt_script_with_all_settings(
+                self.mesa_widgets, 
+                self.nvidia_widgets
+            )
+            
+            if hasattr(self, 'tray_icon') and self.tray_icon:
+                self.tray_icon.showMessage(
+                    "volt-gui",
+                    f"GPU launch settings applied and saved to {script_path}",
+                    QSystemTrayIcon.MessageIcon.Information,
+                    2000
+                )
+            
+            return True
+                
+        except Exception as e:
+            if hasattr(self, 'tray_icon') and self.tray_icon:
+                self.tray_icon.showMessage(
+                    "volt-gui",
+                    f"Error applying GPU launch settings: {e}",
+                    QSystemTrayIcon.MessageIcon.Critical,
+                    2000
+                )
+            return False
+
+    @staticmethod
+    def _get_vulkan_icd_options():
         """
         Gets available Vulkan ICD (Installable Client Driver) options.
         Returns:
@@ -466,7 +588,7 @@ class GPULaunchManager:
         return sorted(options)
 
     @staticmethod
-    def generate_render_selector_env_vars(render_widgets):
+    def _generate_render_selector_env_vars(render_widgets):
         """
         Generates environment variables for render selector settings.
         Args:
@@ -511,17 +633,20 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def generate_mesa_script_content(mesa_widgets):
+    def _generate_mesa_script_content(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
         Args:
             mesa_widgets: Dictionary containing Mesa settings widgets
         Returns:
-            str: Generated script content
+            list: Generated environment variable strings
         """
         env_vars = []
         
         for widget_key, mapping in GPULaunchManager.MESA_ENV_MAPPINGS.items():
+            if widget_key not in mesa_widgets:
+                continue
+                
             value = mesa_widgets[widget_key].currentText()
             if value == "unset":
                 continue
@@ -535,20 +660,10 @@ class GPULaunchManager:
                 if mapped_value:
                     env_vars.append(f'export {var_name}="{mapped_value}"')
         
-        script_content = "#!/bin/bash\n\n"
-        script_content += "\n".join(env_vars)
-        script_content += "\n\n# Process potential environment variable assignments\n"
-        script_content += "while [[ \"$1\" =~ \"=\" ]]; do\n"
-        script_content += "  export \"$1\"\n"
-        script_content += "  shift\n"
-        script_content += "done\n\n"
-        script_content += "# Launch the specified program with the environment variables\n"
-        script_content += "\"$@\"\n"
-        
-        return script_content
+        return env_vars
 
     @staticmethod
-    def generate_nvidia_script_content(nvidia_widgets):
+    def _generate_nvidia_script_content(nvidia_widgets):
         """
         Generates script content for NVIDIA environment variables.
         Args:
@@ -559,6 +674,9 @@ class GPULaunchManager:
         env_vars = []
         
         for widget_key, mapping in GPULaunchManager.NVIDIA_ENV_MAPPINGS.items():
+            if widget_key not in nvidia_widgets:
+                continue
+                
             value = nvidia_widgets[widget_key].currentText()
             if value == "unset":
                 continue
@@ -581,23 +699,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def generate_launch_options_env_vars():
-        """
-        Generates environment variables for launch options.
-        Returns:
-            list: Generated environment variable strings
-        """
-        if not hasattr(GPULaunchManager, 'launch_options_widgets'):
-            return []
-            
-        launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
-        if not launch_options:
-            return []
-            
-        return [f'export LAUNCH_OPTIONS="{launch_options}"']
-
-    @staticmethod
-    def write_volt_script(script_content):
+    def _write_volt_script(script_content):
         """
         Writes the volt script to the specified path with root permissions.
         Args:
@@ -627,35 +729,9 @@ class GPULaunchManager:
             raise RuntimeError(f"Unexpected error writing script: {e}")
 
     @staticmethod
-    def read_volt_script():
+    def _write_volt_script_with_all_settings(mesa_widgets, nvidia_widgets):
         """
-        Reads and parses the volt script.        
-        Returns:
-            dict: Dictionary of environment variables from the script, or None if reading fails
-        """
-        if not os.path.exists(GPULaunchManager.VOLT_SCRIPT_PATH):
-            return None
-        
-        if not os.access(GPULaunchManager.VOLT_SCRIPT_PATH, os.R_OK):
-            return None
-        
-        env_vars = {}
-        try:
-            with open(GPULaunchManager.VOLT_SCRIPT_PATH, "r") as f:
-                for line in f:
-                    match = re.match(r'export\s+(\w+)=(.+)', line.strip())
-                    if match:
-                        var_name = match.group(1)
-                        var_value = match.group(2)
-                        env_vars[var_name] = var_value
-            return env_vars
-        except Exception:
-            return None
-
-    @staticmethod
-    def write_volt_script_with_all_settings(mesa_widgets, nvidia_widgets):
-        """
-        Writes a volt script combining all settings (Mesa, NVIDIA, render selector).
+        Writes a volt script combining all settings (Mesa, NVIDIA, render selector, launch options).
         Args:
             mesa_widgets: Dictionary containing Mesa settings widgets
             nvidia_widgets: Dictionary containing NVIDIA settings widgets
@@ -664,23 +740,20 @@ class GPULaunchManager:
         """
         mesa_env_vars = []
         if mesa_widgets is not None:
-            mesa_content = GPULaunchManager.generate_mesa_script_content(mesa_widgets)
-            for line in mesa_content.split('\n'):
-                if line.startswith('export '):
-                    mesa_env_vars.append(line)
+            mesa_env_vars = GPULaunchManager._generate_mesa_script_content(mesa_widgets)
         
         nvidia_env_vars = []
         if nvidia_widgets is not None:
-            nvidia_env_vars = GPULaunchManager.generate_nvidia_script_content(nvidia_widgets)
+            nvidia_env_vars = GPULaunchManager._generate_nvidia_script_content(nvidia_widgets)
         
         render_env_vars = []
         if GPULaunchManager.render_selector_widgets:
-            render_env_vars = GPULaunchManager.generate_render_selector_env_vars(
+            render_env_vars = GPULaunchManager._generate_render_selector_env_vars(
                 GPULaunchManager.render_selector_widgets
             )
             
         launch_options = ""
-        if hasattr(GPULaunchManager, 'launch_options_widgets'):
+        if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
             launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
         
         all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars
@@ -688,7 +761,7 @@ class GPULaunchManager:
         script_content = "#!/bin/bash\n\n"
         script_content += "\n".join(all_env_vars)
         
-        script_content += "\n# Handle launch options if present\n"
+        script_content += "\n\n# Handle launch options if present\n"
         if launch_options:
             script_content += f"# Execute the specified program with environment variables\n"
             script_content += f"{launch_options} \"$@\"\n"
@@ -696,4 +769,4 @@ class GPULaunchManager:
             script_content += "# Launch the specified program with the environment variables\n"
             script_content += "\"$@\"\n"
         
-        return GPULaunchManager.write_volt_script(script_content)
+        return GPULaunchManager._write_volt_script(script_content)

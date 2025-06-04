@@ -9,11 +9,10 @@ from PySide6.QtCore import Qt
 class ExtrasManager:
     """
     Manager class for creating and managing the extras tab with useful resources.    
-    Provides static methods to create UI elements and handle link opening.
+    Provides methods to create UI elements and handle link opening.
     """
     
-    @staticmethod
-    def create_extras_tab():
+    def create_extras_tab(self):
         """
         Creates and returns the extras tab widget with subtabs for links and programs.
         Returns:
@@ -24,11 +23,11 @@ class ExtrasManager:
         extras_layout.setSpacing(10)
         
         extras_subtabs = QTabWidget()
-        useful_links_tab = ExtrasManager._create_scrollable_tab(
-            ExtrasManager._get_useful_links()
+        useful_links_tab = self._create_scrollable_tab(
+            self._get_useful_links()
         )
-        useful_programs_tab = ExtrasManager._create_scrollable_tab(
-            ExtrasManager._get_useful_programs()
+        useful_programs_tab = self._create_scrollable_tab(
+            self._get_useful_programs()
         )
         
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
@@ -37,8 +36,7 @@ class ExtrasManager:
         
         return extras_tab, extras_subtabs
     
-    @staticmethod
-    def _get_useful_links():
+    def _get_useful_links(self):
         """
         Returns a list of dictionaries containing useful link information.
         Returns:
@@ -72,8 +70,7 @@ class ExtrasManager:
             },
         ]
     
-    @staticmethod
-    def _get_useful_programs():
+    def _get_useful_programs(self):
         """
         Returns a list of dictionaries containing useful program information.
         Returns:
@@ -137,8 +134,7 @@ class ExtrasManager:
             },
         ]
     
-    @staticmethod
-    def _create_scrollable_tab(items):
+    def _create_scrollable_tab(self, items):
         """
         Creates a scrollable tab widget containing the provided items.
         Args:
@@ -161,7 +157,7 @@ class ExtrasManager:
         scroll_layout.setContentsMargins(10, 10, 10, 10)
         
         for item in items:
-            container = ExtrasManager._create_item_container(item)
+            container = self._create_item_container(item)
             scroll_layout.addWidget(container)
         
         scroll_layout.addStretch(1)
@@ -170,8 +166,7 @@ class ExtrasManager:
         
         return tab
     
-    @staticmethod
-    def _create_item_container(item_info):
+    def _create_item_container(self, item_info):
         """
         Creates a container widget for an individual link/program item.
         Args:
@@ -200,7 +195,7 @@ class ExtrasManager:
         button.setMinimumWidth(100)
         button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button.clicked.connect(
-            lambda checked, url=item_info["url"]: ExtrasManager.open_url(url))
+            lambda checked, url=item_info["url"]: self.open_url(url))
         
         button_container = QWidget()
         button_container_layout = QHBoxLayout(button_container)
@@ -212,8 +207,7 @@ class ExtrasManager:
         container_layout.addWidget(button_container)
         return container
     
-    @staticmethod
-    def open_url(url):
+    def open_url(self, url):
         """
         Opens the specified URL in the system's default web browser.
         Args:

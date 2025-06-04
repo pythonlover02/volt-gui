@@ -73,7 +73,7 @@ class KernelManager:
         scroll_area.setWidget(scroll_widget)
         kernel_layout.addWidget(scroll_area)
         
-        KernelManager._create_apply_button(kernel_layout, widgets)
+        KernelManager.create_kernel_apply_button(kernel_layout, widgets)
         
         return kernel_tab, widgets
 
@@ -110,7 +110,7 @@ class KernelManager:
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
-    def _create_apply_button(kernel_layout, widgets):
+    def create_kernel_apply_button(kernel_layout, widgets):
         """
         Creates the apply button UI element.
         Args:
@@ -136,7 +136,18 @@ class KernelManager:
         kernel_layout.addWidget(button_container)
 
     @staticmethod
-    def get_current_value(setting_path):
+    def refresh_kernel_values(widgets):
+        """
+        Refreshes all kernel setting values in the UI.
+        Args:
+            widgets: Dictionary containing UI widgets to update
+        """
+        for name, info in KernelManager.KERNEL_SETTINGS.items():
+            current = KernelManager._get_current_value(info['path'])
+            widgets[f'{name}_current_value'].setText(f"current value: {current}")
+
+    @staticmethod
+    def _get_current_value(setting_path):
         """
         Gets the current value of a kernel setting.
         Args:
@@ -151,26 +162,7 @@ class KernelManager:
             return "Error"
 
     @staticmethod
-    def refresh_values(widgets):
-        """
-        Refreshes all kernel setting values in the UI.
-        Args:
-            widgets: Dictionary containing UI widgets to update
-        """
-        for name in KernelManager.KERNEL_SETTINGS:
-            widgets[f'{name}_current_value'].setText("Updating...")
-        
-        widgets['kernel_apply_button'].setEnabled(False)
-        
-        try:
-            for name, info in KernelManager.KERNEL_SETTINGS.items():
-                current = KernelManager.get_current_value(info['path'])
-                widgets[f'{name}_current_value'].setText(f"current: {current}")
-        finally:
-            widgets['kernel_apply_button'].setEnabled(True)
-
-    @staticmethod
-    def check_if_settings_already_applied(widgets):
+    def check_if_kernel_settings_already_applied(widgets):
         """
         Check if the kernel settings that have values entered are already applied.
         Args:
@@ -184,7 +176,7 @@ class KernelManager:
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             value = widgets[f'{name}_input'].text().strip()
             if value:
-                current_value = KernelManager.get_current_value(info['path'])
+                current_value = KernelManager._get_current_value(info['path'])
                 if current_value != "Error" and current_value != value:
                     return False
                 settings_to_check.append((name, value, current_value))
@@ -197,9 +189,9 @@ class KernelManager:
         return True
 
     @staticmethod
-    def apply_kernel_settings(widgets, main_window=None):
+    def apply_kernel_settings(widgets, main_window):
         """
-        Applies the kernel settings using privilege escalation.        
+        Applies the kernel settings using privilege escalation and controls system tray messages.        
         Args:
             widgets: Dictionary containing UI widgets with new values
             main_window: Optional reference to main window for showing notifications
@@ -213,10 +205,10 @@ class KernelManager:
                 value = widgets[f'{name}_input'].text().strip()
                 if value:
                     path = info['path']
-                    originals[name] = KernelManager.get_current_value(path)
+                    originals[name] = KernelManager._get_current_value(path)
                     settings.append(f"{path}:{value}")
             
-            # If no settings to apply, return early
+            # If no settings to apply, show notification and return early
             if not settings:
                 if main_window and hasattr(main_window, 'tray_icon'):
                     main_window.tray_icon.showMessage(
@@ -228,11 +220,11 @@ class KernelManager:
                 return
             
             # Check if settings are already applied
-            if KernelManager.check_if_settings_already_applied(widgets):
+            if KernelManager.check_if_kernel_settings_already_applied(widgets):
                 if main_window and hasattr(main_window, 'tray_icon'):
                     main_window.tray_icon.showMessage(
                         "volt-gui",
-                        "Settings already applied",
+                        "Kernel settings already applied",
                         main_window.tray_icon.MessageIcon.Information,
                         2000
                     )
@@ -244,8 +236,8 @@ class KernelManager:
             process.waitForFinished()
             
             if process.exitCode() == 0:
+                # Store original values for restoration
                 widgets['original_values'] = originals
-                KernelManager.refresh_values(widgets)
                 
                 if main_window and hasattr(main_window, 'tray_icon'):
                     main_window.tray_icon.showMessage(
@@ -295,7 +287,6 @@ class KernelManager:
             
             if process.exitCode() == 0:
                 del widgets['original_values']
-                KernelManager.refresh_values(widgets)
 
         except Exception as e:
             print(f"Restore error: {str(e)}")

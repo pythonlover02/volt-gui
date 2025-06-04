@@ -17,7 +17,7 @@ class OptionsManager:
     including themes, system tray behavior, and window appearance.
     """
 
-    def __init__(self, main_window=None):
+    def __init__(self, main_window):
         """
         Initialize the OptionsManager.
         Args:
@@ -201,7 +201,7 @@ class OptionsTab(QWidget):
     Provides a user interface for modifying application settings and preferences.
     """
 
-    def __init__(self, parent=None, main_window=None):
+    def __init__(self, parent, main_window):
         """
         Initialize the OptionsTab.
         Args:

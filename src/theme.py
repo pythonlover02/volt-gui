@@ -62,10 +62,6 @@ class ThemeManager:
         "nvidia": NVIDIA_COLORS
     }
     
-    # Current theme settings
-    COLORS = AMD_COLORS
-    CURRENT_THEME = "amd"
-
     @classmethod
     def set_theme(cls, theme_name):
         """
@@ -73,14 +69,8 @@ class ThemeManager:
         Args:
             theme_name: Name of the theme to set (amd, intel, nvidia)
         """
-        theme_name = theme_name.lower()
-        if theme_name in cls.THEMES:
-            cls.COLORS = cls.THEMES[theme_name]
-            cls.CURRENT_THEME = theme_name
-        else:
-            # Fallback to AMD theme if invalid name provided
-            cls.COLORS = cls.AMD_COLORS
-            cls.CURRENT_THEME = "amd"
+        cls.COLORS = cls.THEMES[theme_name]
+        cls.CURRENT_THEME = theme_name
             
     @classmethod
     def get_theme_style_sheet(cls):
@@ -472,7 +462,7 @@ class ThemeManager:
         Apply the specified theme to the application.
         Args:
             app: QApplication instance to apply the theme to
-            theme_name: Name of the theme to apply (optional)
+            theme_name: Name of the theme to apply (optional, defaults to current theme)
         """
         if theme_name:
             cls.set_theme(theme_name)
