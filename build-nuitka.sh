@@ -22,6 +22,7 @@ BASE_FILENAME=$(basename "$SRC_FILE" .py)
 NUITKA_OPTS=(
     "--onefile"
     "--output-filename=$BASE_FILENAME"
+    "--assume-yes-for-downloads"
     "--enable-plugin=pyside6"
 )
 
