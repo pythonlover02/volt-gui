@@ -472,9 +472,17 @@ class MainWindow(QMainWindow):
         """
         Apply GPU and launch settings.
         """
+        # Ensure the class variables are set with the current instance widgets
+        GPULaunchManager.mesa_widgets = self.gpu_manager.mesa_widgets
+        GPULaunchManager.nvidia_widgets = self.gpu_manager.nvidia_widgets
+        
         success = GPULaunchManager.apply_gpu_launch_settings(
             self.tray_icon if hasattr(self, 'tray_icon') else None
         )
+        
+        # Save settings after applying
+        if success:
+            self.save_settings()
     
     def apply_dark_theme(self):
         """
