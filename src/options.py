@@ -17,11 +17,11 @@ class OptionsManager:
     including themes, system tray behavior, and window appearance.
     """
 
-    def __init__(self, main_window=None):
+    def __init__(self, main_window):
         """
         Initialize the OptionsManager.
         Args:
-            main_window: Reference to the main application window (optional)
+            main_window: Reference to the main application window
         """
         self.config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -140,6 +140,33 @@ class OptionsManager:
             restore_kernel = self.widgets['restore_kernel_combo'].currentText() == 'enable'
             self.main_window.restore_kernel_on_close = restore_kernel
             print(f"Kernel restore setting applied: {restore_kernel}")
+
+    def create_option_apply_button(self, parent_layout):
+        """
+        Create and setup the apply button for options.
+        Args:
+            parent_layout: The layout to add the button container to
+        Returns:
+            QPushButton: The created apply button
+        """
+        # Apply button
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        apply_button = QPushButton("Apply")
+        apply_button.setMinimumSize(100, 30)
+        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(apply_button)
+        button_layout.addStretch(1)
+        
+        parent_layout.addWidget(button_container)
+        parent_layout.addSpacing(9)
+        
+        return apply_button
     
     def load_settings(self):
         """
@@ -201,7 +228,7 @@ class OptionsTab(QWidget):
     Provides a user interface for modifying application settings and preferences.
     """
 
-    def __init__(self, parent=None, main_window=None):
+    def __init__(self, parent, main_window):
         """
         Initialize the OptionsTab.
         Args:
@@ -324,22 +351,8 @@ class OptionsTab(QWidget):
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        # Apply button
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 5)
-
-        self.apply_button = QPushButton("Apply")
-        self.apply_button.setMinimumSize(100, 30)
-        self.apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(self.apply_button)
-        button_layout.addStretch(1)
-        
-        main_layout.addWidget(button_container)
-        main_layout.addSpacing(9)
+        # Create apply button
+        self.apply_button = self.options_manager.create_option_apply_button(main_layout)
         
         # Register widgets with options manager
         self.options_manager.widgets = {
@@ -363,9 +376,6 @@ class OptionsTab(QWidget):
         Save current settings and apply them to the application.
         Triggered when the apply button is clicked.
         """
-        if self.main_window and hasattr(self.main_window, 'animate_button_click'):
-            self.main_window.animate_button_click(self.apply_button)
-            
         self.options_manager.save_settings()
         
         if self.main_window and hasattr(self.main_window, 'tray_icon'):
