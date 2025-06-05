@@ -483,42 +483,6 @@ class GPULaunchManager:
             self.launch_options_widgets['apply_button'].clicked.connect(self.apply_gpu_launch_settings)
 
     @staticmethod
-    def check_if_gpu_launch_settings_already_applied():
-        """
-        Checks if GPU launch settings are already applied by reading the volt script.
-        Returns:
-            bool: True if settings are already applied, False otherwise
-        """
-        if not os.path.exists(GPULaunchManager.VOLT_SCRIPT_PATH):
-            return False
-        
-        if not os.access(GPULaunchManager.VOLT_SCRIPT_PATH, os.R_OK):
-            return False
-        
-        try:
-            with open(GPULaunchManager.VOLT_SCRIPT_PATH, "r") as f:
-                content = f.read()
-                
-            # Check if any environment variables are set
-            env_vars_found = bool(re.search(r'export\s+\w+=', content))
-            
-            # Check launch options
-            launch_options = ""
-            if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
-                launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
-            
-            launch_options_applied = False
-            if launch_options:
-                launch_options_applied = launch_options in content
-            else:
-                launch_options_applied = True
-            
-            return env_vars_found or launch_options_applied
-            
-        except Exception:
-            return False
-
-    @staticmethod
     def apply_gpu_launch_settings(tray_icon):
         """
         Apply GPU launch settings and show system tray notifications.
