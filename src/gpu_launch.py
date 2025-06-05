@@ -192,36 +192,6 @@ class GPULaunchManager:
     tray_icon = None
 
     @staticmethod
-    def create_gpu_launch_tab():
-        """
-        Creates the main GPU launch tab containing GPU settings and Launch Options subtabs.
-        Returns:
-            QWidget: The main GPU launch tab widget
-        """
-        main_tab = QWidget()
-        main_layout = QVBoxLayout(main_tab)
-        main_layout.setSpacing(10)
-        
-        # Create tab widget for subtabs
-        subtabs = QTabWidget()
-        
-        # Create GPU settings tab
-        gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets = GPULaunchManager._create_gpu_settings_tab()
-        GPULaunchManager.mesa_widgets = mesa_widgets
-        GPULaunchManager.nvidia_widgets = nvidia_widgets
-        
-        # Create Launch Options tab
-        launch_options_tab = GPULaunchManager._create_launch_options_tab()
-        
-        # Add tabs
-        subtabs.addTab(gpu_tab, "GPU Settings")
-        subtabs.addTab(launch_options_tab, "Launch Options")
-        
-        main_layout.addWidget(subtabs)
-        
-        return main_tab
-
-    @staticmethod
     def _create_gpu_settings_tab():
         """
         Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
@@ -463,24 +433,6 @@ class GPULaunchManager:
         }
         
         return launch_tab
-
-    @staticmethod
-    def create_gpu_launch_apply_button(self):
-        """
-        Creates and connects apply button signals for all GPU launch settings.
-        This should be called after the tab is created to connect signals.
-        """
-        if self.mesa_widgets and 'mesa_apply_button' in self.mesa_widgets:
-            self.mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
-        
-        if self.nvidia_widgets and 'nvidia_apply_button' in self.nvidia_widgets:
-            self.nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
-        
-        if self.render_selector_widgets and 'render_selector_apply_button' in self.render_selector_widgets:
-            self.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_launch_settings)
-        
-        if self.launch_options_widgets and 'apply_button' in self.launch_options_widgets:
-            self.launch_options_widgets['apply_button'].clicked.connect(self.apply_gpu_launch_settings)
 
     @staticmethod
     def apply_gpu_launch_settings(tray_icon):
