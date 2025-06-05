@@ -192,6 +192,51 @@ class GPULaunchManager:
     tray_icon = None
 
     @staticmethod
+    def create_gpu_apply_button(layout, widgets, button_name):
+        """
+        Creates and adds an apply button to the specified layout.
+        Args:
+            layout: The layout to add the button to
+            widgets: Widget dictionary to store the button reference
+            button_name: Name for the button widget key
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        widgets[button_name] = QPushButton("Apply")
+        widgets[button_name].setMinimumSize(100, 30)
+        widgets[button_name].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets[button_name])
+        button_layout.addStretch(1)
+        layout.addWidget(button_container)
+
+    @staticmethod
+    def create_launch_apply_button(layout, widgets):
+        """
+        Creates and adds an apply button specifically for the launch options tab.
+        Args:
+            layout: The layout to add the button to
+            widgets: Widget dictionary to store the button reference
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        widgets['apply_button'] = QPushButton("Apply")
+        widgets['apply_button'].setMinimumSize(100, 30)
+        widgets['apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets['apply_button'])
+        button_layout.addStretch(1)
+        layout.addWidget(button_container)
+
+    @staticmethod
     def _create_gpu_settings_tab():
         """
         Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
@@ -278,20 +323,6 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        widgets[apply_button_name] = QPushButton("Apply")
-        widgets[apply_button_name].setMinimumSize(100, 30)
-        widgets[apply_button_name].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(widgets[apply_button_name])
-        button_layout.addStretch(1)
-        main_layout.addWidget(button_container)
-        
         return tab, widgets
 
     @staticmethod
@@ -349,21 +380,6 @@ class GPULaunchManager:
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
-        
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        widgets['render_selector_apply_button'] = QPushButton("Apply")
-        widgets['render_selector_apply_button'].setMinimumSize(100, 30)
-        widgets['render_selector_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(widgets['render_selector_apply_button'])
-        button_layout.addStretch(1)
-        main_layout.addWidget(button_container)
-        
         GPULaunchManager.render_selector_widgets = widgets
         
         return render_tab
@@ -411,25 +427,12 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        apply_button = QPushButton("Apply")
-        apply_button.setMinimumSize(100, 30)
-        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(apply_button)
-        button_layout.addStretch(1)
-        main_layout.addWidget(button_container)
+        GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
         
         main_layout.addSpacing(9)
         
         GPULaunchManager.launch_options_widgets = {
-            'launch_options_input': launch_options_input,
-            'apply_button': apply_button
+            'launch_options_input': launch_options_input
         }
         
         return launch_tab

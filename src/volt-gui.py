@@ -328,14 +328,22 @@ class MainWindow(QMainWindow):
         self.gpu_manager.mesa_widgets = mesa_widgets
         self.gpu_manager.nvidia_widgets = nvidia_widgets
         
-        # Connect the apply button signals for Mesa and NVIDIA tabs
-        if 'mesa_apply_button' in mesa_widgets:
+        # Create apply buttons for Mesa and NVIDIA tabs
+        if mesa_widgets:
+            # Find the Mesa tab widget and add apply button
+            mesa_tab = gpu_subtabs.widget(0)  # Mesa is first tab
+            GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
             mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_settings)
         
-        if 'nvidia_apply_button' in nvidia_widgets:
+        if nvidia_widgets:
+            # Find the NVIDIA tab widget and add apply button  
+            nvidia_tab = gpu_subtabs.widget(1)  # NVIDIA is second tab
+            GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
             nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_settings)
         
         # Connect render selector apply button
+        render_selector_tab = gpu_subtabs.widget(2)  # Render Selector is third tab
+        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), self.gpu_manager.render_selector_widgets, 'render_selector_apply_button')
         if 'render_selector_apply_button' in self.gpu_manager.render_selector_widgets:
             self.gpu_manager.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_settings)
         
