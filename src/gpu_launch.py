@@ -242,7 +242,7 @@ class GPULaunchManager:
         Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
         Returns:
             tuple: (QWidget, QTabWidget, dict, dict) The GPU tab widget, subtabs widget,
-                   Mesa widgets dict, and NVIDIA widgets dict
+                Mesa widgets dict, and NVIDIA widgets dict
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -257,6 +257,11 @@ class GPULaunchManager:
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
         gpu_layout.addWidget(gpu_subtabs)
+        
+        # Add apply buttons to each tab
+        GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
+        GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
+        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
         
         return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets
 
@@ -427,13 +432,15 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
-        
-        main_layout.addSpacing(9)
-        
+        # Initialize launch options widgets dictionary
         GPULaunchManager.launch_options_widgets = {
             'launch_options_input': launch_options_input
         }
+        
+        # Add apply button
+        GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
+        
+        main_layout.addSpacing(9)
         
         return launch_tab
 

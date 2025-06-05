@@ -470,12 +470,3 @@ class ThemeManager:
         if app:
             app.setStyleSheet(cls.get_theme_style_sheet())
             app.setPalette(cls.get_theme_palette())
-
-    @classmethod
-    def get_available_themes(cls):
-        """
-        Get list of available theme names.
-        Returns:
-            list: Names of available themes
-        """
-        return list(cls.THEMES.keys())

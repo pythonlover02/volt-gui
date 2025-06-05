@@ -27,6 +27,10 @@ class KernelManager:
             'path': '/proc/sys/vm/min_free_kbytes', 
             'recommended': 'do not set this below 1024 KB or above 5% of your systems memory'
         },
+        'max_map_count': {
+            'path': '/proc/sys/vm/max_map_count', 
+            'recommended': 'for performance and compatibility reasons the recommended value its 1048576'
+        },
         'swappiness': {
             'path': '/proc/sys/vm/swappiness', 
             'recommended': '10'
@@ -42,9 +46,11 @@ class KernelManager:
     }
 
     @staticmethod
-    def create_kernel_tab():
+    def create_kernel_tab(main_window):
         """
         Creates and returns the kernel settings tab widget.
+        Args:
+            main_window: Reference to main window for connecting signals
         Returns:
             tuple: (QWidget, dict) The tab widget and a dictionary of UI elements
         """
@@ -73,7 +79,7 @@ class KernelManager:
         scroll_area.setWidget(scroll_widget)
         kernel_layout.addWidget(scroll_area)
         
-        KernelManager.create_kernel_apply_button(kernel_layout, widgets)
+        KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
         
         return kernel_tab, widgets
 
@@ -110,12 +116,13 @@ class KernelManager:
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
-    def create_kernel_apply_button(kernel_layout, widgets):
+    def create_kernel_apply_button(kernel_layout, widgets, main_window):
         """
-        Creates the apply button UI element.
+        Creates the apply button UI element and connects its signal.
         Args:
             kernel_layout: The parent layout to add widgets to
             widgets: Dictionary to store created widgets
+            main_window: Reference to main window for connecting signals
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)

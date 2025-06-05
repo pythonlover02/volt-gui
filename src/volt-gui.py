@@ -101,7 +101,10 @@ class SingleInstanceChecker:
         Clean up resources.
         """
         self.running = False
-        self.sock.close()
+        try:
+            self.sock.close()
+        except:
+            pass
 
 
 class MainWindow(QMainWindow):
@@ -166,43 +169,8 @@ class MainWindow(QMainWindow):
         Update the application's quit behavior based on system tray usage.
         """
         app = QApplication.instance()
-        app.setQuitOnLastWindowClosed(not self.use_system_tray)
-
-    def update_system_tray_setting(self, enabled):
-        """
-        Update the system tray setting and apply changes.
-        Args:
-            enabled (bool): Whether system tray should be enabled
-        """
-        old_tray_setting = self.use_system_tray
-        self.use_system_tray = enabled
-        
-        if enabled and not old_tray_setting:
-            # System tray was disabled, now enabling
-            self.setup_system_tray()
-        elif not enabled and old_tray_setting:
-            # System tray was enabled, now disabling
-            if hasattr(self, 'tray_icon'):
-                self.tray_icon.hide()
-                delattr(self, 'tray_icon')
-        
-        # Update quit behavior
-        self.update_quit_behavior()
-
-    def closeEvent(self, event):
-        """
-        Handle close event. If system tray is enabled, hide to tray instead of quitting.
-        Args:
-            event: Close event
-        """
-        if self.use_system_tray and hasattr(self, 'tray_icon'):
-            # Hide to system tray
-            event.ignore()
-            self.hide()
-        else:
-            # Actually quit the application
-            self.quit_application()
-            event.accept()
+        if app:
+            app.setQuitOnLastWindowClosed(not self.use_system_tray)
 
     def load_options_settings(self):
         """
@@ -214,27 +182,30 @@ class MainWindow(QMainWindow):
             return
             
         config = configparser.ConfigParser()
-        config.read(config_path)
-        
-        # Load system tray setting
-        if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-            self.use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
-        
-        # Load start minimized setting
-        if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-            # Only start minimized if system tray is enabled
-            if self.use_system_tray:
-                self.start_minimized = config['StartupBehavior'].get('start_minimized', 'disable') == 'enable'
-            else:
-                self.start_minimized = False
-        
-        # Load CPU restore setting
-        if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
-            self.restore_cpu_on_close = config['CPUBehavior']['restore_on_close'] == 'enable'
-        
-        # Load kernel restore setting
-        if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
-            self.restore_kernel_on_close = config['KernelBehavior']['restore_on_close'] == 'enable'
+        try:
+            config.read(config_path)
+            
+            # Load system tray setting
+            if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
+                self.use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
+            
+            # Load start minimized setting
+            if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
+                # Only start minimized if system tray is enabled
+                if self.use_system_tray:
+                    self.start_minimized = config['StartupBehavior'].get('start_minimized', 'disable') == 'enable'
+                else:
+                    self.start_minimized = False
+            
+            # Load CPU restore setting
+            if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
+                self.restore_cpu_on_close = config['CPUBehavior']['restore_on_close'] == 'enable'
+            
+            # Load kernel restore setting
+            if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
+                self.restore_kernel_on_close = config['KernelBehavior']['restore_on_close'] == 'enable'
+        except Exception as e:
+            print(f"Warning: Failed to load options settings: {e}")
 
     def setup_system_tray(self):
         """
@@ -267,7 +238,8 @@ class MainWindow(QMainWindow):
         self.tray_icon.activated.connect(self.tray_icon_activated)
         
         # Set tray icon reference for GPU manager
-        self.gpu_manager.tray_icon = self.tray_icon
+        if hasattr(self.gpu_manager, 'tray_icon'):
+            self.gpu_manager.tray_icon = self.tray_icon
 
     def setup_ui(self):
         """
@@ -285,8 +257,8 @@ class MainWindow(QMainWindow):
         # Setup tabs
         self.setup_cpu_tab()
         self.setup_gpu_tab()
-        self.setup_launch_options_tab()
         self.setup_kernel_tab()
+        self.setup_launch_options_tab()
         self.setup_extras_tab()
         
         # Add options tab
@@ -304,12 +276,9 @@ class MainWindow(QMainWindow):
         # Create CPU tab using CPUManager
         cpu_tab, self.cpu_widgets = CPUManager.create_cpu_tab()
         
-        # Add the apply button to the CPU tab layout
-        cpu_tab_layout = cpu_tab.layout()
-        CPUManager.create_cpu_apply_button(cpu_tab_layout, self.cpu_widgets)
-        
-        # Connect the apply button signal
-        self.cpu_widgets['cpu_apply_button'].clicked.connect(self.apply_cpu_settings)
+        # Connect the apply button signal (button is now created in CPUManager)
+        if 'cpu_apply_button' in self.cpu_widgets:
+            self.cpu_widgets['cpu_apply_button'].clicked.connect(self.apply_cpu_settings)
         
         # Initialize CPU values
         CPUManager.refresh_cpu_values(self.cpu_widgets)
@@ -319,44 +288,35 @@ class MainWindow(QMainWindow):
     
     def setup_gpu_tab(self):
         """
-        Setup the GPU management tab.
+        Setup the GPU tab.
         """
         # Create GPU settings tab (Mesa, NVIDIA, Render Selector)
         gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets = GPULaunchManager._create_gpu_settings_tab()
         
         # Store the widgets in the gpu_manager
-        self.gpu_manager.mesa_widgets = mesa_widgets
-        self.gpu_manager.nvidia_widgets = nvidia_widgets
+        self.gpu_manager.mesa_widgets = mesa_widgets or {}
+        self.gpu_manager.nvidia_widgets = nvidia_widgets or {}
         
-        # Create apply buttons for Mesa and NVIDIA tabs
-        if mesa_widgets:
-            # Find the Mesa tab widget and add apply button
-            mesa_tab = gpu_subtabs.widget(0)  # Mesa is first tab
-            GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
+        # Connect apply button signals
+        if mesa_widgets and 'mesa_apply_button' in mesa_widgets:
             mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_settings)
         
-        if nvidia_widgets:
-            # Find the NVIDIA tab widget and add apply button  
-            nvidia_tab = gpu_subtabs.widget(1)  # NVIDIA is second tab
-            GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
+        if nvidia_widgets and 'nvidia_apply_button' in nvidia_widgets:
             nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_settings)
         
-        # Connect render selector apply button
-        render_selector_tab = gpu_subtabs.widget(2)  # Render Selector is third tab
-        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), self.gpu_manager.render_selector_widgets, 'render_selector_apply_button')
-        if 'render_selector_apply_button' in self.gpu_manager.render_selector_widgets:
+        if hasattr(self.gpu_manager, 'render_selector_widgets') and 'render_selector_apply_button' in self.gpu_manager.render_selector_widgets:
             self.gpu_manager.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_settings)
         
         self.tab_widget.addTab(gpu_tab, "GPU")
     
     def setup_launch_options_tab(self):
         """
-        Setup the launch options tab as a separate top-level tab.
+        Setup the launch Options Tab.
         """
         launch_options_tab = GPULaunchManager._create_launch_options_tab()
         
         # Connect the apply button signal
-        if 'apply_button' in self.gpu_manager.launch_options_widgets:
+        if hasattr(self.gpu_manager, 'launch_options_widgets') and 'apply_button' in self.gpu_manager.launch_options_widgets:
             self.gpu_manager.launch_options_widgets['apply_button'].clicked.connect(self.apply_gpu_settings)
         
         self.tab_widget.addTab(launch_options_tab, "Launch Options")
@@ -365,14 +325,18 @@ class MainWindow(QMainWindow):
         """
         Setup the kernel management tab.
         """
-        kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab()
+        kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab(self)
         
         # Connect signals
-        self.kernel_widgets['kernel_apply_button'].clicked.connect(self.apply_kernel_settings)
+        if 'kernel_apply_button' in self.kernel_widgets:
+            self.kernel_widgets['kernel_apply_button'].clicked.connect(self.apply_kernel_settings)
         
         # Install event filters for kernel settings inputs
-        for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-            self.kernel_widgets[f'{setting_name}_input'].installEventFilter(self)
+        if hasattr(KernelManager, 'KERNEL_SETTINGS'):
+            for setting_name in KernelManager.KERNEL_SETTINGS.keys():
+                widget_key = f'{setting_name}_input'
+                if widget_key in self.kernel_widgets:
+                    self.kernel_widgets[widget_key].installEventFilter(self)
         
         # Initialize values
         KernelManager.refresh_kernel_values(self.kernel_widgets)
@@ -481,8 +445,10 @@ class MainWindow(QMainWindow):
         Apply GPU and launch settings.
         """
         # Ensure the class variables are set with the current instance widgets
-        GPULaunchManager.mesa_widgets = self.gpu_manager.mesa_widgets
-        GPULaunchManager.nvidia_widgets = self.gpu_manager.nvidia_widgets
+        if hasattr(GPULaunchManager, 'mesa_widgets'):
+            GPULaunchManager.mesa_widgets = self.gpu_manager.mesa_widgets
+        if hasattr(GPULaunchManager, 'nvidia_widgets'):
+            GPULaunchManager.nvidia_widgets = self.gpu_manager.nvidia_widgets
         
         success = GPULaunchManager.apply_gpu_launch_settings(
             self.tray_icon if hasattr(self, 'tray_icon') else None
@@ -531,9 +497,11 @@ class MainWindow(QMainWindow):
             bool: True if event should be filtered, False otherwise
         """
         if event.type() == QEvent.FocusOut:
-            for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-                if obj == self.kernel_widgets[f'{setting_name}_input']:
-                    obj.clearFocus()
+            if hasattr(KernelManager, 'KERNEL_SETTINGS'):
+                for setting_name in KernelManager.KERNEL_SETTINGS.keys():
+                    widget_key = f'{setting_name}_input'
+                    if widget_key in self.kernel_widgets and obj == self.kernel_widgets[widget_key]:
+                        obj.clearFocus()
         return super().eventFilter(obj, event)
 
 def main():

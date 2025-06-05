@@ -17,6 +17,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Chose compaction_proactiveness value
   - Chose watermark_boost_factor value
   - Chose min_free_kbytes value
+  - Chose max_map_count value
   - Chose swappiness value
   - Chose zone_reclaim_mode value
   - Chose page_lock_unfairness value

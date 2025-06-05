@@ -101,6 +101,9 @@ class CPUManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
+        # Add apply button
+        CPUManager.create_cpu_apply_button(main_layout, widgets)
+        
         # Store original values for restoration
         widgets['original_governor'] = CPUManager.get_current_governor()
         widgets['original_scheduler'] = CPUManager.get_current_scheduler()
@@ -231,7 +234,6 @@ class CPUManager:
         if scheduler != "unset" and scheduler == current_running_scheduler:
             current_governor = CPUManager.get_current_governor()
             if governor != "unset" and governor != current_governor:
-                CPUManager._animate_button_click(widgets['cpu_apply_button'])
                 widgets['cpu_apply_button'].setEnabled(False)
                 widgets['process'] = QProcess()
                 widgets['process'].start("pkexec", ["/usr/local/bin/volt-cpu", governor, "unset"])
@@ -243,7 +245,6 @@ class CPUManager:
                 return
 
         # Apply both governor and scheduler
-        CPUManager._animate_button_click(widgets['cpu_apply_button'])
         widgets['cpu_apply_button'].setEnabled(False)
 
         widgets['process'] = QProcess()
@@ -315,28 +316,6 @@ class CPUManager:
         )
         processes = result.stdout.strip().splitlines()
         return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
-
-    @staticmethod
-    def _animate_button_click(button):
-        """
-        Animate button click effect.
-        Args:
-            button: Button to animate
-        """
-        shrink_anim = QPropertyAnimation(button, b"size")
-        shrink_anim.setDuration(100)
-        shrink_anim.setStartValue(button.size())
-        shrink_anim.setEndValue(QSize(int(button.width()*0.95), int(button.height()*0.95)))
-        shrink_anim.setEasingCurve(QEasingCurve.OutQuad)
-        
-        grow_anim = QPropertyAnimation(button, b"size")
-        grow_anim.setDuration(100)
-        grow_anim.setStartValue(QSize(int(button.width()*0.95), int(button.height()*0.95)))
-        grow_anim.setEndValue(button.size())
-        grow_anim.setEasingCurve(QEasingCurve.OutBounce)
-        
-        shrink_anim.finished.connect(grow_anim.start)
-        shrink_anim.start()
 
     @staticmethod
     def _on_process_finished(widgets, main_window):
