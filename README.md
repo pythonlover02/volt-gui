@@ -90,7 +90,7 @@ A graphical user interface for configuring GPU related environment variables and
 
 - `GLX Vendor Library` Select a GLX provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
 - `Mesa Select GPU` Select which to use GPU among those available on the system. (Only for GPUs using the Mesa Drivers)
-- `OpenGL Software Rendering` Use Mesa OpenGL rendering through llvmpipe; this will ignore the `Mesa Select GPU` option.
+- `OpenGL Software Rendering` Use Mesa OpenGL Software Rendering; this will ignore the `Mesa Select GPU` option.
 - `Vulkan ICD` Selects the Vulkan Installable Client Driver, obtained from `/usr/share/vulkan/icd.d/`.
 
 ## Usage of the `volt` script
