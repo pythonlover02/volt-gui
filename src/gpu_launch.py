@@ -158,29 +158,15 @@ class GPULaunchManager:
         }
     }
     
-    # OpenGL render device options
-    OPENGL_RENDER_OPTIONS = [
-        "dedicated gpu",
-        "integrated gpu",
-        "llvmpipe (Software Rendering)"
-    ]
+    # DRI_PRIME
+    DRI_PRIME = ["unset"] + [str(i) for i in range(1, 11)]
 
-    # Mapping between OpenGL render options and environment variables
-    OPENGL_RENDER_MAPPINGS = {
-        "dedicated gpu": {
-            "DRI_PRIME": "1",
-            "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
-        },
-        "integrated gpu": {
-            "DRI_PRIME": "0",
-            "__GLX_VENDOR_LIBRARY_NAME": "mesa"
-        },
-        "llvmpipe (Software Rendering)": {
-            "LIBGL_ALWAYS_SOFTWARE": "1",
-            "__GLX_VENDOR_LIBRARY_NAME": "mesa"
-        }
-    }
-    
+    # GLX vendor
+    GLX_VENDOR = ["unset", "nvidia", "mesa"]
+
+    # LIBGL software
+    LIBGL_SOFTWARE = ["unset", "0", "1"]
+        
     # Path to the volt script
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     
@@ -352,23 +338,54 @@ class GPULaunchManager:
         scroll_layout.setContentsMargins(0, 10, 0, 0)
         
         widgets = {}
-        
-        opengl_layout = QHBoxLayout()
-        opengl_label = QLabel("OpenGL Rendering Device:")
-        opengl_label.setWordWrap(True)
-        opengl_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['opengl_render_combo'] = QComboBox()
-        widgets['opengl_render_combo'].addItems(["unset"] + GPULaunchManager.OPENGL_RENDER_OPTIONS)
-        widgets['opengl_render_combo'].setCurrentText("unset")
-        widgets['opengl_render_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        opengl_layout.addWidget(opengl_label)
-        opengl_layout.addWidget(widgets['opengl_render_combo'])
-        scroll_layout.addLayout(opengl_layout)
+
+        # DRI_PRIME
+        dri_prime_layout = QHBoxLayout()
+        dri_prime_label = QLabel("DRI_PRIME:")
+        dri_prime_label.setWordWrap(True)
+        dri_prime_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        widgets['dri_prime_combo'] = QComboBox()
+        widgets['dri_prime_combo'].addItems(GPULaunchManager.DRI_PRIME)
+        widgets['dri_prime_combo'].setCurrentText("unset")
+        widgets['dri_prime_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        dri_prime_layout.addWidget(dri_prime_label)
+        dri_prime_layout.addWidget(widgets['dri_prime_combo'])
+        scroll_layout.addLayout(dri_prime_layout)
+
+        # GLX_VENDOR
+        glx_vendor_layout = QHBoxLayout()
+        glx_vendor_label = QLabel("__GLX_VENDOR_LIBRARY_NAME:")
+        glx_vendor_label.setWordWrap(True)
+        glx_vendor_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        widgets['glx_vendor_combo'] = QComboBox()
+        widgets['glx_vendor_combo'].addItems(GPULaunchManager.GLX_VENDOR)
+        widgets['glx_vendor_combo'].setCurrentText("unset")
+        widgets['glx_vendor_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        glx_vendor_layout.addWidget(glx_vendor_label)
+        glx_vendor_layout.addWidget(widgets['glx_vendor_combo'])
+        scroll_layout.addLayout(glx_vendor_layout)
+
+        # LIBGL_ALWAYS_SOFTWARE
+        libgl_software_layout = QHBoxLayout()
+        libgl_software_label = QLabel("LIBGL_ALWAYS_SOFTWARE:")
+        libgl_software_label.setWordWrap(True)
+        libgl_software_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        widgets['libgl_software_combo'] = QComboBox()
+        widgets['libgl_software_combo'].addItems(GPULaunchManager.LIBGL_SOFTWARE)
+        widgets['libgl_software_combo'].setCurrentText("unset")
+        widgets['libgl_software_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        libgl_software_layout.addWidget(libgl_software_label)
+        libgl_software_layout.addWidget(widgets['libgl_software_combo'])
+        scroll_layout.addLayout(libgl_software_layout)
         
         vulkan_layout = QHBoxLayout()
-        vulkan_label = QLabel("Vulkan Rendering Device:")
+        vulkan_label = QLabel("Vulkan ICD:")
         vulkan_label.setWordWrap(True)
         vulkan_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
@@ -505,7 +522,7 @@ class GPULaunchManager:
             
             for name, paths in icd_files.items():
                 if 'lvp' in name.lower():
-                    options.append(f"{name} (Software Rendering)")
+                    options.append(f"{name} (software Rendering)")
                 else:
                     options.append(name)
         except OSError:
@@ -524,16 +541,26 @@ class GPULaunchManager:
         """
         env_vars = []
         
-        opengl_selection = render_widgets['opengl_render_combo'].currentText()
-        if opengl_selection != "unset":
-            mappings = GPULaunchManager.OPENGL_RENDER_MAPPINGS.get(opengl_selection, {})
-            for var_name, value in mappings.items():
-                env_vars.append(f'export {var_name}="{value}"')
+        # Handle DRI_PRIME
+        dri_prime_selection = render_widgets['dri_prime_combo'].currentText()
+        if dri_prime_selection != "unset":
+            env_vars.append(f'export DRI_PRIME="{dri_prime_selection}"')
         
+        # Handle __GLX_VENDOR_LIBRARY_NAME
+        glx_vendor_selection = render_widgets['glx_vendor_combo'].currentText()
+        if glx_vendor_selection != "unset":
+            env_vars.append(f'export __GLX_VENDOR_LIBRARY_NAME="{glx_vendor_selection}"')
+        
+        # Handle LIBGL_ALWAYS_SOFTWARE
+        libgl_software_selection = render_widgets['libgl_software_combo'].currentText()
+        if libgl_software_selection != "unset":
+            env_vars.append(f'export LIBGL_ALWAYS_SOFTWARE="{libgl_software_selection}"')
+        
+        # Handle Vulkan
         vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
         if vulkan_selection != "unset":
-            if "(Software Rendering)" in vulkan_selection:
-                vulkan_selection = vulkan_selection.replace(" (Software Rendering)", "")
+            if "(software Rendering)" in vulkan_selection:
+                vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
             
             icd_dir = "/usr/share/vulkan/icd.d/"
             icd_files = []
