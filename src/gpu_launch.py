@@ -57,6 +57,14 @@ class GPULaunchManager:
         ("Ignore GLSL Extensions Requirements:", 'nvidia_glsl_ext_combo', ["unset", "on", "off"]),
         ("Use Unofficial GLX Protocol:", 'nvidia_glx_combo', ["unset", "on", "off"])
     ]
+
+    # Render selector settings configuration
+    RENDER_SETTINGS = [
+        ("GLX Vendor Library:", 'glx_vendor_combo', ["unset", "nvidia", "mesa"]),
+        ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(1, 11)]),
+        ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
+        ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),  # Will be populated dynamically
+    ]
     
     # Mapping between Mesa UI widgets and environment variables
     MESA_ENV_MAPPINGS = {
@@ -158,14 +166,27 @@ class GPULaunchManager:
         }
     }
     
-    # DRI_PRIME
-    DRI_PRIME = ["unset"] + [str(i) for i in range(1, 11)]
-
-    # GLX vendor
-    GLX_VENDOR = ["unset", "nvidia", "mesa"]
-
-    # LIBGL software
-    LIBGL_SOFTWARE = ["unset", "0", "1"]
+    # Mapping between Render Selector UI widgets and environment variables
+    RENDER_ENV_MAPPINGS = {
+        'glx_vendor_combo': {
+            'var_name': '__GLX_VENDOR_LIBRARY_NAME',
+            'direct_value': True
+        },
+        'dri_prime_combo': {
+            'var_name': 'DRI_PRIME',
+            'direct_value': True,
+            'dependency': 'mesa_only'
+        },
+        'libgl_software_combo': {
+            'var_name': 'LIBGL_ALWAYS_SOFTWARE',
+            'values': {'on': '1', 'off': '0'},
+            'dependency': 'mesa_only'
+        },
+        'vulkan_render_combo': {
+            'var_name': 'VK_DRIVER_FILES',
+            'special_handling': 'vulkan_icd'
+        }
+    }
         
     # Path to the volt script
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
@@ -323,88 +344,44 @@ class GPULaunchManager:
         Returns:
             QWidget: The created render selector tab widget
         """
-        render_tab = QWidget()
-        main_layout = QVBoxLayout(render_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        # Create the tab using the standardized method
+        render_tab, widgets = GPULaunchManager._create_settings_tab(
+            GPULaunchManager.RENDER_SETTINGS, 
+            "render_selector_apply_button"
+        )
         
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_widget.setProperty("scrollContainer", True)
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(0, 10, 0, 0)
-        
-        widgets = {}
-
-        # DRI_PRIME
-        dri_prime_layout = QHBoxLayout()
-        dri_prime_label = QLabel("DRI_PRIME:")
-        dri_prime_label.setWordWrap(True)
-        dri_prime_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-
-        widgets['dri_prime_combo'] = QComboBox()
-        widgets['dri_prime_combo'].addItems(GPULaunchManager.DRI_PRIME)
-        widgets['dri_prime_combo'].setCurrentText("unset")
-        widgets['dri_prime_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-        dri_prime_layout.addWidget(dri_prime_label)
-        dri_prime_layout.addWidget(widgets['dri_prime_combo'])
-        scroll_layout.addLayout(dri_prime_layout)
-
-        # GLX_VENDOR
-        glx_vendor_layout = QHBoxLayout()
-        glx_vendor_label = QLabel("__GLX_VENDOR_LIBRARY_NAME:")
-        glx_vendor_label.setWordWrap(True)
-        glx_vendor_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-
-        widgets['glx_vendor_combo'] = QComboBox()
-        widgets['glx_vendor_combo'].addItems(GPULaunchManager.GLX_VENDOR)
-        widgets['glx_vendor_combo'].setCurrentText("unset")
-        widgets['glx_vendor_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-        glx_vendor_layout.addWidget(glx_vendor_label)
-        glx_vendor_layout.addWidget(widgets['glx_vendor_combo'])
-        scroll_layout.addLayout(glx_vendor_layout)
-
-        # LIBGL_ALWAYS_SOFTWARE
-        libgl_software_layout = QHBoxLayout()
-        libgl_software_label = QLabel("LIBGL_ALWAYS_SOFTWARE:")
-        libgl_software_label.setWordWrap(True)
-        libgl_software_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-
-        widgets['libgl_software_combo'] = QComboBox()
-        widgets['libgl_software_combo'].addItems(GPULaunchManager.LIBGL_SOFTWARE)
-        widgets['libgl_software_combo'].setCurrentText("unset")
-        widgets['libgl_software_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-        libgl_software_layout.addWidget(libgl_software_label)
-        libgl_software_layout.addWidget(widgets['libgl_software_combo'])
-        scroll_layout.addLayout(libgl_software_layout)
-        
-        vulkan_layout = QHBoxLayout()
-        vulkan_label = QLabel("Vulkan ICD:")
-        vulkan_label.setWordWrap(True)
-        vulkan_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['vulkan_render_combo'] = QComboBox()
+        # Populate Vulkan ICD options dynamically
         vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
+        widgets['vulkan_render_combo'].clear()
         widgets['vulkan_render_combo'].addItems(vulkan_options)
         widgets['vulkan_render_combo'].setCurrentText("unset")
-        widgets['vulkan_render_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
-        vulkan_layout.addWidget(vulkan_label)
-        vulkan_layout.addWidget(widgets['vulkan_render_combo'])
-        scroll_layout.addLayout(vulkan_layout)
+        # Connect GLX vendor change handler
+        widgets['glx_vendor_combo'].currentTextChanged.connect(
+            lambda: GPULaunchManager._handle_glx_vendor_change(widgets)
+        )
         
-        scroll_layout.addStretch(1)
-        scroll_area.setWidget(scroll_widget)
-        main_layout.addWidget(scroll_area)
+        # Set initial state
+        GPULaunchManager._handle_glx_vendor_change(widgets)
+
         GPULaunchManager.render_selector_widgets = widgets
-        
         return render_tab
+
+    @staticmethod
+    def _handle_glx_vendor_change(widgets):
+        """
+        Handles GLX vendor selection changes to enable/disable Mesa-only options.
+        Args:
+            widgets: Dictionary containing render selector widgets
+        """
+        glx_vendor = widgets['glx_vendor_combo'].currentText()
+        mesa_enabled = glx_vendor == "mesa"
+        
+        # Enable/disable Mesa Select GPU
+        widgets['dri_prime_combo'].setEnabled(mesa_enabled)
+        
+        # Enable/disable OpenGL Software Rendering
+        widgets['libgl_software_combo'].setEnabled(mesa_enabled)
 
     @staticmethod
     def _create_launch_options_tab():
@@ -541,47 +518,61 @@ class GPULaunchManager:
         """
         env_vars = []
         
-        # Handle DRI_PRIME
-        dri_prime_selection = render_widgets['dri_prime_combo'].currentText()
-        if dri_prime_selection != "unset":
-            env_vars.append(f'export DRI_PRIME="{dri_prime_selection}"')
+        # Check GLX vendor for dependency validation
+        glx_vendor = render_widgets.get('glx_vendor_combo', {}).currentText() if 'glx_vendor_combo' in render_widgets else "unset"
+        mesa_enabled = glx_vendor == "mesa"
         
-        # Handle __GLX_VENDOR_LIBRARY_NAME
-        glx_vendor_selection = render_widgets['glx_vendor_combo'].currentText()
-        if glx_vendor_selection != "unset":
-            env_vars.append(f'export __GLX_VENDOR_LIBRARY_NAME="{glx_vendor_selection}"')
-        
-        # Handle LIBGL_ALWAYS_SOFTWARE
-        libgl_software_selection = render_widgets['libgl_software_combo'].currentText()
-        if libgl_software_selection != "unset":
-            env_vars.append(f'export LIBGL_ALWAYS_SOFTWARE="{libgl_software_selection}"')
-        
-        # Handle Vulkan
-        vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
-        if vulkan_selection != "unset":
-            if "(software Rendering)" in vulkan_selection:
-                vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
+        for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
+            if widget_key not in render_widgets:
+                continue
+                
+            widget = render_widgets[widget_key]
+            value = widget.currentText()
+            if value == "unset":
+                continue
+                
+            # Check dependency requirements, skip disabled Mesa only settings
+            if mapping.get('dependency') == 'mesa_only' and not mesa_enabled:
+                continue
+                
+            var_name = mapping['var_name']
             
-            icd_dir = "/usr/share/vulkan/icd.d/"
-            icd_files = []
+            # Handle special Vulkan ICD case
+            if mapping.get('special_handling') == 'vulkan_icd':
+                vulkan_selection = value
+                if "(software Rendering)" in vulkan_selection:
+                    vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
+                
+                icd_dir = "/usr/share/vulkan/icd.d/"
+                icd_files = []
+                
+                try:
+                    for file in os.listdir(icd_dir):
+                        if file.endswith('.json'):
+                            if '.' in file[:-5]:
+                                base_name = file[:-5].split('.')[0]
+                                if base_name == vulkan_selection:
+                                    icd_files.append(os.path.join(icd_dir, file))
+                            else:
+                                if file[:-5] == vulkan_selection:
+                                    icd_files.append(os.path.join(icd_dir, file))
+                except OSError:
+                    pass
+                
+                if icd_files:
+                    driver_paths = ":".join(icd_files)
+                    env_vars.append(f'export {var_name}="{driver_paths}"')
+                    env_vars.append('export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"')
             
-            try:
-                for file in os.listdir(icd_dir):
-                    if file.endswith('.json'):
-                        if '.' in file[:-5]:
-                            base_name = file[:-5].split('.')[0]
-                            if base_name == vulkan_selection:
-                                icd_files.append(os.path.join(icd_dir, file))
-                        else:
-                            if file[:-5] == vulkan_selection:
-                                icd_files.append(os.path.join(icd_dir, file))
-            except OSError:
-                pass
+            # Handle direct value mapping
+            elif mapping.get('direct_value', False):
+                env_vars.append(f'export {var_name}="{value}"')
             
-            if icd_files:
-                driver_paths = ":".join(icd_files)
-                env_vars.append(f'export VK_DRIVER_FILES="{driver_paths}"')
-                env_vars.append('export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"')
+            # Handle value mapping
+            else:
+                mapped_value = mapping['values'].get(value)
+                if mapped_value:
+                    env_vars.append(f'export {var_name}="{mapped_value}"')
         
         return env_vars
 
