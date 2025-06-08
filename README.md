@@ -2,6 +2,10 @@
 
 A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
 
+![](/images/1.png)
+![](/images/2.png)
+![](/images/3.png)
+
 ## What you can do?
 
 - CPU Management
