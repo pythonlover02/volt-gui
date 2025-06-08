@@ -50,9 +50,9 @@ done
 echo -e "\n\033[34mCreating desktop entry...\033[0m"
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
-Version=1.0
+Version=0.1
 Name=volt-gui
-Comment=Utility
+Comment=A simple GUI program to modify and create the "volt" script and more
 Exec=volt-gui
 Icon=preferences-system
 Terminal=false
