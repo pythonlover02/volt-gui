@@ -2,6 +2,10 @@
 
 A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
 
+![](/images/1.png)
+![](/images/2.png)
+![](/images/3.png)
+
 ## What you can do?
 
 - CPU Management
@@ -82,13 +86,24 @@ A graphical user interface for configuring GPU related environment variables and
    - Remove the `volt` bash script from `/usr/local/bin/`
    - Remove the desktop entry `/usr/share/applications/volt-gui.desktop`
 
-## Usage
+## How to use `volt-gui`
 
-Launch volt-gui from your application menu or run `volt-gui` from the terminal. The `GPU` and `Launch Options` settings are saved on the `volt` script, this script must be called on your launcher launch options or before the program, example for Steam:
+Simply launch volt-gui from your application menu or run `volt-gui` from the terminal.
+
+## How to use the `volt` script
+
+The `GPU` and `Launch Options` settings are saved on the `volt` script, this script must be called on your launcher launch options or before the program, example for Steam:
 
 ```
 volt %command%
 ```
+
+## GPU Selector explained:
+
+- `GLX Vendor Library` Select a GLX provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
+- `Mesa Select GPU` Select which to use GPU among those available on the system. (Only for GPUs using the Mesa Drivers)
+- `OpenGL Software Rendering` Use Mesa OpenGL Software Rendering; this will ignore the `Mesa Select GPU` option.
+- `Vulkan ICD` Selects the Vulkan Installable Client Driver, obtained from `/usr/share/vulkan/icd.d/`.
 
 ## Technical References
 
