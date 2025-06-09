@@ -55,6 +55,9 @@ class OptionsManager:
         config['KernelBehavior'] = {
             'restore_on_close': self.widgets['restore_kernel_combo'].currentText()
         }
+        config['DiskBehavior'] = {
+            'restore_on_close': self.widgets['restore_disk_combo'].currentText()
+        }
         
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         
@@ -68,6 +71,7 @@ class OptionsManager:
             self.apply_start_minimized_settings()
             self.apply_restore_cpu_settings()
             self.apply_restore_kernel_settings()
+            self.apply_restore_disk_settings()
             
     def apply_system_tray_settings(self):
         """
@@ -141,6 +145,15 @@ class OptionsManager:
             self.main_window.restore_kernel_on_close = restore_kernel
             print(f"Kernel restore setting applied: {restore_kernel}")
 
+    def apply_restore_disk_settings(self):
+        """
+        Apply the disk restore on close setting.
+        """
+        if self.main_window and hasattr(self.main_window, 'restore_disk_on_close'):
+            restore_disk = self.widgets['restore_disk_combo'].currentText() == 'enable'
+            self.main_window.restore_disk_on_close = restore_disk
+            print(f"Disk restore setting applied: {restore_disk}")
+
     def create_option_apply_button(self, parent_layout):
         """
         Create and setup the apply button for options.
@@ -181,6 +194,7 @@ class OptionsManager:
         self.widgets['start_minimized_combo'].setCurrentText("disable")
         self.widgets['restore_cpu_combo'].setCurrentText("enable")
         self.widgets['restore_kernel_combo'].setCurrentText("enable")
+        self.widgets['restore_disk_combo'].setCurrentText("enable")
         
         if not self.config_path.exists():
             self.save_settings()
@@ -212,6 +226,10 @@ class OptionsManager:
             self.widgets['restore_kernel_combo'].setCurrentText(
                 config['KernelBehavior']['restore_on_close']
             )
+        if 'DiskBehavior' in config and 'restore_on_close' in config['DiskBehavior']:
+            self.widgets['restore_disk_combo'].setCurrentText(
+                config['DiskBehavior']['restore_on_close']
+            )
         
         # Apply loaded settings
         self.apply_system_tray_settings()
@@ -220,6 +238,7 @@ class OptionsManager:
         self.apply_start_minimized_settings()
         self.apply_restore_cpu_settings()
         self.apply_restore_kernel_settings()
+        self.apply_restore_disk_settings()
 
 
 class OptionsTab(QWidget):
@@ -345,6 +364,21 @@ class OptionsTab(QWidget):
         restore_kernel_layout.addWidget(restore_kernel_label)
         restore_kernel_layout.addWidget(self.restore_kernel_combo)
         scroll_layout.addLayout(restore_kernel_layout)
+
+        # Disk restore option
+        restore_disk_layout = QHBoxLayout()
+        restore_disk_label = QLabel("Restore Disk Settings on Close:")
+        restore_disk_label.setWordWrap(True)
+        restore_disk_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        self.restore_disk_combo = QComboBox()
+        self.restore_disk_combo.addItems(["enable", "disable"])
+        self.restore_disk_combo.setCurrentText("enable")
+        self.restore_disk_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        restore_disk_layout.addWidget(restore_disk_label)
+        restore_disk_layout.addWidget(self.restore_disk_combo)
+        scroll_layout.addLayout(restore_disk_layout)
         
         # Finalize scroll area
         scroll_layout.addStretch(1)
@@ -362,6 +396,7 @@ class OptionsTab(QWidget):
             'start_minimized_combo': self.start_minimized_combo,
             'restore_cpu_combo': self.restore_cpu_combo,
             'restore_kernel_combo': self.restore_kernel_combo,
+            'restore_disk_combo': self.restore_disk_combo,  # ADD THIS LINE
             'apply_button': self.apply_button
         }
         

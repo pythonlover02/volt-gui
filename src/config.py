@@ -2,6 +2,7 @@ import os
 import configparser
 from pathlib import Path
 from kernel import KernelManager
+from disk import DiskManager  # Import DiskManager
 
 
 class ConfigManager:
@@ -21,13 +22,14 @@ class ConfigManager:
         return config_dir / "volt-config.ini"
     
     @staticmethod
-    def save_settings(cpu_widgets, gpu_manager, kernel_widgets):
+    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets=None):
         """
         Save current settings to the configuration file.
         Args:
             cpu_widgets: Dictionary of CPU settings widgets
             gpu_manager: GPULaunchManager instance
             kernel_widgets: Dictionary of kernel settings widgets (optional)
+            disk_widgets: Dictionary of disk settings widgets (optional)
         """
         config = configparser.ConfigParser()
         
@@ -70,18 +72,30 @@ class ConfigManager:
             if kernel_settings:
                 config['Kernel'] = kernel_settings
         
+        # Save disk settings if provided
+        if disk_widgets:
+            disk_settings = {}
+            # Save disk scheduler settings
+            for disk_id, scheduler_combo in disk_widgets.items():
+                if disk_id.endswith('_scheduler') and hasattr(scheduler_combo, 'currentText'):
+                    disk_name = disk_id.replace('_scheduler', '')
+                    disk_settings[disk_name] = scheduler_combo.currentText()
+            if disk_settings:
+                config['Disk'] = disk_settings
+        
         # Write config to file
         with open(ConfigManager.get_config_path(), 'w') as configfile:
             config.write(configfile)
     
     @staticmethod
-    def load_settings(cpu_widgets, gpu_manager, kernel_widgets):
+    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets=None):
         """
         Load settings from the configuration file.
         Args:
             cpu_widgets: Dictionary of CPU settings widgets to update
             gpu_manager: GPULaunchManager instance
             kernel_widgets: Dictionary of kernel settings widgets to update (optional)
+            disk_widgets: Dictionary of disk settings widgets to update (optional)
         Returns:
             bool: True if settings were loaded successfully, False otherwise
         """
@@ -127,5 +141,12 @@ class ConfigManager:
                 if setting_name in KernelManager.KERNEL_SETTINGS:
                     input_widget = kernel_widgets[f'{setting_name}_input']
                     input_widget.setText(value)
+        
+        # Load disk settings
+        if disk_widgets and 'Disk' in config:
+            for disk_name, scheduler in config['Disk'].items():
+                scheduler_widget_key = f'{disk_name}_scheduler'
+                if scheduler_widget_key in disk_widgets and hasattr(disk_widgets[scheduler_widget_key], 'setCurrentText'):
+                    disk_widgets[scheduler_widget_key].setCurrentText(scheduler)
         
         return True
