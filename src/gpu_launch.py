@@ -61,7 +61,7 @@ class GPULaunchManager:
     # Render selector settings configuration
     RENDER_SETTINGS = [
         ("GLX Vendor Library:", 'glx_vendor_combo', ["unset", "nvidia", "mesa"]),
-        ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(1, 11)]),
+        ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
         ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),  # Will be populated dynamically
     ]

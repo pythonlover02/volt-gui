@@ -13,7 +13,7 @@ fi
 INSTALL_DIR="/usr/local/bin"
 RELEASE_DIR="release"
 EXECUTABLE="$RELEASE_DIR/volt-gui"
-HELPER_SCRIPTS=("scripts/volt-cpu" "scripts/volt-kernel")
+HELPER_SCRIPTS=("scripts/volt-cpu" "scripts/volt-kernel" "scripts/volt-disk")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
 # Check release directory

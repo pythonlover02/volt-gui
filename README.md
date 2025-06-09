@@ -2,6 +2,9 @@
 
 A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
 
+![Badge Language](https://img.shields.io/github/languages/top/pythonlover02/volt-gui)
+[![Stars](https://img.shields.io/github/stars/pythonlover02/volt-gui?style=social)](https://github.com/pythonlover02/volt-gui/stargazers)
+
 ![](/images/1.png)
 ![](/images/2.png)
 ![](/images/3.png)
@@ -11,12 +14,13 @@ A graphical user interface for configuring GPU related environment variables and
 - CPU Management
   - Governor Selection: Choose from available CPU governors
   - Scheduler Configuration: Select CPU pluggable schedulers (requires `scx` and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`)
-  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 - GPU Configuration
   - Mesa Drivers: Configure Mesa Drivers specific environment variables
   - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
   - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
   - All those GPU settings will be added to the `volt` script
+- Disk Configuration
+  - Change Disks Schedulers
 - Kernel Configuration
   - Chose compaction_proactiveness value
   - Chose watermark_boost_factor value
@@ -25,7 +29,6 @@ A graphical user interface for configuring GPU related environment variables and
   - Chose swappiness value
   - Chose zone_reclaim_mode value
   - Chose page_lock_unfairness value
-  - Those settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
   ```
@@ -36,6 +39,9 @@ A graphical user interface for configuring GPU related environment variables and
   - Useful Programs for the average Linux Gamer
 - Options
   - Options for the program itself
+
+> [!NOTE]  
+> CPU, Disk and Kernel settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 
 ## Requirements
 

@@ -20,6 +20,7 @@ from PySide6.QtGui import QIcon, QAction
 from theme import ThemeManager
 from gpu_launch import GPULaunchManager
 from cpu import CPUManager
+from disk import DiskManager
 from extras import ExtrasManager
 from options import OptionsTab
 from kernel import KernelManager
@@ -131,10 +132,12 @@ class MainWindow(QMainWindow):
         self.start_minimized = False
         self.restore_cpu_on_close = True
         self.restore_kernel_on_close = True
+        self.restore_disk_on_close = True
         
         # Initialize widget dictionaries and managers
         self.cpu_widgets = {}
         self.kernel_widgets = {}
+        self.disk_widgets = {}
         self.gpu_manager = GPULaunchManager()
         self.extras_manager = ExtrasManager()
         
@@ -204,6 +207,11 @@ class MainWindow(QMainWindow):
             # Load kernel restore setting
             if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
                 self.restore_kernel_on_close = config['KernelBehavior']['restore_on_close'] == 'enable'
+            
+            # Load disk restore setting
+            if 'DiskBehavior' in config and 'restore_on_close' in config['DiskBehavior']:
+                self.restore_disk_on_close = config['DiskBehavior']['restore_on_close'] == 'enable'
+
         except Exception as e:
             print(f"Warning: Failed to load options settings: {e}")
 
@@ -225,6 +233,7 @@ class MainWindow(QMainWindow):
         
         # Add apply actions
         tray_menu.addAction(QAction("Apply CPU Settings", self, triggered=self.apply_cpu_settings))
+        tray_menu.addAction(QAction("Apply Disk Settings", self, triggered=self.apply_disk_settings))  # Add disk action
         tray_menu.addAction(QAction("Apply Kernel Settings", self, triggered=self.apply_kernel_settings))
         tray_menu.addAction(QAction("Apply GPU and Launch Settings", self, triggered=self.apply_gpu_settings))
         
@@ -257,6 +266,7 @@ class MainWindow(QMainWindow):
         # Setup tabs
         self.setup_cpu_tab()
         self.setup_gpu_tab()
+        self.setup_disk_tab()
         self.setup_kernel_tab()
         self.setup_launch_options_tab()
         self.setup_extras_tab()
@@ -285,6 +295,23 @@ class MainWindow(QMainWindow):
         
         # Add tab to tab widget
         self.tab_widget.addTab(cpu_tab, "CPU")
+    
+    def setup_disk_tab(self):
+        """
+        Setup the disk management tab.
+        """
+        # Create disk tab using DiskManager
+        disk_tab, self.disk_widgets = DiskManager.create_disk_tab()
+        
+        # Connect the apply button signal
+        if 'disk_apply_button' in self.disk_widgets:
+            self.disk_widgets['disk_apply_button'].clicked.connect(self.apply_disk_settings)
+        
+        # Initialize disk values
+        DiskManager.refresh_disk_values(self.disk_widgets)
+        
+        # Add tab to tab widget
+        self.tab_widget.addTab(disk_tab, "Disk")
     
     def setup_gpu_tab(self):
         """
@@ -355,6 +382,7 @@ class MainWindow(QMainWindow):
         """
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.refresh_cpu_values)
+        self.refresh_timer.timeout.connect(self.refresh_disk_values)  # Add disk refresh
         self.refresh_timer.timeout.connect(self.refresh_kernel_values)
         self.refresh_timer.start(5000)
     
@@ -396,7 +424,8 @@ class MainWindow(QMainWindow):
             ConfigManager.load_settings(
                 self.cpu_widgets, 
                 self.gpu_manager, 
-                self.kernel_widgets
+                self.kernel_widgets,
+                self.disk_widgets  # Add disk widgets to loading
             )
         except Exception as e:
             print(f"Warning: Failed to load settings: {e}")
@@ -409,7 +438,8 @@ class MainWindow(QMainWindow):
             ConfigManager.save_settings(
                 self.cpu_widgets, 
                 self.gpu_manager, 
-                self.kernel_widgets
+                self.kernel_widgets,
+                self.disk_widgets  # Add disk widgets to saving
             )
         except Exception as e:
             print(f"Warning: Failed to save settings: {e}")
@@ -426,6 +456,19 @@ class MainWindow(QMainWindow):
         Refresh CPU governor and current scheduler information in UI.
         """
         CPUManager.refresh_cpu_values(self.cpu_widgets)
+    
+    def apply_disk_settings(self):
+        """
+        Apply disk scheduler settings using DiskManager.
+        """
+        DiskManager.apply_disk_settings(self.disk_widgets, self)
+        self.save_settings()
+    
+    def refresh_disk_values(self):
+        """
+        Refresh disk scheduler information in UI.
+        """
+        DiskManager.refresh_disk_values(self.disk_widgets)
     
     def refresh_kernel_values(self):
         """
@@ -475,6 +518,10 @@ class MainWindow(QMainWindow):
         # Restore kernel settings if needed
         if self.restore_kernel_on_close and hasattr(self, 'kernel_widgets'):
             KernelManager.restore_kernel_settings(self.kernel_widgets)
+
+        # Restore disk settings if needed
+        if self.restore_disk_on_close and hasattr(self, 'disk_widgets'):
+            DiskManager.restore_disk_settings(self.disk_widgets)
         
         # Save settings and clean up
         self.save_settings()

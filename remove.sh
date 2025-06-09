@@ -11,7 +11,7 @@ fi
 
 # Configuration
 INSTALL_DIR="/usr/local/bin"
-TARGETS=("volt" "volt-gui" "volt-cpu" "volt-kernel")
+TARGETS=("volt" "volt-gui" "volt-cpu" "volt-kernel" "volt-disk")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
 # Remove installed files
