@@ -11,13 +11,13 @@ fi
 
 # Configuration
 INSTALL_DIR="/usr/local/bin"
-TARGETS=("volt" "volt-gui" "volt-cpu" "volt-kernel" "volt-disk")
+TARGETS=("volt" "volt-gui" "volt-helper")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
 # Remove installed files
 echo -e "\033[34mRemoving installed files...\033[0m"
 
-# Remove main executable and helpers
+# Remove main executable and helper
 for target in "${TARGETS[@]}"; do
   file="$INSTALL_DIR/$target"
   if [[ -f "$file" ]]; then
