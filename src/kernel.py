@@ -42,6 +42,14 @@ class KernelManager:
         'page_lock_unfairness': {
             'path': '/proc/sys/vm/page_lock_unfairness', 
             'recommended': '1'
+        },
+        'sched_cfs_bandwidth_slice_us': {
+            'path': '/proc/sys/kernel/sched_cfs_bandwidth_slice_us', 
+            'recommended': '3000'
+        },
+        'sched_autogroup_enabled': {
+            'path': '/proc/sys/kernel/sched_autogroup_enabled', 
+            'recommended': '1'
         }
     }
 
