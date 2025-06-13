@@ -239,7 +239,7 @@ class KernelManager:
             
             # Apply the settings
             process = QProcess()
-            process.start("pkexec", ["volt-kernel"] + settings)
+            process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + settings)
             process.waitForFinished()
             
             if process.exitCode() == 0:
@@ -289,7 +289,7 @@ class KernelManager:
             ]
             
             process = QProcess()
-            process.start("pkexec", ["volt-kernel"] + restore)
+            process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + restore)
             process.waitForFinished()
             
             if process.exitCode() == 0:

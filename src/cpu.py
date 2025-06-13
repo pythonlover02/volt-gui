@@ -236,7 +236,7 @@ class CPUManager:
             if governor != "unset" and governor != current_governor:
                 widgets['cpu_apply_button'].setEnabled(False)
                 widgets['process'] = QProcess()
-                widgets['process'].start("pkexec", ["/usr/local/bin/volt-cpu", governor, "unset"])
+                widgets['process'].start("pkexec", ["/usr/local/bin/volt-helper", "-c", governor, "unset"])
                 widgets['process'].finished.connect(
                     lambda: CPUManager._on_process_finished(widgets, main_window)
                 )
@@ -248,7 +248,7 @@ class CPUManager:
         widgets['cpu_apply_button'].setEnabled(False)
 
         widgets['process'] = QProcess()
-        widgets['process'].start("pkexec", ["/usr/local/bin/volt-cpu", governor, scheduler])
+        widgets['process'].start("pkexec", ["/usr/local/bin/volt-helper", "-c", governor, scheduler])
         widgets['process'].finished.connect(
             lambda: CPUManager._on_process_finished(widgets, main_window)
         )
@@ -266,7 +266,8 @@ class CPUManager:
             try:
                 process = QProcess()
                 process.start("pkexec", [
-                    "/usr/local/bin/volt-cpu", 
+                    "/usr/local/bin/volt-helper", 
+                    "-c",
                     widgets['original_governor'], 
                     widgets['original_scheduler']
                 ])

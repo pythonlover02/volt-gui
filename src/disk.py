@@ -332,8 +332,8 @@ class DiskManager:
         widgets['disk_apply_button'].setEnabled(False)
         widgets['process'] = QProcess()
         
-        # Pass all changes as arguments to volt-disk script
-        args = ["/usr/local/bin/volt-disk"] + scheduler_changes
+        # Pass all changes as arguments to volt-helper with -d flag
+        args = ["/usr/local/bin/volt-helper", "-d"] + scheduler_changes
         widgets['process'].start("pkexec", args)
         widgets['process'].finished.connect(
             lambda: DiskManager._on_process_finished(widgets, main_window)
@@ -356,7 +356,7 @@ class DiskManager:
                     scheduler_changes.append(f"{disk_name}:{original_scheduler}")
                 
                 process = QProcess()
-                args = ["/usr/local/bin/volt-disk"] + scheduler_changes
+                args = ["/usr/local/bin/volt-helper", "-d"] + scheduler_changes
                 process.start("pkexec", args)
                 process.waitForFinished()
             except Exception:

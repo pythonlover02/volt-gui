@@ -13,7 +13,7 @@ fi
 INSTALL_DIR="/usr/local/bin"
 RELEASE_DIR="release"
 EXECUTABLE="$RELEASE_DIR/volt-gui"
-HELPER_SCRIPTS=("scripts/volt-cpu" "scripts/volt-kernel" "scripts/volt-disk")
+HELPER_SCRIPT="scripts/volt-helper"
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
 # Check release directory
@@ -28,23 +28,19 @@ if [[ ! -f "$EXECUTABLE" ]]; then
   exit 1
 fi
 
-# Check helper scripts
-for script in "${HELPER_SCRIPTS[@]}"; do
-  if [[ ! -f "$script" ]]; then
-    echo -e "\033[31mError: Helper script $script not found.\033[0m" >&2
-    exit 1
-  fi
-done
+# Check helper script
+if [[ ! -f "$HELPER_SCRIPT" ]]; then
+  echo -e "\033[31mError: Helper script $HELPER_SCRIPT not found.\033[0m" >&2
+  exit 1
+fi
 
 # Install main executable
 echo -e "\033[34mInstalling main executable...\033[0m"
 install -v -m 755 -T "$EXECUTABLE" "$INSTALL_DIR/volt-gui"
 
-# Install helper scripts
-echo -e "\n\033[34mInstalling helper scripts...\033[0m"
-for script in "${HELPER_SCRIPTS[@]}"; do
-  install -v -m 755 -T "$script" "$INSTALL_DIR/$(basename "$script")"
-done
+# Install helper script
+echo -e "\n\033[34mInstalling helper script...\033[0m"
+install -v -m 755 -T "$HELPER_SCRIPT" "$INSTALL_DIR/volt-helper"
 
 # Create desktop entry
 echo -e "\n\033[34mCreating desktop entry...\033[0m"

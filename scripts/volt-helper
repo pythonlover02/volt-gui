@@ -1,0 +1,287 @@
+#!/bin/bash
+
+show_usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -c <governor> <scheduler>     Configure CPU governor and scheduler"
+    echo "  -d <disk:scheduler> [...]     Configure disk I/O schedulers"
+    echo "  -k <path:value> [...]         Configure kernel parameters"
+    echo "  -h, --help                    Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0 -c performance scx_rusty"
+    echo "  $0 -d sda:bfq sdb:mq-deadline"
+    echo "  $0 -k /proc/sys/vm/swappiness:10 /proc/sys/vm/dirty_ratio:15"
+    echo "  $0 -c ondemand unset -d sda:none"
+    echo ""
+    echo "Notes:"
+    echo "  - Use 'unset' for CPU governor to skip governor changes"
+    echo "  - Use 'unset' or 'none' for CPU scheduler to skip/terminate schedulers"
+    echo "  - Multiple -d and -k arguments can be provided"
+    exit 0
+}
+
+# CPU Management Functions
+apply_governor() {
+    local governor="$1"
+    if [ "$governor" != "unset" ]; then
+        echo "Applying CPU governor: $governor"
+        for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+            if [ -w "$CPU_PATH" ]; then
+                echo "$governor" > "$CPU_PATH"
+                echo "  Applied to $CPU_PATH"
+            else
+                echo "  Warning: Cannot write to $CPU_PATH"
+            fi
+        done
+    else
+        echo "Governor set to unset, skipping governor application"
+    fi
+}
+
+handle_scheduler() {
+    local scheduler="$1"
+    
+    if [ "$scheduler" != "unset" ]; then
+        echo "Terminating existing SCX schedulers..."
+        for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
+            echo "Attempting to terminate $proc"
+            pkill -INT -f "$proc" 2>/dev/null
+            sleep 0.5
+            
+            if pgrep -f "$proc" > /dev/null 2>&1; then
+                pkill -TERM -f "$proc" 2>/dev/null
+                sleep 0.5
+                
+                if pgrep -f "$proc" > /dev/null 2>&1; then
+                    pkill -KILL -f "$proc" 2>/dev/null
+                    sleep 0.2
+                fi
+            fi
+        done
+        
+        if [ "$scheduler" != "none" ] && [ "$scheduler" != "unset" ]; then
+            echo "Starting scheduler: $scheduler"
+            if command -v "$scheduler" > /dev/null 2>&1; then
+                "$scheduler" &
+                echo "  Scheduler $scheduler started"
+            else
+                echo "  Error: Scheduler $scheduler not found"
+                return 1
+            fi
+        fi
+    else
+        echo "Scheduler set to unset, skipping scheduler changes"
+    fi
+}
+
+manage_cpu() {
+    local governor="$1"
+    local scheduler="$2"
+    
+    if [ $# -ne 2 ]; then
+        echo "Error: CPU management requires exactly 2 arguments: <governor> <scheduler>"
+        return 1
+    fi
+    
+    echo "volt-helper: Managing CPU settings"
+    echo "  Governor: $governor"
+    echo "  Scheduler: $scheduler"
+    echo
+    
+    apply_governor "$governor"
+    handle_scheduler "$scheduler"
+    
+    return $?
+}
+
+# Disk Management Functions
+apply_disk_scheduler() {
+    local disk_name="$1"
+    local scheduler="$2"
+    local scheduler_path="/sys/block/$disk_name/queue/scheduler"
+    
+    if [ ! -f "$scheduler_path" ]; then
+        echo "Warning: Scheduler file not found for disk $disk_name: $scheduler_path"
+        return 1
+    fi
+    
+    if [ ! -w "$scheduler_path" ]; then
+        echo "Warning: Cannot write to scheduler file for disk $disk_name: $scheduler_path"
+        return 1
+    fi
+    
+    echo "Applying scheduler '$scheduler' to disk $disk_name"
+    
+    # Check if scheduler is available
+    if ! grep -q "$scheduler" "$scheduler_path"; then
+        echo "Error: Scheduler '$scheduler' not available for disk $disk_name"
+        echo "Available schedulers: $(cat "$scheduler_path" | tr -d '[]')"
+        return 1
+    fi
+    
+    # Apply the scheduler
+    if echo "$scheduler" > "$scheduler_path"; then
+        echo "  Successfully applied scheduler '$scheduler' to $disk_name"
+        return 0
+    else
+        echo "  Error: Failed to apply scheduler '$scheduler' to $disk_name"
+        return 1
+    fi
+}
+
+manage_disk() {
+    local disk_args=("$@")
+    
+    if [ ${#disk_args[@]} -eq 0 ]; then
+        echo "Error: Disk management requires at least one disk:scheduler pair"
+        return 1
+    fi
+    
+    echo "volt-helper: Managing disk I/O schedulers"
+    echo
+    
+    # Track success/failure
+    local total_changes=0
+    local successful_changes=0
+    
+    # Process each disk:scheduler pair
+    for arg in "${disk_args[@]}"; do
+        if [[ "$arg" == *":"* ]]; then
+            local disk_name="${arg%%:*}"
+            local scheduler="${arg#*:}"
+            
+            total_changes=$((total_changes + 1))
+            
+            echo "Processing: $disk_name -> $scheduler"
+            
+            if apply_disk_scheduler "$disk_name" "$scheduler"; then
+                successful_changes=$((successful_changes + 1))
+            fi
+            
+            echo
+        else
+            echo "Warning: Invalid format '$arg'. Expected format: disk:scheduler"
+            echo
+        fi
+    done
+    
+    echo "Applied $successful_changes out of $total_changes scheduler changes"
+    
+    # Return error if any changes failed
+    if [ $successful_changes -eq $total_changes ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Kernel Parameter Management Functions
+manage_kernel() {
+    local kernel_args=("$@")
+    
+    if [ ${#kernel_args[@]} -eq 0 ]; then
+        echo "Error: Kernel management requires at least one path:value pair"
+        return 1
+    fi
+    
+    echo "volt-helper: Managing kernel parameters"
+    echo
+    
+    # Process kernel settings in format: /proc/path:value
+    for setting in "${kernel_args[@]}"; do
+        local path="${setting%%:*}"
+        local value="${setting#*:}"
+        
+        if [ -w "$path" ]; then
+            echo "Applying: $value to $path"
+            if echo "$value" > "$path" 2>/dev/null; then
+                echo "  Successfully applied"
+            else
+                echo "  Error: Failed to write to $path"
+                return 1
+            fi
+        else
+            echo "Error: Path $path not writable"
+            return 1
+        fi
+        echo
+    done
+    
+    return 0
+}
+
+# Main script logic
+if [ $# -eq 0 ]; then
+    show_usage
+fi
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -c|--cpu)
+            if [ $# -lt 3 ]; then
+                echo "Error: -c requires 2 arguments: <governor> <scheduler>"
+                exit 1
+            fi
+            manage_cpu "$2" "$3"
+            cpu_result=$?
+            shift 3
+            ;;
+        -d|--disk)
+            shift
+            disk_args=()
+            # Collect all disk:scheduler arguments until next flag or end
+            while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+                disk_args+=("$1")
+                shift
+            done
+            if [ ${#disk_args[@]} -eq 0 ]; then
+                echo "Error: -d requires at least one disk:scheduler argument"
+                exit 1
+            fi
+            manage_disk "${disk_args[@]}"
+            disk_result=$?
+            ;;
+        -k|--kernel)
+            shift
+            kernel_args=()
+            # Collect all path:value arguments until next flag or end
+            while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+                kernel_args+=("$1")
+                shift
+            done
+            if [ ${#kernel_args[@]} -eq 0 ]; then
+                echo "Error: -k requires at least one path:value argument"
+                exit 1
+            fi
+            manage_kernel "${kernel_args[@]}"
+            kernel_result=$?
+            ;;
+        -h|--help)
+            show_usage
+            ;;
+        *)
+            echo "Error: Unknown option '$1'"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+echo "volt-helper: Operation completed"
+
+# Exit with error if any operation failed
+exit_code=0
+if [ -n "$cpu_result" ] && [ $cpu_result -ne 0 ]; then
+    exit_code=1
+fi
+if [ -n "$disk_result" ] && [ $disk_result -ne 0 ]; then
+    exit_code=1
+fi
+if [ -n "$kernel_result" ] && [ $kernel_result -ne 0 ]; then
+    exit_code=1
+fi
+
+exit $exit_code

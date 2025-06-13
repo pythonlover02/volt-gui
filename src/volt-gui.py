@@ -439,7 +439,7 @@ class MainWindow(QMainWindow):
                 self.cpu_widgets, 
                 self.gpu_manager, 
                 self.kernel_widgets,
-                self.disk_widgets  # Add disk widgets to saving
+                self.disk_widgets
             )
         except Exception as e:
             print(f"Warning: Failed to save settings: {e}")
