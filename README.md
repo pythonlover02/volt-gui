@@ -41,19 +41,20 @@ A graphical user interface for configuring GPU related environment variables and
   - Options for the program itself
 
 > [!NOTE]  
-> CPU, Disk and Kernel settings will be reverted or not when the program its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
+> CPU, Disk and Kernel settings will be reverted or not when volt-gui its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
 
 ## Requirements
 
 - Python 3.9 or higher
 - Pip
+- [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU pluggable schedulers
 - Linux operating system
 
-### Additional requirements in the case you use Nuitka:
+### Additional requirements in the case you build the program using Nuitka:
 
 - C/C++ Compiler
 - patchelf
-- ccache (for optimizing compiling times)
+- ccache (optional, for optimizing compiling times)
 
 ## Installation
 
