@@ -22,14 +22,14 @@ class ConfigManager:
         return config_dir / "volt-config.ini"
     
     @staticmethod
-    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets=None):
+    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
         """
         Save current settings to the configuration file.
         Args:
             cpu_widgets: Dictionary of CPU settings widgets
             gpu_manager: GPULaunchManager instance
-            kernel_widgets: Dictionary of kernel settings widgets (optional)
-            disk_widgets: Dictionary of disk settings widgets (optional)
+            kernel_widgets: Dictionary of kernel settings widgets
+            disk_widgets: Dictionary of disk settings widgets
         """
         config = configparser.ConfigParser()
         
@@ -56,6 +56,12 @@ class ConfigManager:
         for widget_key, widget in gpu_manager.render_selector_widgets.items():
             if hasattr(widget, 'currentText'):
                 config['RenderSelector'][widget_key] = widget.currentText()
+
+        # Save frame control settings
+        config['FrameControl'] = {}
+        for widget_key, widget in gpu_manager.frame_control_widgets.items():
+            if hasattr(widget, 'currentText'):
+                config['FrameControl'][widget_key] = widget.currentText()
             
         # Save launch options
         if 'launch_options_input' in gpu_manager.launch_options_widgets:
@@ -88,14 +94,14 @@ class ConfigManager:
             config.write(configfile)
     
     @staticmethod
-    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets=None):
+    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
         """
         Load settings from the configuration file.
         Args:
             cpu_widgets: Dictionary of CPU settings widgets to update
             gpu_manager: GPULaunchManager instance
-            kernel_widgets: Dictionary of kernel settings widgets to update (optional)
-            disk_widgets: Dictionary of disk settings widgets to update (optional)
+            kernel_widgets: Dictionary of kernel settings widgets to update
+            disk_widgets: Dictionary of disk settings widgets to update
         Returns:
             bool: True if settings were loaded successfully, False otherwise
         """
@@ -129,6 +135,12 @@ class ConfigManager:
             for widget_key, value in config['RenderSelector'].items():
                 if widget_key in gpu_manager.render_selector_widgets and hasattr(gpu_manager.render_selector_widgets[widget_key], 'setCurrentText'):
                     gpu_manager.render_selector_widgets[widget_key].setCurrentText(value)
+
+        # Load frame control settings
+        if 'FrameControl' in config:
+            for widget_key, value in config['FrameControl'].items():
+                if widget_key in gpu_manager.frame_control_widgets and hasattr(gpu_manager.frame_control_widgets[widget_key], 'setCurrentText'):
+                    gpu_manager.frame_control_widgets[widget_key].setCurrentText(value)
                 
         # Load launch options
         if 'LaunchOptions' in config and 'launch_options_input' in gpu_manager.launch_options_widgets:

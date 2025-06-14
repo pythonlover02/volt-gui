@@ -457,12 +457,12 @@ class ThemeManager:
         return palette
 
     @classmethod
-    def apply_theme(cls, app, theme_name=None):
+    def apply_theme(cls, app, theme_name):
         """
         Apply the specified theme to the application.
         Args:
             app: QApplication instance to apply the theme to
-            theme_name: Name of the theme to apply (optional, defaults to current theme)
+            theme_name: Name of the theme to apply
         """
         if theme_name:
             cls.set_theme(theme_name)
