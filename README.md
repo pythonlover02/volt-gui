@@ -29,6 +29,8 @@ A graphical user interface for configuring GPU related environment variables and
   - Chose swappiness value
   - Chose zone_reclaim_mode value
   - Chose page_lock_unfairness value
+  - Chose sched_cfs_bandwidth_slice_us value
+  - Chose sched_autogroup_enabled value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
   ```
