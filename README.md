@@ -18,6 +18,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Mesa Drivers: Configure Mesa Drivers specific environment variables
   - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
   - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
+  - Set frame limit for both OpenGL and Vulkan applications (requires [mangohud](https://github.com/flightlessmango/MangoHud)
   - All those GPU settings will be added to the `volt` script
 - Disk Configuration
   - Change Disks Schedulers
@@ -50,6 +51,7 @@ A graphical user interface for configuring GPU related environment variables and
 - Python 3.9 or higher
 - Pip
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU pluggable schedulers
+- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of a frame limit
 - Linux operating system
 
 ### Additional requirements in the case you build the program using Nuitka:
