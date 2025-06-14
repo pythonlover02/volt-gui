@@ -59,7 +59,7 @@ A graphical user interface for configuring GPU related environment variables and
 - ccache (optional, for optimizing compiling times)
 
 ### Additional requirements for some Options:
-If this software its not provied leave those settings on unset:
+If this software is not provided, leave those settings unset.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
 - [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Frame Options
