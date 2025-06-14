@@ -27,6 +27,17 @@ from kernel import KernelManager
 from config import ConfigManager
 
 
+def check_sudo_execution():
+    """
+    Check if the application is being run with sudo and exit if so.
+    """
+
+    if os.environ.get('SUDO_USER'):
+        print("Error: This application should not be run with sudo.")
+        print("Please run as a regular user. The application will request")
+        print("elevated privileges when needed through pkexec.")
+        sys.exit(1)
+
 class SingletonSignals(QObject):
     """
     Signals for single instance application communication.
@@ -560,6 +571,9 @@ def main():
     """
     Main application entry point.
     """
+    # DONT RUN WITH SUDO FFS
+    check_sudo_execution()
+
     # Create application instance
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
