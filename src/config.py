@@ -65,7 +65,13 @@ class ConfigManager:
         # Save kernel settings if provided
         if kernel_widgets:
             kernel_settings = {}
+            # Handle regular kernel settings
             for setting_name in KernelManager.KERNEL_SETTINGS.keys():
+                value = kernel_widgets[f'{setting_name}_input'].text().strip()
+                if value:
+                    kernel_settings[setting_name] = value
+            # Handle dynamic kernel settings
+            for setting_name in KernelManager.DYNAMIC_SETTINGS.keys():
                 value = kernel_widgets[f'{setting_name}_input'].text().strip()
                 if value:
                     kernel_settings[setting_name] = value
@@ -138,7 +144,9 @@ class ConfigManager:
         # Load kernel settings
         if kernel_widgets and 'Kernel' in config:
             for setting_name, value in config['Kernel'].items():
-                if setting_name in KernelManager.KERNEL_SETTINGS:
+                # Check both regular and dynamic settings
+                if (setting_name in KernelManager.KERNEL_SETTINGS or 
+                    setting_name in KernelManager.DYNAMIC_SETTINGS):
                     input_widget = kernel_widgets[f'{setting_name}_input']
                     input_widget.setText(value)
         

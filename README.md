@@ -31,6 +31,9 @@ A graphical user interface for configuring GPU related environment variables and
   - Chose page_lock_unfairness value
   - Chose sched_cfs_bandwidth_slice_us value
   - Chose sched_autogroup_enabled value
+  - Chose /sys/kernel/mm/transparent_hugepage/enabled value
+  - Chose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
+  - Chose /sys/kernel/mm/transparent_hugepage/defrag value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
   ```

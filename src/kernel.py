@@ -53,6 +53,19 @@ class KernelManager:
         }
     }
 
+    # Dynamic settings - these will be populated dynamically and don't use "recommended:" prefix, as we indicate instead the posible values
+    DYNAMIC_SETTINGS = {
+        'thp_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/enabled'
+        },
+        'thp_shmem_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled'
+        },
+        'thp_defrag': {
+            'path': '/sys/kernel/mm/transparent_hugepage/defrag'
+        }
+    }
+
     @staticmethod
     def create_kernel_tab(main_window):
         """
@@ -75,7 +88,21 @@ class KernelManager:
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         
+        # Add regular kernel settings
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
+            KernelManager._create_setting_section(
+                scroll_layout, 
+                widgets, 
+                setting_name, 
+                setting_info
+            )
+        
+        # Add dynamic settings
+        for setting_name, setting_info in KernelManager.DYNAMIC_SETTINGS.items():
+            # Get possible values dynamically
+            possible_values = KernelManager._get_dynamic_possible_values(setting_info['path'])
+            setting_info['recommended'] = f"possible values: {possible_values}"
+            
             KernelManager._create_setting_section(
                 scroll_layout, 
                 widgets, 
@@ -114,9 +141,15 @@ class KernelManager:
         setting_layout.addWidget(current_value_label)
         
         input_widget = QLineEdit()
-        input_widget.setPlaceholderText(
-            f"enter value (recommended: {setting_info['recommended']})"
-        )
+        # Check if this is a dynamic setting to avoid "recommended:" prefix
+        if setting_name in KernelManager.DYNAMIC_SETTINGS:
+            input_widget.setPlaceholderText(
+                f"enter value ({setting_info['recommended']})"
+            )
+        else:
+            input_widget.setPlaceholderText(
+                f"enter value (recommended: {setting_info['recommended']})"
+            )
         setting_layout.addWidget(input_widget)
         
         widgets[f'{setting_name}_input'] = input_widget
@@ -157,8 +190,14 @@ class KernelManager:
         Args:
             widgets: Dictionary containing UI widgets to update
         """
+        # Refresh regular kernel settings
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             current = KernelManager._get_current_value(info['path'])
+            widgets[f'{name}_current_value'].setText(f"current value: {current}")
+        
+        # Refresh dynamic settings
+        for name, info in KernelManager.DYNAMIC_SETTINGS.items():
+            current = KernelManager._get_dynamic_current_value(info['path'])
             widgets[f'{name}_current_value'].setText(f"current value: {current}")
 
     @staticmethod
@@ -177,6 +216,51 @@ class KernelManager:
             return "Error"
 
     @staticmethod
+    def _get_dynamic_current_value(setting_path):
+        """
+        Gets the current value of a dynamic setting (extracts value in brackets).
+        Args:
+            setting_path: Path to the dynamic setting file
+        Returns:
+            str: Current value (from brackets) or "Error" if reading fails
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                content = f.read().strip()
+            
+            # Extract value in brackets
+            import re
+            match = re.search(r'\[([^\]]+)\]', content)
+            if match:
+                return match.group(1)
+            else:
+                # If no brackets found, return first value as fallback
+                values = content.split()
+                return values[0] if values else "Error"
+        except Exception:
+            return "Error"
+
+    @staticmethod
+    def _get_dynamic_possible_values(setting_path):
+        """
+        Gets all possible values for a dynamic setting (removes brackets).
+        Args:
+            setting_path: Path to the dynamic setting file
+        Returns:
+            str: Space-separated possible values or "Error" if reading fails
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                content = f.read().strip()
+            
+            # Remove brackets and return all values
+            import re
+            content = re.sub(r'[\[\]]', '', content)
+            return content
+        except Exception:
+            return "Error"
+
+    @staticmethod
     def check_if_kernel_settings_already_applied(widgets):
         """
         Check if the kernel settings that have values entered are already applied.
@@ -187,11 +271,20 @@ class KernelManager:
         """
         settings_to_check = []
         
-        # Get all settings that have values entered
+        # Check regular kernel settings
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             value = widgets[f'{name}_input'].text().strip()
             if value:
                 current_value = KernelManager._get_current_value(info['path'])
+                if current_value != "Error" and current_value != value:
+                    return False
+                settings_to_check.append((name, value, current_value))
+        
+        # Check dynamic settings
+        for name, info in KernelManager.DYNAMIC_SETTINGS.items():
+            value = widgets[f'{name}_input'].text().strip()
+            if value:
+                current_value = KernelManager._get_dynamic_current_value(info['path'])
                 if current_value != "Error" and current_value != value:
                     return False
                 settings_to_check.append((name, value, current_value))
@@ -215,12 +308,20 @@ class KernelManager:
             settings = []
             originals = {}
             
-            # Collect settings that have values entered
+            # Collect regular kernel settings that have values entered
             for name, info in KernelManager.KERNEL_SETTINGS.items():
                 value = widgets[f'{name}_input'].text().strip()
                 if value:
                     path = info['path']
                     originals[name] = KernelManager._get_current_value(path)
+                    settings.append(f"{path}:{value}")
+            
+            # Collect dynamic settings that have values entered
+            for name, info in KernelManager.DYNAMIC_SETTINGS.items():
+                value = widgets[f'{name}_input'].text().strip()
+                if value:
+                    path = info['path']
+                    originals[name] = KernelManager._get_dynamic_current_value(path)
                     settings.append(f"{path}:{value}")
             
             # If no settings to apply, show notification and return early
@@ -291,10 +392,14 @@ class KernelManager:
             
         try:
             originals = widgets['original_values']
-            restore = [
-                f"{KernelManager.KERNEL_SETTINGS[name]['path']}:{val}" 
-                for name, val in originals.items()
-            ]
+            restore = []
+            
+            # Restore regular kernel settings
+            for name, val in originals.items():
+                if name in KernelManager.KERNEL_SETTINGS:
+                    restore.append(f"{KernelManager.KERNEL_SETTINGS[name]['path']}:{val}")
+                elif name in KernelManager.DYNAMIC_SETTINGS:
+                    restore.append(f"{KernelManager.DYNAMIC_SETTINGS[name]['path']}:{val}")
             
             process = QProcess()
             process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + restore)
