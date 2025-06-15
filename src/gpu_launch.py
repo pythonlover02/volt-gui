@@ -248,8 +248,8 @@ class GPULaunchManager:
         """
         Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
         Returns:
-            tuple: (QWidget, QTabWidget, dict, dict) The GPU tab widget, subtabs widget,
-                Mesa widgets dict, and NVIDIA widgets dict
+            tuple: (QWidget, QTabWidget, dict, dict, dict) The GPU tab widget, subtabs widget,
+                Mesa widgets dict, NVIDIA widgets dict, and render selector widgets dict
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -258,7 +258,7 @@ class GPULaunchManager:
         gpu_subtabs = QTabWidget()
         mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
         nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab = GPULaunchManager._create_render_selector_tab()
+        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -268,9 +268,9 @@ class GPULaunchManager:
         # Add apply buttons to each tab
         GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
         GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
-        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
+        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), render_selector_widgets, 'render_selector_apply_button')
         
-        return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets
+        return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets
 
     @staticmethod
     def _create_mesa_tab():
@@ -342,7 +342,7 @@ class GPULaunchManager:
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         Returns:
-            QWidget: The created render selector tab widget
+            tuple: (QWidget, dict) The render selector tab widget and its widgets dictionary
         """
         # Create the tab using the standardized method
         render_tab, widgets = GPULaunchManager._create_settings_tab(
@@ -364,8 +364,7 @@ class GPULaunchManager:
         # Set initial state
         GPULaunchManager._handle_glx_vendor_change(widgets)
 
-        GPULaunchManager.render_selector_widgets = widgets
-        return render_tab
+        return render_tab, widgets
 
     @staticmethod
     def _handle_glx_vendor_change(widgets):
