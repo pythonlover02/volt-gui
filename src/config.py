@@ -2,7 +2,7 @@ import os
 import configparser
 from pathlib import Path
 from kernel import KernelManager
-from disk import DiskManager  # Import DiskManager
+from disk import DiskManager
 
 
 class ConfigManager:
@@ -56,12 +56,6 @@ class ConfigManager:
         for widget_key, widget in gpu_manager.render_selector_widgets.items():
             if hasattr(widget, 'currentText'):
                 config['RenderSelector'][widget_key] = widget.currentText()
-
-        # Save frame control settings
-        config['FrameControl'] = {}
-        for widget_key, widget in gpu_manager.frame_control_widgets.items():
-            if hasattr(widget, 'currentText'):
-                config['FrameControl'][widget_key] = widget.currentText()
             
         # Save launch options
         if 'launch_options_input' in gpu_manager.launch_options_widgets:
@@ -71,7 +65,13 @@ class ConfigManager:
         # Save kernel settings if provided
         if kernel_widgets:
             kernel_settings = {}
+            # Handle regular kernel settings
             for setting_name in KernelManager.KERNEL_SETTINGS.keys():
+                value = kernel_widgets[f'{setting_name}_input'].text().strip()
+                if value:
+                    kernel_settings[setting_name] = value
+            # Handle dynamic kernel settings
+            for setting_name in KernelManager.DYNAMIC_SETTINGS.keys():
                 value = kernel_widgets[f'{setting_name}_input'].text().strip()
                 if value:
                     kernel_settings[setting_name] = value
@@ -135,12 +135,6 @@ class ConfigManager:
             for widget_key, value in config['RenderSelector'].items():
                 if widget_key in gpu_manager.render_selector_widgets and hasattr(gpu_manager.render_selector_widgets[widget_key], 'setCurrentText'):
                     gpu_manager.render_selector_widgets[widget_key].setCurrentText(value)
-
-        # Load frame control settings
-        if 'FrameControl' in config:
-            for widget_key, value in config['FrameControl'].items():
-                if widget_key in gpu_manager.frame_control_widgets and hasattr(gpu_manager.frame_control_widgets[widget_key], 'setCurrentText'):
-                    gpu_manager.frame_control_widgets[widget_key].setCurrentText(value)
                 
         # Load launch options
         if 'LaunchOptions' in config and 'launch_options_input' in gpu_manager.launch_options_widgets:
@@ -150,7 +144,9 @@ class ConfigManager:
         # Load kernel settings
         if kernel_widgets and 'Kernel' in config:
             for setting_name, value in config['Kernel'].items():
-                if setting_name in KernelManager.KERNEL_SETTINGS:
+                # Check both regular and dynamic settings
+                if (setting_name in KernelManager.KERNEL_SETTINGS or 
+                    setting_name in KernelManager.DYNAMIC_SETTINGS):
                     input_widget = kernel_widgets[f'{setting_name}_input']
                     input_widget.setText(value)
         

@@ -328,14 +328,13 @@ class MainWindow(QMainWindow):
         """
         Setup the GPU tab.
         """
-        # Create GPU settings tab (Mesa, NVIDIA, Render Selector, Frame Control)
-        gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets, frame_control_widgets = GPULaunchManager._create_gpu_settings_tab()
-
-        # Store the widgets in the gpu_manager instance
+        # Create GPU settings tab (Mesa, NVIDIA, Render Selector)
+        gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets = GPULaunchManager._create_gpu_settings_tab()
+        
+        # Store the widgets in the gpu_manager
         self.gpu_manager.mesa_widgets = mesa_widgets or {}
         self.gpu_manager.nvidia_widgets = nvidia_widgets or {}
         self.gpu_manager.render_selector_widgets = render_selector_widgets or {}
-        self.gpu_manager.frame_control_widgets = frame_control_widgets or {}
         
         # Connect apply button signals
         if mesa_widgets and 'mesa_apply_button' in mesa_widgets:
@@ -346,9 +345,6 @@ class MainWindow(QMainWindow):
         
         if render_selector_widgets and 'render_selector_apply_button' in render_selector_widgets:
             render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_settings)
-        
-        if frame_control_widgets and 'frame_control_apply_button' in frame_control_widgets:
-            frame_control_widgets['frame_control_apply_button'].clicked.connect(self.apply_gpu_settings)
         
         self.tab_widget.addTab(gpu_tab, "GPU")
     

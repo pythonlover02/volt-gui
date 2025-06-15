@@ -66,13 +66,6 @@ class GPULaunchManager:
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),  # Will be populated dynamically
     ]
     
-    # Frame control settings configuration
-    FRAME_CONTROL_SETTINGS = [
-    ("Display Elements:", 'frame_display_combo', ["unset", "fps only", "nothing"]),
-    ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
-    ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
-    ]
-    
     # Mapping between Mesa UI widgets and environment variables
     MESA_ENV_MAPPINGS = {
         'mesa_vsync_gl_combo': {
@@ -195,25 +188,6 @@ class GPULaunchManager:
         }
     }
         
-    # Frame control environment mappings
-    FRAME_CONTROL_ENV_MAPPINGS = {
-        'frame_display_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'fps only': 'fps_only', 'nothing': 'no_display'}
-        },
-        'frame_fps_limit_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'unlimited': '0'},
-            'direct_value': True,
-            'prefix': 'fps_limit='
-        },
-        'frame_fps_method_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
-            'prefix': 'fps_limit_method='
-        }
-    }
-   
     # Path to the volt script
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     
@@ -221,7 +195,6 @@ class GPULaunchManager:
     mesa_widgets = {}
     nvidia_widgets = {}
     render_selector_widgets = {}
-    frame_control_widgets = {}
     launch_options_widgets = {}
     tray_icon = None
 
@@ -273,10 +246,10 @@ class GPULaunchManager:
     @staticmethod
     def _create_gpu_settings_tab():
         """
-        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and frame control subtabs.
+        Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
         Returns:
-            tuple: (QWidget, QTabWidget, dict, dict, dict, dict) The GPU tab widget, subtabs widget,
-                Mesa widgets dict, NVIDIA widgets dict, render selector widgets dict, and frame control widgets dict
+            tuple: (QWidget, QTabWidget, dict, dict, dict) The GPU tab widget, subtabs widget,
+                Mesa widgets dict, NVIDIA widgets dict, and render selector widgets dict
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -285,22 +258,19 @@ class GPULaunchManager:
         gpu_subtabs = QTabWidget()
         mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
         nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab = GPULaunchManager._create_render_selector_tab()
-        frame_control_tab = GPULaunchManager._create_frame_control_tab()
+        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
-        gpu_subtabs.addTab(frame_control_tab, "Frame Control")
         gpu_layout.addWidget(gpu_subtabs)
         
         # Add apply buttons to each tab
         GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
         GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
-        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
-        GPULaunchManager.create_gpu_apply_button(frame_control_tab.layout(), GPULaunchManager.frame_control_widgets, 'frame_control_apply_button')
+        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), render_selector_widgets, 'render_selector_apply_button')
         
-        return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, GPULaunchManager.render_selector_widgets, GPULaunchManager.frame_control_widgets
+        return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets
 
     @staticmethod
     def _create_mesa_tab():
@@ -372,7 +342,7 @@ class GPULaunchManager:
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         Returns:
-            QWidget: The created render selector tab widget
+            tuple: (QWidget, dict) The render selector tab widget and its widgets dictionary
         """
         # Create the tab using the standardized method
         render_tab, widgets = GPULaunchManager._create_settings_tab(
@@ -394,32 +364,7 @@ class GPULaunchManager:
         # Set initial state
         GPULaunchManager._handle_glx_vendor_change(widgets)
 
-        GPULaunchManager.render_selector_widgets = widgets
-        return render_tab
-
-    @staticmethod
-    def _create_frame_control_tab():
-        """
-        Creates the frame control tab for managing FPS and display settings.
-        Returns:
-            QWidget: The created frame control tab widget
-        """
-        # Create the tab using the standardized method
-        frame_control_tab, widgets = GPULaunchManager._create_settings_tab(
-            GPULaunchManager.FRAME_CONTROL_SETTINGS, 
-            "frame_control_apply_button"
-        )
-        
-        # Connect FPS limit change handler to enable/disable method selection
-        widgets['frame_fps_limit_combo'].currentTextChanged.connect(
-            lambda: GPULaunchManager._handle_fps_limit_change(widgets)
-        )
-        
-        # Set initial state
-        GPULaunchManager._handle_fps_limit_change(widgets)
-
-        GPULaunchManager.frame_control_widgets = widgets
-        return frame_control_tab
+        return render_tab, widgets
 
     @staticmethod
     def _handle_glx_vendor_change(widgets):
@@ -436,19 +381,6 @@ class GPULaunchManager:
         
         # Enable/disable OpenGL Software Rendering
         widgets['libgl_software_combo'].setEnabled(mesa_enabled)
-
-    @staticmethod
-    def _handle_fps_limit_change(widgets):
-        """
-        Handles FPS limit selection changes to enable/disable FPS limit method.
-        Args:
-            widgets: Dictionary containing frame control widgets
-        """
-        fps_limit = widgets['frame_fps_limit_combo'].currentText()
-        method_enabled = fps_limit != "unset"
-        
-        # Enable/disable FPS limit method
-        widgets['frame_fps_method_combo'].setEnabled(method_enabled)
 
     @staticmethod
     def _create_launch_options_tab():
@@ -644,61 +576,6 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_frame_control_env_vars(frame_control_widgets):
-        """
-        Generates environment variables for frame control settings.
-        Args:
-            frame_control_widgets: Dictionary containing frame control widgets
-        Returns:
-            tuple: (list, bool) Generated environment variable strings and whether MangoHUD should be used
-        """
-        env_vars = []
-        mangohud_config_parts = []
-        use_mangohud = False
-        
-        for widget_key, mapping in GPULaunchManager.FRAME_CONTROL_ENV_MAPPINGS.items():
-            if widget_key not in frame_control_widgets:
-                continue
-                
-            widget = frame_control_widgets[widget_key]
-            value = widget.currentText()
-            if value == "unset":
-                continue
-                
-            use_mangohud = True
-            
-            # Handle direct value mapping
-            if mapping.get('direct_value', False):
-                prefix = mapping.get('prefix', '')
-                if value == 'unlimited':
-                    # Handle special case for unlimited
-                    mapped_value = mapping['values'].get(value, '0')
-                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
-                else:
-                    # Direct value
-                    mangohud_config_parts.append(f'{prefix}{value}')
-            
-            # Handle value mapping
-            elif 'values' in mapping:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    prefix = mapping.get('prefix', '')
-                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
-            
-            # Handle simple value mapping
-            else:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    mangohud_config_parts.append(mapped_value)
-        
-        # Create MANGOHUD_CONFIG if there are any settings
-        if mangohud_config_parts:
-            config_value = ','.join(mangohud_config_parts)
-            env_vars.append(f'export MANGOHUD_CONFIG="{config_value}"')
-        
-        return env_vars, use_mangohud
-
-    @staticmethod
     def _generate_mesa_script_content(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
@@ -797,7 +674,7 @@ class GPULaunchManager:
     @staticmethod
     def _write_volt_script_with_all_settings(mesa_widgets, nvidia_widgets):
         """
-        Writes a volt script combining all settings (Mesa, NVIDIA, render selector, frame control, launch options).
+        Writes a volt script combining all settings (Mesa, NVIDIA, render selector, launch options).
         Args:
             mesa_widgets: Dictionary containing Mesa settings widgets
             nvidia_widgets: Dictionary containing NVIDIA settings widgets
@@ -817,44 +694,22 @@ class GPULaunchManager:
             render_env_vars = GPULaunchManager._generate_render_selector_env_vars(
                 GPULaunchManager.render_selector_widgets
             )
-        
-        frame_control_env_vars = []
-        use_mangohud = False
-        if GPULaunchManager.frame_control_widgets:
-            frame_control_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(
-                GPULaunchManager.frame_control_widgets
-            )
             
         launch_options = ""
         if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
             launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
         
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + frame_control_env_vars
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars
         
         script_content = "#!/bin/bash\n\n"
         script_content += "\n".join(all_env_vars)
         
         script_content += "\n\n# Handle launch options if present\n"
-        
-        # Build the command with MangoHUD if needed
-        command_parts = []
-        
-        if use_mangohud:
-            command_parts.append("mangohud")
-        
         if launch_options:
-            command_parts.append(launch_options)
-        
-        command_parts.append('"$@"')
-        
-        if command_parts:
-            if use_mangohud or launch_options:
-                script_content += f"# Execute the specified program with environment variables and additional tools\n"
-            else:
-                script_content += "# Launch the specified program with the environment variables\n"
-            script_content += " ".join(command_parts) + "\n"
+            script_content += f"# Execute the specified program with environment variables\n"
+            script_content += f"{launch_options} \"$@\"\n"
         else:
             script_content += "# Launch the specified program with the environment variables\n"
-            script_content += '"$@"\n'
+            script_content += "\"$@\"\n"
         
         return GPULaunchManager._write_volt_script(script_content)
