@@ -70,7 +70,7 @@ class GPULaunchManager:
     FRAME_CONTROL_SETTINGS = [
     ("Display Elements:", 'frame_display_combo', ["unset", "fps only", "nothing"]),
     ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
-    ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early", "late"]),
+    ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
     ]
     
     # Mapping between Mesa UI widgets and environment variables
@@ -209,7 +209,7 @@ class GPULaunchManager:
         },
         'frame_fps_method_combo': {
             'var_name': 'MANGOHUD_CONFIG',
-            'direct_value': True,
+            'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
             'prefix': 'fps_limit_method='
         }
     }
@@ -667,22 +667,29 @@ class GPULaunchManager:
                 
             use_mangohud = True
             
-            # Handle display elements
-            if widget_key == 'frame_display_combo':
+            # Handle direct value mapping
+            if mapping.get('direct_value', False):
+                prefix = mapping.get('prefix', '')
+                if value == 'unlimited':
+                    # Handle special case for unlimited
+                    mapped_value = mapping['values'].get(value, '0')
+                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
+                else:
+                    # Direct value
+                    mangohud_config_parts.append(f'{prefix}{value}')
+            
+            # Handle value mapping
+            elif 'values' in mapping:
+                mapped_value = mapping['values'].get(value)
+                if mapped_value:
+                    prefix = mapping.get('prefix', '')
+                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
+            
+            # Handle simple value mapping
+            else:
                 mapped_value = mapping['values'].get(value)
                 if mapped_value:
                     mangohud_config_parts.append(mapped_value)
-            
-            # Handle FPS limit
-            elif widget_key == 'frame_fps_limit_combo':
-                if value == 'unlimited':
-                    mangohud_config_parts.append('fps_limit=0')
-                else:
-                    mangohud_config_parts.append(f'fps_limit={value}')
-            
-            # Handle FPS limit method
-            elif widget_key == 'frame_fps_method_combo':
-                mangohud_config_parts.append(f'fps_limit_method={value}')
         
         # Create MANGOHUD_CONFIG if there are any settings
         if mangohud_config_parts:
