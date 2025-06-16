@@ -22,15 +22,15 @@ A graphical user interface for configuring GPU related environment variables and
 - Disk Configuration
   - Change Disks Schedulers
 - Kernel Configuration
-  - Chose compaction_proactiveness value
-  - Chose watermark_boost_factor value
-  - Chose min_free_kbytes value
-  - Chose max_map_count value
-  - Chose swappiness value
-  - Chose zone_reclaim_mode value
-  - Chose page_lock_unfairness value
-  - Chose sched_cfs_bandwidth_slice_us value
-  - Chose sched_autogroup_enabled value
+  - Chose /proc/sys/vm/compaction_proactiveness value
+  - Chose /proc/sys/vm/watermark_boost_factor value
+  - Chose /proc/sys/vm/min_free_kbytes value
+  - Chose /proc/sys/vm/max_map_count value
+  - Chose /proc/sys/vm/swappiness value
+  - Chose /proc/sys/vm/zone_reclaim_mode value
+  - Chose /proc/sys/vm/page_lock_unfairness value
+  - Chose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
+  - Chose /proc/sys/kernel/sched_autogroup_enabled value
   - Chose /sys/kernel/mm/transparent_hugepage/enabled value
   - Chose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
   - Chose /sys/kernel/mm/transparent_hugepage/defrag value
