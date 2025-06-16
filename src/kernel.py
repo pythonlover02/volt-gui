@@ -35,6 +35,26 @@ class KernelManager:
             'path': '/proc/sys/vm/swappiness', 
             'recommended': '10'
         },
+        'dirty_ratio': {
+            'path': '/proc/sys/vm/dirty_ratio',
+            'recommended': '15-20 for better I/O performance'
+        },
+        'dirty_background_ratio': {
+            'path': '/proc/sys/vm/dirty_background_ratio',
+            'recommended': '5-10 for proactive writeback'
+        },
+        'dirty_expire_centisecs': {
+            'path': '/proc/sys/vm/dirty_expire_centisecs',
+            'recommended': '1500-3000 for faster writes'
+        },
+        'dirty_writeback_centisecs': {
+            'path': '/proc/sys/vm/dirty_writeback_centisecs',
+            'recommended': '500-1500 for responsive I/O'
+        },
+        'vfs_cache_pressure': {
+            'path': '/proc/sys/vm/vfs_cache_pressure',
+            'recommended': '50-80 to keep caches longer'
+        },
         'zone_reclaim_mode': {
             'path': '/proc/sys/vm/zone_reclaim_mode', 
             'recommended': '0'
@@ -50,7 +70,19 @@ class KernelManager:
         'sched_autogroup_enabled': {
             'path': '/proc/sys/kernel/sched_autogroup_enabled', 
             'recommended': '1'
-        }
+        },
+        'watchdog': {
+            'path': '/proc/sys/kernel/watchdog',
+            'recommended': '0 to disable soft lockup detector'
+        },
+        'nmi_watchdog': {
+            'path': '/proc/sys/kernel/nmi_watchdog',
+            'recommended': '0 to disable NMI watchdog'
+        },
+                'laptop_mode': {
+            'path': '/proc/sys/vm/laptop_mode',
+            'recommended': '0 to disable power-saving mode'
+        },
     }
 
     # Dynamic settings - these will be populated dynamically and don't use "recommended:" prefix, as we indicate instead the posible values
