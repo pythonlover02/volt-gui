@@ -29,11 +29,38 @@ class CPUManager:
         "schedutil"
     ]
     
-    # Available CPU schedulers
-    AVAILABLE_SCHEDULERS = [
-        "unset", "none", "scx_bpfland", 
-        "scx_flash", "scx_lavd", "scx_rusty"
+    # Paths to search for scx_ schedulers (easy to extend)
+    SCHEDULER_SEARCH_PATHS = [
+        "/usr/bin/",
+        "/usr/local/bin/"
     ]
+    
+    # Base available CPU schedulers (always present)
+    BASE_SCHEDULERS = ["unset", "none"]
+
+    @staticmethod
+    def find_available_schedulers():
+        """
+        Dynamically find available scx_ schedulers in the configured paths.
+        Returns:
+            list: List of available schedulers including base schedulers
+        """
+        schedulers = CPUManager.BASE_SCHEDULERS.copy()
+        
+        for search_path in CPUManager.SCHEDULER_SEARCH_PATHS:
+            try:
+                # Use glob to find all scx_* files in the path
+                scx_files = glob.glob(os.path.join(search_path, "scx_*"))
+                for file_path in scx_files:
+                    scheduler_name = os.path.basename(file_path)
+                    # Check if it's executable and not already in list
+                    if os.access(file_path, os.X_OK) and scheduler_name not in schedulers:
+                        schedulers.append(scheduler_name)
+            except Exception:
+                # Skip paths that can't be accessed
+                continue
+        
+        return schedulers
 
     @staticmethod
     def create_cpu_tab():
@@ -84,9 +111,22 @@ class CPUManager:
         sched_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         widgets['sched_combo'] = QComboBox()
-        widgets['sched_combo'].addItems(CPUManager.AVAILABLE_SCHEDULERS)
+        # Populate with dynamically found schedulers
+        available_schedulers = CPUManager.find_available_schedulers()
+        widgets['sched_combo'].addItems(available_schedulers)
         widgets['sched_combo'].setCurrentText("unset")
         widgets['sched_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        # Store the list of schedulers that were available at creation time
+        widgets['available_schedulers'] = available_schedulers
+        
+        # Check if no scx schedulers were found (only base schedulers exist)
+        scx_schedulers_found = len([s for s in available_schedulers if s.startswith("scx_")]) > 0
+        if not scx_schedulers_found:
+            widgets['sched_combo'].setEnabled(False)
+            widgets['scheduler_locked'] = True
+        else:
+            widgets['scheduler_locked'] = False
         
         sched_layout.addWidget(sched_label)
         sched_layout.addWidget(widgets['sched_combo'])
@@ -155,17 +195,36 @@ class CPUManager:
         widgets['current_sched_value'].setText("Updating...")
         try:
             running_scheduler = CPUManager._find_running_scheduler()
-            schedulers = CPUManager.AVAILABLE_SCHEDULERS.copy()
             
             # Filter out zombie processes (<defunc>)
             if running_scheduler != "none" and "<defunc>" in running_scheduler:
                 running_scheduler = "none"
             
-            # Only add new scheduler if it's not a zombie and not already in the list
-            if running_scheduler != "none" and running_scheduler not in schedulers:
-                schedulers.append(running_scheduler)
-                widgets['sched_combo'].clear()
-                widgets['sched_combo'].addItems(schedulers)
+            # Check if we need to update the combo box with new schedulers
+            current_available = CPUManager.find_available_schedulers()
+            
+            # If schedulers are locked (no scx found initially), check if any are now available
+            if widgets.get('scheduler_locked', False):
+                scx_schedulers_found = len([s for s in current_available if s.startswith("scx_")]) > 0
+                if scx_schedulers_found:
+                    # Unlock and update the combo box
+                    widgets['sched_combo'].setEnabled(True)
+                    widgets['scheduler_locked'] = False
+                    widgets['available_schedulers'] = current_available
+                    current_selection = widgets['sched_combo'].currentText()
+                    widgets['sched_combo'].clear()
+                    widgets['sched_combo'].addItems(current_available)
+                    # Try to restore previous selection
+                    if current_selection in current_available:
+                        widgets['sched_combo'].setCurrentText(current_selection)
+            else:
+                # Normal update: add new schedulers if found
+                if running_scheduler not in widgets['available_schedulers'] and running_scheduler != "none":
+                    widgets['available_schedulers'].append(running_scheduler)
+                    current_selection = widgets['sched_combo'].currentText()
+                    widgets['sched_combo'].clear()
+                    widgets['sched_combo'].addItems(widgets['available_schedulers'])
+                    widgets['sched_combo'].setCurrentText(current_selection)
             
             widgets['current_sched_value'].setText(f"current: {running_scheduler}")
             
