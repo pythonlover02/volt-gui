@@ -248,17 +248,16 @@ class GPULaunchManager:
         """
         Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
         Returns:
-            tuple: (QWidget, QTabWidget, dict, dict, dict) The GPU tab widget, subtabs widget,
-                Mesa widgets dict, NVIDIA widgets dict, and render selector widgets dict
+            tuple: (QWidget, QTabWidget) The GPU tab widget and subtabs widget
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
-        nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
+        mesa_tab = GPULaunchManager._create_mesa_tab()
+        nvidia_tab = GPULaunchManager._create_nvidia_tab()
+        render_selector_tab = GPULaunchManager._create_render_selector_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -266,29 +265,33 @@ class GPULaunchManager:
         gpu_layout.addWidget(gpu_subtabs)
         
         # Add apply buttons to each tab
-        GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), mesa_widgets, 'mesa_apply_button')
-        GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), nvidia_widgets, 'nvidia_apply_button')
-        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), render_selector_widgets, 'render_selector_apply_button')
+        GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), GPULaunchManager.mesa_widgets, 'mesa_apply_button')
+        GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), GPULaunchManager.nvidia_widgets, 'nvidia_apply_button')
+        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
         
-        return gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets
+        return gpu_tab, gpu_subtabs
 
     @staticmethod
     def _create_mesa_tab():
         """
         Creates the Mesa settings tab.
         Returns:
-            tuple: (QWidget, dict) The Mesa tab widget and its widgets dictionary
+            QWidget: The Mesa tab widget
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
+        tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
+        GPULaunchManager.mesa_widgets.update(widgets)
+        return tab
 
     @staticmethod
     def _create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
         Returns:
-            tuple: (QWidget, dict) The NVIDIA tab widget and its widgets dictionary
+            QWidget: The NVIDIA tab widget
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
+        tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
+        GPULaunchManager.nvidia_widgets.update(widgets)
+        return tab
     
     @staticmethod
     def _create_settings_tab(settings_layouts, apply_button_name):
@@ -342,7 +345,7 @@ class GPULaunchManager:
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         Returns:
-            tuple: (QWidget, dict) The render selector tab widget and its widgets dictionary
+            QWidget: The render selector tab widget
         """
         # Create the tab using the standardized method
         render_tab, widgets = GPULaunchManager._create_settings_tab(
@@ -350,21 +353,24 @@ class GPULaunchManager:
             "render_selector_apply_button"
         )
         
+        # Store widgets in class variable
+        GPULaunchManager.render_selector_widgets.update(widgets)
+        
         # Populate Vulkan ICD options dynamically
         vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
-        widgets['vulkan_render_combo'].clear()
-        widgets['vulkan_render_combo'].addItems(vulkan_options)
-        widgets['vulkan_render_combo'].setCurrentText("unset")
+        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].clear()
+        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].addItems(vulkan_options)
+        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].setCurrentText("unset")
         
         # Connect GLX vendor change handler
-        widgets['glx_vendor_combo'].currentTextChanged.connect(
-            lambda: GPULaunchManager._handle_glx_vendor_change(widgets)
+        GPULaunchManager.render_selector_widgets['glx_vendor_combo'].currentTextChanged.connect(
+            lambda: GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
         )
         
         # Set initial state
-        GPULaunchManager._handle_glx_vendor_change(widgets)
+        GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
 
-        return render_tab, widgets
+        return render_tab
 
     @staticmethod
     def _handle_glx_vendor_change(widgets):
@@ -451,10 +457,7 @@ class GPULaunchManager:
             bool: True if settings were applied successfully, False otherwise
         """
         try:
-            script_path = GPULaunchManager._write_volt_script_with_all_settings(
-                GPULaunchManager.mesa_widgets, 
-                GPULaunchManager.nvidia_widgets
-            )
+            script_path = GPULaunchManager._write_volt_script_with_all_settings()
             
             if tray_icon:
                 tray_icon.showMessage(
@@ -678,28 +681,23 @@ class GPULaunchManager:
             raise RuntimeError(f"Unexpected error writing script: {e}")
 
     @staticmethod
-    def _write_volt_script_with_all_settings(mesa_widgets, nvidia_widgets):
+    def _write_volt_script_with_all_settings():
         """
         Writes a volt script combining all settings (Mesa, NVIDIA, render selector, launch options).
-        Args:
-            mesa_widgets: Dictionary containing Mesa settings widgets
-            nvidia_widgets: Dictionary containing NVIDIA settings widgets
         Returns:
             str: Path to the written script
         """
         mesa_env_vars = []
-        if mesa_widgets is not None:
-            mesa_env_vars = GPULaunchManager._generate_mesa_script_content(mesa_widgets)
+        if GPULaunchManager.mesa_widgets:
+            mesa_env_vars = GPULaunchManager._generate_mesa_script_content(GPULaunchManager.mesa_widgets)
         
         nvidia_env_vars = []
-        if nvidia_widgets is not None:
-            nvidia_env_vars = GPULaunchManager._generate_nvidia_script_content(nvidia_widgets)
+        if GPULaunchManager.nvidia_widgets:
+            nvidia_env_vars = GPULaunchManager._generate_nvidia_script_content(GPULaunchManager.nvidia_widgets)
         
         render_env_vars = []
         if GPULaunchManager.render_selector_widgets:
-            render_env_vars = GPULaunchManager._generate_render_selector_env_vars(
-                GPULaunchManager.render_selector_widgets
-            )
+            render_env_vars = GPULaunchManager._generate_render_selector_env_vars(GPULaunchManager.render_selector_widgets)
             
         launch_options = ""
         if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
