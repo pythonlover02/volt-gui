@@ -97,6 +97,8 @@ class DiskManager:
         # Add apply button
         DiskManager.create_disk_apply_button(main_layout, widgets)
         
+        main_layout.addSpacing(9)
+        
         # Store additional state
         widgets['disk_settings_applied'] = False
         widgets['is_process_running'] = False
@@ -115,7 +117,7 @@ class DiskManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 10)
+        button_layout.setContentsMargins(10, 10, 10, 0)
 
         widgets['disk_apply_button'] = QPushButton("Apply")
         widgets['disk_apply_button'].setMinimumSize(100, 30)

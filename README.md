@@ -22,18 +22,26 @@ A graphical user interface for configuring GPU related environment variables and
 - Disk Configuration
   - Change Disks Schedulers
 - Kernel Configuration
-  - Chose /proc/sys/vm/compaction_proactiveness value
-  - Chose /proc/sys/vm/watermark_boost_factor value
-  - Chose /proc/sys/vm/min_free_kbytes value
-  - Chose /proc/sys/vm/max_map_count value
-  - Chose /proc/sys/vm/swappiness value
-  - Chose /proc/sys/vm/zone_reclaim_mode value
-  - Chose /proc/sys/vm/page_lock_unfairness value
-  - Chose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
-  - Chose /proc/sys/kernel/sched_autogroup_enabled value
-  - Chose /sys/kernel/mm/transparent_hugepage/enabled value
-  - Chose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
-  - Chose /sys/kernel/mm/transparent_hugepage/defrag value
+  - Choose /proc/sys/vm/compaction_proactiveness value
+  - Choose /proc/sys/vm/watermark_boost_factor value
+  - Choose /proc/sys/vm/min_free_kbytes value
+  - Choose /proc/sys/vm/max_map_count value
+  - Choose /proc/sys/vm/swappiness value
+  - Choose /proc/sys/vm/dirty_ratio value
+  - Choose /proc/sys/vm/dirty_background_ratio value
+  - Choose /proc/sys/vm/dirty_expire_centisecs value
+  - Choose /proc/sys/vm/dirty_writeback_centisecs value
+  - Choose /proc/sys/vm/vfs_cache_pressure value
+  - Choose /sys/kernel/mm/transparent_hugepage/enabled value
+  - Choose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
+  - Choose /sys/kernel/mm/transparent_hugepage/defrag value
+  - Choose /proc/sys/vm/zone_reclaim_mode value
+  - Choose /proc/sys/vm/page_lock_unfairness value
+  - Choose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
+  - Choose /proc/sys/kernel/sched_autogroup_enabled value
+  - Choose /proc/sys/kernel/watchdog value
+  - Choose /proc/sys/kernel/nmi_watchdog value
+  - Choose /proc/sys/vm/laptop_mode value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
   ```
