@@ -13,88 +13,107 @@ class KernelManager:
     and handle privilege escalation for system modifications.
     """
     
-    # Dictionary of kernel settings with their paths and recommended values
+    # kernel settings dictionary with descriptive text and recommended values
     KERNEL_SETTINGS = {
         'compaction_proactiveness': {
-            'path': '/proc/sys/vm/compaction_proactiveness', 
-            'recommended': '0'
+            'path': '/proc/sys/vm/compaction_proactiveness',
+            'text': 'Controls memory compaction proactiveness. Lower values reduce CPU overhead.\nRecommended values: 0',
+            'is_dynamic': False
         },
         'watermark_boost_factor': {
-            'path': '/proc/sys/vm/watermark_boost_factor', 
-            'recommended': '1'
+            'path': '/proc/sys/vm/watermark_boost_factor',
+            'text': 'Controls memory reclaim aggressiveness. Lower values prevent excessive reclaim.\nRecommended values: 1',
+            'is_dynamic': False
         },
         'min_free_kbytes': {
-            'path': '/proc/sys/vm/min_free_kbytes', 
-            'recommended': 'do not set this below 1024 KB or above 5% of your systems memory'
+            'path': '/proc/sys/vm/min_free_kbytes',
+            'text': 'Minimum free memory to maintain. Do not set below 1024 KB or above 5% of system memory.\nRecommended values: 1024-65536',
+            'is_dynamic': False
         },
         'max_map_count': {
-            'path': '/proc/sys/vm/max_map_count', 
-            'recommended': 'for performance and compatibility reasons the recommended value its 1048576'
+            'path': '/proc/sys/vm/max_map_count',
+            'text': 'Maximum number of memory map areas a process can have. For performance and compatibility.\nRecommended values: 1048576',
+            'is_dynamic': False
         },
         'swappiness': {
-            'path': '/proc/sys/vm/swappiness', 
-            'recommended': '10'
+            'path': '/proc/sys/vm/swappiness',
+            'text': 'Controls how aggressively the kernel swaps memory pages. Lower values prefer RAM over swap.\nRecommended values: 10',
+            'is_dynamic': False
         },
         'dirty_ratio': {
             'path': '/proc/sys/vm/dirty_ratio',
-            'recommended': '15-20 for better I/O performance'
+            'text': 'Percentage of system memory that can be filled with dirty pages before processes are forced to write.\nRecommended values: 15-20',
+            'is_dynamic': False
         },
         'dirty_background_ratio': {
             'path': '/proc/sys/vm/dirty_background_ratio',
-            'recommended': '5-10 for proactive writeback'
+            'text': 'Percentage of system memory at which background writeback starts.\nRecommended values: 5-10',
+            'is_dynamic': False
         },
         'dirty_expire_centisecs': {
             'path': '/proc/sys/vm/dirty_expire_centisecs',
-            'recommended': '1500-3000 for faster writes'
+            'text': 'How long dirty data can remain in memory before being written (in centiseconds).\nRecommended values: 1500-3000',
+            'is_dynamic': False
         },
         'dirty_writeback_centisecs': {
             'path': '/proc/sys/vm/dirty_writeback_centisecs',
-            'recommended': '500-1500 for responsive I/O'
+            'text': 'Interval between periodic writeback wakeups (in centiseconds).\nRecommended values: 500-1500',
+            'is_dynamic': False
         },
         'vfs_cache_pressure': {
             'path': '/proc/sys/vm/vfs_cache_pressure',
-            'recommended': '50-80 to keep caches longer'
+            'text': 'Controls tendency of kernel to reclaim directory and inode cache memory. Lower values keep caches longer.\nRecommended values: 50-80',
+            'is_dynamic': False
+        },
+        'thp_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/enabled',
+            'text': 'Controls transparent huge pages. Can improve performance but may increase memory usage.\nPossible values: always madvise never',
+            'is_dynamic': True
+        },
+        'thp_shmem_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled',
+            'text': 'Controls transparent huge pages for shared memory. May improve performance for memory-intensive applications.\nPossible values: always within_size advise never',
+            'is_dynamic': True
+        },
+        'thp_defrag': {
+            'path': '/sys/kernel/mm/transparent_hugepage/defrag',
+            'text': 'Controls when kernel attempts to make huge pages available through memory compaction.\nPossible values: always defer defer+madvise madvise never',
+            'is_dynamic': True
         },
         'zone_reclaim_mode': {
-            'path': '/proc/sys/vm/zone_reclaim_mode', 
-            'recommended': '0'
+            'path': '/proc/sys/vm/zone_reclaim_mode',
+            'text': 'Controls zone reclaim behavior in NUMA systems. Disabling improves performance on most systems.\nRecommended values: 0',
+            'is_dynamic': False
         },
         'page_lock_unfairness': {
-            'path': '/proc/sys/vm/page_lock_unfairness', 
-            'recommended': '1'
+            'path': '/proc/sys/vm/page_lock_unfairness',
+            'text': 'Controls page lock unfairness to prevent lock starvation.\nRecommended values: 1',
+            'is_dynamic': False
         },
         'sched_cfs_bandwidth_slice_us': {
-            'path': '/proc/sys/kernel/sched_cfs_bandwidth_slice_us', 
-            'recommended': '3000'
+            'path': '/proc/sys/kernel/sched_cfs_bandwidth_slice_us',
+            'text': 'CFS bandwidth slice duration in microseconds. Affects scheduler responsiveness.\nRecommended values: 3000',
+            'is_dynamic': False
         },
         'sched_autogroup_enabled': {
-            'path': '/proc/sys/kernel/sched_autogroup_enabled', 
-            'recommended': '1'
+            'path': '/proc/sys/kernel/sched_autogroup_enabled',
+            'text': 'Enables automatic process grouping for better desktop responsiveness.\nRecommended values: 1',
+            'is_dynamic': False
         },
         'watchdog': {
             'path': '/proc/sys/kernel/watchdog',
-            'recommended': '0 to disable soft lockup detector'
+            'text': 'Enables soft lockup detector. \nRecommended values: 0',
+            'is_dynamic': False
         },
         'nmi_watchdog': {
             'path': '/proc/sys/kernel/nmi_watchdog',
-            'recommended': '0 to disable NMI watchdog'
+            'text': 'Enables NMI watchdog for hard lockup detection. \nRecommended values: 0',
+            'is_dynamic': False
         },
-                'laptop_mode': {
+        'laptop_mode': {
             'path': '/proc/sys/vm/laptop_mode',
-            'recommended': '0 to disable power-saving mode'
-        },
-    }
-
-    # Dynamic settings - these will be populated dynamically and don't use "recommended:" prefix, as we indicate instead the posible values
-    DYNAMIC_SETTINGS = {
-        'thp_enabled': {
-            'path': '/sys/kernel/mm/transparent_hugepage/enabled'
-        },
-        'thp_shmem_enabled': {
-            'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled'
-        },
-        'thp_defrag': {
-            'path': '/sys/kernel/mm/transparent_hugepage/defrag'
+            'text': 'Enables laptop power-saving mode for disk I/O. \nRecommended values: 0',
+            'is_dynamic': False
         }
     }
 
@@ -120,21 +139,8 @@ class KernelManager:
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Add regular kernel settings
+        # Add all kernel settings
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
-            KernelManager._create_setting_section(
-                scroll_layout, 
-                widgets, 
-                setting_name, 
-                setting_info
-            )
-        
-        # Add dynamic settings
-        for setting_name, setting_info in KernelManager.DYNAMIC_SETTINGS.items():
-            # Get possible values dynamically
-            possible_values = KernelManager._get_dynamic_possible_values(setting_info['path'])
-            setting_info['recommended'] = f"possible values: {possible_values}"
-            
             KernelManager._create_setting_section(
                 scroll_layout, 
                 widgets, 
@@ -172,16 +178,15 @@ class KernelManager:
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
         
+        # Add descriptive text label
+        text_label = QLabel(setting_info['text'])
+        text_label.setWordWrap(True)
+        text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
+        setting_layout.addWidget(text_label)
+        
         input_widget = QLineEdit()
-        # Check if this is a dynamic setting to avoid "recommended:" prefix
-        if setting_name in KernelManager.DYNAMIC_SETTINGS:
-            input_widget.setPlaceholderText(
-                f"enter value ({setting_info['recommended']})"
-            )
-        else:
-            input_widget.setPlaceholderText(
-                f"enter value (recommended: {setting_info['recommended']})"
-            )
+        input_widget.setPlaceholderText("enter value")
+        
         setting_layout.addWidget(input_widget)
         
         widgets[f'{setting_name}_input'] = input_widget
@@ -222,14 +227,11 @@ class KernelManager:
         Args:
             widgets: Dictionary containing UI widgets to update
         """
-        # Refresh regular kernel settings
         for name, info in KernelManager.KERNEL_SETTINGS.items():
-            current = KernelManager._get_current_value(info['path'])
-            widgets[f'{name}_current_value'].setText(f"current value: {current}")
-        
-        # Refresh dynamic settings
-        for name, info in KernelManager.DYNAMIC_SETTINGS.items():
-            current = KernelManager._get_dynamic_current_value(info['path'])
+            if info['is_dynamic']:
+                current = KernelManager._get_dynamic_current_value(info['path'])
+            else:
+                current = KernelManager._get_current_value(info['path'])
             widgets[f'{name}_current_value'].setText(f"current value: {current}")
 
     @staticmethod
@@ -303,20 +305,14 @@ class KernelManager:
         """
         settings_to_check = []
         
-        # Check regular kernel settings
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             value = widgets[f'{name}_input'].text().strip()
             if value:
-                current_value = KernelManager._get_current_value(info['path'])
-                if current_value != "Error" and current_value != value:
-                    return False
-                settings_to_check.append((name, value, current_value))
-        
-        # Check dynamic settings
-        for name, info in KernelManager.DYNAMIC_SETTINGS.items():
-            value = widgets[f'{name}_input'].text().strip()
-            if value:
-                current_value = KernelManager._get_dynamic_current_value(info['path'])
+                if info['is_dynamic']:
+                    current_value = KernelManager._get_dynamic_current_value(info['path'])
+                else:
+                    current_value = KernelManager._get_current_value(info['path'])
+                
                 if current_value != "Error" and current_value != value:
                     return False
                 settings_to_check.append((name, value, current_value))
@@ -340,20 +336,15 @@ class KernelManager:
             settings = []
             originals = {}
             
-            # Collect regular kernel settings that have values entered
+            # Collect kernel settings that have values entered
             for name, info in KernelManager.KERNEL_SETTINGS.items():
                 value = widgets[f'{name}_input'].text().strip()
                 if value:
                     path = info['path']
-                    originals[name] = KernelManager._get_current_value(path)
-                    settings.append(f"{path}:{value}")
-            
-            # Collect dynamic settings that have values entered
-            for name, info in KernelManager.DYNAMIC_SETTINGS.items():
-                value = widgets[f'{name}_input'].text().strip()
-                if value:
-                    path = info['path']
-                    originals[name] = KernelManager._get_dynamic_current_value(path)
+                    if info['is_dynamic']:
+                        originals[name] = KernelManager._get_dynamic_current_value(path)
+                    else:
+                        originals[name] = KernelManager._get_current_value(path)
                     settings.append(f"{path}:{value}")
             
             # If no settings to apply, show notification and return early
@@ -426,12 +417,10 @@ class KernelManager:
             originals = widgets['original_values']
             restore = []
             
-            # Restore regular kernel settings
+            # Restore kernel settings
             for name, val in originals.items():
                 if name in KernelManager.KERNEL_SETTINGS:
                     restore.append(f"{KernelManager.KERNEL_SETTINGS[name]['path']}:{val}")
-                elif name in KernelManager.DYNAMIC_SETTINGS:
-                    restore.append(f"{KernelManager.DYNAMIC_SETTINGS[name]['path']}:{val}")
             
             process = QProcess()
             process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + restore)
