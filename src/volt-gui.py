@@ -329,22 +329,22 @@ class MainWindow(QMainWindow):
         Setup the GPU tab.
         """
         # Create GPU settings tab (Mesa, NVIDIA, Render Selector)
-        gpu_tab, gpu_subtabs, mesa_widgets, nvidia_widgets, render_selector_widgets = GPULaunchManager._create_gpu_settings_tab()
+        gpu_tab, gpu_subtabs = GPULaunchManager._create_gpu_settings_tab()
         
-        # Store the widgets in the gpu_manager
-        self.gpu_manager.mesa_widgets = mesa_widgets or {}
-        self.gpu_manager.nvidia_widgets = nvidia_widgets or {}
-        self.gpu_manager.render_selector_widgets = render_selector_widgets or {}
+        # Store the widgets in the gpu_manager - access them from class variables
+        self.gpu_manager.mesa_widgets = GPULaunchManager.mesa_widgets
+        self.gpu_manager.nvidia_widgets = GPULaunchManager.nvidia_widgets
+        self.gpu_manager.render_selector_widgets = GPULaunchManager.render_selector_widgets
         
         # Connect apply button signals
-        if mesa_widgets and 'mesa_apply_button' in mesa_widgets:
-            mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_settings)
+        if GPULaunchManager.mesa_widgets and 'mesa_apply_button' in GPULaunchManager.mesa_widgets:
+            GPULaunchManager.mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_gpu_settings)
         
-        if nvidia_widgets and 'nvidia_apply_button' in nvidia_widgets:
-            nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_settings)
+        if GPULaunchManager.nvidia_widgets and 'nvidia_apply_button' in GPULaunchManager.nvidia_widgets:
+            GPULaunchManager.nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_gpu_settings)
         
-        if render_selector_widgets and 'render_selector_apply_button' in render_selector_widgets:
-            render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_settings)
+        if GPULaunchManager.render_selector_widgets and 'render_selector_apply_button' in GPULaunchManager.render_selector_widgets:
+            GPULaunchManager.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_gpu_settings)
         
         self.tab_widget.addTab(gpu_tab, "GPU")
     
