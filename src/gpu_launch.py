@@ -400,27 +400,33 @@ class GPULaunchManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 0)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
         
-        scroll_layout.addSpacing(10)
+        setting_container = QWidget()
+        setting_container.setProperty("settingContainer", True)
+        setting_layout = QVBoxLayout(setting_container)
+        setting_layout.setContentsMargins(0, 10, 0, 0)
         
-        launch_options_layout = QVBoxLayout()
-        launch_options_label = QLabel("Launch Options:")
-        launch_options_label.setWordWrap(True)
-        launch_options_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # Path/title
+        path_label = QLabel("Launch Options:")
+        path_label.setWordWrap(True)
+        setting_layout.addWidget(path_label)
         
+        # text with examplee
+        example_text = "Additional programs and environment variables to launch with the game, arguments are not supported.\nExample: gamemoderun PROTON_USE_WINED3D=1"
+
+        text_label = QLabel(example_text)
+        text_label.setWordWrap(True)
+        text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
+        setting_layout.addWidget(text_label)
+        
+        # Input widget
         launch_options_input = QLineEdit()
-        launch_options_input.setPlaceholderText(
-            "Enter programs to be launched with the game and environment variables, "
-            "example: gamemoderun PROTON_USE_WINED3D=1"
-        )
-        launch_options_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        launch_options_input.setPlaceholderText("enter launch options")
+        setting_layout.addWidget(launch_options_input)
         
-        launch_options_layout.addWidget(launch_options_label)
-        launch_options_layout.addWidget(launch_options_input)
-        scroll_layout.addLayout(launch_options_layout)
-        
+        # Add the setting container to scroll layout
+        scroll_layout.addWidget(setting_container)
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
