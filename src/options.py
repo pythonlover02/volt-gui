@@ -396,7 +396,7 @@ class OptionsTab(QWidget):
             'start_minimized_combo': self.start_minimized_combo,
             'restore_cpu_combo': self.restore_cpu_combo,
             'restore_kernel_combo': self.restore_kernel_combo,
-            'restore_disk_combo': self.restore_disk_combo,  # ADD THIS LINE
+            'restore_disk_combo': self.restore_disk_combo,
             'apply_button': self.apply_button
         }
         

@@ -296,9 +296,7 @@ class DiskManager:
                     break
         
         if not settings_changed:
-            return True, "Settings already applied"
-        
-        return False, "Settings need to be applied"
+            return True, "Disk settings already applied"
 
     @staticmethod
     def apply_disk_settings(widgets, main_window):
@@ -387,7 +385,7 @@ class DiskManager:
         if main_window and hasattr(main_window, 'tray_icon'):
             main_window.tray_icon.showMessage(
                 "volt-gui", 
-                "Settings applied successfully" if exit_code == 0 else "Error applying settings",
+                "Disk settings applied successfully" if exit_code == 0 else "Error applying Disk settings",
                 QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
                 2000
             )

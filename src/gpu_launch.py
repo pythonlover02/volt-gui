@@ -473,7 +473,7 @@ class GPULaunchManager:
             if tray_icon:
                 tray_icon.showMessage(
                     "volt-gui",
-                    f"Error applying GPU launch settings: {e}",
+                    f"Failed to apply GPU launch settings: {e}",
                     QSystemTrayIcon.MessageIcon.Critical,
                     2000
                 )
@@ -507,7 +507,7 @@ class GPULaunchManager:
             
             for name, paths in icd_files.items():
                 if 'lvp' in name.lower():
-                    options.append(f"{name} (software Rendering)")
+                    options.append(f"{name} (software rendering)")
                 else:
                     options.append(name)
         except OSError:

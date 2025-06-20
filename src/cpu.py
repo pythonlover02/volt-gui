@@ -251,14 +251,7 @@ class CPUManager:
         scheduler_matches = (scheduler == "unset" or scheduler == current_scheduler)
         
         if governor_matches and scheduler_matches:
-            return True, "Settings already applied"
-        
-        # Check if scheduler is already running but governor needs change
-        if scheduler != "unset" and scheduler == current_scheduler:
-            if governor != "unset" and governor != current_governor:
-                return False, "Governor needs update"
-        
-        return False, "Settings need to be applied"
+            return True, "CPU settings already applied"
 
     @staticmethod
     def apply_cpu_settings(widgets, main_window):
@@ -400,7 +393,7 @@ class CPUManager:
         if main_window and hasattr(main_window, 'tray_icon'):
             main_window.tray_icon.showMessage(
                 "volt-gui", 
-                "Settings applied successfully" if exit_code == 0 else "Error applying settings",
+                "CPU settings applied successfully" if exit_code == 0 else "Failed to apply CPU settings",
                 QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
                 2000
             )
