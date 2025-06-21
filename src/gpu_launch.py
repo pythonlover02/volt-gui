@@ -17,7 +17,14 @@ class GPULaunchManager:
     generate environment variable scripts, and manage the configuration file.
     """
     
-    # Mesa driver settings configuration
+    VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
+    
+    mesa_widgets = {}
+    nvidia_widgets = {}
+    render_selector_widgets = {}
+    launch_options_widgets = {}
+    tray_icon = None
+    
     MESA_SETTINGS = [
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "on", "off"]),
         ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "on", "off"]),
@@ -33,7 +40,6 @@ class GPULaunchManager:
         ("GLSL Version Spoofing:", 'mesa_fake_glsl_combo', ["unset", "330", "460"]),
     ]
     
-    # NVIDIA driver settings configuration
     NVIDIA_SETTINGS = [
         ("OpenGL Vsync:", 'nvidia_vsync_gl_combo', ["unset", "on", "off"]),
         ("OpenGL G-SYNC:", 'nvidia_gsync_combo', ["unset", "on", "off"]),
@@ -58,15 +64,13 @@ class GPULaunchManager:
         ("Use Unofficial GLX Protocol:", 'nvidia_glx_combo', ["unset", "on", "off"])
     ]
 
-    # Render selector settings configuration
     RENDER_SETTINGS = [
         ("GLX Vendor Library:", 'glx_vendor_combo', ["unset", "nvidia", "mesa"]),
         ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
         ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
-        ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),  # Will be populated dynamically
+        ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
     ]
     
-    # Mapping between Mesa UI widgets and environment variables
     MESA_ENV_MAPPINGS = {
         'mesa_vsync_gl_combo': {
             'var_name': 'vblank_mode',
@@ -118,7 +122,6 @@ class GPULaunchManager:
         }
     }
     
-    # Mapping between NVIDIA UI widgets and environment variables
     NVIDIA_ENV_MAPPINGS = {
         'nvidia_vsync_gl_combo': {
             'var_name': '__GL_SYNC_TO_VBLANK',
@@ -166,7 +169,6 @@ class GPULaunchManager:
         }
     }
     
-    # Mapping between Render Selector UI widgets and environment variables
     RENDER_ENV_MAPPINGS = {
         'glx_vendor_combo': {
             'var_name': '__GLX_VENDOR_LIBRARY_NAME',
@@ -187,61 +189,42 @@ class GPULaunchManager:
             'special_handling': 'vulkan_icd'
         }
     }
+
+    @staticmethod
+    def _get_vulkan_icd_options():
+        """
+        Gets available Vulkan ICD (Installable Client Driver) options.
+        Returns:
+            list: Available Vulkan ICD options
+        """
+        icd_dir = "/usr/share/vulkan/icd.d/"
+        options = []
         
-    # Path to the volt script
-    VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
-    
-    # Class variables to store widgets
-    mesa_widgets = {}
-    nvidia_widgets = {}
-    render_selector_widgets = {}
-    launch_options_widgets = {}
-    tray_icon = None
-
-    @staticmethod
-    def create_gpu_apply_button(layout, widgets, button_name):
-        """
-        Creates and adds an apply button to the specified layout.
-        Args:
-            layout: The layout to add the button to
-            widgets: Widget dictionary to store the button reference
-            button_name: Name for the button widget key
-        """
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        widgets[button_name] = QPushButton("Apply")
-        widgets[button_name].setMinimumSize(100, 30)
-        widgets[button_name].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(widgets[button_name])
-        button_layout.addStretch(1)
-        layout.addWidget(button_container)
-
-    @staticmethod
-    def create_launch_apply_button(layout, widgets):
-        """
-        Creates and adds an apply button specifically for the launch options tab.
-        Args:
-            layout: The layout to add the button to
-            widgets: Widget dictionary to store the button reference
-        """
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        widgets['apply_button'] = QPushButton("Apply")
-        widgets['apply_button'].setMinimumSize(100, 30)
-        widgets['apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(widgets['apply_button'])
-        button_layout.addStretch(1)
-        layout.addWidget(button_container)
+        try:
+            icd_files = {}
+            for file in os.listdir(icd_dir):
+                if file.endswith('.json'):
+                    base_name = file[:-5]
+                    
+                    if '.' in base_name:
+                        pure_name = base_name.split('.')[0]
+                        if pure_name not in icd_files:
+                            icd_files[pure_name] = []
+                        icd_files[pure_name].append(os.path.join(icd_dir, file))
+                    else:
+                        if base_name not in icd_files:
+                            icd_files[base_name] = []
+                        icd_files[base_name].append(os.path.join(icd_dir, file))
+            
+            for name, paths in icd_files.items():
+                if 'lvp' in name.lower():
+                    options.append(f"{name} (software rendering)")
+                else:
+                    options.append(name)
+        except OSError:
+            pass
+        
+        return sorted(options)
 
     @staticmethod
     def _create_gpu_settings_tab():
@@ -264,7 +247,6 @@ class GPULaunchManager:
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
         gpu_layout.addWidget(gpu_subtabs)
         
-        # Add apply buttons to each tab
         GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), GPULaunchManager.mesa_widgets, 'mesa_apply_button')
         GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), GPULaunchManager.nvidia_widgets, 'nvidia_apply_button')
         GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
@@ -347,46 +329,25 @@ class GPULaunchManager:
         Returns:
             QWidget: The render selector tab widget
         """
-        # Create the tab using the standardized method
         render_tab, widgets = GPULaunchManager._create_settings_tab(
             GPULaunchManager.RENDER_SETTINGS, 
             "render_selector_apply_button"
         )
         
-        # Store widgets in class variable
         GPULaunchManager.render_selector_widgets.update(widgets)
         
-        # Populate Vulkan ICD options dynamically
         vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
         GPULaunchManager.render_selector_widgets['vulkan_render_combo'].clear()
         GPULaunchManager.render_selector_widgets['vulkan_render_combo'].addItems(vulkan_options)
         GPULaunchManager.render_selector_widgets['vulkan_render_combo'].setCurrentText("unset")
         
-        # Connect GLX vendor change handler
         GPULaunchManager.render_selector_widgets['glx_vendor_combo'].currentTextChanged.connect(
             lambda: GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
         )
         
-        # Set initial state
         GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
 
         return render_tab
-
-    @staticmethod
-    def _handle_glx_vendor_change(widgets):
-        """
-        Handles GLX vendor selection changes to enable/disable Mesa-only options.
-        Args:
-            widgets: Dictionary containing render selector widgets
-        """
-        glx_vendor = widgets['glx_vendor_combo'].currentText()
-        mesa_enabled = glx_vendor == "mesa"
-        
-        # Enable/disable Mesa Select GPU
-        widgets['dri_prime_combo'].setEnabled(mesa_enabled)
-        
-        # Enable/disable OpenGL Software Rendering
-        widgets['libgl_software_combo'].setEnabled(mesa_enabled)
 
     @staticmethod
     def _create_launch_options_tab():
@@ -413,12 +374,10 @@ class GPULaunchManager:
         setting_layout = QVBoxLayout(setting_container)
         setting_layout.setContentsMargins(0, 10, 0, 0)
         
-        # Path/title
         path_label = QLabel("Launch Options:")
         path_label.setWordWrap(True)
         setting_layout.addWidget(path_label)
         
-        # text with examplee
         example_text = "Additional programs and environment variables to launch with the game, arguments are not supported.\nExample: gamemoderun PROTON_USE_WINED3D=1"
 
         text_label = QLabel(example_text)
@@ -426,28 +385,83 @@ class GPULaunchManager:
         text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
         setting_layout.addWidget(text_label)
         
-        # Input widget
         launch_options_input = QLineEdit()
         launch_options_input.setPlaceholderText("enter launch options")
         setting_layout.addWidget(launch_options_input)
         
-        # Add the setting container to scroll layout
         scroll_layout.addWidget(setting_container)
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        # Initialize launch options widgets dictionary
         GPULaunchManager.launch_options_widgets = {
             'launch_options_input': launch_options_input
         }
         
-        # Add apply button
         GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
         
         main_layout.addSpacing(9)
         
         return launch_tab
+
+    @staticmethod
+    def create_gpu_apply_button(layout, widgets, button_name):
+        """
+        Creates and adds an apply button to the specified layout.
+        Args:
+            layout: The layout to add the button to
+            widgets: Widget dictionary to store the button reference
+            button_name: Name for the button widget key
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        widgets[button_name] = QPushButton("Apply")
+        widgets[button_name].setMinimumSize(100, 30)
+        widgets[button_name].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets[button_name])
+        button_layout.addStretch(1)
+        layout.addWidget(button_container)
+
+    @staticmethod
+    def create_launch_apply_button(layout, widgets):
+        """
+        Creates and adds an apply button specifically for the launch options tab.
+        Args:
+            layout: The layout to add the button to
+            widgets: Widget dictionary to store the button reference
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        widgets['apply_button'] = QPushButton("Apply")
+        widgets['apply_button'].setMinimumSize(100, 30)
+        widgets['apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets['apply_button'])
+        button_layout.addStretch(1)
+        layout.addWidget(button_container)
+
+    @staticmethod
+    def _handle_glx_vendor_change(widgets):
+        """
+        Handles GLX vendor selection changes to enable/disable Mesa-only options.
+        Args:
+            widgets: Dictionary containing render selector widgets
+        """
+        glx_vendor = widgets['glx_vendor_combo'].currentText()
+        mesa_enabled = glx_vendor == "mesa"
+        
+        widgets['dri_prime_combo'].setEnabled(mesa_enabled)
+        
+        widgets['libgl_software_combo'].setEnabled(mesa_enabled)
 
     @staticmethod
     def apply_gpu_launch_settings(tray_icon):
@@ -478,111 +492,6 @@ class GPULaunchManager:
                     2000
                 )
             return False
-
-    @staticmethod
-    def _get_vulkan_icd_options():
-        """
-        Gets available Vulkan ICD (Installable Client Driver) options.
-        Returns:
-            list: Available Vulkan ICD options
-        """
-        icd_dir = "/usr/share/vulkan/icd.d/"
-        options = []
-        
-        try:
-            icd_files = {}
-            for file in os.listdir(icd_dir):
-                if file.endswith('.json'):
-                    base_name = file[:-5]
-                    
-                    if '.' in base_name:
-                        pure_name = base_name.split('.')[0]
-                        if pure_name not in icd_files:
-                            icd_files[pure_name] = []
-                        icd_files[pure_name].append(os.path.join(icd_dir, file))
-                    else:
-                        if base_name not in icd_files:
-                            icd_files[base_name] = []
-                        icd_files[base_name].append(os.path.join(icd_dir, file))
-            
-            for name, paths in icd_files.items():
-                if 'lvp' in name.lower():
-                    options.append(f"{name} (software rendering)")
-                else:
-                    options.append(name)
-        except OSError:
-            pass
-        
-        return sorted(options)
-
-    @staticmethod
-    def _generate_render_selector_env_vars(render_widgets):
-        """
-        Generates environment variables for render selector settings.
-        Args:
-            render_widgets: Dictionary containing render selector widgets
-        Returns:
-            list: Generated environment variable strings
-        """
-        env_vars = []
-        
-        # Check GLX vendor for dependency validation
-        glx_vendor = render_widgets.get('glx_vendor_combo', {}).currentText() if 'glx_vendor_combo' in render_widgets else "unset"
-        mesa_enabled = glx_vendor == "mesa"
-        
-        for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
-            if widget_key not in render_widgets:
-                continue
-                
-            widget = render_widgets[widget_key]
-            value = widget.currentText()
-            if value == "unset":
-                continue
-                
-            # Check dependency requirements, skip disabled Mesa only settings
-            if mapping.get('dependency') == 'mesa_only' and not mesa_enabled:
-                continue
-                
-            var_name = mapping['var_name']
-            
-            # Handle special Vulkan ICD case
-            if mapping.get('special_handling') == 'vulkan_icd':
-                vulkan_selection = value
-                if "(software Rendering)" in vulkan_selection:
-                    vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
-                
-                icd_dir = "/usr/share/vulkan/icd.d/"
-                icd_files = []
-                
-                try:
-                    for file in os.listdir(icd_dir):
-                        if file.endswith('.json'):
-                            if '.' in file[:-5]:
-                                base_name = file[:-5].split('.')[0]
-                                if base_name == vulkan_selection:
-                                    icd_files.append(os.path.join(icd_dir, file))
-                            else:
-                                if file[:-5] == vulkan_selection:
-                                    icd_files.append(os.path.join(icd_dir, file))
-                except OSError:
-                    pass
-                
-                if icd_files:
-                    driver_paths = ":".join(icd_files)
-                    env_vars.append(f'export {var_name}="{driver_paths}"')
-                    env_vars.append('export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"')
-            
-            # Handle direct value mapping
-            elif mapping.get('direct_value', False):
-                env_vars.append(f'export {var_name}="{value}"')
-            
-            # Handle value mapping
-            else:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    env_vars.append(f'export {var_name}="{mapped_value}"')
-        
-        return env_vars
 
     @staticmethod
     def _generate_mesa_script_content(mesa_widgets):
@@ -643,6 +552,70 @@ class GPULaunchManager:
                 env_vars.append(f'export {var_name}="{bytes_value}"')
             elif mapping.get('direct_value', False):
                 env_vars.append(f'export {var_name}="{value}"')
+            else:
+                mapped_value = mapping['values'].get(value)
+                if mapped_value:
+                    env_vars.append(f'export {var_name}="{mapped_value}"')
+        
+        return env_vars
+
+    @staticmethod
+    def _generate_render_selector_env_vars(render_widgets):
+        """
+        Generates environment variables for render selector settings.
+        Args:
+            render_widgets: Dictionary containing render selector widgets
+        Returns:
+            list: Generated environment variable strings
+        """
+        env_vars = []
+        
+        glx_vendor = render_widgets.get('glx_vendor_combo', {}).currentText() if 'glx_vendor_combo' in render_widgets else "unset"
+        mesa_enabled = glx_vendor == "mesa"
+        
+        for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
+            if widget_key not in render_widgets:
+                continue
+                
+            widget = render_widgets[widget_key]
+            value = widget.currentText()
+            if value == "unset":
+                continue
+                
+            if mapping.get('dependency') == 'mesa_only' and not mesa_enabled:
+                continue
+                
+            var_name = mapping['var_name']
+            
+            if mapping.get('special_handling') == 'vulkan_icd':
+                vulkan_selection = value
+                if "(software Rendering)" in vulkan_selection:
+                    vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
+                
+                icd_dir = "/usr/share/vulkan/icd.d/"
+                icd_files = []
+                
+                try:
+                    for file in os.listdir(icd_dir):
+                        if file.endswith('.json'):
+                            if '.' in file[:-5]:
+                                base_name = file[:-5].split('.')[0]
+                                if base_name == vulkan_selection:
+                                    icd_files.append(os.path.join(icd_dir, file))
+                            else:
+                                if file[:-5] == vulkan_selection:
+                                    icd_files.append(os.path.join(icd_dir, file))
+                except OSError:
+                    pass
+                
+                if icd_files:
+                    driver_paths = ":".join(icd_files)
+                    env_vars.append(f'export {var_name}="{driver_paths}"')
+                    env_vars.append('export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"')
+            
+            elif mapping.get('direct_value', False):
+                env_vars.append(f'export {var_name}="{value}"')
+            
             else:
                 mapped_value = mapping['values'].get(value)
                 if mapped_value:

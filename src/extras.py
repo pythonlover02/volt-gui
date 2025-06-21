@@ -12,30 +12,6 @@ class ExtrasManager:
     Provides methods to create UI elements and handle link opening.
     """
     
-    def create_extras_tab(self):
-        """
-        Creates and returns the extras tab widget with subtabs for links and programs.
-        Returns:
-            tuple: (QWidget, QTabWidget) The main tab widget and subtabs widget
-        """
-        extras_tab = QWidget()
-        extras_layout = QVBoxLayout(extras_tab)
-        extras_layout.setSpacing(10)
-        
-        extras_subtabs = QTabWidget()
-        useful_links_tab = self._create_scrollable_tab(
-            self._get_useful_links()
-        )
-        useful_programs_tab = self._create_scrollable_tab(
-            self._get_useful_programs()
-        )
-        
-        extras_subtabs.addTab(useful_links_tab, "Useful Links")
-        extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
-        extras_layout.addWidget(extras_subtabs)
-        
-        return extras_tab, extras_subtabs
-    
     def _get_useful_links(self):
         """
         Returns a list of dictionaries containing useful link information.
@@ -133,6 +109,30 @@ class ExtrasManager:
                 "url": "https://github.com/HansKristian-Work/vkd3d-proton"
             },
         ]
+    
+    def create_extras_tab(self):
+        """
+        Creates and returns the extras tab widget with subtabs for links and programs.
+        Returns:
+            tuple: (QWidget, QTabWidget) The main tab widget and subtabs widget
+        """
+        extras_tab = QWidget()
+        extras_layout = QVBoxLayout(extras_tab)
+        extras_layout.setSpacing(10)
+        
+        extras_subtabs = QTabWidget()
+        useful_links_tab = self._create_scrollable_tab(
+            self._get_useful_links()
+        )
+        useful_programs_tab = self._create_scrollable_tab(
+            self._get_useful_programs()
+        )
+        
+        extras_subtabs.addTab(useful_links_tab, "Useful Links")
+        extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
+        extras_layout.addWidget(extras_subtabs)
+        
+        return extras_tab, extras_subtabs
     
     def _create_scrollable_tab(self, items):
         """

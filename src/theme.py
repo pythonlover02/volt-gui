@@ -4,13 +4,7 @@ from PySide6.QtWidgets import QApplication
 
 
 class ThemeManager:
-    """
-    Manages application themes including colors, stylesheets and palettes.    
-    Provides class methods to apply themes, get style information, and manage
-    theme-related settings across the application.
-    """
     
-    # AMD brand color scheme
     AMD_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -25,7 +19,6 @@ class ThemeManager:
         'selection_bg': "#FF0000",
     }
     
-    # Intel brand color scheme
     INTEL_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -40,7 +33,6 @@ class ThemeManager:
         'selection_bg': "#0071C5",
     }
     
-    # NVIDIA brand color scheme
     NVIDIA_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -55,7 +47,6 @@ class ThemeManager:
         'selection_bg': "#76B900",
     }
     
-    # Available themes mapping
     THEMES = {
         "amd": AMD_COLORS,
         "intel": INTEL_COLORS,
@@ -64,21 +55,20 @@ class ThemeManager:
     
     @classmethod
     def set_theme(cls, theme_name):
-        """
-        Set the current application theme.
-        Args:
-            theme_name: Name of the theme to set (amd, intel, nvidia)
-        """
         cls.COLORS = cls.THEMES[theme_name]
         cls.CURRENT_THEME = theme_name
+    
+    @classmethod
+    def apply_theme(cls, app, theme_name):
+        if theme_name:
+            cls.set_theme(theme_name)
+            
+        if app:
+            app.setStyleSheet(cls.get_theme_style_sheet())
+            app.setPalette(cls.get_theme_palette())
             
     @classmethod
     def get_theme_style_sheet(cls):
-        """
-        Generate the Qt stylesheet for the current theme.
-        Returns:
-            str: CSS-like stylesheet string for the current theme
-        """
         c = cls.COLORS
         return f"""
         /* Base widget styling */
@@ -420,33 +410,23 @@ class ThemeManager:
 
     @classmethod
     def get_theme_palette(cls):
-        """
-        Generate the QPalette for the current theme.
-        Returns:
-            QPalette: Configured palette for the current theme
-        """
         palette = QPalette()
         c = cls.COLORS
         
-        # Window and base colors
         palette.setColor(QPalette.Window, QColor(c['bg_color']))
         palette.setColor(QPalette.WindowText, QColor(c['text_color']))
         palette.setColor(QPalette.Base, QColor(c['surface_bg']))
         palette.setColor(QPalette.AlternateBase, QColor(c['lighter_bg']))
         
-        # Text colors
         palette.setColor(QPalette.Text, QColor(c['text_color']))
         palette.setColor(QPalette.BrightText, QColor("#FFFFFF"))
         
-        # Button colors
         palette.setColor(QPalette.Button, QColor(c['surface_bg']))
         palette.setColor(QPalette.ButtonText, QColor(c['text_color']))
         
-        # Highlight and selection colors
         palette.setColor(QPalette.Highlight, QColor(c['accent_color']))
         palette.setColor(QPalette.HighlightedText, QColor("#FFFFFF"))
         
-        # Disabled state colors
         palette.setColor(QPalette.Disabled, QPalette.Text, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(c['disabled_text']))
@@ -455,18 +435,3 @@ class ThemeManager:
         palette.setColor(QPalette.Disabled, QPalette.Button, QColor(c['darker_bg']))
         
         return palette
-
-    @classmethod
-    def apply_theme(cls, app, theme_name):
-        """
-        Apply the specified theme to the application.
-        Args:
-            app: QApplication instance to apply the theme to
-            theme_name: Name of the theme to apply
-        """
-        if theme_name:
-            cls.set_theme(theme_name)
-            
-        if app:
-            app.setStyleSheet(cls.get_theme_style_sheet())
-            app.setPalette(cls.get_theme_palette())
