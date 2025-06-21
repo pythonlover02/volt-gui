@@ -12,12 +12,18 @@ class ConfigManager:
     
     @staticmethod
     def get_config_path():
+        """
+        Get the configuration file path, creating directories if needed.
+        """
         config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
         config_dir.mkdir(parents=True, exist_ok=True)
         return config_dir / "volt-config.ini"
     
     @staticmethod
     def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
+        """
+        Save all widget settings to the configuration file.
+        """
         config = configparser.ConfigParser()
         
         config['CPU'] = {
@@ -67,6 +73,9 @@ class ConfigManager:
     
     @staticmethod
     def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
+        """
+        Load settings from configuration file and apply to widgets.
+        """
         config = configparser.ConfigParser()
         config_path = ConfigManager.get_config_path()
         

@@ -28,6 +28,9 @@ from config import ConfigManager
 
 
 def check_sudo_execution():
+    """
+    Check if the application is run with sudo and exit if it is.
+    """
     if os.environ.get('SUDO_USER'):
         print("Error: This application should not be run with sudo.")
         print("Please run as a regular user. The application will request")
@@ -36,11 +39,20 @@ def check_sudo_execution():
 
 
 class SingletonSignals(QObject):
+    """
+    Qt signals for singleton communication.
+    """
     show_window = Signal()
 
 
 class SingleInstanceChecker:
+    """
+    Ensures only one instance of the application runs at a time.
+    """
     def __init__(self, port=47832):
+        """
+        Initialize the single instance checker with a specific port.
+        """
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = ('localhost', self.port)
@@ -49,6 +61,9 @@ class SingleInstanceChecker:
         self.running = False
         
     def is_already_running(self):
+        """
+        Check if another instance is already running.
+        """
         try:
             self.sock.bind(self.server_address)
             self.start_listener()
@@ -58,12 +73,18 @@ class SingleInstanceChecker:
             return True
     
     def start_listener(self):
+        """
+        Start listening for signals from other instances.
+        """
         self.sock.listen(1)
         self.running = True
         self.listener_thread = threading.Thread(target=self.listen_for_signals, daemon=True)
         self.listener_thread.start()
     
     def listen_for_signals(self):
+        """
+        Listen for incoming connections from other instances.
+        """
         while self.running:
             try:
                 connection, _ = self.sock.accept()
@@ -75,6 +96,9 @@ class SingleInstanceChecker:
                 break
     
     def signal_first_instance(self):
+        """
+        Signal the first instance to show its window.
+        """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect(self.server_address)
@@ -82,6 +106,9 @@ class SingleInstanceChecker:
             pass
     
     def cleanup(self):
+        """
+        Clean up the socket connection.
+        """
         self.running = False
         try:
             self.sock.close()
@@ -90,7 +117,13 @@ class SingleInstanceChecker:
 
 
 class MainWindow(QMainWindow):
+    """
+    Main application window with all tabs and functionality.
+    """
     def __init__(self, instance_checker):
+        """
+        Initialize the main window with all components.
+        """
         super().__init__()
         self.instance_checker = instance_checker
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
@@ -131,6 +164,9 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, self.show_and_activate)
 
     def load_options_settings(self):
+        """
+        Load options settings from configuration file.
+        """
         config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         
         if not config_path.exists():
@@ -162,6 +198,9 @@ class MainWindow(QMainWindow):
             print(f"Warning: Failed to load options settings: {e}")
 
     def load_saved_settings(self):
+        """
+        Load previously saved settings from configuration file.
+        """
         try:
             ConfigManager.load_settings(
                 self.cpu_widgets, 
@@ -173,6 +212,9 @@ class MainWindow(QMainWindow):
             print(f"Warning: Failed to load settings: {e}")
     
     def save_settings(self):
+        """
+        Save current settings to configuration file.
+        """
         try:
             ConfigManager.save_settings(
                 self.cpu_widgets, 
@@ -184,6 +226,9 @@ class MainWindow(QMainWindow):
             print(f"Warning: Failed to save settings: {e}")
 
     def setup_ui(self):
+        """
+        Set up the main user interface with all tabs.
+        """
         central_widget = QWidget()
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -206,6 +251,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
     
     def setup_cpu_tab(self):
+        """
+        Set up the CPU management tab.
+        """
         cpu_tab, self.cpu_widgets = CPUManager.create_cpu_tab()
         
         if 'cpu_apply_button' in self.cpu_widgets:
@@ -216,6 +264,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(cpu_tab, "CPU")
     
     def setup_disk_tab(self):
+        """
+        Set up the disk management tab.
+        """
         disk_tab, self.disk_widgets = DiskManager.create_disk_tab()
         
         if 'disk_apply_button' in self.disk_widgets:
@@ -226,6 +277,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(disk_tab, "Disk")
     
     def setup_gpu_tab(self):
+        """
+        Set up the GPU management tab.
+        """
         gpu_tab, gpu_subtabs = GPULaunchManager._create_gpu_settings_tab()
         
         self.gpu_manager.mesa_widgets = GPULaunchManager.mesa_widgets
@@ -244,6 +298,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(gpu_tab, "GPU")
     
     def setup_launch_options_tab(self):
+        """
+        Set up the launch options tab.
+        """
         launch_options_tab = GPULaunchManager._create_launch_options_tab()
         
         if hasattr(self.gpu_manager, 'launch_options_widgets') and 'apply_button' in self.gpu_manager.launch_options_widgets:
@@ -252,6 +309,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(launch_options_tab, "Launch Options")
     
     def setup_kernel_tab(self):
+        """
+        Set up the kernel management tab.
+        """
         kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab(self)
         
         if 'kernel_apply_button' in self.kernel_widgets:
@@ -267,10 +327,16 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(kernel_tab, "Kernel")
     
     def setup_extras_tab(self):
+        """
+        Set up the extras/additional features tab.
+        """
         extras_tab, _ = self.extras_manager.create_extras_tab()
         self.tab_widget.addTab(extras_tab, "Extras")
 
     def setup_system_tray(self):
+        """
+        Set up the system tray icon and menu.
+        """
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
             
@@ -297,6 +363,9 @@ class MainWindow(QMainWindow):
             self.gpu_manager.tray_icon = self.tray_icon
 
     def setup_refresh_timer(self):
+        """
+        Set up the timer for periodic value refresh.
+        """
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.refresh_cpu_values)
         self.refresh_timer.timeout.connect(self.refresh_disk_values)
@@ -304,26 +373,44 @@ class MainWindow(QMainWindow):
         self.refresh_timer.start(5000)
 
     def update_quit_behavior(self):
+        """
+        Update application quit behavior based on tray usage.
+        """
         app = QApplication.instance()
         if app:
             app.setQuitOnLastWindowClosed(not self.use_system_tray)
 
     def apply_dark_theme(self):
+        """
+        Apply the default dark theme to the application.
+        """
         ThemeManager.apply_theme(QApplication.instance(), "amd")
 
     def show_and_activate(self):
+        """
+        Show the window and bring it to the foreground.
+        """
         self.showMaximized()
         self.activateWindow()
         self.raise_()
 
     def handle_show_window_signal(self):
+        """
+        Handle the signal to show the window from another instance.
+        """
         self.show_and_activate()
 
     def tray_icon_activated(self, reason):
+        """
+        Handle system tray icon activation events.
+        """
         if reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
             self.hide() if self.isVisible() else self.show_and_activate()
 
     def changeEvent(self, event):
+        """
+        Handle window state change events.
+        """
         if event.type() == QEvent.WindowStateChange and self.isMinimized():
             event.ignore()
             self.hide()
@@ -332,6 +419,9 @@ class MainWindow(QMainWindow):
         super().changeEvent(event)
 
     def eventFilter(self, obj, event):
+        """
+        Filter events for specific widgets.
+        """
         if event.type() == QEvent.FocusOut:
             if hasattr(KernelManager, 'KERNEL_SETTINGS'):
                 for setting_name in KernelManager.KERNEL_SETTINGS.keys():
@@ -341,27 +431,48 @@ class MainWindow(QMainWindow):
         return super().eventFilter(obj, event)
 
     def refresh_cpu_values(self):
+        """
+        Refresh CPU related values in the interface.
+        """
         CPUManager.refresh_cpu_values(self.cpu_widgets)
     
     def refresh_disk_values(self):
+        """
+        Refresh disk related values in the interface.
+        """
         DiskManager.refresh_disk_values(self.disk_widgets)
     
     def refresh_kernel_values(self):
+        """
+        Refresh kernel related values in the interface.
+        """
         KernelManager.refresh_kernel_values(self.kernel_widgets)
 
     def apply_cpu_settings(self):
+        """
+        Apply CPU settings and save configuration.
+        """
         CPUManager.apply_cpu_settings(self.cpu_widgets, self)
         self.save_settings()
     
     def apply_disk_settings(self):
+        """
+        Apply disk settings and save configuration.
+        """
         DiskManager.apply_disk_settings(self.disk_widgets, self)
         self.save_settings()
     
     def apply_kernel_settings(self):
+        """
+        Apply kernel settings and save configuration.
+        """
         KernelManager.apply_kernel_settings(self.kernel_widgets, self)
         self.save_settings()
     
     def apply_gpu_settings(self):
+        """
+        Apply GPU and launch settings and save configuration.
+        """
         if hasattr(GPULaunchManager, 'mesa_widgets'):
             GPULaunchManager.mesa_widgets = self.gpu_manager.mesa_widgets
         if hasattr(GPULaunchManager, 'nvidia_widgets'):
@@ -375,6 +486,9 @@ class MainWindow(QMainWindow):
             self.save_settings()
 
     def quit_application(self):
+        """
+        Quit the application and restore settings if configured.
+        """
         if self.restore_cpu_on_close:
             CPUManager.restore_cpu_settings(self.cpu_widgets)
         
@@ -390,6 +504,9 @@ class MainWindow(QMainWindow):
 
 
 def main():
+    """
+    Main application entry point.
+    """
     check_sudo_execution()
 
     app = QApplication(sys.argv)

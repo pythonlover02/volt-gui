@@ -4,6 +4,9 @@ from PySide6.QtWidgets import QApplication
 
 
 class ThemeManager:
+    """
+    Defines the application themes.
+    """
     
     AMD_COLORS = {
         'bg_color': "#1A1A1A",
@@ -55,11 +58,17 @@ class ThemeManager:
     
     @classmethod
     def set_theme(cls, theme_name):
+        """
+        Set the current theme colors and name.
+        """
         cls.COLORS = cls.THEMES[theme_name]
         cls.CURRENT_THEME = theme_name
     
     @classmethod
     def apply_theme(cls, app, theme_name):
+        """
+        Apply the specified theme to the application.
+        """
         if theme_name:
             cls.set_theme(theme_name)
             
@@ -69,6 +78,9 @@ class ThemeManager:
             
     @classmethod
     def get_theme_style_sheet(cls):
+        """
+        Generate the complete stylesheet for the current theme.
+        """
         c = cls.COLORS
         return f"""
         /* Base widget styling */
@@ -410,6 +422,9 @@ class ThemeManager:
 
     @classmethod
     def get_theme_palette(cls):
+        """
+        Create a QPalette with theme colors for the application.
+        """
         palette = QPalette()
         c = cls.COLORS
         
