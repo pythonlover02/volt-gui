@@ -513,11 +513,6 @@ def main():
     app.setStyle("Fusion")
     app.setQuitOnLastWindowClosed(False)
     
-    if len(sys.argv) > 1:
-        scheduler_name = sys.argv[0].split('/')[-1]
-        if scheduler_name in ["scx_bpfland", "scx_flash", "scx_lavd", "scx_rusty"]:
-            sys.exit(subprocess.run([scheduler_name] + sys.argv[1:]).returncode)
-    
     instance_checker = SingleInstanceChecker()
     if instance_checker.is_already_running():
         QMessageBox.information(None, "volt-gui", "The application is already running and will be displayed.")
