@@ -155,25 +155,6 @@ class KernelManager:
             return "Error"
 
     @staticmethod
-    def _get_dynamic_possible_values(setting_path):
-        """
-        Gets all possible values for a dynamic setting (removes brackets).
-        Args:
-            setting_path: Path to the dynamic setting file
-        Returns:
-            str: Space-separated possible values or "Error" if reading fails
-        """
-        try:
-            with open(setting_path, 'r') as f:
-                content = f.read().strip()
-            
-            import re
-            content = re.sub(r'[\[\]]', '', content)
-            return content
-        except Exception:
-            return "Error"
-
-    @staticmethod
     def create_kernel_tab(main_window):
         """
         Creates and returns the kernel settings tab widget.
