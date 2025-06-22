@@ -116,10 +116,34 @@ Simply launch volt-gui from your application menu or run `volt-gui` from the ter
 
 ## How to use the `volt` script:
 
-The `GPU` and `Launch Options` settings are saved on the `volt` script, this script must be called on your launcher launch options or before the program, example for Steam:
+The `GPU` and `Launch Options` settings are saved on the `volt` script. Here are some examples of its usage:
+
+### Native Programs:
+
+When using the terminal or a custom desktop entry:
 
 ```
+volt glxgears
+```
+
+When using a Launcher to play your game, you can just add it to the game launch options, like this:
+
+Steam (Native):
+```
 volt %command%
+```
+
+Lutris (Native):
+```
+volt
+```
+
+### Flatpak:
+
+When using the terminal or a custom desktop entry:
+
+```
+volt flatpak run net.pcsx2.PCSX2
 ```
 
 ## GPU Selector explained:

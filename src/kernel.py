@@ -1,7 +1,7 @@
 import subprocess
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-    QScrollArea, QSizePolicy, QLineEdit, QFrame
+    QScrollArea, QSizePolicy, QLineEdit, QFrame, QSystemTrayIcon
 )
 from PySide6.QtCore import Qt, QProcess
 
@@ -13,7 +13,6 @@ class KernelManager:
     and handle privilege escalation for system modifications.
     """
     
-    # kernel settings dictionary with descriptive text and recommended values
     KERNEL_SETTINGS = {
         'compaction_proactiveness': {
             'path': '/proc/sys/vm/compaction_proactiveness',
@@ -118,6 +117,63 @@ class KernelManager:
     }
 
     @staticmethod
+    def _get_current_value(setting_path):
+        """
+        Gets the current value of a kernel setting.
+        Args:
+            setting_path: Path to the kernel setting file
+        Returns:
+            str: Current value or "Error" if reading fails
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                return f.read().strip()
+        except Exception:
+            return "Error"
+
+    @staticmethod
+    def _get_dynamic_current_value(setting_path):
+        """
+        Gets the current value of a dynamic setting (extracts value in brackets).
+        Args:
+            setting_path: Path to the dynamic setting file
+        Returns:
+            str: Current value (from brackets) or "Error" if reading fails
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                content = f.read().strip()
+            
+            import re
+            match = re.search(r'\[([^\]]+)\]', content)
+            if match:
+                return match.group(1)
+            else:
+                values = content.split()
+                return values[0] if values else "Error"
+        except Exception:
+            return "Error"
+
+    @staticmethod
+    def _get_dynamic_possible_values(setting_path):
+        """
+        Gets all possible values for a dynamic setting (removes brackets).
+        Args:
+            setting_path: Path to the dynamic setting file
+        Returns:
+            str: Space-separated possible values or "Error" if reading fails
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                content = f.read().strip()
+            
+            import re
+            content = re.sub(r'[\[\]]', '', content)
+            return content
+        except Exception:
+            return "Error"
+
+    @staticmethod
     def create_kernel_tab(main_window):
         """
         Creates and returns the kernel settings tab widget.
@@ -139,7 +195,6 @@ class KernelManager:
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Add all kernel settings
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
             KernelManager._create_setting_section(
                 scroll_layout, 
@@ -153,6 +208,10 @@ class KernelManager:
         kernel_layout.addWidget(scroll_area)
         
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
+        
+        widgets['kernel_settings_applied'] = False
+        widgets['is_process_running'] = False
+        widgets['process'] = None
         
         return kernel_tab, widgets
 
@@ -178,7 +237,6 @@ class KernelManager:
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
         
-        # Add descriptive text label
         text_label = QLabel(setting_info['text'])
         text_label.setWordWrap(True)
         text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
@@ -235,75 +293,16 @@ class KernelManager:
             widgets[f'{name}_current_value'].setText(f"current value: {current}")
 
     @staticmethod
-    def _get_current_value(setting_path):
-        """
-        Gets the current value of a kernel setting.
-        Args:
-            setting_path: Path to the kernel setting file
-        Returns:
-            str: Current value or "Error" if reading fails
-        """
-        try:
-            with open(setting_path, 'r') as f:
-                return f.read().strip()
-        except Exception:
-            return "Error"
-
-    @staticmethod
-    def _get_dynamic_current_value(setting_path):
-        """
-        Gets the current value of a dynamic setting (extracts value in brackets).
-        Args:
-            setting_path: Path to the dynamic setting file
-        Returns:
-            str: Current value (from brackets) or "Error" if reading fails
-        """
-        try:
-            with open(setting_path, 'r') as f:
-                content = f.read().strip()
-            
-            # Extract value in brackets
-            import re
-            match = re.search(r'\[([^\]]+)\]', content)
-            if match:
-                return match.group(1)
-            else:
-                # If no brackets found, return first value as fallback
-                values = content.split()
-                return values[0] if values else "Error"
-        except Exception:
-            return "Error"
-
-    @staticmethod
-    def _get_dynamic_possible_values(setting_path):
-        """
-        Gets all possible values for a dynamic setting (removes brackets).
-        Args:
-            setting_path: Path to the dynamic setting file
-        Returns:
-            str: Space-separated possible values or "Error" if reading fails
-        """
-        try:
-            with open(setting_path, 'r') as f:
-                content = f.read().strip()
-            
-            # Remove brackets and return all values
-            import re
-            content = re.sub(r'[\[\]]', '', content)
-            return content
-        except Exception:
-            return "Error"
-
-    @staticmethod
     def check_if_kernel_settings_already_applied(widgets):
         """
         Check if the kernel settings that have values entered are already applied.
         Args:
             widgets: Dictionary containing UI widgets with entered values
         Returns:
-            bool: True if all non-empty settings match current values, False otherwise
+            tuple: (bool, str) - (settings_already_applied, message)
         """
-        settings_to_check = []
+        entered_settings = []
+        current_values = []
         
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             value = widgets[f'{name}_input'].text().strip()
@@ -313,16 +312,19 @@ class KernelManager:
                 else:
                     current_value = KernelManager._get_current_value(info['path'])
                 
-                if current_value != "Error" and current_value != value:
-                    return False
-                settings_to_check.append((name, value, current_value))
+                entered_settings.append((name, value))
+                current_values.append((name, current_value))
         
-        # If no settings have values entered, return False (nothing to apply)
-        if not settings_to_check:
-            return False
-            
-        # All settings with values match current values
-        return True
+        all_settings_match = True
+        for (name, entered_val), (_, current_val) in zip(entered_settings, current_values):
+            if current_val == "Error" or current_val != entered_val:
+                all_settings_match = False
+                break
+        
+        if all_settings_match and entered_settings:
+            return True, "Kernel settings already applied"
+        else:
+            return False, "Kernel settings need to be applied"
 
     @staticmethod
     def apply_kernel_settings(widgets, main_window):
@@ -332,11 +334,13 @@ class KernelManager:
             widgets: Dictionary containing UI widgets with new values
             main_window: Optional reference to main window for showing notifications
         """
+        if widgets['is_process_running']:
+            return
+
         try:
             settings = []
             originals = {}
             
-            # Collect kernel settings that have values entered
             for name, info in KernelManager.KERNEL_SETTINGS.items():
                 value = widgets[f'{name}_input'].text().strip()
                 if value:
@@ -347,59 +351,36 @@ class KernelManager:
                         originals[name] = KernelManager._get_current_value(path)
                     settings.append(f"{path}:{value}")
             
-            # If no settings to apply, show notification and return early
-            if not settings:
+            already_applied, message = KernelManager.check_if_kernel_settings_already_applied(widgets)
+            
+            if already_applied:
                 if main_window and hasattr(main_window, 'tray_icon'):
                     main_window.tray_icon.showMessage(
-                        "volt-gui",
-                        "No kernel settings to apply",
-                        main_window.tray_icon.MessageIcon.Information,
+                        "volt-gui", 
+                        message, 
+                        QSystemTrayIcon.MessageIcon.Information, 
                         2000
                     )
                 return
             
-            # Check if settings are already applied
-            if KernelManager.check_if_kernel_settings_already_applied(widgets):
-                if main_window and hasattr(main_window, 'tray_icon'):
-                    main_window.tray_icon.showMessage(
-                        "volt-gui",
-                        "Kernel settings already applied",
-                        main_window.tray_icon.MessageIcon.Information,
-                        2000
-                    )
-                return
+            widgets['original_values'] = originals
             
-            # Apply the settings
-            process = QProcess()
-            process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + settings)
-            process.waitForFinished()
+            widgets['kernel_apply_button'].setEnabled(False)
+            widgets['process'] = QProcess()
+            widgets['process'].start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + settings)
+            widgets['process'].finished.connect(
+                lambda: KernelManager._on_process_finished(widgets, main_window)
+            )
+            widgets['is_process_running'] = True
+            widgets['kernel_settings_applied'] = True
             
-            if process.exitCode() == 0:
-                # Store original values for restoration
-                widgets['original_values'] = originals
-                
-                if main_window and hasattr(main_window, 'tray_icon'):
-                    main_window.tray_icon.showMessage(
-                        "volt-gui",
-                        "Kernel settings applied successfully",
-                        main_window.tray_icon.MessageIcon.Information,
-                        2000
-                    )
-            else:
-                if main_window and hasattr(main_window, 'tray_icon'):
-                    main_window.tray_icon.showMessage(
-                        "volt-gui",
-                        "Failed to apply kernel settings",
-                        main_window.tray_icon.MessageIcon.Critical,
-                        2000
-                    )
         except Exception as e:
             print(f"Apply error: {str(e)}")
             if main_window and hasattr(main_window, 'tray_icon'):
                 main_window.tray_icon.showMessage(
                     "volt-gui",
-                    f"Error applying kernel settings: {str(e)}",
-                    main_window.tray_icon.MessageIcon.Critical,
+                    f"Error applying Kernel settings: {str(e)}",
+                    QSystemTrayIcon.MessageIcon.Critical,
                     2000
                 )
 
@@ -410,24 +391,50 @@ class KernelManager:
         Args:
             widgets: Dictionary containing UI widgets and original values
         """
-        if 'original_values' not in widgets:
-            return
-            
-        try:
-            originals = widgets['original_values']
-            restore = []
-            
-            # Restore kernel settings
-            for name, val in originals.items():
-                if name in KernelManager.KERNEL_SETTINGS:
-                    restore.append(f"{KernelManager.KERNEL_SETTINGS[name]['path']}:{val}")
-            
-            process = QProcess()
-            process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + restore)
-            process.waitForFinished()
-            
-            if process.exitCode() == 0:
-                del widgets['original_values']
+        if widgets['kernel_settings_applied'] and 'original_values' in widgets:
+            try:
+                originals = widgets['original_values']
+                restore = []
+                
+                for name, val in originals.items():
+                    if name in KernelManager.KERNEL_SETTINGS:
+                        restore.append(f"{KernelManager.KERNEL_SETTINGS[name]['path']}:{val}")
+                
+                process = QProcess()
+                process.start("pkexec", ["/usr/local/bin/volt-helper", "-k"] + restore)
+                process.waitForFinished()
+                
+                if process.exitCode() == 0:
+                    del widgets['original_values']
 
-        except Exception as e:
-            print(f"Restore error: {str(e)}")
+            except Exception as e:
+                print(f"Restore error: {str(e)}")
+
+    @staticmethod
+    def _on_process_finished(widgets, main_window):
+        """
+        Handle process completion.
+        Args:
+            widgets: Dictionary containing UI widgets
+            main_window: Reference to main window for notifications
+        """
+        widgets['is_process_running'] = False
+        widgets['kernel_apply_button'].setEnabled(True)
+        
+        exit_code = 0
+        if widgets['process']:
+            exit_code = widgets['process'].exitCode()
+        
+        KernelManager.refresh_kernel_values(widgets)
+        
+        if main_window and hasattr(main_window, 'tray_icon'):
+            main_window.tray_icon.showMessage(
+                "volt-gui", 
+                "Kernel settings applied successfully" if exit_code == 0 else "Failed to apply kernel settings",
+                QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
+                2000
+            )
+        
+        if widgets['process']:
+            widgets['process'].deleteLater()
+            widgets['process'] = None

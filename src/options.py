@@ -27,7 +27,90 @@ class OptionsManager:
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         self.widgets = {}
         self.main_window = main_window
+
+    def load_settings(self):
+        """
+        Load settings from the configuration file.
+        Reads settings from the config file and updates the UI widgets.
+        If no config file exists, creates one with default values.
+        """
+        self.widgets['theme_combo'].setCurrentText("amd")
+        self.widgets['tray_combo'].setCurrentText("enable")
+        self.widgets['transparency_combo'].setCurrentText("enable")
+        self.widgets['start_minimized_combo'].setCurrentText("disable")
+        self.widgets['restore_cpu_combo'].setCurrentText("enable")
+        self.widgets['restore_kernel_combo'].setCurrentText("enable")
+        self.widgets['restore_disk_combo'].setCurrentText("enable")
         
+        if not self.config_path.exists():
+            self.save_settings()
+            return
+            
+        config = configparser.ConfigParser()
+        config.read(self.config_path)
+        
+        if 'Theme' in config and 'selected_theme' in config['Theme']:
+            self.widgets['theme_combo'].setCurrentText(config['Theme']['selected_theme'])
+            
+        if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
+            self.widgets['tray_combo'].setCurrentText(config['SystemTray']['run_in_tray'])
+            
+        if 'Appearance' in config and 'transparency' in config['Appearance']:
+            self.widgets['transparency_combo'].setCurrentText(config['Appearance']['transparency'])
+        
+        if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
+            self.widgets['start_minimized_combo'].setCurrentText(
+                config['StartupBehavior'].get('start_minimized', 'disable')
+            )
+            
+        if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
+            self.widgets['restore_cpu_combo'].setCurrentText(
+                config['CPUBehavior']['restore_on_close']
+            )
+            
+        if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
+            self.widgets['restore_kernel_combo'].setCurrentText(
+                config['KernelBehavior']['restore_on_close']
+            )
+        if 'DiskBehavior' in config and 'restore_on_close' in config['DiskBehavior']:
+            self.widgets['restore_disk_combo'].setCurrentText(
+                config['DiskBehavior']['restore_on_close']
+            )
+        
+        self.apply_system_tray_settings()
+        self.apply_transparency_settings()
+        self.apply_theme_settings()
+        self.apply_start_minimized_settings()
+        self.apply_restore_cpu_settings()
+        self.apply_restore_kernel_settings()
+        self.apply_restore_disk_settings()
+
+    def create_option_apply_button(self, parent_layout):
+        """
+        Create and setup the apply button for options.
+        Args:
+            parent_layout: The layout to add the button container to
+        Returns:
+            QPushButton: The created apply button
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(10, 10, 10, 0)
+
+        apply_button = QPushButton("Apply")
+        apply_button.setMinimumSize(100, 30)
+        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(apply_button)
+        button_layout.addStretch(1)
+        
+        parent_layout.addWidget(button_container)
+        parent_layout.addSpacing(9)
+        
+        return apply_button
+
     def save_settings(self):
         """
         Save current settings to the configuration file.
@@ -72,7 +155,16 @@ class OptionsManager:
             self.apply_restore_cpu_settings()
             self.apply_restore_kernel_settings()
             self.apply_restore_disk_settings()
-            
+
+    def apply_theme_settings(self):
+        """
+        Apply the selected theme to the application.
+        """
+        if self.main_window:
+            theme_name = self.widgets['theme_combo'].currentText()
+            ThemeManager.apply_theme(QApplication.instance(), theme_name)
+            print(f"Theme setting applied: {theme_name}")
+
     def apply_system_tray_settings(self):
         """
         Apply system tray settings to the main window.
@@ -108,16 +200,7 @@ class OptionsManager:
             else:
                 self.main_window.setWindowOpacity(1.0)
             print(f"Transparency setting applied: {transparency_enabled}")
-            
-    def apply_theme_settings(self):
-        """
-        Apply the selected theme to the application.
-        """
-        if self.main_window:
-            theme_name = self.widgets['theme_combo'].currentText()
-            ThemeManager.apply_theme(QApplication.instance(), theme_name)
-            print(f"Theme setting applied: {theme_name}")
-    
+
     def apply_start_minimized_settings(self):
         """
         Apply the start minimized setting to the application.
@@ -135,7 +218,7 @@ class OptionsManager:
             restore_cpu = self.widgets['restore_cpu_combo'].currentText() == 'enable'
             self.main_window.restore_cpu_on_close = restore_cpu
             print(f"CPU restore setting applied: {restore_cpu}")
-    
+
     def apply_restore_kernel_settings(self):
         """
         Apply the kernel restore on close setting.
@@ -153,92 +236,6 @@ class OptionsManager:
             restore_disk = self.widgets['restore_disk_combo'].currentText() == 'enable'
             self.main_window.restore_disk_on_close = restore_disk
             print(f"Disk restore setting applied: {restore_disk}")
-
-    def create_option_apply_button(self, parent_layout):
-        """
-        Create and setup the apply button for options.
-        Args:
-            parent_layout: The layout to add the button container to
-        Returns:
-            QPushButton: The created apply button
-        """
-        # Apply button
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
-
-        apply_button = QPushButton("Apply")
-        apply_button.setMinimumSize(100, 30)
-        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(apply_button)
-        button_layout.addStretch(1)
-        
-        parent_layout.addWidget(button_container)
-        parent_layout.addSpacing(9)
-        
-        return apply_button
-    
-    def load_settings(self):
-        """
-        Load settings from the configuration file.
-        Reads settings from the config file and updates the UI widgets.
-        If no config file exists, creates one with default values.
-        """
-        # Set default values
-        self.widgets['theme_combo'].setCurrentText("amd")
-        self.widgets['tray_combo'].setCurrentText("enable")
-        self.widgets['transparency_combo'].setCurrentText("enable")
-        self.widgets['start_minimized_combo'].setCurrentText("disable")
-        self.widgets['restore_cpu_combo'].setCurrentText("enable")
-        self.widgets['restore_kernel_combo'].setCurrentText("enable")
-        self.widgets['restore_disk_combo'].setCurrentText("enable")
-        
-        if not self.config_path.exists():
-            self.save_settings()
-            return
-            
-        config = configparser.ConfigParser()
-        config.read(self.config_path)
-        
-        if 'Theme' in config and 'selected_theme' in config['Theme']:
-            self.widgets['theme_combo'].setCurrentText(config['Theme']['selected_theme'])
-            
-        if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-            self.widgets['tray_combo'].setCurrentText(config['SystemTray']['run_in_tray'])
-            
-        if 'Appearance' in config and 'transparency' in config['Appearance']:
-            self.widgets['transparency_combo'].setCurrentText(config['Appearance']['transparency'])
-        
-        if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-            self.widgets['start_minimized_combo'].setCurrentText(
-                config['StartupBehavior'].get('start_minimized', 'disable')
-            )
-            
-        if 'CPUBehavior' in config and 'restore_on_close' in config['CPUBehavior']:
-            self.widgets['restore_cpu_combo'].setCurrentText(
-                config['CPUBehavior']['restore_on_close']
-            )
-            
-        if 'KernelBehavior' in config and 'restore_on_close' in config['KernelBehavior']:
-            self.widgets['restore_kernel_combo'].setCurrentText(
-                config['KernelBehavior']['restore_on_close']
-            )
-        if 'DiskBehavior' in config and 'restore_on_close' in config['DiskBehavior']:
-            self.widgets['restore_disk_combo'].setCurrentText(
-                config['DiskBehavior']['restore_on_close']
-            )
-        
-        # Apply loaded settings
-        self.apply_system_tray_settings()
-        self.apply_transparency_settings()
-        self.apply_theme_settings()
-        self.apply_start_minimized_settings()
-        self.apply_restore_cpu_settings()
-        self.apply_restore_kernel_settings()
-        self.apply_restore_disk_settings()
 
 
 class OptionsTab(QWidget):
@@ -258,7 +255,7 @@ class OptionsTab(QWidget):
         self.main_window = main_window
         self.options_manager = OptionsManager(main_window)
         self.setup_ui()
-        
+
     def setup_ui(self):
         """
         Set up the user interface for the options tab.
@@ -267,7 +264,6 @@ class OptionsTab(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(10)
         
-        # Create scroll area for settings
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -278,7 +274,6 @@ class OptionsTab(QWidget):
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Theme selection
         theme_layout = QHBoxLayout()
         theme_label = QLabel("Selected Theme:")
         theme_label.setWordWrap(True)
@@ -292,7 +287,6 @@ class OptionsTab(QWidget):
         theme_layout.addWidget(self.theme_combo)
         scroll_layout.addLayout(theme_layout)
         
-        # System tray option
         tray_layout = QHBoxLayout()
         tray_label = QLabel("Run in System Tray:")
         tray_label.setWordWrap(True)
@@ -306,7 +300,6 @@ class OptionsTab(QWidget):
         tray_layout.addWidget(self.tray_combo)
         scroll_layout.addLayout(tray_layout)
         
-        # Transparency option
         transparency_layout = QHBoxLayout()
         transparency_label = QLabel("Transparency:")
         transparency_label.setWordWrap(True)
@@ -320,7 +313,6 @@ class OptionsTab(QWidget):
         transparency_layout.addWidget(self.transparency_combo)
         scroll_layout.addLayout(transparency_layout)
         
-        # Start minimized option
         start_minimized_layout = QHBoxLayout()
         start_minimized_label = QLabel("Open Minimized:")
         start_minimized_label.setWordWrap(True)
@@ -335,7 +327,6 @@ class OptionsTab(QWidget):
         start_minimized_layout.addWidget(self.start_minimized_combo)
         scroll_layout.addLayout(start_minimized_layout)
         
-        # CPU restore option
         restore_cpu_layout = QHBoxLayout()
         restore_cpu_label = QLabel("Restore CPU Settings on Close:")
         restore_cpu_label.setWordWrap(True)
@@ -350,7 +341,6 @@ class OptionsTab(QWidget):
         restore_cpu_layout.addWidget(self.restore_cpu_combo)
         scroll_layout.addLayout(restore_cpu_layout)
         
-        # Kernel restore option
         restore_kernel_layout = QHBoxLayout()
         restore_kernel_label = QLabel("Restore Kernel Settings on Close:")
         restore_kernel_label.setWordWrap(True)
@@ -365,7 +355,6 @@ class OptionsTab(QWidget):
         restore_kernel_layout.addWidget(self.restore_kernel_combo)
         scroll_layout.addLayout(restore_kernel_layout)
 
-        # Disk restore option
         restore_disk_layout = QHBoxLayout()
         restore_disk_label = QLabel("Restore Disk Settings on Close:")
         restore_disk_label.setWordWrap(True)
@@ -380,15 +369,12 @@ class OptionsTab(QWidget):
         restore_disk_layout.addWidget(self.restore_disk_combo)
         scroll_layout.addLayout(restore_disk_layout)
         
-        # Finalize scroll area
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        # Create apply button
         self.apply_button = self.options_manager.create_option_apply_button(main_layout)
         
-        # Register widgets with options manager
         self.options_manager.widgets = {
             'theme_combo': self.theme_combo,
             'tray_combo': self.tray_combo,
@@ -396,16 +382,13 @@ class OptionsTab(QWidget):
             'start_minimized_combo': self.start_minimized_combo,
             'restore_cpu_combo': self.restore_cpu_combo,
             'restore_kernel_combo': self.restore_kernel_combo,
-            'restore_disk_combo': self.restore_disk_combo,  # ADD THIS LINE
+            'restore_disk_combo': self.restore_disk_combo,
             'apply_button': self.apply_button
         }
         
-        # Connect signals
         self.apply_button.clicked.connect(self.save_and_apply_settings)
-        
-        # Load existing settings
         self.options_manager.load_settings()
-    
+
     def save_and_apply_settings(self):
         """
         Save current settings and apply them to the application.
