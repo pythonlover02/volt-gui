@@ -407,29 +407,6 @@ class MainWindow(QMainWindow):
         if reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
             self.hide() if self.isVisible() else self.show_and_activate()
 
-    def changeEvent(self, event):
-        """
-        Handle window state change events.
-        """
-        if event.type() == QEvent.WindowStateChange and self.isMinimized():
-            event.ignore()
-            self.hide()
-            return
-        
-        super().changeEvent(event)
-
-    def eventFilter(self, obj, event):
-        """
-        Filter events for specific widgets.
-        """
-        if event.type() == QEvent.FocusOut:
-            if hasattr(KernelManager, 'KERNEL_SETTINGS'):
-                for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-                    widget_key = f'{setting_name}_input'
-                    if widget_key in self.kernel_widgets and obj == self.kernel_widgets[widget_key]:
-                        obj.clearFocus()
-        return super().eventFilter(obj, event)
-
     def refresh_cpu_values(self):
         """
         Refresh CPU related values in the interface.
