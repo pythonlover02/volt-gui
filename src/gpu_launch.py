@@ -1,5 +1,6 @@
 import os
 import re
+import glob
 import tempfile
 import subprocess
 from PySide6.QtWidgets import (
@@ -13,15 +14,17 @@ from PySide6.QtCore import Qt
 class GPULaunchManager:
     """
     Main class for managing GPU launch settings and configurations.
-    Provides functionality to create UI tabs for Mesa, NVIDIA, render selector, and launch options,
-    generate environment variable scripts, and manage the configuration file.
     """
     
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
+    VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
+    ICD_DIR = "/usr/share/vulkan/icd.d/"
+    MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/",]
     
     mesa_widgets = {}
     nvidia_widgets = {}
     render_selector_widgets = {}
+    frame_control_widgets = {}
     launch_options_widgets = {}
     tray_icon = None
     
@@ -69,6 +72,12 @@ class GPULaunchManager:
         ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
         ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
+    ]
+
+    FRAME_CONTROL_SETTINGS = [
+        ("Display Elements:", 'frame_display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
+        ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
+        ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
     ]
     
     MESA_ENV_MAPPINGS = {
@@ -190,19 +199,57 @@ class GPULaunchManager:
         }
     }
 
+    FRAME_CONTROL_ENV_MAPPINGS = {
+        'frame_display_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4',}
+        },
+        'frame_fps_limit_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'values': {'unlimited': '0'},
+            'direct_value': True,
+            'prefix': 'fps_limit='
+        },
+        'frame_fps_method_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
+            'prefix': 'fps_limit_method='
+        }
+    }
+
+    @staticmethod
+    def find_available_mangohud():
+        """
+        Dynamically find MangoHUD availability in system paths and Flatpak.
+        """
+        for search_path in GPULaunchManager.MANGOHUD_SEARCH_PATHS:
+            try:
+                mangohud_files = glob.glob(os.path.join(search_path, "mangohud*"))
+                for file_path in mangohud_files:
+                    if os.access(file_path, os.X_OK):
+                        return True
+            except Exception:
+                continue
+        
+        try:
+            result = subprocess.run(["flatpak", "list"], capture_output=True, text=True, check=True)
+            if "mangohud" in result.stdout.lower():
+                return True
+        except Exception:
+            pass
+        
+        return False
+
     @staticmethod
     def _get_vulkan_icd_options():
         """
         Gets available Vulkan ICD (Installable Client Driver) options.
-        Returns:
-            list: Available Vulkan ICD options
         """
-        icd_dir = "/usr/share/vulkan/icd.d/"
         options = []
         
         try:
             icd_files = {}
-            for file in os.listdir(icd_dir):
+            for file in os.listdir(GPULaunchManager.ICD_DIR):
                 if file.endswith('.json'):
                     base_name = file[:-5]
                     
@@ -210,11 +257,11 @@ class GPULaunchManager:
                         pure_name = base_name.split('.')[0]
                         if pure_name not in icd_files:
                             icd_files[pure_name] = []
-                        icd_files[pure_name].append(os.path.join(icd_dir, file))
+                        icd_files[pure_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
                     else:
                         if base_name not in icd_files:
                             icd_files[base_name] = []
-                        icd_files[base_name].append(os.path.join(icd_dir, file))
+                        icd_files[base_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
             
             for name, paths in icd_files.items():
                 if 'lvp' in name.lower():
@@ -229,9 +276,7 @@ class GPULaunchManager:
     @staticmethod
     def _create_gpu_settings_tab():
         """
-        Creates the GPU settings tab with Mesa, NVIDIA, and render selector subtabs.
-        Returns:
-            tuple: (QWidget, QTabWidget) The GPU tab widget and subtabs widget
+        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and frame control subtabs.
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -241,15 +286,18 @@ class GPULaunchManager:
         mesa_tab = GPULaunchManager._create_mesa_tab()
         nvidia_tab = GPULaunchManager._create_nvidia_tab()
         render_selector_tab = GPULaunchManager._create_render_selector_tab()
+        frame_control_tab = GPULaunchManager._create_frame_control_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
+        gpu_subtabs.addTab(frame_control_tab, "Frame Control")
         gpu_layout.addWidget(gpu_subtabs)
         
         GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), GPULaunchManager.mesa_widgets, 'mesa_apply_button')
         GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), GPULaunchManager.nvidia_widgets, 'nvidia_apply_button')
         GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
+        GPULaunchManager.create_gpu_apply_button(frame_control_tab.layout(), GPULaunchManager.frame_control_widgets, 'frame_control_apply_button')
         
         return gpu_tab, gpu_subtabs
 
@@ -257,8 +305,6 @@ class GPULaunchManager:
     def _create_mesa_tab():
         """
         Creates the Mesa settings tab.
-        Returns:
-            QWidget: The Mesa tab widget
         """
         tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
         GPULaunchManager.mesa_widgets.update(widgets)
@@ -268,8 +314,6 @@ class GPULaunchManager:
     def _create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
-        Returns:
-            QWidget: The NVIDIA tab widget
         """
         tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
         GPULaunchManager.nvidia_widgets.update(widgets)
@@ -279,11 +323,6 @@ class GPULaunchManager:
     def _create_settings_tab(settings_layouts, apply_button_name):
         """
         Helper method to create a settings tab with the specified configuration.
-        Args:
-            settings_layouts: List of setting configurations
-            apply_button_name: Name for the apply button widget
-        Returns:
-            tuple: (QWidget, dict) The created tab widget and its widgets dictionary
         """
         tab = QWidget()
         main_layout = QVBoxLayout(tab)
@@ -326,13 +365,8 @@ class GPULaunchManager:
     def _create_render_selector_tab():
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
-        Returns:
-            QWidget: The render selector tab widget
         """
-        render_tab, widgets = GPULaunchManager._create_settings_tab(
-            GPULaunchManager.RENDER_SETTINGS, 
-            "render_selector_apply_button"
-        )
+        render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
         GPULaunchManager.render_selector_widgets.update(widgets)
         
@@ -341,20 +375,32 @@ class GPULaunchManager:
         GPULaunchManager.render_selector_widgets['vulkan_render_combo'].addItems(vulkan_options)
         GPULaunchManager.render_selector_widgets['vulkan_render_combo'].setCurrentText("unset")
         
-        GPULaunchManager.render_selector_widgets['glx_vendor_combo'].currentTextChanged.connect(
-            lambda: GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
-        )
+        GPULaunchManager.render_selector_widgets['glx_vendor_combo'].currentTextChanged.connect(lambda: GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets))
         
         GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
 
         return render_tab
 
     @staticmethod
+    def _create_frame_control_tab():
+        """
+        Creates the frame control tab for managing FPS and display settings.
+        """
+        mangohud_available = GPULaunchManager.find_available_mangohud()
+        
+        frame_control_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.FRAME_CONTROL_SETTINGS, "frame_control_apply_button")
+        
+        if not mangohud_available:
+            for widget in widgets.values():
+                widget.setEnabled(False)
+
+        GPULaunchManager.frame_control_widgets = widgets
+        return frame_control_tab
+
+    @staticmethod
     def _create_launch_options_tab():
         """
         Creates the launch options tab for specifying additional launch commands.
-        Returns:
-            QWidget: The created launch options tab widget
         """
         launch_tab = QWidget()
         main_layout = QVBoxLayout(launch_tab)
@@ -394,9 +440,7 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        GPULaunchManager.launch_options_widgets = {
-            'launch_options_input': launch_options_input
-        }
+        GPULaunchManager.launch_options_widgets = {'launch_options_input': launch_options_input}
         
         GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
         
@@ -408,10 +452,6 @@ class GPULaunchManager:
     def create_gpu_apply_button(layout, widgets, button_name):
         """
         Creates and adds an apply button to the specified layout.
-        Args:
-            layout: The layout to add the button to
-            widgets: Widget dictionary to store the button reference
-            button_name: Name for the button widget key
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -431,21 +471,18 @@ class GPULaunchManager:
     def create_launch_apply_button(layout, widgets):
         """
         Creates and adds an apply button specifically for the launch options tab.
-        Args:
-            layout: The layout to add the button to
-            widgets: Widget dictionary to store the button reference
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(10, 10, 10, 0)
 
-        widgets['apply_button'] = QPushButton("Apply")
-        widgets['apply_button'].setMinimumSize(100, 30)
-        widgets['apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        widgets['launch_apply_button'] = QPushButton("Apply")
+        widgets['launch_apply_button'].setMinimumSize(100, 30)
+        widgets['launch_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         button_layout.addStretch(1)
-        button_layout.addWidget(widgets['apply_button'])
+        button_layout.addWidget(widgets['launch_apply_button'])
         button_layout.addStretch(1)
         layout.addWidget(button_container)
 
@@ -453,54 +490,17 @@ class GPULaunchManager:
     def _handle_glx_vendor_change(widgets):
         """
         Handles GLX vendor selection changes to enable/disable Mesa-only options.
-        Args:
-            widgets: Dictionary containing render selector widgets
         """
         glx_vendor = widgets['glx_vendor_combo'].currentText()
         mesa_enabled = glx_vendor == "mesa"
         
         widgets['dri_prime_combo'].setEnabled(mesa_enabled)
-        
         widgets['libgl_software_combo'].setEnabled(mesa_enabled)
 
     @staticmethod
-    def apply_gpu_launch_settings(tray_icon):
-        """
-        Apply GPU launch settings and show system tray notifications.
-        Returns:
-            bool: True if settings were applied successfully, False otherwise
-        """
-        try:
-            script_path = GPULaunchManager._write_volt_script_with_all_settings()
-            
-            if tray_icon:
-                tray_icon.showMessage(
-                    "volt-gui",
-                    f"GPU launch settings applied and saved to {script_path}",
-                    QSystemTrayIcon.MessageIcon.Information,
-                    2000
-                )
-            
-            return True
-                
-        except Exception as e:
-            if tray_icon:
-                tray_icon.showMessage(
-                    "volt-gui",
-                    f"Failed to apply GPU launch settings: {e}",
-                    QSystemTrayIcon.MessageIcon.Critical,
-                    2000
-                )
-            return False
-
-    @staticmethod
-    def _generate_mesa_script_content(mesa_widgets):
+    def _generate_mesa_env_vars(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
-        Args:
-            mesa_widgets: Dictionary containing Mesa settings widgets
-        Returns:
-            list: Generated environment variable strings
         """
         env_vars = []
         
@@ -515,22 +515,18 @@ class GPULaunchManager:
             var_name = mapping['var_name']
             
             if mapping.get('direct_value', False):
-                env_vars.append(f'export {var_name}="{value}"')
+                env_vars.append(f'{var_name}={value}')
             else:
                 mapped_value = mapping['values'].get(value)
                 if mapped_value:
-                    env_vars.append(f'export {var_name}="{mapped_value}"')
+                    env_vars.append(f'{var_name}={mapped_value}')
         
         return env_vars
 
     @staticmethod
-    def _generate_nvidia_script_content(nvidia_widgets):
+    def _generate_nvidia_env_vars(nvidia_widgets):
         """
         Generates script content for NVIDIA environment variables.
-        Args:
-            nvidia_widgets: Dictionary containing NVIDIA settings widgets
-        Returns:
-            list: Generated environment variable strings
         """
         env_vars = []
         
@@ -546,31 +542,30 @@ class GPULaunchManager:
             
             if mapping.get('extract_prefix', False):
                 extracted_value = value.split(' - ')[0]
-                env_vars.append(f'export {var_name}="{extracted_value}"')
+                env_vars.append(f'{var_name}={extracted_value}')
             elif mapping.get('convert_to_bytes', False):
                 bytes_value = int(value) * 1073741824
-                env_vars.append(f'export {var_name}="{bytes_value}"')
+                env_vars.append(f'{var_name}={bytes_value}')
             elif mapping.get('direct_value', False):
-                env_vars.append(f'export {var_name}="{value}"')
+                env_vars.append(f'{var_name}={value}')
             else:
                 mapped_value = mapping['values'].get(value)
                 if mapped_value:
-                    env_vars.append(f'export {var_name}="{mapped_value}"')
+                    env_vars.append(f'{var_name}={mapped_value}')
         
         return env_vars
 
     @staticmethod
     def _generate_render_selector_env_vars(render_widgets):
         """
-        Generates environment variables for render selector settings.
-        Args:
-            render_widgets: Dictionary containing render selector widgets
-        Returns:
-            list: Generated environment variable strings
+        Generates environment variables for render selector settings in key=value format.
         """
         env_vars = []
         
-        glx_vendor = render_widgets.get('glx_vendor_combo', {}).currentText() if 'glx_vendor_combo' in render_widgets else "unset"
+        if not render_widgets or 'glx_vendor_combo' not in render_widgets:
+            return env_vars
+            
+        glx_vendor = render_widgets['glx_vendor_combo'].currentText()
         mesa_enabled = glx_vendor == "mesa"
         
         for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
@@ -589,84 +584,97 @@ class GPULaunchManager:
             
             if mapping.get('special_handling') == 'vulkan_icd':
                 vulkan_selection = value
-                if "(software Rendering)" in vulkan_selection:
-                    vulkan_selection = vulkan_selection.replace(" (software Rendering)", "")
+                if "(software rendering)" in vulkan_selection.lower():
+                    vulkan_selection = re.sub(r'\s*\(software rendering\)', '', vulkan_selection, flags=re.IGNORECASE)
                 
-                icd_dir = "/usr/share/vulkan/icd.d/"
                 icd_files = []
                 
                 try:
-                    for file in os.listdir(icd_dir):
+                    for file in os.listdir(GPULaunchManager.ICD_DIR):
                         if file.endswith('.json'):
-                            if '.' in file[:-5]:
-                                base_name = file[:-5].split('.')[0]
-                                if base_name == vulkan_selection:
-                                    icd_files.append(os.path.join(icd_dir, file))
+                            base_name = file[:-5]
+                            if '.' in base_name:
+                                pure_name = base_name.split('.')[0]
+                                if pure_name == vulkan_selection:
+                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
                             else:
-                                if file[:-5] == vulkan_selection:
-                                    icd_files.append(os.path.join(icd_dir, file))
+                                if base_name == vulkan_selection:
+                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
                 except OSError:
                     pass
                 
                 if icd_files:
                     driver_paths = ":".join(icd_files)
-                    env_vars.append(f'export {var_name}="{driver_paths}"')
-                    env_vars.append('export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"')
+                    env_vars.append(f'{var_name}={driver_paths}')
+                    env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
             
             elif mapping.get('direct_value', False):
-                env_vars.append(f'export {var_name}="{value}"')
+                env_vars.append(f'{var_name}={value}')
             
-            else:
+            elif 'values' in mapping:
                 mapped_value = mapping['values'].get(value)
                 if mapped_value:
-                    env_vars.append(f'export {var_name}="{mapped_value}"')
+                    env_vars.append(f'{var_name}={mapped_value}')
         
         return env_vars
 
     @staticmethod
-    def _write_volt_script(script_content):
+    def _generate_frame_control_env_vars(frame_control_widgets):
         """
-        Writes the volt script to the specified path with root permissions.
-        Args:
-            script_content: Content to write to the script
-        Returns:
-            str: Path to the written script
-        Raises:
-            RuntimeError: If script writing fails
+        Generates environment variables for frame control settings.
         """
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
-            temp_file.write(script_content)
-            temp_path = temp_file.name
+        env_vars = []
+        mangohud_config_parts = []
+        use_mangohud = False
         
-        try:
-            subprocess.run([
-                "pkexec", "sh", "-c",
-                f"cat '{temp_path}' > {GPULaunchManager.VOLT_SCRIPT_PATH} && chmod 755 {GPULaunchManager.VOLT_SCRIPT_PATH}"
-            ], check=True)
+        for widget_key, mapping in GPULaunchManager.FRAME_CONTROL_ENV_MAPPINGS.items():
+            if widget_key not in frame_control_widgets:
+                continue
+                
+            widget = frame_control_widgets[widget_key]
+            value = widget.currentText()
+            if value == "unset":
+                continue
+                
+            use_mangohud = True
             
-            os.unlink(temp_path)
-            return GPULaunchManager.VOLT_SCRIPT_PATH
-        except subprocess.CalledProcessError as e:
-            os.unlink(temp_path)
-            raise RuntimeError(f"Failed to write script: {e}")
-        except Exception as e:
-            os.unlink(temp_path)
-            raise RuntimeError(f"Unexpected error writing script: {e}")
+            if mapping.get('direct_value', False):
+                prefix = mapping.get('prefix', '')
+                if value == 'unlimited':
+                    mapped_value = mapping['values'].get(value, '0')
+                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
+                else:
+                    mangohud_config_parts.append(f'{prefix}{value}')
+            
+            elif 'values' in mapping:
+                mapped_value = mapping['values'].get(value)
+                if mapped_value:
+                    prefix = mapping.get('prefix', '')
+                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
+            
+            else:
+                mapped_value = mapping['values'].get(value)
+                if mapped_value:
+                    mangohud_config_parts.append(mapped_value)
+        
+        if mangohud_config_parts:
+            config_value = ','.join(mangohud_config_parts)
+            env_vars.append(f'MANGOHUD_CONFIG={config_value}')
+        
+        return env_vars, use_mangohud
 
     @staticmethod
-    def _write_volt_script_with_all_settings():
+    def _write_settings_file():
         """
-        Writes a volt script combining all settings (Mesa, NVIDIA, render selector, launch options).
-        Returns:
-            str: Path to the written script
+        Writes GPU settings to a temporary file for volt-helper to process.
         """
         mesa_env_vars = []
         if GPULaunchManager.mesa_widgets:
-            mesa_env_vars = GPULaunchManager._generate_mesa_script_content(GPULaunchManager.mesa_widgets)
+            mesa_env_vars = GPULaunchManager._generate_mesa_env_vars(GPULaunchManager.mesa_widgets)
         
         nvidia_env_vars = []
         if GPULaunchManager.nvidia_widgets:
-            nvidia_env_vars = GPULaunchManager._generate_nvidia_script_content(GPULaunchManager.nvidia_widgets)
+            nvidia_env_vars = GPULaunchManager._generate_nvidia_env_vars(GPULaunchManager.nvidia_widgets)
         
         render_env_vars = []
         if GPULaunchManager.render_selector_widgets:
@@ -675,18 +683,23 @@ class GPULaunchManager:
         launch_options = ""
         if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
             launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
-        
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars
-        
-        script_content = "#!/bin/bash\n\n"
-        script_content += "\n".join(all_env_vars)
-        
-        script_content += "\n\n# Handle launch options if present\n"
-        if launch_options:
-            script_content += f"# Execute the specified program with environment variables\n"
-            script_content += f"{launch_options} \"$@\"\n"
-        else:
-            script_content += "# Launch the specified program with the environment variables\n"
-            script_content += "\"$@\"\n"
-        
-        return GPULaunchManager._write_volt_script(script_content)
+
+        frame_env_vars, use_mangohud = [], False
+        if GPULaunchManager.frame_control_widgets:
+            frame_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(GPULaunchManager.frame_control_widgets)
+
+        if use_mangohud and launch_options:
+            launch_options = f"mangohud {launch_options}"
+        elif use_mangohud and not launch_options:
+            launch_options = "mangohud"
+
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + frame_env_vars
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.conf') as temp_file:
+            for env_var in all_env_vars:
+                temp_file.write(f"{env_var}\n")
+            
+            if launch_options:
+                temp_file.write(f"launch_options={launch_options}\n")
+            
+            return temp_file.name

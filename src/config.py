@@ -11,16 +11,34 @@ class ConfigManager:
     """
     
     @staticmethod
-    def get_config_path():
+    def get_config_path(profile_name="Default"):
         """
         Get the configuration file path, creating directories if needed.
         """
         config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
         config_dir.mkdir(parents=True, exist_ok=True)
-        return config_dir / "volt-config.ini"
+        if profile_name == "Default":
+            return config_dir / "volt-config.ini"
+        else:
+            return config_dir / f"volt-config-{profile_name}.ini"
     
     @staticmethod
-    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
+    def get_available_profiles():
+        """
+        Get list of available profile names.
+        """
+        config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
+        profiles = ["Default"]
+        
+        if config_dir.exists():
+            for config_file in config_dir.glob("volt-config-*.ini"):
+                profile_name = config_file.stem.replace("volt-config-", "")
+                profiles.append(profile_name)
+        
+        return profiles
+    
+    @staticmethod
+    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Save all widget settings to the configuration file.
         """
@@ -33,18 +51,23 @@ class ConfigManager:
         
         config['Mesa'] = {}
         for widget_key, widget in gpu_manager.mesa_widgets.items():
-            if hasattr(widget, 'currentText'):
+            if hasattr(widget, 'currentText') and widget_key != 'mesa_apply_button':
                 config['Mesa'][widget_key] = widget.currentText()
         
         config['NVIDIA'] = {}
         for widget_key, widget in gpu_manager.nvidia_widgets.items():
-            if hasattr(widget, 'currentText'):
+            if hasattr(widget, 'currentText') and widget_key != 'nvidia_apply_button':
                 config['NVIDIA'][widget_key] = widget.currentText()
         
         config['RenderSelector'] = {}
         for widget_key, widget in gpu_manager.render_selector_widgets.items():
-            if hasattr(widget, 'currentText'):
+            if hasattr(widget, 'currentText') and widget_key != 'render_selector_apply_button':
                 config['RenderSelector'][widget_key] = widget.currentText()
+        
+        config['FrameControl'] = {}
+        for widget_key, widget in gpu_manager.frame_control_widgets.items():
+            if hasattr(widget, 'currentText') and widget_key != 'frame_control_apply_button':
+                config['FrameControl'][widget_key] = widget.currentText()
             
         if 'launch_options_input' in gpu_manager.launch_options_widgets:
             launch_options = gpu_manager.launch_options_widgets['launch_options_input'].text().replace('%', '%%')
@@ -59,25 +82,23 @@ class ConfigManager:
             if kernel_settings:
                 config['Kernel'] = kernel_settings
         
-        if disk_widgets:
+        if disk_widgets and 'disk_combos' in disk_widgets:
             disk_settings = {}
-            for disk_id, scheduler_combo in disk_widgets.items():
-                if disk_id.endswith('_scheduler') and hasattr(scheduler_combo, 'currentText'):
-                    disk_name = disk_id.replace('_scheduler', '')
-                    disk_settings[disk_name] = scheduler_combo.currentText()
+            for disk_name, scheduler_combo in disk_widgets['disk_combos'].items():
+                disk_settings[disk_name] = scheduler_combo.currentText()
             if disk_settings:
                 config['Disk'] = disk_settings
         
-        with open(ConfigManager.get_config_path(), 'w') as configfile:
+        with open(ConfigManager.get_config_path(profile_name), 'w') as configfile:
             config.write(configfile)
     
     @staticmethod
-    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets):
+    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Load settings from configuration file and apply to widgets.
         """
         config = configparser.ConfigParser()
-        config_path = ConfigManager.get_config_path()
+        config_path = ConfigManager.get_config_path(profile_name)
         
         if not config_path.exists():
             return False
@@ -102,6 +123,11 @@ class ConfigManager:
             for widget_key, value in config['RenderSelector'].items():
                 if widget_key in gpu_manager.render_selector_widgets and hasattr(gpu_manager.render_selector_widgets[widget_key], 'setCurrentText'):
                     gpu_manager.render_selector_widgets[widget_key].setCurrentText(value)
+    
+        if 'FrameControl' in config:
+            for widget_key, value in config['FrameControl'].items():
+                if widget_key in gpu_manager.frame_control_widgets and hasattr(gpu_manager.frame_control_widgets[widget_key], 'setCurrentText'):
+                    gpu_manager.frame_control_widgets[widget_key].setCurrentText(value)
                 
         if 'LaunchOptions' in config and 'launch_options_input' in gpu_manager.launch_options_widgets:
             launch_options = config['LaunchOptions'].get('launch_options', '').replace('%%', '%')
@@ -113,10 +139,24 @@ class ConfigManager:
                     input_widget = kernel_widgets[f'{setting_name}_input']
                     input_widget.setText(value)
         
-        if disk_widgets and 'Disk' in config:
+        if disk_widgets and 'disk_combos' in disk_widgets and 'Disk' in config:
             for disk_name, scheduler in config['Disk'].items():
-                scheduler_widget_key = f'{disk_name}_scheduler'
-                if scheduler_widget_key in disk_widgets and hasattr(disk_widgets[scheduler_widget_key], 'setCurrentText'):
-                    disk_widgets[scheduler_widget_key].setCurrentText(scheduler)
+                if disk_name in disk_widgets['disk_combos']:
+                    disk_widgets['disk_combos'][disk_name].setCurrentText(scheduler)
         
         return True
+    
+    @staticmethod
+    def delete_profile(profile_name):
+        """
+        Delete a profile configuration file.
+        """
+        if profile_name == "Default":
+            return False
+        
+        config_path = ConfigManager.get_config_path(profile_name)
+        if config_path.exists():
+            config_path.unlink()
+            return True
+        
+        return False

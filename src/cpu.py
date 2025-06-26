@@ -2,43 +2,24 @@ import glob
 import re
 import subprocess
 import os
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon
-)
-from PySide6.QtCore import (
-    Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize
-)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon)
+from PySide6.QtCore import (Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize)
 
 class CPUManager:
     """
     Main CPU management class that handles CPU governors and schedulers.
-    Provides static methods to create UI elements and manage CPU settings.
     """
     
     CPU_GOVERNOR_PATH = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
-    
     DEFAULT_GOVERNOR = "powersave"
-    
-    AVAILABLE_GOVERNORS = [
-        "unset", "performance", "powersave", 
-        "userspace", "ondemand", "conservative", 
-        "schedutil"
-    ]
-    
-    SCHEDULER_SEARCH_PATHS = [
-        "/usr/bin/",
-        "/usr/local/bin/"
-    ]
-    
+    AVAILABLE_GOVERNORS = ["unset", "performance", "powersave", "userspace", "ondemand", "conservative", "schedutil"]
+    SCHEDULER_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     BASE_SCHEDULERS = ["unset", "none"]
 
     @staticmethod
     def get_current_governor():
         """
         Gets the current CPU governor setting.
-        Returns:
-            str: Current governor or default if error occurs
         """
         try:
             with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r") as f:
@@ -50,8 +31,6 @@ class CPUManager:
     def get_current_scheduler():
         """
         Gets the currently running CPU scheduler.
-        Returns:
-            str: Running scheduler name or "none" if error occurs
         """
         try:
             return CPUManager._find_running_scheduler()
@@ -62,17 +41,8 @@ class CPUManager:
     def _find_running_scheduler():
         """
         Internal method to detect the currently running CPU scheduler.
-        Returns:
-            str: Name of running scheduler or "none" if not found
-        Raises:
-            subprocess.CalledProcessError: If ps command fails
         """
-        result = subprocess.run(
-            ["ps", "-eo", "comm"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["ps", "-eo", "comm"], capture_output=True, text=True, check=True)
         processes = result.stdout.strip().splitlines()
         return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
 
@@ -80,8 +50,6 @@ class CPUManager:
     def find_available_schedulers():
         """
         Dynamically find available scx_ schedulers in the configured paths.
-        Returns:
-            list: List of available schedulers including base schedulers
         """
         schedulers = CPUManager.BASE_SCHEDULERS.copy()
         
@@ -101,8 +69,6 @@ class CPUManager:
     def create_cpu_tab():
         """
         Creates and returns the CPU management tab widget.
-        Returns:
-            tuple: (QWidget, dict) The tab widget and a dictionary of UI elements
         """
         cpu_tab = QWidget()
         main_layout = QVBoxLayout(cpu_tab)
@@ -172,8 +138,6 @@ class CPUManager:
         
         CPUManager.create_cpu_apply_button(main_layout, widgets)
         
-        widgets['original_governor'] = CPUManager.get_current_governor()
-        widgets['original_scheduler'] = CPUManager.get_current_scheduler()
         widgets['cpu_settings_applied'] = False
         widgets['is_process_running'] = False
         widgets['process'] = None
@@ -184,9 +148,6 @@ class CPUManager:
     def create_cpu_apply_button(parent_layout, widgets):
         """
         Creates and adds the CPU apply button to the layout.
-        Args:
-            parent_layout: Layout to add the button to
-            widgets: Dictionary of widgets to store the button reference
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -207,8 +168,6 @@ class CPUManager:
     def refresh_cpu_values(widgets):
         """
         Updates the UI with current CPU governor and scheduler information.
-        Args:
-            widgets: Dictionary containing UI widgets to update
         """
         widgets['current_gov_value'].setText("Updating...")
         try:
@@ -249,126 +208,3 @@ class CPUManager:
             
         except Exception:
             widgets['current_sched_value'].setText("Error")
-
-    @staticmethod
-    def check_if_cpu_settings_already_applied(widgets):
-        """
-        Check if the selected CPU settings are already applied.
-        Args:
-            widgets: Dictionary containing UI widgets
-        Returns:
-            tuple: (bool, str) - (settings_already_applied, message)
-        """
-        governor = widgets['gov_combo'].currentText()
-        scheduler = widgets['sched_combo'].currentText()
-        
-        current_governor = CPUManager.get_current_governor()
-        current_scheduler = CPUManager.get_current_scheduler()
-        
-        governor_matches = (governor == "unset" or governor == current_governor)
-        scheduler_matches = (scheduler == "unset" or scheduler == current_scheduler)
-        
-        if governor_matches and scheduler_matches:
-            return True, "CPU settings already applied"
-        else:
-            return False, "CPU settings need to be applied"
-
-    @staticmethod
-    def apply_cpu_settings(widgets, main_window):
-        """
-        Apply CPU governor and scheduler settings.
-        Args:
-            widgets: Dictionary containing UI widgets
-            main_window: Reference to main window for system tray notifications
-        """
-        if widgets['is_process_running']:
-            return
-
-        governor = widgets['gov_combo'].currentText()
-        scheduler = widgets['sched_combo'].currentText()
-        
-        already_applied, message = CPUManager.check_if_cpu_settings_already_applied(widgets)
-        
-        if already_applied:
-            if main_window and hasattr(main_window, 'tray_icon'):
-                main_window.tray_icon.showMessage(
-                    "volt-gui", 
-                    message, 
-                    QSystemTrayIcon.MessageIcon.Information, 
-                    2000
-                )
-            return
-
-        current_running_scheduler = CPUManager.get_current_scheduler()
-
-        if scheduler != "unset" and scheduler == current_running_scheduler:
-            current_governor = CPUManager.get_current_governor()
-            if governor != "unset" and governor != current_governor:
-                widgets['cpu_apply_button'].setEnabled(False)
-                widgets['process'] = QProcess()
-                widgets['process'].start("pkexec", ["/usr/local/bin/volt-helper", "-c", governor, "unset"])
-                widgets['process'].finished.connect(
-                    lambda: CPUManager._on_process_finished(widgets, main_window)
-                )
-                widgets['is_process_running'] = True
-                widgets['cpu_settings_applied'] = True
-                return
-
-        widgets['cpu_apply_button'].setEnabled(False)
-
-        widgets['process'] = QProcess()
-        widgets['process'].start("pkexec", ["/usr/local/bin/volt-helper", "-c", governor, scheduler])
-        widgets['process'].finished.connect(
-            lambda: CPUManager._on_process_finished(widgets, main_window)
-        )
-        widgets['is_process_running'] = True
-        widgets['cpu_settings_applied'] = True
-
-    @staticmethod
-    def restore_cpu_settings(widgets):
-        """
-        Restore CPU settings to original values.
-        Args:
-            widgets: Dictionary containing UI widgets with original values
-        """
-        if widgets['cpu_settings_applied']:
-            try:
-                process = QProcess()
-                process.start("pkexec", [
-                    "/usr/local/bin/volt-helper", 
-                    "-c",
-                    widgets['original_governor'], 
-                    widgets['original_scheduler']
-                ])
-                process.waitForFinished()
-            except Exception:
-                pass
-
-    @staticmethod
-    def _on_process_finished(widgets, main_window):
-        """
-        Handle process completion.
-        Args:
-            widgets: Dictionary containing UI widgets
-            main_window: Reference to main window for notifications
-        """
-        widgets['is_process_running'] = False
-        widgets['cpu_apply_button'].setEnabled(True)
-        
-        exit_code = 0
-        if widgets['process']:
-            exit_code = widgets['process'].exitCode()
-        
-        CPUManager.refresh_cpu_values(widgets)
-        
-        if main_window and hasattr(main_window, 'tray_icon'):
-            main_window.tray_icon.showMessage(
-                "volt-gui", 
-                "CPU settings applied successfully" if exit_code == 0 else "Failed to apply CPU settings",
-                QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
-                2000
-            )
-        
-        if widgets['process']:
-            widgets['process'].deleteLater()
-            widgets['process'] = None
