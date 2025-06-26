@@ -110,6 +110,32 @@ class ThemeManager:
             border: none;
         }}
         
+        QTabBar::tab:hover:!selected {{
+            background-color: {c['lighter_bg']};
+            color: {c['text_color']};
+        }}
+        
+        QTabBar::scroller {{
+            width: 30px;
+            background-color: {c['surface_bg']};
+            border: none;
+        }}
+        
+        QTabBar QToolButton {{
+            background-color: {c['surface_bg']};
+            color: {c['text_color']};
+            border: none;
+            padding: 4px;
+        }}
+        
+        QTabBar QToolButton:hover {{
+            background-color: {c['lighter_bg']};
+        }}
+        
+        QTabBar QToolButton:pressed {{
+            background-color: {c['accent_pressed']};
+        }}
+        
         QTabWidget {{
             background-color: {c['bg_color']};
             border: none;
