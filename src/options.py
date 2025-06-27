@@ -13,46 +13,46 @@ class OptionsManager:
     """
 
     def __init__(self, main_window):
-        self.config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
-        self.config_path.parent.mkdir(parents=True, exist_ok=True)
+        self.options_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
+        self.options_path.parent.mkdir(parents=True, exist_ok=True)
         self.widgets = {}
         self.main_window = main_window
 
-    def load_settings(self):
+    def load_options(self):
         """
-        Load settings from the configuration file.
+        Load options from the configuration file.
         """
         self._set_default_values()
         
-        if not self.config_path.exists():
-            self.save_settings()
+        if not self.options_path.exists():
+            self.save_options()
             return
             
-        config = configparser.ConfigParser()
-        config.read(self.config_path)
+        options = configparser.ConfigParser()
+        options.read(self.options_path)
         
-        self._apply_config_values(config)
-        self._apply_all_settings()
+        self._apply_options_values(options)
+        self._apply_all_options()
 
-    def save_settings(self):
+    def save_options(self):
         """
-        Save current settings to the configuration file.
+        Save current options to the configuration file.
         """
-        config = configparser.ConfigParser()
+        options = configparser.ConfigParser()
         
-        config['Theme'] = {'selected_theme': self.widgets['theme_combo'].currentText()}
-        config['SystemTray'] = {'run_in_tray': self.widgets['tray_combo'].currentText()}
-        config['Appearance'] = {'transparency': self.widgets['transparency_combo'].currentText()}
-        config['StartupBehavior'] = {'start_minimized': self.widgets['start_minimized_combo'].currentText()}
-        config['Profile'] = {'last_selected': getattr(self.main_window, 'current_profile', 'Default')}
+        options['Theme'] = {'selected_theme': self.widgets['theme_combo'].currentText()}
+        options['SystemTray'] = {'run_in_tray': self.widgets['tray_combo'].currentText()}
+        options['Appearance'] = {'transparency': self.widgets['transparency_combo'].currentText()}
+        options['StartupBehavior'] = {'start_minimized': self.widgets['start_minimized_combo'].currentText()}
+        options['Profile'] = {'last_selected': getattr(self.main_window, 'current_profile', 'Default')}
         
-        os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.options_path), exist_ok=True)
         
-        with open(self.config_path, 'w') as configfile:
-            config.write(configfile)
+        with open(self.options_path, 'w') as optionsfile:
+            options.write(optionsfile)
             
         if self.main_window:
-            self._apply_all_settings()
+            self._apply_all_options()
 
     def create_option_apply_button(self, parent_layout):
         """
@@ -85,57 +85,57 @@ class OptionsManager:
         self.widgets['transparency_combo'].setCurrentText("enable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
 
-    def _apply_config_values(self, config):
+    def _apply_options_values(self, options):
         """
-        Apply values from config file to widgets.
+        Apply values from options file to widgets.
         """
-        if 'Theme' in config and 'selected_theme' in config['Theme']:
-            self.widgets['theme_combo'].setCurrentText(config['Theme']['selected_theme'])
+        if 'Theme' in options and 'selected_theme' in options['Theme']:
+            self.widgets['theme_combo'].setCurrentText(options['Theme']['selected_theme'])
             
-        if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-            self.widgets['tray_combo'].setCurrentText(config['SystemTray']['run_in_tray'])
+        if 'SystemTray' in options and 'run_in_tray' in options['SystemTray']:
+            self.widgets['tray_combo'].setCurrentText(options['SystemTray']['run_in_tray'])
             
-        if 'Appearance' in config and 'transparency' in config['Appearance']:
-            self.widgets['transparency_combo'].setCurrentText(config['Appearance']['transparency'])
+        if 'Appearance' in options and 'transparency' in options['Appearance']:
+            self.widgets['transparency_combo'].setCurrentText(options['Appearance']['transparency'])
         
-        if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-            self.widgets['start_minimized_combo'].setCurrentText(config['StartupBehavior'].get('start_minimized', 'disable'))
+        if 'StartupBehavior' in options and 'start_minimized' in options['StartupBehavior']:
+            self.widgets['start_minimized_combo'].setCurrentText(options['StartupBehavior'].get('start_minimized', 'disable'))
         
-        if 'Profile' in config and 'last_selected' in config['Profile'] and self.main_window:
-            last_profile = config['Profile']['last_selected']
+        if 'Profile' in options and 'last_selected' in options['Profile'] and self.main_window:
+            last_profile = options['Profile']['last_selected']
             index = self.main_window.profile_selector.findText(last_profile)
             if index >= 0:
                 self.main_window.profile_selector.setCurrentText(last_profile)
                 self.main_window.current_profile = last_profile
 
-    def _apply_all_settings(self):
+    def _apply_all_options(self):
         """
-        Apply all settings to the application.
+        Apply all options to the application.
         """
-        self.apply_system_tray_settings()
-        self.apply_transparency_settings()
-        self.apply_theme_settings()
-        self.apply_start_minimized_settings()
+        self.apply_system_tray_options()
+        self.apply_transparency_options()
+        self.apply_theme_options()
+        self.apply_start_minimized_options()
 
-    def apply_theme_settings(self):
+    def apply_theme_options(self):
         """
         Apply the selected theme to the application.
         """
         if self.main_window:
             theme_name = self.widgets['theme_combo'].currentText()
             ThemeManager.apply_theme(QApplication.instance(), theme_name)
-            print(f"Theme setting applied: {theme_name}")
+            print(f"Theme option applied: {theme_name}")
 
-    def apply_system_tray_settings(self):
+    def apply_system_tray_options(self):
         """
-        Apply system tray settings to the main window.
+        Apply system tray options to the main window.
         """
         if self.main_window:
             run_in_tray = self.widgets['tray_combo'].currentText() == 'enable'
-            old_setting = self.main_window.use_system_tray
+            old_option = self.main_window.use_system_tray
             self.main_window.use_system_tray = run_in_tray
             
-            if old_setting != run_in_tray:
+            if old_option != run_in_tray:
                 if run_in_tray:
                     if not hasattr(self.main_window, 'tray_icon'):
                         self.main_window.setup_system_tray()
@@ -146,12 +146,14 @@ class OptionsManager:
                         delattr(self.main_window, 'tray_icon')
                         if not self.main_window.isVisible():
                             self.main_window.show_and_activate()
+                
+                self.main_window.update_quit_behavior()
             
-            print(f"System tray setting applied: {run_in_tray}")
+            print(f"System tray option applied: {run_in_tray}")
             
-    def apply_transparency_settings(self):
+    def apply_transparency_options(self):
         """
-        Apply window transparency settings to the main window.
+        Apply window transparency options to the main window.
         """
         if self.main_window:
             transparency_enabled = self.widgets['transparency_combo'].currentText() == 'enable'
@@ -159,16 +161,16 @@ class OptionsManager:
                 self.main_window.setWindowOpacity(0.9)
             else:
                 self.main_window.setWindowOpacity(1.0)
-            print(f"Transparency setting applied: {transparency_enabled}")
+            print(f"Transparency option applied: {transparency_enabled}")
 
-    def apply_start_minimized_settings(self):
+    def apply_start_minimized_options(self):
         """
-        Apply the start minimized setting to the application.
+        Apply the start minimized option to the application.
         """
         if self.main_window:
             start_minimized = self.widgets['start_minimized_combo'].currentText() == 'enable'
             self.main_window.start_minimized = start_minimized
-            print(f"Start minimized setting applied: {start_minimized}")
+            print(f"Start minimized option applied: {start_minimized}")
 
 
 class OptionsTab(QWidget):
@@ -196,17 +198,17 @@ class OptionsTab(QWidget):
         self.apply_button = self.options_manager.create_option_apply_button(main_layout)
         
         self._register_widgets()
-        self.apply_button.clicked.connect(self.save_and_apply_settings)
-        self.options_manager.load_settings()
+        self.apply_button.clicked.connect(self.save_and_apply_options)
+        self.options_manager.load_options()
 
-    def save_and_apply_settings(self):
+    def save_and_apply_options(self):
         """
-        Save current settings and apply them to the application.
+        Save current options and apply them to the application.
         """
-        self.options_manager.save_settings()
+        self.options_manager.save_options()
         
         if self.main_window and hasattr(self.main_window, 'tray_icon'):
-            self.main_window.tray_icon.showMessage("volt-gui", "Options settings saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
+            self.main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
 
     def _create_scroll_area(self):
         """

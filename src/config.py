@@ -38,7 +38,7 @@ class ConfigManager:
         return profiles
     
     @staticmethod
-    def save_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
+    def save_config(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Save all widget settings to the configuration file.
         """
@@ -74,26 +74,26 @@ class ConfigManager:
             config['LaunchOptions'] = {'launch_options': launch_options}
             
         if kernel_widgets:
-            kernel_settings = {}
+            kernel_config = {}
             for setting_name in KernelManager.KERNEL_SETTINGS.keys():
                 value = kernel_widgets[f'{setting_name}_input'].text().strip()
                 if value:
-                    kernel_settings[setting_name] = value
-            if kernel_settings:
-                config['Kernel'] = kernel_settings
+                    kernel_config[setting_name] = value
+            if kernel_config:
+                config['Kernel'] = kernel_config
         
         if disk_widgets and 'disk_combos' in disk_widgets:
-            disk_settings = {}
+            disk_config = {}
             for disk_name, scheduler_combo in disk_widgets['disk_combos'].items():
-                disk_settings[disk_name] = scheduler_combo.currentText()
-            if disk_settings:
-                config['Disk'] = disk_settings
+                disk_config[disk_name] = scheduler_combo.currentText()
+            if disk_config:
+                config['Disk'] = disk_config
         
         with open(ConfigManager.get_config_path(profile_name), 'w') as configfile:
             config.write(configfile)
     
     @staticmethod
-    def load_settings(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
+    def load_config(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Load settings from configuration file and apply to widgets.
         """

@@ -141,6 +141,70 @@ class MainWindow(QMainWindow):
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
 
+    def closeEvent(self, event):
+        """
+        Handle the window close event to save settings and current profile.
+        """
+        self.save_settings()
+        self.save_current_profile_preference()
+        self.options_tab.options_manager.save_options()
+        
+        if self.use_system_tray and hasattr(self, 'tray_icon'):
+            event.ignore()
+            self.hide()
+        else:
+            event.accept()
+            self.instance_checker.cleanup()
+
+    def save_current_profile_preference(self):
+        """
+        Save the currently selected profile as the last used profile.
+        """
+        config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
+        config_dir.mkdir(parents=True, exist_ok=True)
+        
+        config_path = config_dir / "volt-session.ini"
+        config = configparser.ConfigParser()
+        
+        if config_path.exists():
+            try:
+                config.read(config_path)
+            except:
+                pass
+        
+        if not config.has_section('Session'):
+            config.add_section('Session')
+        
+        config.set('Session', 'last_profile', self.current_profile)
+        
+        try:
+            with open(config_path, 'w') as configfile:
+                config.write(configfile)
+        except Exception as e:
+            print(f"Warning: Failed to save session config: {e}")
+
+    def load_current_profile_preference(self):
+        """
+        Load the last used profile from session config.
+        """
+        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-session.ini"))
+        
+        if not config_path.exists():
+            return "Default"
+        
+        config = configparser.ConfigParser()
+        try:
+            config.read(config_path)
+            if config.has_section('Session') and config.has_option('Session', 'last_profile'):
+                last_profile = config.get('Session', 'last_profile')
+                available_profiles = ConfigManager.get_available_profiles()
+                if last_profile in available_profiles:
+                    return last_profile
+        except Exception as e:
+            print(f"Warning: Failed to load session config: {e}")
+        
+        return "Default"
+
     def load_options_settings(self):
         """
         Load options settings from configuration file.
@@ -171,7 +235,10 @@ class MainWindow(QMainWindow):
         Load previously saved settings from configuration file.
         """
         try:
-            ConfigManager.load_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+            last_profile = self.load_current_profile_preference()
+            self.current_profile = last_profile
+            
+            ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
         except Exception as e:
             print(f"Warning: Failed to load settings: {e}")
 
@@ -222,7 +289,7 @@ class MainWindow(QMainWindow):
         self.profile_selector = QComboBox()
         self.profile_selector.setMinimumWidth(200)
         self.update_profile_list()
-        self.profile_selector.setCurrentText("Default")
+        self.profile_selector.setCurrentText(self.current_profile)
         self.profile_selector.currentTextChanged.connect(self.on_profile_changed)
 
         self.save_profile_btn = QPushButton("New Profile")
@@ -420,7 +487,7 @@ class MainWindow(QMainWindow):
         Save current settings to configuration file.
         """
         try:
-            ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+            ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
         except Exception as e:
             print(f"Warning: Failed to save settings: {e}")
 
@@ -433,12 +500,13 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, '_initial_setup_complete') and self._initial_setup_complete:
             try:
-                ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+                ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
             except Exception as e:
                 print(f"Warning: Failed to save current profile settings: {e}")
 
         self.current_profile = profile_name
-        ConfigManager.load_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
+        self.save_current_profile_preference()
+        ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
     def save_new_profile(self):
         """
@@ -459,10 +527,11 @@ class MainWindow(QMainWindow):
                     return
 
             try:
-                ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
-                ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
+                ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+                ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
                 self.current_profile = profile_name
+                self.save_current_profile_preference()
                 self.update_profile_list()
                 self.profile_selector.setCurrentText(profile_name)
 
@@ -499,10 +568,11 @@ class MainWindow(QMainWindow):
                     profile_file.unlink()
 
                     self.current_profile = "Default"
+                    self.save_current_profile_preference()
                     self.update_profile_list()
                     self.profile_selector.setCurrentText("Default")
 
-                    ConfigManager.load_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, "Default")
+                    ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, "Default")
 
                     self.refresh_cpu_values()
                     self.refresh_disk_values()
@@ -524,13 +594,14 @@ class MainWindow(QMainWindow):
         """
         if profile_name != self.current_profile:
             try:
-                ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+                ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
             except Exception as e:
                 print(f"Warning: Failed to save current profile settings: {e}")
 
             self.current_profile = profile_name
+            self.save_current_profile_preference()
             self.profile_selector.setCurrentText(profile_name)
-            ConfigManager.load_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
+            ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
             self.refresh_cpu_values()
             self.refresh_disk_values()
@@ -639,7 +710,8 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             print(f"Error applying settings: {e}")
-            self.tray_icon.showMessage("volt-gui", f"Failed to apply settings: {e}", QSystemTrayIcon.MessageIcon.Critical, 2000)
+            if hasattr(self, 'tray_icon'):
+                self.tray_icon.showMessage("volt-gui", f"Failed to apply settings: {e}", QSystemTrayIcon.MessageIcon.Critical, 2000)
 
     def on_settings_applied(self, exit_code):
         """
@@ -666,14 +738,16 @@ class MainWindow(QMainWindow):
         self.refresh_disk_values()
         self.refresh_kernel_values()
 
-        self.tray_icon.showMessage("volt-gui", "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical, 2000)
+        if hasattr(self, 'tray_icon'):
+            self.tray_icon.showMessage("volt-gui", "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical, 2000)
 
     def quit_application(self):
         """
-        Quit the application.
+        Quit the application properly, ensuring all settings are saved.
         """
         self.save_settings()
-        self.options_tab.options_manager.save_settings()
+        self.save_current_profile_preference()
+        self.options_tab.options_manager.save_options()
         self.instance_checker.cleanup()
         QApplication.quit()
 
