@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
         self.update_quit_behavior()
         self.setup_refresh_timer()
         self.load_saved_settings()
+        self._initial_setup_complete = True
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
         if not self.start_minimized:
@@ -430,10 +431,11 @@ class MainWindow(QMainWindow):
         if not profile_name or profile_name == self.current_profile or profile_name.isspace():
             return
 
-        try:
-            ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
-        except Exception as e:
-            print(f"Warning: Failed to save current profile settings: {e}")
+        if hasattr(self, '_initial_setup_complete') and self._initial_setup_complete:
+            try:
+                ConfigManager.save_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+            except Exception as e:
+                print(f"Warning: Failed to save current profile settings: {e}")
 
         self.current_profile = profile_name
         ConfigManager.load_settings(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
