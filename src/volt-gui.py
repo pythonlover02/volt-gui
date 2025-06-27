@@ -122,7 +122,6 @@ class MainWindow(QMainWindow):
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
         self.setMinimumSize(640, 480)
-        self.resize(640, 480)
         self.setAttribute(Qt.WA_DontShowOnScreen, True)
 
         self.apply_dark_theme()

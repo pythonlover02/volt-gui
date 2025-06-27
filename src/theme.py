@@ -136,6 +136,13 @@ class ThemeManager:
             background-color: {c['accent_pressed']};
         }}
         
+        QTabBar::tear {{
+            width: 0px;
+            height: 0px;
+            background: transparent;
+            border: none;
+        }}
+        
         QTabWidget {{
             background-color: {c['bg_color']};
             border: none;
