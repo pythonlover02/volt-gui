@@ -1,6 +1,6 @@
 import os
 import configparser
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox)
 from PySide6.QtCore import Qt
 from theme import ThemeManager
 from pathlib import Path
@@ -209,6 +209,8 @@ class OptionsTab(QWidget):
         
         if self.main_window and hasattr(self.main_window, 'tray_icon'):
             self.main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
+        else:
+            QMessageBox.information(self.main_window, "volt-gui", "Options saved successfully")
 
     def _create_scroll_area(self):
         """

@@ -712,6 +712,8 @@ class MainWindow(QMainWindow):
             print(f"Error applying settings: {e}")
             if hasattr(self, 'tray_icon'):
                 self.tray_icon.showMessage("volt-gui", f"Failed to apply settings: {e}", QSystemTrayIcon.MessageIcon.Critical, 2000)
+            else:
+                QMessageBox.warning(self, "volt-gui", f"Failed to apply settings: {e}")
 
     def on_settings_applied(self, exit_code):
         """
@@ -740,6 +742,8 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, 'tray_icon'):
             self.tray_icon.showMessage("volt-gui", "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical, 2000)
+        else:
+            QMessageBox.information(self, "volt-gui", "Settings applied successfully")
 
     def quit_application(self):
         """
