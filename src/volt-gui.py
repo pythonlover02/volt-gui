@@ -144,14 +144,13 @@ class MainWindow(QMainWindow):
         """
         Handle the window close event to save settings and current profile.
         """
-        self.save_settings()
-        self.save_current_profile_preference()
-        self.options_tab.options_manager.save_options()
-        
         if self.use_system_tray and hasattr(self, 'tray_icon'):
             event.ignore()
             self.hide()
         else:
+            self.save_settings()
+            self.save_current_profile_preference()
+            self.options_tab.options_manager.save_options()
             event.accept()
             self.instance_checker.cleanup()
 
