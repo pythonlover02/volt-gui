@@ -1,7 +1,6 @@
 import re
 import subprocess
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-                               QScrollArea, QSizePolicy, QLineEdit, QFrame, QSystemTrayIcon)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit, QFrame, QSystemTrayIcon)
 from PySide6.QtCore import Qt, QProcess
 
 
@@ -23,7 +22,7 @@ class KernelManager:
         },
         'min_free_kbytes': {
             'path': '/proc/sys/vm/min_free_kbytes',
-            'text': 'Minimum free memory to maintain. Do not set below 1024 KB or above 5% of system memory.\nRecommended values: 1024-65536',
+            'text': 'Minimum free memory to maintain. Do not set below 1024 KB or above 5% of system memory.\nRecommended values: 1024-...',
             'is_dynamic': False
         },
         'max_map_count': {
@@ -63,17 +62,17 @@ class KernelManager:
         },
         'thp_enabled': {
             'path': '/sys/kernel/mm/transparent_hugepage/enabled',
-            'text': 'Controls transparent huge pages. Can improve performance but may increase memory usage.\nPossible values: always madvise never',
+            'text': 'Controls transparent huge pages. Can improve performance but may increase memory usage.',
             'is_dynamic': True
         },
         'thp_shmem_enabled': {
             'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled',
-            'text': 'Controls transparent huge pages for shared memory. May improve performance for memory-intensive applications.\nPossible values: always within_size advise never',
+            'text': 'Controls transparent huge pages for shared memory. May improve performance for memory-intensive applications.',
             'is_dynamic': True
         },
         'thp_defrag': {
             'path': '/sys/kernel/mm/transparent_hugepage/defrag',
-            'text': 'Controls when kernel attempts to make huge pages available through memory compaction.\nPossible values: always defer defer+madvise madvise never',
+            'text': 'Controls when kernel attempts to make huge pages available through memory compaction.',
             'is_dynamic': True
         },
         'zone_reclaim_mode': {
@@ -143,6 +142,35 @@ class KernelManager:
             return "Error"
 
     @staticmethod
+    def _get_dynamic_possible_values(setting_path):
+        """
+        Get all possible values for a dynamic setting.
+        Returns a list of possible values extracted from the system file.
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                content = f.read().strip()
+            
+            clean_content = re.sub(r'[\[\]]', '', content)
+            possible_values = clean_content.split()
+            
+            return possible_values if possible_values else ["Error"]
+        except Exception:
+            return ["Error"]
+
+    @staticmethod
+    def _get_dynamic_text_with_values(base_text, setting_path):
+        """
+        Generate dynamic text that includes the possible values from the system.
+        """
+        possible_values = KernelManager._get_dynamic_possible_values(setting_path)
+        if possible_values and possible_values[0] != "Error":
+            values_text = " ".join(possible_values)
+            return f"{base_text}\nPossible values: {values_text}"
+        else:
+            return f"{base_text}\nPossible values: Unable to read from system"
+
+    @staticmethod
     def create_kernel_tab(main_window):
         """
         Create and return the kernel settings tab widget.
@@ -192,7 +220,12 @@ class KernelManager:
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
         
-        text_label = QLabel(setting_info['text'])
+        if setting_info['is_dynamic']:
+            display_text = KernelManager._get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
+        else:
+            display_text = setting_info['text']
+
+        text_label = QLabel(display_text)
         text_label.setWordWrap(True)
         text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
         setting_layout.addWidget(text_label)
@@ -203,6 +236,7 @@ class KernelManager:
         
         widgets[f'{setting_name}_input'] = input_widget
         widgets[f'{setting_name}_current_value'] = current_value_label
+        widgets[f'{setting_name}_text_label'] = text_label
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
@@ -229,6 +263,7 @@ class KernelManager:
     def refresh_kernel_values(widgets):
         """
         Refresh all kernel setting values in the UI.
+        Also updates dynamic text labels with current possible values.
         """
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             if info['is_dynamic']:
@@ -236,6 +271,10 @@ class KernelManager:
             else:
                 current = KernelManager._get_current_value(info['path'])
             widgets[f'{name}_current_value'].setText(f"current value: {current}")
+            
+            if info['is_dynamic'] and f'{name}_text_label' in widgets:
+                updated_text = KernelManager._get_dynamic_text_with_values(info['text'], info['path'])
+                widgets[f'{name}_text_label'].setText(updated_text)
 
     @staticmethod
     def check_sudo_execution():
