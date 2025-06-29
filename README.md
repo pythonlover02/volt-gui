@@ -1,3 +1,6 @@
+> [!WARNING]  
+> This program its WIP, bugs are expected.
+
 # volt-gui:
 
 A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
@@ -18,6 +21,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Mesa Drivers: Configure Mesa Drivers specific environment variables
   - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
   - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
+  - Set frame limit for both OpenGL and Vulkan applications (requires [mangohud](https://github.com/flightlessmango/MangoHud))
   - All those GPU settings will be added to the `volt` script
 - Disk Configuration
   - Change Disks Schedulers
@@ -72,6 +76,7 @@ A graphical user interface for configuring GPU related environment variables and
 If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
+- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Frame Options Settings
 
 ## Installation:
 

@@ -2,29 +2,22 @@ import glob
 import re
 import subprocess
 import os
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon
-)
-from PySide6.QtCore import (
-    Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize
-)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon)
+from PySide6.QtCore import (Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize)
 
 class DiskManager:
     """
     Main Disk management class that handles disk I/O schedulers.
-    Provides static methods to create UI elements and manage disk settings.
     """
     
     DISK_SCHEDULER_PATH_PATTERN = "/sys/block/*/queue/scheduler"
     DEFAULT_SCHEDULER = "mq-deadline"
+    BASE_OPTIONS = ["unset"]
 
     @staticmethod
     def get_disk_scheduler_info():
         """
         Gets information about all disk schedulers with improved format handling.
-        Returns:
-            dict: Dictionary with disk names as keys and scheduler info as values
         """
         disk_info = {}
         
@@ -57,15 +50,6 @@ class DiskManager:
     def _parse_scheduler_content(content):
         """
         Parse scheduler content with improved error handling for various formats.
-        Handles formats like:
-        - Standard: "none [mq-deadline] kyber bfq"
-        - Alternative: "none kyber bfq [dash]"
-        - Malformed: "none kyber bfq dash" (no brackets)
-        - Single scheduler: "[mq-deadline]"
-        Args:
-            content: Raw content from scheduler file
-        Returns:
-            dict: Dictionary with 'current' and 'available' schedulers, or None if parsing fails
         """
         if not content or not content.strip():
             print("Warning: Empty scheduler content")
@@ -77,7 +61,7 @@ class DiskManager:
                 print("Warning: No scheduler tokens found")
                 return None
             
-            available = []
+            available = DiskManager.BASE_OPTIONS.copy()
             current = None
             
             bracket_pattern = re.compile(r'\[([^\]]+)\]')
@@ -86,19 +70,22 @@ class DiskManager:
                 bracket_match = bracket_pattern.search(token)
                 if bracket_match:
                     current = bracket_match.group(1)
-                    available.append(current)
+                    if current not in available:
+                        available.append(current)
                 else:
-                    available.append(token)
+                    if token not in available:
+                        available.append(token)
             
             if current is None:
                 print(f"Warning: No current scheduler found in brackets for content: '{content}'")
                 
-                if available:
-                    current = available[0]
+                if len(available) > 1:
+                    current = available[1]
                     print(f"Warning: Using '{current}' as fallback current scheduler")
                 else:
                     current = DiskManager.DEFAULT_SCHEDULER
-                    available = [current]
+                    if current not in available:
+                        available.append(current)
                     print(f"Warning: Using default scheduler '{current}' as fallback")
             
             if current not in available:
@@ -111,24 +98,17 @@ class DiskManager:
                     seen.add(scheduler)
                     unique_available.append(scheduler)
             
-            return {
-                'current': current,
-                'available': unique_available
-            }
+            return {'current': current, 'available': unique_available}
             
         except Exception as e:
             print(f"Error parsing scheduler content '{content}': {e}")
-            return {
-                'current': DiskManager.DEFAULT_SCHEDULER,
-                'available': [DiskManager.DEFAULT_SCHEDULER]
-            }
+            fallback_available = DiskManager.BASE_OPTIONS + [DiskManager.DEFAULT_SCHEDULER]
+            return {'current': DiskManager.DEFAULT_SCHEDULER, 'available': fallback_available}
 
     @staticmethod
     def create_disk_tab():
         """
         Creates and returns the disk management tab widget.
-        Returns:
-            tuple: (QWidget, dict) The tab widget and a dictionary of UI elements
         """
         disk_tab = QWidget()
         main_layout = QVBoxLayout(disk_tab)
@@ -147,7 +127,6 @@ class DiskManager:
         widgets = {}
         widgets['disk_combos'] = {}
         widgets['disk_labels'] = {}
-        widgets['original_schedulers'] = {}
         
         disk_info = DiskManager.get_disk_scheduler_info()
         
@@ -163,22 +142,28 @@ class DiskManager:
             disk_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             
             disk_combo = QComboBox()
-            sorted_schedulers = sorted(scheduler_info['available'])
+            available_schedulers = scheduler_info['available']
+            if 'unset' in available_schedulers:
+                sorted_schedulers = ['unset'] + sorted([s for s in available_schedulers if s != 'unset'])
+            else:
+                sorted_schedulers = sorted(available_schedulers)
+            
             disk_combo.addItems(sorted_schedulers)
-            disk_combo.setCurrentText(scheduler_info['current'])
+            disk_combo.setCurrentText("unset")
             disk_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             
             disk_layout.addWidget(disk_label)
             disk_layout.addWidget(disk_combo)
             scroll_layout.addLayout(disk_layout)
             
-            current_label = QLabel(f"current: {scheduler_info['current']}")
+            current_scheduler = scheduler_info['current']
+            current_display = f"current: {current_scheduler}"
+            current_label = QLabel(current_display)
             current_label.setContentsMargins(0, 0, 0, 10)
             scroll_layout.addWidget(current_label)
             
             widgets['disk_combos'][disk_name] = disk_combo
             widgets['disk_labels'][disk_name] = current_label
-            widgets['original_schedulers'][disk_name] = scheduler_info['current']
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -198,9 +183,6 @@ class DiskManager:
     def create_disk_apply_button(parent_layout, widgets):
         """
         Creates and adds the disk apply button to the layout.
-        Args:
-            parent_layout: Layout to add the button to
-            widgets: Dictionary of widgets to store the button reference
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -221,127 +203,12 @@ class DiskManager:
     def refresh_disk_values(widgets):
         """
         Updates the UI with current disk scheduler information.
-        Args:
-            widgets: Dictionary containing UI widgets to update
         """
         disk_info = DiskManager.get_disk_scheduler_info()
         
         for disk_name, scheduler_info in disk_info.items():
-            if disk_name in widgets['disk_labels']:
-                widgets['disk_labels'][disk_name].setText(f"current: {scheduler_info['current']}")
-
-
-
-    @staticmethod
-    def check_if_disk_settings_already_applied(widgets):
-        """
-        Check if the selected disk settings are already applied.
-        Args:
-            widgets: Dictionary containing UI widgets
-        Returns:
-            tuple: (bool, str) - (settings_already_applied, message)
-        """
-        current_disk_info = DiskManager.get_disk_scheduler_info()
-        settings_changed = False
-        
-        for disk_name, combo in widgets['disk_combos'].items():
-            selected_scheduler = combo.currentText()
-            
-            if disk_name in current_disk_info:
-                current_scheduler = current_disk_info[disk_name]['current']
-                if selected_scheduler != current_scheduler:
-                    settings_changed = True
-                    break
-        
-        if not settings_changed:
-            return True, "Disk settings already applied"
-        else:
-            return False, "Disk settings need to be applied"
-
-    @staticmethod
-    def apply_disk_settings(widgets, main_window):
-        """
-        Apply disk scheduler settings.
-        Args:
-            widgets: Dictionary containing UI widgets
-            main_window: Reference to main window for system tray notifications
-        """
-        if widgets['is_process_running']:
-            return
-
-        already_applied, message = DiskManager.check_if_disk_settings_already_applied(widgets)
-        
-        if already_applied:
-            if main_window and hasattr(main_window, 'tray_icon'):
-                main_window.tray_icon.showMessage(
-                    "volt-gui", 
-                    message, 
-                    QSystemTrayIcon.MessageIcon.Information, 
-                    2000
-                )
-            return
-
-        scheduler_changes = []
-        for disk_name, combo in widgets['disk_combos'].items():
-            selected_scheduler = combo.currentText()
-            scheduler_changes.append(f"{disk_name}:{selected_scheduler}")
-
-        widgets['disk_apply_button'].setEnabled(False)
-        widgets['process'] = QProcess()
-        
-        args = ["/usr/local/bin/volt-helper", "-d"] + scheduler_changes
-        widgets['process'].start("pkexec", args)
-        widgets['process'].finished.connect(
-            lambda: DiskManager._on_process_finished(widgets, main_window)
-        )
-        widgets['is_process_running'] = True
-        widgets['disk_settings_applied'] = True
-
-    @staticmethod
-    def restore_disk_settings(widgets):
-        """
-        Restore disk settings to original values.
-        Args:
-            widgets: Dictionary containing UI widgets with original values
-        """
-        if widgets['disk_settings_applied']:
-            try:
-                scheduler_changes = []
-                for disk_name, original_scheduler in widgets['original_schedulers'].items():
-                    scheduler_changes.append(f"{disk_name}:{original_scheduler}")
+            if disk_name in widgets['disk_labels'] and disk_name in widgets['disk_combos']:
+                label = widgets['disk_labels'][disk_name]
+                current_scheduler = scheduler_info['current']
                 
-                process = QProcess()
-                args = ["/usr/local/bin/volt-helper", "-d"] + scheduler_changes
-                process.start("pkexec", args)
-                process.waitForFinished()
-            except Exception:
-                pass
-
-    @staticmethod
-    def _on_process_finished(widgets, main_window):
-        """
-        Handle process completion.
-        Args:
-            widgets: Dictionary containing UI widgets
-            main_window: Reference to main window for notifications
-        """
-        widgets['is_process_running'] = False
-        widgets['disk_apply_button'].setEnabled(True)
-        
-        exit_code = 0
-        if widgets['process']:
-            exit_code = widgets['process'].exitCode()
-        
-        DiskManager.refresh_disk_values(widgets)
-        
-        if main_window and hasattr(main_window, 'tray_icon'):
-            main_window.tray_icon.showMessage(
-                "volt-gui", 
-                "Disk settings applied successfully" if exit_code == 0 else "Error applying Disk settings",
-                QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical,
-                2000
-            )
-        
-        if widgets['process']:
-            widgets['process'].deleteLater()
-            widgets['process'] = None
+                label.setText(f"current: {current_scheduler}")

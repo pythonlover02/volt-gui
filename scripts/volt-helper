@@ -1,103 +1,224 @@
 #!/bin/bash
 
+SCRIPT_NAME="$0"
+CPU_RESULT=""
+DISK_RESULT=""
+KERNEL_RESULT=""
+GPU_RESULT=""
+
 show_usage() {
-    echo "Usage: $0 [OPTIONS]"
+    # Display usage information and examples for the script
+    echo "Usage: $SCRIPT_NAME [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -c <governor> <scheduler>     Configure CPU governor and scheduler"
-    echo "  -d <disk:scheduler> [...]     Configure disk I/O schedulers"
-    echo "  -k <path:value> [...]         Configure kernel parameters"
-    echo "  -h, --help                    Show this help message"
+    echo "  -c <governor:name> [scheduler:name]     Configure CPU governor and/or scheduler"
+    echo "  -d <disk:scheduler> [...]               Configure disk I/O schedulers"
+    echo "  -k <path:value> [...]                   Configure kernel parameters"
+    echo "  -g <settings_file>                      Generate GPU launch script from settings file"
+    echo "  -h, --help                              Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 -c performance scx_rusty"
-    echo "  $0 -d sda:bfq sdb:mq-deadline"
-    echo "  $0 -k /proc/sys/vm/swappiness:10 /proc/sys/vm/dirty_ratio:15"
-    echo "  $0 -c ondemand unset -d sda:none"
+    echo "  $SCRIPT_NAME -c governor:performance scheduler:scx_simple"
+    echo "  $SCRIPT_NAME -c governor:powersave"
+    echo "  $SCRIPT_NAME -c scheduler:scx_simple"
+    echo "  $SCRIPT_NAME -d sda:mq-deadline sdb:none"
     echo ""
     echo "Notes:"
-    echo "  - Use 'unset' for CPU governor to skip governor changes"
-    echo "  - Use 'unset' or 'none' for CPU scheduler to skip/terminate schedulers"
-    echo "  - Multiple -d and -k arguments can be provided"
+    echo "  - Use 'none' for CPU scheduler to terminate all schedulers"
+    echo "  - Multiple flags can be combined in any order"
+    echo "  - GPU settings file should contain key=value pairs"
     exit 0
 }
 
-# CPU Management Functions
-apply_governor() {
+get_current_scheduler() {
+    # Retrieve the currently running SCX scheduler
+    for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
+        echo "$proc"
+        return 0
+    done
+    echo ""
+}
+
+is_scheduler_running() {
+    # Check if a specific scheduler process is running
+    local scheduler="$1"
+    pgrep -f "$scheduler" > /dev/null 2>&1
+}
+
+is_scheduler_available() {
+    # Check if a scheduler command is available in PATH
+    local scheduler="$1"
+    command -v "$scheduler" > /dev/null 2>&1
+}
+
+get_available_disk_schedulers() {
+    # Get available schedulers for a specific disk
+    local disk_name="$1"
+    local scheduler_path="/sys/block/$disk_name/queue/scheduler"
+    if [ -f "$scheduler_path" ]; then
+        cat "$scheduler_path" | tr -d '[]'
+    fi
+}
+
+is_governor_available() {
+    # Check if a CPU governor is available
     local governor="$1"
-    if [ "$governor" != "unset" ]; then
-        echo "Applying CPU governor: $governor"
-        for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-            if [ -w "$CPU_PATH" ]; then
-                echo "$governor" > "$CPU_PATH"
+    local governor_path="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
+    if [ -f "$governor_path" ]; then
+        grep -q "$governor" "$governor_path"
+    else
+        return 1
+    fi
+}
+
+apply_governor() {
+    # Apply CPU governor to all available CPU cores
+    local governor="$1"
+    echo "Applying CPU governor: $governor"
+    
+    # Check if governor is available
+    if ! is_governor_available "$governor"; then
+        echo "  Error: Governor $governor not available"
+        return 1
+    fi
+    
+    local success=0
+    for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        if [ -w "$CPU_PATH" ]; then
+            if echo "$governor" > "$CPU_PATH"; then
                 echo "  Applied to $CPU_PATH"
             else
                 echo "  Warning: Cannot write to $CPU_PATH"
+                success=1
             fi
-        done
+        else
+            echo "  Warning: Cannot write to $CPU_PATH"
+            success=1
+        fi
+    done
+    return $success
+}
+
+terminate_existing_schedulers() {
+    # Terminate all running SCX schedulers using progressive signal escalation
+    echo "Terminating existing SCX schedulers..."
+    for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
+        echo "Attempting to terminate $proc"
+        pkill -INT -f "$proc" 2>/dev/null && sleep 0.5
+        
+        if is_scheduler_running "$proc"; then
+            pkill -TERM -f "$proc" 2>/dev/null && sleep 0.5
+            
+            if is_scheduler_running "$proc"; then
+                pkill -KILL -f "$proc" 2>/dev/null && sleep 0.2
+            fi
+        fi
+    done
+    sleep 1
+}
+
+start_new_scheduler() {
+    # Start a new scheduler and verify it's running
+    local scheduler="$1"
+    echo "Starting scheduler: $scheduler"
+    
+    if is_scheduler_available "$scheduler"; then
+        "$scheduler" &
+        local scheduler_pid=$!
+        sleep 1
+        
+        if kill -0 "$scheduler_pid" 2>/dev/null; then
+            echo "  Scheduler $scheduler started successfully (PID: $scheduler_pid)"
+            return 0
+        else
+            echo "  Error: Scheduler $scheduler failed to start"
+            return 1
+        fi
     else
-        echo "Governor set to unset, skipping governor application"
+        echo "  Error: Scheduler $scheduler not found"
+        return 1
     fi
 }
 
 handle_scheduler() {
+    # Handle scheduler termination and startup logic
     local scheduler="$1"
     
-    if [ "$scheduler" != "unset" ]; then
-        echo "Terminating existing SCX schedulers..."
-        for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
-            echo "Attempting to terminate $proc"
-            pkill -INT -f "$proc" 2>/dev/null
-            sleep 0.5
-            
-            if pgrep -f "$proc" > /dev/null 2>&1; then
-                pkill -TERM -f "$proc" 2>/dev/null
-                sleep 0.5
-                
-                if pgrep -f "$proc" > /dev/null 2>&1; then
-                    pkill -KILL -f "$proc" 2>/dev/null
-                    sleep 0.2
-                fi
-            fi
-        done
-        
-        if [ "$scheduler" != "none" ] && [ "$scheduler" != "unset" ]; then
-            echo "Starting scheduler: $scheduler"
-            if command -v "$scheduler" > /dev/null 2>&1; then
-                "$scheduler" &
-                echo "  Scheduler $scheduler started"
-            else
-                echo "  Error: Scheduler $scheduler not found"
-                return 1
-            fi
-        fi
-    else
-        echo "Scheduler set to unset, skipping scheduler changes"
+    local current_scheduler=$(get_current_scheduler)
+    
+    # If the requested scheduler is already running, skip
+    if [ "$scheduler" != "none" ] && [ -n "$current_scheduler" ] && [ "$scheduler" = "$current_scheduler" ]; then
+        echo "Scheduler $scheduler is already running, no changes needed"
+        return 0
     fi
+    
+    # Always terminate existing schedulers first
+    if [ -n "$current_scheduler" ]; then
+        terminate_existing_schedulers
+    fi
+    
+    # Start new scheduler if not "none"
+    if [ "$scheduler" != "none" ]; then
+        start_new_scheduler "$scheduler"
+        return $?
+    fi
+    
+    return 0
 }
 
 manage_cpu() {
-    local governor="$1"
-    local scheduler="$2"
+    # Manage CPU governor and scheduler configuration
+    local cpu_args=("$@")
     
-    if [ $# -ne 2 ]; then
-        echo "Error: CPU management requires exactly 2 arguments: <governor> <scheduler>"
+    if [ ${#cpu_args[@]} -eq 0 ]; then
+        echo "Error: CPU management requires at least one argument"
         return 1
     fi
     
     echo "volt-helper: Managing CPU settings"
-    echo "  Governor: $governor"
-    echo "  Scheduler: $scheduler"
+    
+    local governor=""
+    local scheduler=""
+    local governor_result=0
+    local scheduler_result=0
+    
+    # Parse CPU arguments
+    for arg in "${cpu_args[@]}"; do
+        if [[ "$arg" == governor:* ]]; then
+            governor="${arg#governor:}"
+            echo "  Governor: $governor"
+        elif [[ "$arg" == scheduler:* ]]; then
+            scheduler="${arg#scheduler:}"
+            echo "  Scheduler: $scheduler"
+        else
+            echo "Error: Invalid CPU argument format '$arg'. Expected governor:name or scheduler:name"
+            return 1
+        fi
+    done
+    
     echo
     
-    apply_governor "$governor"
-    handle_scheduler "$scheduler"
+    # Apply governor if specified
+    if [ -n "$governor" ]; then
+        apply_governor "$governor"
+        governor_result=$?
+    fi
     
-    return $?
+    # Handle scheduler if specified
+    if [ -n "$scheduler" ]; then
+        handle_scheduler "$scheduler"
+        scheduler_result=$?
+    fi
+    
+    # Return failure if either operation failed
+    if [ $governor_result -ne 0 ] || [ $scheduler_result -ne 0 ]; then
+        return 1
+    fi
+    return 0
 }
 
-# Disk Management Functions
 apply_disk_scheduler() {
+    # Apply I/O scheduler to a specific disk
     local disk_name="$1"
     local scheduler="$2"
     local scheduler_path="/sys/block/$disk_name/queue/scheduler"
@@ -114,14 +235,12 @@ apply_disk_scheduler() {
     
     echo "Applying scheduler '$scheduler' to disk $disk_name"
     
-    # Check if scheduler is available
     if ! grep -q "$scheduler" "$scheduler_path"; then
         echo "Error: Scheduler '$scheduler' not available for disk $disk_name"
-        echo "Available schedulers: $(cat "$scheduler_path" | tr -d '[]')"
+        echo "Available schedulers: $(get_available_disk_schedulers "$disk_name")"
         return 1
     fi
     
-    # Apply the scheduler
     if echo "$scheduler" > "$scheduler_path"; then
         echo "  Successfully applied scheduler '$scheduler' to $disk_name"
         return 0
@@ -132,6 +251,7 @@ apply_disk_scheduler() {
 }
 
 manage_disk() {
+    # Manage disk I/O scheduler configuration for multiple disks
     local disk_args=("$@")
     
     if [ ${#disk_args[@]} -eq 0 ]; then
@@ -142,24 +262,20 @@ manage_disk() {
     echo "volt-helper: Managing disk I/O schedulers"
     echo
     
-    # Track success/failure
     local total_changes=0
     local successful_changes=0
     
-    # Process each disk:scheduler pair
     for arg in "${disk_args[@]}"; do
         if [[ "$arg" == *":"* ]]; then
             local disk_name="${arg%%:*}"
             local scheduler="${arg#*:}"
             
             total_changes=$((total_changes + 1))
-            
             echo "Processing: $disk_name -> $scheduler"
             
             if apply_disk_scheduler "$disk_name" "$scheduler"; then
                 successful_changes=$((successful_changes + 1))
             fi
-            
             echo
         else
             echo "Warning: Invalid format '$arg'. Expected format: disk:scheduler"
@@ -169,7 +285,7 @@ manage_disk() {
     
     echo "Applied $successful_changes out of $total_changes scheduler changes"
     
-    # Return error if any changes failed
+    # Return success if all operations completed
     if [ $successful_changes -eq $total_changes ]; then
         return 0
     else
@@ -177,8 +293,28 @@ manage_disk() {
     fi
 }
 
-# Kernel Parameter Management Functions
+apply_kernel_parameter() {
+    # Apply a single kernel parameter setting
+    local path="$1"
+    local value="$2"
+    
+    if [ -w "$path" ]; then
+        echo "Applying: $value to $path"
+        if echo "$value" > "$path" 2>/dev/null; then
+            echo "  Successfully applied"
+            return 0
+        else
+            echo "  Error: Failed to write to $path"
+            return 1
+        fi
+    else
+        echo "Error: Path $path not writable"
+        return 1
+    fi
+}
+
 manage_kernel() {
+    # Manage kernel parameter configuration
     local kernel_args=("$@")
     
     if [ ${#kernel_args[@]} -eq 0 ]; then
@@ -189,21 +325,11 @@ manage_kernel() {
     echo "volt-helper: Managing kernel parameters"
     echo
     
-    # Process kernel settings in format: /proc/path:value
     for setting in "${kernel_args[@]}"; do
         local path="${setting%%:*}"
         local value="${setting#*:}"
         
-        if [ -w "$path" ]; then
-            echo "Applying: $value to $path"
-            if echo "$value" > "$path" 2>/dev/null; then
-                echo "  Successfully applied"
-            else
-                echo "  Error: Failed to write to $path"
-                return 1
-            fi
-        else
-            echo "Error: Path $path not writable"
+        if ! apply_kernel_parameter "$path" "$value"; then
             return 1
         fi
         echo
@@ -212,76 +338,259 @@ manage_kernel() {
     return 0
 }
 
-# Main script logic
+read_gpu_settings() {
+    # Read GPU settings from configuration file and generate environment variables
+    local settings_file="$1"
+    local script_content="#!/bin/bash\n\n"
+    
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        if [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]]; then
+            continue
+        fi
+        
+        key=$(echo "$key" | tr -d ' ')
+        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        if [ "$key" = "launch_options" ]; then
+            continue
+        elif [ -n "$value" ]; then
+            script_content="${script_content}export ${key}=\"${value}\"\n"
+        fi
+    done < "$settings_file"
+    
+    echo -e "$script_content"
+}
+
+add_launch_options() {
+    # Add launch options handling to GPU script
+    local settings_file="$1"
+    local script_content="$2"
+    local launch_options=$(grep "^launch_options=" "$settings_file" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    
+    script_content="${script_content}\n# Handle launch options if present\n"
+    if [ -n "$launch_options" ]; then
+        script_content="${script_content}# Execute the specified program with environment variables\n"
+        script_content="${script_content}${launch_options} \"\$@\"\n"
+    else
+        script_content="${script_content}# Launch the specified program with the environment variables\n"
+        script_content="${script_content}\"\$@\"\n"
+    fi
+    
+    echo -e "$script_content"
+}
+
+create_gpu_script() {
+    # Create GPU launch script with proper permissions
+    local script_content="$1"
+    local volt_script="/usr/local/bin/volt"
+    
+    # Check if we can write to the target directory
+    if [ ! -w "/usr/local/bin" ]; then
+        echo "Error: Cannot write to /usr/local/bin - run with appropriate privileges"
+        return 1
+    fi
+    
+    if echo -e "$script_content" > "$volt_script" 2>/dev/null; then
+        chmod 755 "$volt_script" 2>/dev/null
+        if [ $? -eq 0 ]; then
+            echo "GPU launch script successfully created at $volt_script"
+            return 0
+        else
+            echo "Warning: Failed to set executable permissions on $volt_script"
+            return 1
+        fi
+    else
+        echo "Error: Failed to write GPU launch script to $volt_script"
+        echo "Make sure you have write permissions or run with appropriate privileges"
+        return 1
+    fi
+}
+
+manage_gpu() {
+    # Manage GPU configuration by creating launch script from settings file
+    local settings_file="$1"
+    
+    if [ $# -ne 1 ]; then
+        echo "Error: GPU management requires exactly 1 argument: <settings_file>"
+        return 1
+    fi
+    
+    if [ ! -f "$settings_file" ]; then
+        echo "Error: Settings file $settings_file not found"
+        return 1
+    fi
+    
+    echo "volt-helper: Managing GPU launch settings"
+    echo "  Settings file: $settings_file"
+    echo
+    
+    local script_content=$(read_gpu_settings "$settings_file")
+    script_content=$(add_launch_options "$settings_file" "$script_content")
+    
+    create_gpu_script "$script_content"
+    return $?
+}
+
+print_operation_summary() {
+    # Print summary of all completed operations with success/failure status
+    local cpu_requested="$1"
+    local disk_requested="$2"
+    local kernel_requested="$3"
+    local gpu_requested="$4"
+    
+    if [ "$cpu_requested" = true ]; then
+        if [ "$CPU_RESULT" -eq 0 ]; then
+            echo "✓ CPU configuration: SUCCESS"
+        else
+            echo "✗ CPU configuration: FAILED"
+        fi
+    fi
+    
+    if [ "$disk_requested" = true ]; then
+        if [ "$DISK_RESULT" -eq 0 ]; then
+            echo "✓ Disk I/O configuration: SUCCESS"
+        else
+            echo "✗ Disk I/O configuration: FAILED"
+        fi
+    fi
+    
+    if [ "$kernel_requested" = true ]; then
+        if [ "$KERNEL_RESULT" -eq 0 ]; then
+            echo "✓ Kernel parameters configuration: SUCCESS"
+        else
+            echo "✗ Kernel parameters configuration: FAILED"
+        fi
+    fi
+    
+    if [ "$gpu_requested" = true ]; then
+        if [ "$GPU_RESULT" -eq 0 ]; then
+            echo "✓ GPU configuration: SUCCESS"
+        else
+            echo "✗ GPU configuration: FAILED"
+        fi
+    fi
+    
+    echo
+}
+
+calculate_exit_code() {
+    # Calculate final exit code based on operation results
+    local exit_code=0
+    
+    if [ -n "$CPU_RESULT" ] && [ "$CPU_RESULT" -ne 0 ]; then
+        exit_code=1
+    fi
+    if [ -n "$DISK_RESULT" ] && [ "$DISK_RESULT" -ne 0 ]; then
+        exit_code=1
+    fi
+    if [ -n "$KERNEL_RESULT" ] && [ "$KERNEL_RESULT" -ne 0 ]; then
+        exit_code=1
+    fi
+    if [ -n "$GPU_RESULT" ] && [ "$GPU_RESULT" -ne 0 ]; then
+        exit_code=1
+    fi
+    
+    return $exit_code
+}
+
+parse_arguments() {
+    # Parse command line arguments and execute requested operations
+    local cpu_requested=false
+    local disk_requested=false
+    local kernel_requested=false
+    local gpu_requested=false
+    
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -c|--cpu)
+                shift
+                local cpu_args=()
+                # Collect CPU arguments until next flag or end
+                while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+                    cpu_args+=("$1")
+                    shift
+                done
+                if [ ${#cpu_args[@]} -eq 0 ]; then
+                    echo "Error: -c requires at least one argument (governor:name or scheduler:name)"
+                    exit 1
+                fi
+                cpu_requested=true
+                manage_cpu "${cpu_args[@]}"
+                CPU_RESULT=$?
+                echo
+                ;;
+            -d|--disk)
+                shift
+                local disk_args=()
+                # Collect disk arguments until next flag or end
+                while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+                    disk_args+=("$1")
+                    shift
+                done
+                if [ ${#disk_args[@]} -eq 0 ]; then
+                    echo "Error: -d requires at least one disk:scheduler argument"
+                    exit 1
+                fi
+                disk_requested=true
+                manage_disk "${disk_args[@]}"
+                DISK_RESULT=$?
+                echo
+                ;;
+            -k|--kernel)
+                shift
+                local kernel_args=()
+                # Collect kernel arguments until next flag or end
+                while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+                    kernel_args+=("$1")
+                    shift
+                done
+                if [ ${#kernel_args[@]} -eq 0 ]; then
+                    echo "Error: -k requires at least one path:value argument"
+                    exit 1
+                fi
+                kernel_requested=true
+                manage_kernel "${kernel_args[@]}"
+                KERNEL_RESULT=$?
+                echo
+                ;;
+            -g|--gpu)
+                if [ $# -lt 2 ]; then
+                    echo "Error: -g requires 1 argument: <settings_file>"
+                    exit 1
+                fi
+                gpu_requested=true
+                manage_gpu "$2"
+                GPU_RESULT=$?
+                echo
+                shift 2
+                ;;
+            -h|--help)
+                show_usage
+                ;;
+            *)
+                echo "Error: Unknown option '$1'"
+                echo "Use -h or --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+    
+    if [ "$cpu_requested" = false ] && [ "$disk_requested" = false ] && [ "$kernel_requested" = false ] && [ "$gpu_requested" = false ]; then
+        echo "Error: No operations specified"
+        echo "Use -h or --help for usage information"
+        exit 1
+    fi
+    
+    print_operation_summary "$cpu_requested" "$disk_requested" "$kernel_requested" "$gpu_requested"
+}
+
 if [ $# -eq 0 ]; then
     show_usage
 fi
 
-# Parse command line arguments
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -c|--cpu)
-            if [ $# -lt 3 ]; then
-                echo "Error: -c requires 2 arguments: <governor> <scheduler>"
-                exit 1
-            fi
-            manage_cpu "$2" "$3"
-            cpu_result=$?
-            shift 3
-            ;;
-        -d|--disk)
-            shift
-            disk_args=()
-            # Collect all disk:scheduler arguments until next flag or end
-            while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
-                disk_args+=("$1")
-                shift
-            done
-            if [ ${#disk_args[@]} -eq 0 ]; then
-                echo "Error: -d requires at least one disk:scheduler argument"
-                exit 1
-            fi
-            manage_disk "${disk_args[@]}"
-            disk_result=$?
-            ;;
-        -k|--kernel)
-            shift
-            kernel_args=()
-            # Collect all path:value arguments until next flag or end
-            while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
-                kernel_args+=("$1")
-                shift
-            done
-            if [ ${#kernel_args[@]} -eq 0 ]; then
-                echo "Error: -k requires at least one path:value argument"
-                exit 1
-            fi
-            manage_kernel "${kernel_args[@]}"
-            kernel_result=$?
-            ;;
-        -h|--help)
-            show_usage
-            ;;
-        *)
-            echo "Error: Unknown option '$1'"
-            echo "Use -h or --help for usage information"
-            exit 1
-            ;;
-    esac
-done
+parse_arguments "$@"
 
-echo "volt-helper: Operation completed"
+echo "volt-helper: All operations completed"
 
-# Exit with error if any operation failed
-exit_code=0
-if [ -n "$cpu_result" ] && [ $cpu_result -ne 0 ]; then
-    exit_code=1
-fi
-if [ -n "$disk_result" ] && [ $disk_result -ne 0 ]; then
-    exit_code=1
-fi
-if [ -n "$kernel_result" ] && [ $kernel_result -ne 0 ]; then
-    exit_code=1
-fi
-
-exit $exit_code
+calculate_exit_code
+exit $?

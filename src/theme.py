@@ -65,25 +65,12 @@ class ThemeManager:
         cls.CURRENT_THEME = theme_name
     
     @classmethod
-    def apply_theme(cls, app, theme_name):
-        """
-        Apply the specified theme to the application.
-        """
-        if theme_name:
-            cls.set_theme(theme_name)
-            
-        if app:
-            app.setStyleSheet(cls.get_theme_style_sheet())
-            app.setPalette(cls.get_theme_palette())
-            
-    @classmethod
     def get_theme_style_sheet(cls):
         """
         Generate the complete stylesheet for the current theme.
         """
         c = cls.COLORS
         return f"""
-        /* Base widget styling */
         QWidget {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -91,7 +78,6 @@ class ThemeManager:
             font-family: "Segoe UI", sans-serif;
         }}
         
-        /* Label styling */
         QLabel {{
             color: {c['text_color']};
             background-color: transparent;
@@ -99,7 +85,6 @@ class ThemeManager:
             qproperty-wordWrap: true;
         }}
         
-        /* Scroll area styling */
         QScrollArea {{
             background-color: transparent;
             border: none;
@@ -109,7 +94,6 @@ class ThemeManager:
             background-color: transparent;
         }}
         
-        /* Custom widget properties */
         QWidget[scrollContainer="true"], 
         QWidget[buttonContainer="true"] {{
             background-color: transparent;
@@ -121,9 +105,41 @@ class ThemeManager:
             background-color: {c['bg_color']};
         }}
         
-        /* Main window and tab styling */
         QMainWindow {{
             background-color: {c['bg_color']};
+            border: none;
+        }}
+        
+        QTabBar::tab:hover:!selected {{
+            background-color: {c['lighter_bg']};
+            color: {c['text_color']};
+        }}
+        
+        QTabBar::scroller {{
+            width: 30px;
+            background-color: {c['surface_bg']};
+            border: none;
+        }}
+        
+        QTabBar QToolButton {{
+            background-color: {c['surface_bg']};
+            color: {c['text_color']};
+            border: none;
+            padding: 4px;
+        }}
+        
+        QTabBar QToolButton:hover {{
+            background-color: {c['lighter_bg']};
+        }}
+        
+        QTabBar QToolButton:pressed {{
+            background-color: {c['accent_pressed']};
+        }}
+        
+        QTabBar::tear {{
+            width: 0px;
+            height: 0px;
+            background: transparent;
             border: none;
         }}
         
@@ -163,7 +179,6 @@ class ThemeManager:
             color: {c['text_color']};
         }}
         
-        /* Vertical scrollbar styling */
         QScrollBar:vertical {{
             background: transparent;
             width: 12px;
@@ -218,7 +233,6 @@ class ThemeManager:
             background: none;
         }}
         
-        /* Button styling */
         QPushButton {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -254,7 +268,6 @@ class ThemeManager:
             outline: none;
         }}
         
-        /* Input controls styling */
         QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -299,7 +312,6 @@ class ThemeManager:
             outline: none;
         }}
         
-        /* Spin box buttons */
         QSpinBox::up-button, QDoubleSpinBox::up-button,
         QSpinBox::down-button, QDoubleSpinBox::down-button {{
             background-color: transparent;
@@ -312,7 +324,6 @@ class ThemeManager:
             background-color: {c['accent_color']};
         }}
         
-        /* Header labels */
         QLabel[isHeader="true"] {{
             font-weight: 600;
             color: {c['accent_color']};
@@ -322,7 +333,6 @@ class ThemeManager:
             border: none;
         }}
         
-        /* Checkbox styling */
         QCheckBox {{
             color: {c['text_color']};
             spacing: 10px;
@@ -349,7 +359,6 @@ class ThemeManager:
             background-color: {c['accent_hover']};
         }}
 
-        /* Status container styling */
         QWidget[statusContainer="true"] {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -364,7 +373,6 @@ class ThemeManager:
             border: none;
         }}
         
-        /* Group box styling - Clean headers */
         QGroupBox {{
             background-color: transparent;
             color: {c['text_color']};
@@ -373,15 +381,19 @@ class ThemeManager:
             font-size: 11pt;
             padding-top: 20px;
         }}
-        
+
         QGroupBox::title {{
             color: {c['accent_color']};
             subcontrol-origin: margin;
             left: 0px;
             padding: 0px 0px 8px 0px;
         }}
+
+        QFrame#profileFrame {{
+            border: 1px solid {c['accent_color']};
+            background-color: {c['bg_color']};
+        }}
         
-        /* Menu styling */
         QMenu {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -405,7 +417,6 @@ class ThemeManager:
             margin: 4px 0px;
         }}
         
-        /* Progress bar styling */
         QProgressBar {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -432,16 +443,12 @@ class ThemeManager:
         palette.setColor(QPalette.WindowText, QColor(c['text_color']))
         palette.setColor(QPalette.Base, QColor(c['surface_bg']))
         palette.setColor(QPalette.AlternateBase, QColor(c['lighter_bg']))
-        
         palette.setColor(QPalette.Text, QColor(c['text_color']))
         palette.setColor(QPalette.BrightText, QColor("#FFFFFF"))
-        
         palette.setColor(QPalette.Button, QColor(c['surface_bg']))
         palette.setColor(QPalette.ButtonText, QColor(c['text_color']))
-        
         palette.setColor(QPalette.Highlight, QColor(c['accent_color']))
         palette.setColor(QPalette.HighlightedText, QColor("#FFFFFF"))
-        
         palette.setColor(QPalette.Disabled, QPalette.Text, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(c['disabled_text']))
         palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(c['disabled_text']))
@@ -450,3 +457,15 @@ class ThemeManager:
         palette.setColor(QPalette.Disabled, QPalette.Button, QColor(c['darker_bg']))
         
         return palette
+
+    @classmethod
+    def apply_theme(cls, app, theme_name):
+        """
+        Apply the specified theme to the application.
+        """
+        if theme_name:
+            cls.set_theme(theme_name)
+            
+        if app:
+            app.setStyleSheet(cls.get_theme_style_sheet())
+            app.setPalette(cls.get_theme_palette())
