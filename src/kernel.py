@@ -275,17 +275,3 @@ class KernelManager:
             if info['is_dynamic'] and f'{name}_text_label' in widgets:
                 updated_text = KernelManager._get_dynamic_text_with_values(info['text'], info['path'])
                 widgets[f'{name}_text_label'].setText(updated_text)
-
-    @staticmethod
-    def check_sudo_execution():
-        """
-        Check if the application is run with sudo and exit if it is.
-        """
-        pass
-
-    @staticmethod
-    def handle_process_execution():
-        """
-        Handle process execution for kernel settings.
-        """
-        pass
