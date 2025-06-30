@@ -28,16 +28,6 @@ class CPUManager:
             return CPUManager.DEFAULT_GOVERNOR
 
     @staticmethod
-    def get_current_scheduler():
-        """
-        Gets the currently running CPU scheduler.
-        """
-        try:
-            return CPUManager._find_running_scheduler()
-        except subprocess.CalledProcessError:
-            return "none"
-    
-    @staticmethod
     def _find_running_scheduler():
         """
         Internal method to detect the currently running CPU scheduler.

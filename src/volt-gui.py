@@ -140,20 +140,6 @@ class MainWindow(QMainWindow):
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
 
-    def closeEvent(self, event):
-        """
-        Handle the window close event to save settings and current profile.
-        """
-        if self.use_system_tray and hasattr(self, 'tray_icon'):
-            event.ignore()
-            self.hide()
-        else:
-            self.save_settings()
-            self.save_current_profile_preference()
-            self.options_tab.options_manager.save_options()
-            event.accept()
-            self.instance_checker.cleanup()
-
     def save_current_profile_preference(self):
         """
         Save the currently selected profile as the last used profile.
