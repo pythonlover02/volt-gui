@@ -5,7 +5,8 @@ from PySide6.QtCore import Qt
 
 class ExtrasManager:
     
-    def _get_useful_links(self):
+    @staticmethod
+    def _get_useful_links():
         """
         Returns a list of dictionaries containing useful link information.
         """
@@ -17,7 +18,8 @@ class ExtrasManager:
             {"label": "Wine Application Database", "description": "Here you can get information on application compatibility with Wine.", "url": "https://appdb.winehq.org/"},
         ]
     
-    def _get_useful_programs(self):
+    @staticmethod
+    def _get_useful_programs():
         """
         Returns a list of dictionaries containing useful program information.
         """
@@ -35,7 +37,8 @@ class ExtrasManager:
             {"label": "VKD3D Proton Github", "description": "Vulkan translation layer for Direct3D 12, used on Proton.", "url": "https://github.com/HansKristian-Work/vkd3d-proton"},
         ]
     
-    def create_extras_tab(self):
+    @staticmethod
+    def create_extras_tab():
         """
         Creates and returns the extras tab widget with subtabs for links and programs.
         """
@@ -44,16 +47,17 @@ class ExtrasManager:
         extras_layout.setSpacing(10)
         
         extras_subtabs = QTabWidget()
-        useful_links_tab = self._create_scrollable_tab(self._get_useful_links())
-        useful_programs_tab = self._create_scrollable_tab(self._get_useful_programs())
+        useful_links_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_links())
+        useful_programs_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_programs())
         
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
         extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
         extras_layout.addWidget(extras_subtabs)
         
-        return extras_tab, extras_subtabs
-    
-    def _create_scrollable_tab(self, items):
+        return extras_tab, {}
+
+    @staticmethod
+    def _create_scrollable_tab(items):
         """
         Creates a scrollable tab widget containing the provided items.
         """
@@ -72,7 +76,7 @@ class ExtrasManager:
         scroll_layout.setContentsMargins(10, 10, 10, 10)
         
         for item in items:
-            container = self._create_item_container(item)
+            container = ExtrasManager._create_item_container(item)
             scroll_layout.addWidget(container)
         
         scroll_layout.addStretch(1)
@@ -81,7 +85,8 @@ class ExtrasManager:
         
         return tab
     
-    def _create_item_container(self, item_info):
+    @staticmethod
+    def _create_item_container(item_info):
         """
         Creates a container widget for an individual link/program item.
         """
@@ -105,7 +110,7 @@ class ExtrasManager:
         button.setMinimumHeight(30)
         button.setMinimumWidth(100)
         button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        button.clicked.connect(lambda checked, url=item_info["url"]: self.open_url(url))
+        button.clicked.connect(lambda checked, url=item_info["url"]: webbrowser.open(url))
         
         button_container = QWidget()
         button_container_layout = QHBoxLayout(button_container)
@@ -116,9 +121,3 @@ class ExtrasManager:
         
         container_layout.addWidget(button_container)
         return container
-    
-    def open_url(self, url):
-        """
-        Opens the specified URL in the system's default web browser.
-        """
-        webbrowser.open(url)

@@ -5,8 +5,7 @@ import tempfile
 import subprocess
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit,
-    QSystemTrayIcon
+    QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
 )
 from PySide6.QtCore import Qt
 
@@ -19,14 +18,7 @@ class GPULaunchManager:
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
     ICD_DIR = "/usr/share/vulkan/icd.d/"
-    MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/",]
-    
-    mesa_widgets = {}
-    nvidia_widgets = {}
-    render_selector_widgets = {}
-    frame_control_widgets = {}
-    launch_options_widgets = {}
-    tray_icon = None
+    MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "on", "off"]),
@@ -274,7 +266,7 @@ class GPULaunchManager:
         return sorted(options)
 
     @staticmethod
-    def _create_gpu_settings_tab():
+    def create_gpu_settings_tab():
         """
         Creates the GPU settings tab with Mesa, NVIDIA, render selector, and frame control subtabs.
         """
@@ -283,10 +275,10 @@ class GPULaunchManager:
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab = GPULaunchManager._create_mesa_tab()
-        nvidia_tab = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab = GPULaunchManager._create_render_selector_tab()
-        frame_control_tab = GPULaunchManager._create_frame_control_tab()
+        mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
+        nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
+        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
+        frame_control_tab, frame_control_widgets = GPULaunchManager._create_frame_control_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -294,30 +286,28 @@ class GPULaunchManager:
         gpu_subtabs.addTab(frame_control_tab, "Frame Control")
         gpu_layout.addWidget(gpu_subtabs)
         
-        GPULaunchManager.create_gpu_apply_button(mesa_tab.layout(), GPULaunchManager.mesa_widgets, 'mesa_apply_button')
-        GPULaunchManager.create_gpu_apply_button(nvidia_tab.layout(), GPULaunchManager.nvidia_widgets, 'nvidia_apply_button')
-        GPULaunchManager.create_gpu_apply_button(render_selector_tab.layout(), GPULaunchManager.render_selector_widgets, 'render_selector_apply_button')
-        GPULaunchManager.create_gpu_apply_button(frame_control_tab.layout(), GPULaunchManager.frame_control_widgets, 'frame_control_apply_button')
+        widgets = {
+            'mesa': mesa_widgets,
+            'nvidia': nvidia_widgets,
+            'render_selector': render_selector_widgets,
+            'frame_control': frame_control_widgets
+        }
         
-        return gpu_tab, gpu_subtabs
+        return gpu_tab, widgets
 
     @staticmethod
     def _create_mesa_tab():
         """
         Creates the Mesa settings tab.
         """
-        tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
-        GPULaunchManager.mesa_widgets.update(widgets)
-        return tab
+        return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
 
     @staticmethod
     def _create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
         """
-        tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
-        GPULaunchManager.nvidia_widgets.update(widgets)
-        return tab
+        return GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
     
     @staticmethod
     def _create_settings_tab(settings_layouts, apply_button_name):
@@ -359,6 +349,8 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
+        GPULaunchManager.create_gpu_apply_button(main_layout, widgets, apply_button_name)
+        
         return tab, widgets
 
     @staticmethod
@@ -368,18 +360,16 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        GPULaunchManager.render_selector_widgets.update(widgets)
-        
         vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
-        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].clear()
-        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].addItems(vulkan_options)
-        GPULaunchManager.render_selector_widgets['vulkan_render_combo'].setCurrentText("unset")
+        widgets['vulkan_render_combo'].clear()
+        widgets['vulkan_render_combo'].addItems(vulkan_options)
+        widgets['vulkan_render_combo'].setCurrentText("unset")
         
-        GPULaunchManager.render_selector_widgets['glx_vendor_combo'].currentTextChanged.connect(lambda: GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets))
+        widgets['glx_vendor_combo'].currentTextChanged.connect(lambda: GPULaunchManager._handle_glx_vendor_change(widgets))
         
-        GPULaunchManager._handle_glx_vendor_change(GPULaunchManager.render_selector_widgets)
+        GPULaunchManager._handle_glx_vendor_change(widgets)
 
-        return render_tab
+        return render_tab, widgets
 
     @staticmethod
     def _create_frame_control_tab():
@@ -394,11 +384,10 @@ class GPULaunchManager:
             for widget in widgets.values():
                 widget.setEnabled(False)
 
-        GPULaunchManager.frame_control_widgets = widgets
-        return frame_control_tab
+        return frame_control_tab, widgets
 
     @staticmethod
-    def _create_launch_options_tab():
+    def create_launch_options_tab():
         """
         Creates the launch options tab for specifying additional launch commands.
         """
@@ -440,13 +429,13 @@ class GPULaunchManager:
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        GPULaunchManager.launch_options_widgets = {'launch_options_input': launch_options_input}
+        widgets = {'launch_options_input': launch_options_input}
         
-        GPULaunchManager.create_launch_apply_button(main_layout, GPULaunchManager.launch_options_widgets)
+        GPULaunchManager.create_launch_apply_button(main_layout, widgets)
         
         main_layout.addSpacing(9)
         
-        return launch_tab
+        return launch_tab, widgets
 
     @staticmethod
     def create_gpu_apply_button(layout, widgets, button_name):
@@ -664,29 +653,19 @@ class GPULaunchManager:
         return env_vars, use_mangohud
 
     @staticmethod
-    def _write_settings_file():
+    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, frame_control_widgets, launch_options_widgets):
         """
         Writes GPU settings to a temporary file for volt-helper to process.
         """
-        mesa_env_vars = []
-        if GPULaunchManager.mesa_widgets:
-            mesa_env_vars = GPULaunchManager._generate_mesa_env_vars(GPULaunchManager.mesa_widgets)
-        
-        nvidia_env_vars = []
-        if GPULaunchManager.nvidia_widgets:
-            nvidia_env_vars = GPULaunchManager._generate_nvidia_env_vars(GPULaunchManager.nvidia_widgets)
-        
-        render_env_vars = []
-        if GPULaunchManager.render_selector_widgets:
-            render_env_vars = GPULaunchManager._generate_render_selector_env_vars(GPULaunchManager.render_selector_widgets)
+        mesa_env_vars = GPULaunchManager._generate_mesa_env_vars(mesa_widgets)
+        nvidia_env_vars = GPULaunchManager._generate_nvidia_env_vars(nvidia_widgets)
+        render_env_vars = GPULaunchManager._generate_render_selector_env_vars(render_selector_widgets)
             
         launch_options = ""
-        if GPULaunchManager.launch_options_widgets and 'launch_options_input' in GPULaunchManager.launch_options_widgets:
-            launch_options = GPULaunchManager.launch_options_widgets['launch_options_input'].text().strip()
+        if 'launch_options_input' in launch_options_widgets:
+            launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        frame_env_vars, use_mangohud = [], False
-        if GPULaunchManager.frame_control_widgets:
-            frame_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(GPULaunchManager.frame_control_widgets)
+        frame_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(frame_control_widgets)
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"
