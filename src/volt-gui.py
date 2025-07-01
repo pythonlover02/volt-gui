@@ -126,8 +126,10 @@ class MainWindow(QMainWindow):
 
         self.apply_dark_theme()
         self.setup_ui()
-        self.load_options_settings()
-
+        
+        # Load options settings
+        self.use_system_tray, self.start_minimized = ConfigManager.load_options_settings()
+        
         if self.use_system_tray:
             self.setup_system_tray()
 
@@ -139,92 +141,6 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
-
-    def save_current_profile_preference(self):
-        """
-        Save the currently selected profile as the last used profile.
-        """
-        config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
-        config_dir.mkdir(parents=True, exist_ok=True)
-        
-        config_path = config_dir / "volt-session.ini"
-        config = configparser.ConfigParser()
-        
-        if config_path.exists():
-            try:
-                config.read(config_path)
-            except:
-                pass
-        
-        if not config.has_section('Session'):
-            config.add_section('Session')
-        
-        config.set('Session', 'last_profile', self.current_profile)
-        
-        try:
-            with open(config_path, 'w') as configfile:
-                config.write(configfile)
-        except Exception as e:
-            print(f"Warning: Failed to save session config: {e}")
-
-    def load_current_profile_preference(self):
-        """
-        Load the last used profile from session config.
-        """
-        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-session.ini"))
-        
-        if not config_path.exists():
-            return "Default"
-        
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_path)
-            if config.has_section('Session') and config.has_option('Session', 'last_profile'):
-                last_profile = config.get('Session', 'last_profile')
-                available_profiles = ConfigManager.get_available_profiles()
-                if last_profile in available_profiles:
-                    return last_profile
-        except Exception as e:
-            print(f"Warning: Failed to load session config: {e}")
-        
-        return "Default"
-
-    def load_options_settings(self):
-        """
-        Load options settings from configuration file.
-        """
-        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
-
-        if not config_path.exists():
-            return
-
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_path)
-
-            if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-                self.use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
-
-            if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-                if self.use_system_tray:
-                    self.start_minimized = config['StartupBehavior'].get('start_minimized', 'disable') == 'enable'
-                else:
-                    self.start_minimized = False
-
-        except Exception as e:
-            print(f"Warning: Failed to load options settings: {e}")
-
-    def load_saved_settings(self):
-        """
-        Load previously saved settings from configuration file.
-        """
-        try:
-            last_profile = self.load_current_profile_preference()
-            self.current_profile = last_profile
-            
-            ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
-        except Exception as e:
-            print(f"Warning: Failed to load settings: {e}")
 
     def setup_ui(self):
         """
@@ -298,8 +214,7 @@ class MainWindow(QMainWindow):
         Set up the CPU management tab.
         """
         cpu_tab, self.cpu_widgets = CPUManager.create_cpu_tab()
-        if 'cpu_apply_button' in self.cpu_widgets:
-            self.cpu_widgets['cpu_apply_button'].clicked.connect(self.apply_all_settings)
+        self.cpu_widgets['cpu_apply_button'].clicked.connect(self.apply_all_settings)
         CPUManager.refresh_cpu_values(self.cpu_widgets)
         self.tab_widget.addTab(cpu_tab, "CPU")
 
@@ -308,8 +223,7 @@ class MainWindow(QMainWindow):
         Set up the disk management tab.
         """
         disk_tab, self.disk_widgets = DiskManager.create_disk_tab()
-        if 'disk_apply_button' in self.disk_widgets:
-            self.disk_widgets['disk_apply_button'].clicked.connect(self.apply_all_settings)
+        self.disk_widgets['disk_apply_button'].clicked.connect(self.apply_all_settings)
         DiskManager.refresh_disk_values(self.disk_widgets)
         self.tab_widget.addTab(disk_tab, "Disk")
 
@@ -323,14 +237,10 @@ class MainWindow(QMainWindow):
         self.gpu_manager.render_selector_widgets = GPULaunchManager.render_selector_widgets
         self.gpu_manager.frame_control_widgets = GPULaunchManager.frame_control_widgets
 
-        if GPULaunchManager.mesa_widgets and 'mesa_apply_button' in GPULaunchManager.mesa_widgets:
-            GPULaunchManager.mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_all_settings)
-        if GPULaunchManager.nvidia_widgets and 'nvidia_apply_button' in GPULaunchManager.nvidia_widgets:
-            GPULaunchManager.nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_all_settings)
-        if GPULaunchManager.render_selector_widgets and 'render_selector_apply_button' in GPULaunchManager.render_selector_widgets:
-            GPULaunchManager.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_all_settings)
-        if GPULaunchManager.frame_control_widgets and 'frame_control_apply_button' in GPULaunchManager.frame_control_widgets:
-            GPULaunchManager.frame_control_widgets['frame_control_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_manager.mesa_widgets['mesa_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_manager.nvidia_widgets['nvidia_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_manager.render_selector_widgets['render_selector_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_manager.frame_control_widgets['frame_control_apply_button'].clicked.connect(self.apply_all_settings)
 
         self.tab_widget.addTab(gpu_tab, "GPU")
 
@@ -339,10 +249,7 @@ class MainWindow(QMainWindow):
         Set up the launch options tab.
         """
         launch_options_tab = GPULaunchManager._create_launch_options_tab()
-
-        if 'launch_apply_button' in self.gpu_manager.launch_options_widgets:
-            self.gpu_manager.launch_options_widgets['launch_apply_button'].clicked.connect(self.apply_all_settings)
-
+        self.gpu_manager.launch_options_widgets['launch_apply_button'].clicked.connect(self.apply_all_settings)
         self.tab_widget.addTab(launch_options_tab, "Launch Options")
 
     def setup_kernel_tab(self):
@@ -350,15 +257,11 @@ class MainWindow(QMainWindow):
         Set up the kernel management tab.
         """
         kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab(self)
+        self.kernel_widgets['kernel_apply_button'].clicked.connect(self.apply_all_settings)
 
-        if 'kernel_apply_button' in self.kernel_widgets:
-            self.kernel_widgets['kernel_apply_button'].clicked.connect(self.apply_all_settings)
-
-        if 'KERNEL_SETTINGS' in KernelManager.__dict__:
-            for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-                widget_key = f'{setting_name}_input'
-                if widget_key in self.kernel_widgets:
-                    self.kernel_widgets[widget_key].installEventFilter(self)
+        for setting_name in KernelManager.KERNEL_SETTINGS.keys():
+            widget_key = f'{setting_name}_input'
+            self.kernel_widgets[widget_key].installEventFilter(self)
 
         KernelManager.refresh_kernel_values(self.kernel_widgets)
         self.tab_widget.addTab(kernel_tab, "Kernel")
@@ -394,8 +297,7 @@ class MainWindow(QMainWindow):
         self.tray_icon.show()
         self.tray_icon.activated.connect(self.tray_icon_activated)
 
-        if 'tray_icon' in self.gpu_manager.__dict__:
-            self.gpu_manager.tray_icon = self.tray_icon
+        self.gpu_manager.tray_icon = self.tray_icon
 
     def setup_refresh_timer(self):
         """
@@ -475,6 +377,18 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Warning: Failed to save settings: {e}")
 
+    def load_saved_settings(self):
+        """
+        Load previously saved settings from configuration file.
+        """
+        try:
+            last_profile = ConfigManager.load_current_profile_preference()
+            self.current_profile = last_profile
+            
+            ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, self.current_profile)
+        except Exception as e:
+            print(f"Warning: Failed to load settings: {e}")
+
     def on_profile_changed(self, profile_name):
         """
         Handle profile selection changes.
@@ -489,7 +403,7 @@ class MainWindow(QMainWindow):
                 print(f"Warning: Failed to save current profile settings: {e}")
 
         self.current_profile = profile_name
-        self.save_current_profile_preference()
+        ConfigManager.save_current_profile_preference(profile_name)
         ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
     def save_new_profile(self):
@@ -515,7 +429,7 @@ class MainWindow(QMainWindow):
                 ConfigManager.save_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
                 self.current_profile = profile_name
-                self.save_current_profile_preference()
+                ConfigManager.save_current_profile_preference(profile_name)
                 self.update_profile_list()
                 self.profile_selector.setCurrentText(profile_name)
 
@@ -545,30 +459,23 @@ class MainWindow(QMainWindow):
 
         if reply == QMessageBox.Yes:
             try:
-                config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
-                profile_file = config_dir / f"volt-config-{current_profile}.ini"
+                ConfigManager.delete_profile(current_profile)
 
-                if profile_file.exists():
-                    profile_file.unlink()
+                self.current_profile = "Default"
+                ConfigManager.save_current_profile_preference("Default")
+                self.update_profile_list()
+                self.profile_selector.setCurrentText("Default")
 
-                    self.current_profile = "Default"
-                    self.save_current_profile_preference()
-                    self.update_profile_list()
-                    self.profile_selector.setCurrentText("Default")
+                ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, "Default")
 
-                    ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, "Default")
+                self.refresh_cpu_values()
+                self.refresh_disk_values()
+                self.refresh_kernel_values()
 
-                    self.refresh_cpu_values()
-                    self.refresh_disk_values()
-                    self.refresh_kernel_values()
+                if hasattr(self, 'tray_icon') and self.use_system_tray:
+                    self.update_tray_profile_menu()
 
-                    if hasattr(self, 'tray_icon') and self.use_system_tray:
-                        self.update_tray_profile_menu()
-
-                    QMessageBox.information(self, "Profile Deleted", f"Profile '{current_profile}' has been deleted.")
-                else:
-                    QMessageBox.warning(self, "Error", f"Profile file for '{current_profile}' not found.")
-
+                QMessageBox.information(self, "Profile Deleted", f"Profile '{current_profile}' has been deleted.")
             except Exception as e:
                 QMessageBox.warning(self, "Error", f"Failed to delete profile '{current_profile}': {str(e)}")
 
@@ -583,7 +490,7 @@ class MainWindow(QMainWindow):
                 print(f"Warning: Failed to save current profile settings: {e}")
 
             self.current_profile = profile_name
-            self.save_current_profile_preference()
+            ConfigManager.save_current_profile_preference(profile_name)
             self.profile_selector.setCurrentText(profile_name)
             ConfigManager.load_config(self.cpu_widgets, self.gpu_manager, self.kernel_widgets, self.disk_widgets, profile_name)
 
@@ -675,22 +582,14 @@ class MainWindow(QMainWindow):
             process.start(all_args[0], all_args[1:])
             process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
 
-            if 'cpu_apply_button' in self.cpu_widgets:
-                self.cpu_widgets['cpu_apply_button'].setEnabled(False)
-            if 'disk_apply_button' in self.disk_widgets:
-                self.disk_widgets['disk_apply_button'].setEnabled(False)
-            if 'kernel_apply_button' in self.kernel_widgets:
-                self.kernel_widgets['kernel_apply_button'].setEnabled(False)
-            if 'mesa_apply_button' in self.gpu_manager.mesa_widgets:
-                self.gpu_manager.mesa_widgets['mesa_apply_button'].setEnabled(False)
-            if 'nvidia_apply_button' in self.gpu_manager.nvidia_widgets:
-                self.gpu_manager.nvidia_widgets['nvidia_apply_button'].setEnabled(False)
-            if 'render_selector_apply_button' in self.gpu_manager.render_selector_widgets:
-                self.gpu_manager.render_selector_widgets['render_selector_apply_button'].setEnabled(False)
-            if 'frame_control_apply_button' in self.gpu_manager.frame_control_widgets:
-                self.gpu_manager.frame_control_widgets['frame_control_apply_button'].setEnabled(False)
-            if 'launch_apply_button' in self.gpu_manager.launch_options_widgets:
-                self.gpu_manager.launch_options_widgets['launch_apply_button'].setEnabled(False)
+            self.cpu_widgets['cpu_apply_button'].setEnabled(False)
+            self.disk_widgets['disk_apply_button'].setEnabled(False)
+            self.kernel_widgets['kernel_apply_button'].setEnabled(False)
+            self.gpu_manager.mesa_widgets['mesa_apply_button'].setEnabled(False)
+            self.gpu_manager.nvidia_widgets['nvidia_apply_button'].setEnabled(False)
+            self.gpu_manager.render_selector_widgets['render_selector_apply_button'].setEnabled(False)
+            self.gpu_manager.frame_control_widgets['frame_control_apply_button'].setEnabled(False)
+            self.gpu_manager.launch_options_widgets['launch_apply_button'].setEnabled(False)
 
         except Exception as e:
             print(f"Error applying settings: {e}")
@@ -703,22 +602,14 @@ class MainWindow(QMainWindow):
         """
         Handle the completion of the settings application process.
         """
-        if 'cpu_apply_button' in self.cpu_widgets:
-            self.cpu_widgets['cpu_apply_button'].setEnabled(True)
-        if 'disk_apply_button' in self.disk_widgets:
-            self.disk_widgets['disk_apply_button'].setEnabled(True)
-        if 'kernel_apply_button' in self.kernel_widgets:
-            self.kernel_widgets['kernel_apply_button'].setEnabled(True)
-        if 'mesa_apply_button' in self.gpu_manager.mesa_widgets:
-            self.gpu_manager.mesa_widgets['mesa_apply_button'].setEnabled(True)
-        if 'nvidia_apply_button' in self.gpu_manager.nvidia_widgets:
-            self.gpu_manager.nvidia_widgets['nvidia_apply_button'].setEnabled(True)
-        if 'render_selector_apply_button' in self.gpu_manager.render_selector_widgets:
-            self.gpu_manager.render_selector_widgets['render_selector_apply_button'].setEnabled(True)
-        if 'frame_control_apply_button' in self.gpu_manager.frame_control_widgets:
-            self.gpu_manager.frame_control_widgets['frame_control_apply_button'].setEnabled(True)
-        if 'launch_apply_button' in self.gpu_manager.launch_options_widgets:
-            self.gpu_manager.launch_options_widgets['launch_apply_button'].setEnabled(True)
+        self.cpu_widgets['cpu_apply_button'].setEnabled(True)
+        self.disk_widgets['disk_apply_button'].setEnabled(True)
+        self.kernel_widgets['kernel_apply_button'].setEnabled(True)
+        self.gpu_manager.mesa_widgets['mesa_apply_button'].setEnabled(True)
+        self.gpu_manager.nvidia_widgets['nvidia_apply_button'].setEnabled(True)
+        self.gpu_manager.render_selector_widgets['render_selector_apply_button'].setEnabled(True)
+        self.gpu_manager.frame_control_widgets['frame_control_apply_button'].setEnabled(True)
+        self.gpu_manager.launch_options_widgets['launch_apply_button'].setEnabled(True)
 
         self.refresh_cpu_values()
         self.refresh_disk_values()
@@ -734,7 +625,7 @@ class MainWindow(QMainWindow):
         Quit the application properly, ensuring all settings are saved.
         """
         self.save_settings()
-        self.save_current_profile_preference()
+        ConfigManager.save_current_profile_preference(self.current_profile)
         self.options_tab.options_manager.save_options()
         self.instance_checker.cleanup()
         QApplication.quit()
