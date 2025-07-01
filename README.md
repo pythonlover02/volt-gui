@@ -56,6 +56,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Useful Programs for the average Linux Gamer
 - Options
   - Options for the program itself
+- Create or Delete Profiles, all of them with its own settings, witch you can apply trough the program or systray.
 
 ## Build Requirements:
 
@@ -160,13 +161,15 @@ volt flatpak run net.pcsx2.PCSX2
 
 Documentation used:
 
-- [Improving performance - Arch Linux Wiki](https://wiki.archlinux.org/title/Improving_performance)
-- [Gaming - Arch Linux Wiki](https://wiki.archlinux.org/title/Gaming#Improving_performance)
+- [Arch Linux Wiki - Improving performance](https://wiki.archlinux.org/title/Improving_performance)
+- [Arch Linux Wiki - Gaming](https://wiki.archlinux.org/title/Gaming#Improving_performance)
 - [sched-ext tutorial - CachyOs Wiki](https://wiki.cachyos.org/configuration/sched-ext/)
+- [sched-ext scx Github - Readme](https://github.com/sched-ext/scx/blob/main/README.md)
+- [MangoHud Github - Readme](https://github.com/flightlessmango/MangoHud/blob/master/README.md)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
-- [NVIDIA 570 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
-- [NVIDIA 470 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
-- [NVIDIA 390 Drivers Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
+- [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
+- [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
+- [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
 
 ## Contributing:
 
