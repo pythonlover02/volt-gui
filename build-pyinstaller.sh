@@ -32,7 +32,7 @@ cleanup() {
 
 # Check for required commands
 check_commands() {
-    local commands=("python" "pip")
+    local commands=("python3" "pip")
     for cmd in "${commands[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
@@ -44,8 +44,8 @@ check_commands() {
 # Create virtual environments
 create_venv() {
     if [[ ! -d "$VENV_DIR" ]]; then
-        echo -e "${CYAN}Creating Python virtual environment...${NC}"
-        python -m venv "$VENV_DIR"
+        echo -e "${CYAN}Creating python3 virtual environment...${NC}"
+        python3 -m venv "$VENV_DIR"
     fi
 }
 

@@ -64,6 +64,7 @@ A graphical user interface for configuring GPU related environment variables and
 
 - Python 3.9 or higher
 - Pip
+- The `python3-venv` package its required on Debian/Debian based distros.
 - Linux operating system
 
 ### Additional requirements in the case you build the program using Nuitka:
@@ -76,7 +77,7 @@ A graphical user interface for configuring GPU related environment variables and
 If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
-- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Frame Options Settings
+- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Frame Options Settings. Both the native or the Flatpak version satisfy the dependency.
 
 ## Installation:
 
