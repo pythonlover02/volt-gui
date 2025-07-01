@@ -57,9 +57,6 @@ A graphical user interface for configuring GPU related environment variables and
 - Options
   - Options for the program itself
 
-> [!NOTE]  
-> CPU, Disk and Kernel settings will be reverted or not when volt-gui its closed, depending of the options selected by the user on the option tab. But those options will always be reverted on system reboot.
-
 ## Build Requirements:
 
 - Python 3.9 or higher
