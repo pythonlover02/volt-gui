@@ -38,7 +38,7 @@ class ConfigManager:
         return profiles
     
     @staticmethod
-    def save_config(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
+    def save_config(cpu_widgets, gpu_widgets, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Save all widget settings to the configuration file.
         """
@@ -50,27 +50,27 @@ class ConfigManager:
         }
         
         config['Mesa'] = {}
-        for widget_key, widget in gpu_manager.mesa_widgets.items():
+        for widget_key, widget in gpu_widgets['mesa'].items():
             if hasattr(widget, 'currentText') and widget_key != 'mesa_apply_button':
                 config['Mesa'][widget_key] = widget.currentText()
         
         config['NVIDIA'] = {}
-        for widget_key, widget in gpu_manager.nvidia_widgets.items():
+        for widget_key, widget in gpu_widgets['nvidia'].items():
             if hasattr(widget, 'currentText') and widget_key != 'nvidia_apply_button':
                 config['NVIDIA'][widget_key] = widget.currentText()
         
         config['RenderSelector'] = {}
-        for widget_key, widget in gpu_manager.render_selector_widgets.items():
+        for widget_key, widget in gpu_widgets['render_selector'].items():
             if hasattr(widget, 'currentText') and widget_key != 'render_selector_apply_button':
                 config['RenderSelector'][widget_key] = widget.currentText()
         
         config['FrameControl'] = {}
-        for widget_key, widget in gpu_manager.frame_control_widgets.items():
+        for widget_key, widget in gpu_widgets['frame_control'].items():
             if hasattr(widget, 'currentText') and widget_key != 'frame_control_apply_button':
                 config['FrameControl'][widget_key] = widget.currentText()
             
-        if 'launch_options_input' in gpu_manager.launch_options_widgets:
-            launch_options = gpu_manager.launch_options_widgets['launch_options_input'].text().replace('%', '%%')
+        if 'launch_options_input' in gpu_widgets['launch_options']:
+            launch_options = gpu_widgets['launch_options']['launch_options_input'].text().replace('%', '%%')
             config['LaunchOptions'] = {'launch_options': launch_options}
             
         if kernel_widgets:
@@ -93,7 +93,7 @@ class ConfigManager:
             config.write(configfile)
     
     @staticmethod
-    def load_config(cpu_widgets, gpu_manager, kernel_widgets, disk_widgets, profile_name="Default"):
+    def load_config(cpu_widgets, gpu_widgets, kernel_widgets, disk_widgets, profile_name="Default"):
         """
         Load settings from configuration file and apply to widgets.
         """
@@ -109,29 +109,29 @@ class ConfigManager:
             cpu_widgets['gov_combo'].setCurrentText(config['CPU'].get('governor', 'unset'))
             cpu_widgets['sched_combo'].setCurrentText(config['CPU'].get('scheduler', 'unset'))
         
-        if 'Mesa' in config:
+        if 'Mesa' in config and 'mesa' in gpu_widgets:
             for widget_key, value in config['Mesa'].items():
-                if widget_key in gpu_manager.mesa_widgets and hasattr(gpu_manager.mesa_widgets[widget_key], 'setCurrentText'):
-                    gpu_manager.mesa_widgets[widget_key].setCurrentText(value)
+                if widget_key in gpu_widgets['mesa'] and hasattr(gpu_widgets['mesa'][widget_key], 'setCurrentText'):
+                    gpu_widgets['mesa'][widget_key].setCurrentText(value)
         
-        if 'NVIDIA' in config:
+        if 'NVIDIA' in config and 'nvidia' in gpu_widgets:
             for widget_key, value in config['NVIDIA'].items():
-                if widget_key in gpu_manager.nvidia_widgets and hasattr(gpu_manager.nvidia_widgets[widget_key], 'setCurrentText'):
-                    gpu_manager.nvidia_widgets[widget_key].setCurrentText(value)
+                if widget_key in gpu_widgets['nvidia'] and hasattr(gpu_widgets['nvidia'][widget_key], 'setCurrentText'):
+                    gpu_widgets['nvidia'][widget_key].setCurrentText(value)
         
-        if 'RenderSelector' in config:
+        if 'RenderSelector' in config and 'render_selector' in gpu_widgets:
             for widget_key, value in config['RenderSelector'].items():
-                if widget_key in gpu_manager.render_selector_widgets and hasattr(gpu_manager.render_selector_widgets[widget_key], 'setCurrentText'):
-                    gpu_manager.render_selector_widgets[widget_key].setCurrentText(value)
+                if widget_key in gpu_widgets['render_selector'] and hasattr(gpu_widgets['render_selector'][widget_key], 'setCurrentText'):
+                    gpu_widgets['render_selector'][widget_key].setCurrentText(value)
     
-        if 'FrameControl' in config:
+        if 'FrameControl' in config and 'frame_control' in gpu_widgets:
             for widget_key, value in config['FrameControl'].items():
-                if widget_key in gpu_manager.frame_control_widgets and hasattr(gpu_manager.frame_control_widgets[widget_key], 'setCurrentText'):
-                    gpu_manager.frame_control_widgets[widget_key].setCurrentText(value)
+                if widget_key in gpu_widgets['frame_control'] and hasattr(gpu_widgets['frame_control'][widget_key], 'setCurrentText'):
+                    gpu_widgets['frame_control'][widget_key].setCurrentText(value)
                 
-        if 'LaunchOptions' in config and 'launch_options_input' in gpu_manager.launch_options_widgets:
+        if 'LaunchOptions' in config and 'launch_options' in gpu_widgets and 'launch_options_input' in gpu_widgets['launch_options']:
             launch_options = config['LaunchOptions'].get('launch_options', '').replace('%%', '%')
-            gpu_manager.launch_options_widgets['launch_options_input'].setText(launch_options)
+            gpu_widgets['launch_options']['launch_options_input'].setText(launch_options)
                 
         if kernel_widgets and 'Kernel' in config:
             for setting_name, value in config['Kernel'].items():
