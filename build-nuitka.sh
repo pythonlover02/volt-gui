@@ -28,7 +28,7 @@ NUITKA_OPTS=(
 
 # Cleanup function
 cleanup() {
-    rm -rf "$BASE_FILENAME.build/" "$BASE_FILENAME.dist/" "$BASE_FILENAME.onefile-build/" **__pycache__*/ 2>/dev/null || true
+    rm -rf "$BASE_FILENAME.build/" "$BASE_FILENAME.dist/" "$BASE_FILENAME.onefile-build/" 2>/dev/null || true
 }
 
 # Check for required commands

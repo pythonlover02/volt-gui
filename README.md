@@ -58,7 +58,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Options for the program itself
 - Create or Delete Profiles, all of them with its own settings, witch you can apply trough the program or systray.
 
-## Build Requirements:
+## Build/Test Requirements:
 
 - Python 3.9 or higher
 - Pip
@@ -100,7 +100,7 @@ If this software is not provided, its options will be locked.
    ```
    This will:
    - Copy the executable to `/usr/local/bin/`
-   - Copy the helper scripts to `/usr/local/bin/`
+   - Copy the `volt-helper` script to `/usr/local/bin/`
    - Create a desktop entry at `/usr/share/applications/volt-gui.desktop`
 
 ### Removal:
@@ -110,9 +110,25 @@ If this software is not provided, its options will be locked.
    ```
    This will:
    - Remove the `volt-gui` executable from `/usr/local/bin/`
-   - Remove the helper scripts from `/usr/local/bin/`
+   - Remove the `volt-helper` script from `/usr/local/bin/`
    - Remove the `volt` bash script from `/usr/local/bin/`
    - Remove the desktop entry `/usr/share/applications/volt-gui.desktop`
+
+## Testing volt-gui:
+In the case you want to contribute to the project you can use the provided `test.sh` script to test the changes you made. This script will create a Python virtual environment if one does not already exist. This way, you don't have to install the program dependencies systemwide.
+
+The first time you run it, use the -c flag that will also copy the `volt-helper` to `/usr/local/bin/`, as the program requires it for appliying the settings:
+```
+./test.sh -c
+```
+
+After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag to avoid unnecessary overwrites of the script:
+```
+./test.sh
+```
+
+> [!NOTE]  
+> You can use the `remove.sh` script to remove the `volt-helper`. The `py_env` folder should be deleted in the case you created it with your system python, and you want to use a python version that its inside a `distrobox` box, or vice versa. 
 
 ## How to use `volt-gui`:
 
