@@ -12,6 +12,18 @@ A graphical user interface for configuring GPU related environment variables and
 ![](/images/2.png)
 ![](/images/3.png)
 
+## Table of Contents
+
+- [What you can do?](#what-you-can-do)
+- [Build/Test Requirements](#buildtest-requirements)
+- [Installation](#installation)
+- [Testing volt-gui](#testing-volt-gui)
+- [How to use volt-gui](#how-to-use-volt-gui)
+- [How to use the volt script](#how-to-use-the-volt-script)
+- [Render Selector explained](#render-selector-explained)
+- [Technical References](#technical-references)
+- [Contributing](#contributing)
+
 ## What you can do?:
 
 - CPU Management
@@ -166,7 +178,7 @@ When using the terminal or a custom desktop entry:
 volt flatpak run net.pcsx2.PCSX2
 ```
 
-## GPU Selector explained:
+## Render Selector explained:
 
 - `OpenGL Provider` Select a OpenGL provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
 - `Mesa Select GPU` In this case “select” means the GPU will be first in the reported physical devices list, It applies to OpenGL and Vulkan and only GPUs using the Mesa Drivers. Something to add its that the `OpenGL Provider` and `Vulkan ICD` settings have priority over this.
@@ -188,4 +200,4 @@ Documentation used:
 
 ## Contributing:
 
-Contributions are welcome. Please ensure any changes maintain compatibility with the supported Python versions and follow the existing code structure.
+Contributions are welcome. Please ensure any changes maintain compatibility with the supported Python versions and follow the existing code structure. You might want to read: [Build/Test Requirements](#buildtest-requirements), [Installation](#installation) and [Testing volt-gui](#testing-volt-gui).
