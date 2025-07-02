@@ -152,9 +152,8 @@ volt flatpak run net.pcsx2.PCSX2
 
 ## GPU Selector explained:
 
-- `GLX Vendor Library` Select a GLX provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
-- `Mesa Select GPU` Select which to use GPU among those available on the system. (Only for GPUs using the Mesa Drivers)
-- `OpenGL Software Rendering` Use Mesa OpenGL Software Rendering; this will ignore the `Mesa Select GPU` option.
+- `OpenGL Provider` Select a OpenGL provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
+- `Mesa Select GPU` In this case “select” means the GPU will be first in the reported physical devices list, It applies to OpenGL and Vulkan and only GPUs using the Mesa Drivers. Something to add its that the `OpenGL Provider` and `Vulkan ICD` settings have priority over this.
 - `Vulkan ICD` Selects the Vulkan Installable Client Driver, obtained from `/usr/share/vulkan/icd.d/`.
 
 ## Technical References:

@@ -60,9 +60,14 @@ class GPULaunchManager:
     ]
 
     RENDER_SETTINGS = [
-        ("GLX Vendor Library:", 'glx_vendor_combo', ["unset", "nvidia", "mesa"]),
+        ("OpenGL Provider:", 'ogl_provider_combo', [
+            "unset", 
+            "nvidia", 
+            "mesa", 
+            "mesa (software rendering)", 
+            "mesa (zink)"
+        ]),
         ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
-        ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
     ]
 
@@ -171,18 +176,18 @@ class GPULaunchManager:
     }
     
     RENDER_ENV_MAPPINGS = {
-        'glx_vendor_combo': {
+        'ogl_provider_combo': {
             'var_name': '__GLX_VENDOR_LIBRARY_NAME',
-            'direct_value': True
+            'values': {
+                'nvidia': 'nvidia',
+                'mesa': 'mesa',
+                'mesa (software rendering)': 'mesa',
+                'mesa (zink)': 'mesa'
+            }
         },
         'dri_prime_combo': {
             'var_name': 'DRI_PRIME',
             'direct_value': True,
-            'dependency': 'mesa_only'
-        },
-        'libgl_software_combo': {
-            'var_name': 'LIBGL_ALWAYS_SOFTWARE',
-            'values': {'on': '1', 'off': '0'},
             'dependency': 'mesa_only'
         },
         'vulkan_render_combo': {
@@ -364,10 +369,6 @@ class GPULaunchManager:
         widgets['vulkan_render_combo'].clear()
         widgets['vulkan_render_combo'].addItems(vulkan_options)
         widgets['vulkan_render_combo'].setCurrentText("unset")
-        
-        widgets['glx_vendor_combo'].currentTextChanged.connect(lambda: GPULaunchManager._handle_glx_vendor_change(widgets))
-        
-        GPULaunchManager._handle_glx_vendor_change(widgets)
 
         return render_tab, widgets
 
@@ -476,17 +477,6 @@ class GPULaunchManager:
         layout.addWidget(button_container)
 
     @staticmethod
-    def _handle_glx_vendor_change(widgets):
-        """
-        Handles GLX vendor selection changes to enable/disable Mesa-only options.
-        """
-        glx_vendor = widgets['glx_vendor_combo'].currentText()
-        mesa_enabled = glx_vendor == "mesa"
-        
-        widgets['dri_prime_combo'].setEnabled(mesa_enabled)
-        widgets['libgl_software_combo'].setEnabled(mesa_enabled)
-
-    @staticmethod
     def _generate_mesa_env_vars(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
@@ -551,59 +541,60 @@ class GPULaunchManager:
         """
         env_vars = []
         
-        if not render_widgets or 'glx_vendor_combo' not in render_widgets:
+        if not render_widgets or 'ogl_provider_combo' not in render_widgets:
             return env_vars
             
-        glx_vendor = render_widgets['glx_vendor_combo'].currentText()
-        mesa_enabled = glx_vendor == "mesa"
+        provider = render_widgets['ogl_provider_combo'].currentText()
+        vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
         
-        for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
-            if widget_key not in render_widgets:
-                continue
+        if provider != "unset":
+            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['ogl_provider_combo']
+            mapped_value = mapping['values'].get(provider)
+            if mapped_value:
+                env_vars.append(f"{mapping['var_name']}={mapped_value}")
                 
-            widget = render_widgets[widget_key]
-            value = widget.currentText()
-            if value == "unset":
-                continue
-                
-            if mapping.get('dependency') == 'mesa_only' and not mesa_enabled:
-                continue
-                
-            var_name = mapping['var_name']
+                if provider == "mesa (software rendering)":
+                    env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
+                elif provider == "mesa (zink)":
+                    env_vars.append("MESA_LOADER_DRIVER_OVERRIDE=zink")
+                    env_vars.append("LIBGL_KOPPER_DRI2=1")
+                    if "(software rendering)" in vulkan_selection.lower():
+                        env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
+        
+        if provider.startswith("mesa"):
+            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['dri_prime_combo']
+            value = render_widgets['dri_prime_combo'].currentText()
+            if value != "unset":
+                env_vars.append(f"{mapping['var_name']}={value}")
+        
+        mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['vulkan_render_combo']
+        value = vulkan_selection
+        if value != "unset":
+            if "(software rendering)" in value.lower():
+                vulkan_selection_name = re.sub(r'\s*\(software rendering\)', '', value, flags=re.IGNORECASE)
+            else:
+                vulkan_selection_name = value
             
-            if mapping.get('special_handling') == 'vulkan_icd':
-                vulkan_selection = value
-                if "(software rendering)" in vulkan_selection.lower():
-                    vulkan_selection = re.sub(r'\s*\(software rendering\)', '', vulkan_selection, flags=re.IGNORECASE)
-                
-                icd_files = []
-                
-                try:
-                    for file in os.listdir(GPULaunchManager.ICD_DIR):
-                        if file.endswith('.json'):
-                            base_name = file[:-5]
-                            if '.' in base_name:
-                                pure_name = base_name.split('.')[0]
-                                if pure_name == vulkan_selection:
-                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                            else:
-                                if base_name == vulkan_selection:
-                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                except OSError:
-                    pass
-                
-                if icd_files:
-                    driver_paths = ":".join(icd_files)
-                    env_vars.append(f'{var_name}={driver_paths}')
-                    env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
+            icd_files = []
             
-            elif mapping.get('direct_value', False):
-                env_vars.append(f'{var_name}={value}')
+            try:
+                for file in os.listdir(GPULaunchManager.ICD_DIR):
+                    if file.endswith('.json'):
+                        base_name = file[:-5]
+                        if '.' in base_name:
+                            pure_name = base_name.split('.')[0]
+                            if pure_name == vulkan_selection_name:
+                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
+                        else:
+                            if base_name == vulkan_selection_name:
+                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
+            except OSError:
+                pass
             
-            elif 'values' in mapping:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    env_vars.append(f'{var_name}={mapped_value}')
+            if icd_files:
+                driver_paths = ":".join(icd_files)
+                env_vars.append(f"{mapping['var_name']}={driver_paths}")
+                env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
         
         return env_vars
 
