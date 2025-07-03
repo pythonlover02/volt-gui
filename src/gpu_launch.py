@@ -21,8 +21,8 @@ class GPULaunchManager:
     MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
-        ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "on", "off"]),
-        ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "on", "off"]),
+        ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
+        ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "default interval 0", "default interval 1", "on", "off"]),
         ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
         ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', 
          ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
@@ -78,13 +78,13 @@ class GPULaunchManager:
     ]
     
     MESA_ENV_MAPPINGS = {
-        'mesa_vsync_gl_combo': {
-            'var_name': 'vblank_mode',
-            'values': {'on': '3', 'off': '0'}
-        },
         'mesa_vsync_vk_combo': {
             'var_name': 'MESA_VK_WSI_PRESENT_MODE',
-            'values': {'on': 'fifo', 'off': 'immediate'}
+            'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
+        },
+        'mesa_vsync_gl_combo': {
+            'var_name': 'vblank_mode',
+            'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
         },
         'mesa_thread_opt_combo': {
             'var_name': 'mesa_glthread',
