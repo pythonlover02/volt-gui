@@ -194,6 +194,7 @@ Documentation used:
 - [sched-ext scx Github - Readme](https://github.com/sched-ext/scx/blob/main/README.md)
 - [MangoHud Github - Readme](https://github.com/flightlessmango/MangoHud/blob/master/README.md)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
+- [FreeDesktop - Dri Configuration Options](https://dri.freedesktop.org/wiki/ConfigurationOptions/)
 - [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
 - [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
 - [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
