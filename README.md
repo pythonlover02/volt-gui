@@ -87,7 +87,7 @@ A graphical user interface for configuring GPU related environment variables and
 If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
-- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Frame Options Settings. Both the native or the Flatpak version satisfy the dependency.
+- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency.
 
 ## Installation:
 
