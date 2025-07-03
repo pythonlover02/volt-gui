@@ -64,10 +64,10 @@ class ConfigManager:
             if hasattr(widget, 'currentText') and widget_key != 'render_selector_apply_button':
                 config['RenderSelector'][widget_key] = widget.currentText()
         
-        config['FrameControl'] = {}
-        for widget_key, widget in gpu_widgets['frame_control'].items():
-            if hasattr(widget, 'currentText') and widget_key != 'frame_control_apply_button':
-                config['FrameControl'][widget_key] = widget.currentText()
+        config['RenderPipeline'] = {}
+        for widget_key, widget in gpu_widgets['render_pipeline'].items():
+            if hasattr(widget, 'currentText') and widget_key != 'render_pipeline_apply_button':
+                config['RenderPipeline'][widget_key] = widget.currentText()
             
         if 'launch_options_input' in gpu_widgets['launch_options']:
             launch_options = gpu_widgets['launch_options']['launch_options_input'].text().replace('%', '%%')
@@ -124,10 +124,10 @@ class ConfigManager:
                 if widget_key in gpu_widgets['render_selector'] and hasattr(gpu_widgets['render_selector'][widget_key], 'setCurrentText'):
                     gpu_widgets['render_selector'][widget_key].setCurrentText(value)
     
-        if 'FrameControl' in config and 'frame_control' in gpu_widgets:
-            for widget_key, value in config['FrameControl'].items():
-                if widget_key in gpu_widgets['frame_control'] and hasattr(gpu_widgets['frame_control'][widget_key], 'setCurrentText'):
-                    gpu_widgets['frame_control'][widget_key].setCurrentText(value)
+        if 'RenderPipeline' in config and 'render_pipeline' in gpu_widgets:
+            for widget_key, value in config['RenderPipeline'].items():
+                if widget_key in gpu_widgets['render_pipeline'] and hasattr(gpu_widgets['render_pipeline'][widget_key], 'setCurrentText'):
+                    gpu_widgets['render_pipeline'][widget_key].setCurrentText(value)
                 
         if 'LaunchOptions' in config and 'launch_options' in gpu_widgets and 'launch_options_input' in gpu_widgets['launch_options']:
             launch_options = config['LaunchOptions'].get('launch_options', '').replace('%%', '%')

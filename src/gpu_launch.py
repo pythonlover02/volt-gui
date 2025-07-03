@@ -71,10 +71,10 @@ class GPULaunchManager:
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
     ]
 
-    FRAME_CONTROL_SETTINGS = [
-        ("Display Elements:", 'frame_display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
-        ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
-        ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
+    RENDER_PIPELINE_SETTINGS = [
+        ("Display Elements:", 'display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
+        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
+        ("Fps Limit Method:", 'fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
         ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
         ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
         ("Anisotropic Filtering:", 'anisotropic_filter_combo', ["unset"] + [str(i) for i in range(0, 17)]),
@@ -199,18 +199,18 @@ class GPULaunchManager:
         }
     }
 
-    FRAME_CONTROL_ENV_MAPPINGS = {
-        'frame_display_combo': {
+    RENDER_PIPELINE_ENV_MAPPINGS = {
+        'display_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4',}
         },
-        'frame_fps_limit_combo': {
+        'fps_limit_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'unlimited': '0'},
             'direct_value': True,
             'prefix': 'fps_limit='
         },
-        'frame_fps_method_combo': {
+        'fps_method_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
             'prefix': 'fps_limit_method='
@@ -294,7 +294,7 @@ class GPULaunchManager:
     @staticmethod
     def create_gpu_settings_tab():
         """
-        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and frame control subtabs.
+        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and render pipeline subtabs.
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -304,19 +304,19 @@ class GPULaunchManager:
         mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
         nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
         render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
-        frame_control_tab, frame_control_widgets = GPULaunchManager._create_frame_control_tab()
+        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager._create_render_pipeline_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
-        gpu_subtabs.addTab(frame_control_tab, "Frame Control")
+        gpu_subtabs.addTab(render_pipeline_tab, "Render Pipeline")
         gpu_layout.addWidget(gpu_subtabs)
         
         widgets = {
             'mesa': mesa_widgets,
             'nvidia': nvidia_widgets,
             'render_selector': render_selector_widgets,
-            'frame_control': frame_control_widgets
+            'render_pipeline': render_pipeline_widgets
         }
         
         return gpu_tab, widgets
@@ -394,19 +394,19 @@ class GPULaunchManager:
         return render_tab, widgets
 
     @staticmethod
-    def _create_frame_control_tab():
+    def _create_render_pipeline_tab():
         """
-        Creates the frame control tab for managing FPS and display settings.
+        Creates the render pipeline tab for managing FPS, filters and display settings.
         """
         mangohud_available = GPULaunchManager.find_available_mangohud()
         
-        frame_control_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.FRAME_CONTROL_SETTINGS, "frame_control_apply_button")
+        render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         
         if not mangohud_available:
             for widget in widgets.values():
                 widget.setEnabled(False)
 
-        return frame_control_tab, widgets
+        return render_pipeline_tab, widgets
 
     @staticmethod
     def create_launch_options_tab():
@@ -620,19 +620,19 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_frame_control_env_vars(frame_control_widgets):
+    def _generate_render_pipeline_env_vars(render_pipeline_widgets):
         """
-        Generates environment variables for frame control settings.
+        Generates environment variables for render pipeline settings.
         """
         env_vars = []
         mangohud_config_parts = []
         use_mangohud = False
         
-        for widget_key, mapping in GPULaunchManager.FRAME_CONTROL_ENV_MAPPINGS.items():
-            if widget_key not in frame_control_widgets:
+        for widget_key, mapping in GPULaunchManager.RENDER_PIPELINE_ENV_MAPPINGS.items():
+            if widget_key not in render_pipeline_widgets:
                 continue
                 
-            widget = frame_control_widgets[widget_key]
+            widget = render_pipeline_widgets[widget_key]
             value = widget.currentText()
             if value == "unset":
                 continue
@@ -666,7 +666,7 @@ class GPULaunchManager:
         return env_vars, use_mangohud
 
     @staticmethod
-    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, frame_control_widgets, launch_options_widgets):
+    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, launch_options_widgets):
         """
         Writes GPU settings to a temporary file for volt-helper to process.
         """
@@ -678,14 +678,14 @@ class GPULaunchManager:
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        frame_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(frame_control_widgets)
+        render_pipeline_env_vars, use_mangohud = GPULaunchManager._generate_render_pipeline_env_vars(render_pipeline_widgets)
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"
         elif use_mangohud and not launch_options:
             launch_options = "mangohud"
 
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + frame_env_vars
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + render_pipeline_env_vars
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.conf') as temp_file:
             for env_var in all_env_vars:

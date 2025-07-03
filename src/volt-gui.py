@@ -235,7 +235,7 @@ class MainWindow(QMainWindow):
         self.gpu_widgets['mesa']['mesa_apply_button'].clicked.connect(self.apply_all_settings)
         self.gpu_widgets['nvidia']['nvidia_apply_button'].clicked.connect(self.apply_all_settings)
         self.gpu_widgets['render_selector']['render_selector_apply_button'].clicked.connect(self.apply_all_settings)
-        self.gpu_widgets['frame_control']['frame_control_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].clicked.connect(self.apply_all_settings)
 
         self.tab_widget.addTab(gpu_tab, "GPU")
 
@@ -624,7 +624,7 @@ class MainWindow(QMainWindow):
                 self.gpu_widgets['mesa'],
                 self.gpu_widgets['nvidia'],
                 self.gpu_widgets['render_selector'],
-                self.gpu_widgets['frame_control'],
+                self.gpu_widgets['render_pipeline'],
                 self.gpu_widgets['launch_options'],
             )
             if settings_file:
@@ -642,7 +642,7 @@ class MainWindow(QMainWindow):
             self.gpu_widgets['mesa']['mesa_apply_button'].setEnabled(False)
             self.gpu_widgets['nvidia']['nvidia_apply_button'].setEnabled(False)
             self.gpu_widgets['render_selector']['render_selector_apply_button'].setEnabled(False)
-            self.gpu_widgets['frame_control']['frame_control_apply_button'].setEnabled(False)
+            self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].setEnabled(False)
             self.launch_options_widgets['launch_apply_button'].setEnabled(False)
 
         except Exception as e:
@@ -662,7 +662,7 @@ class MainWindow(QMainWindow):
         self.gpu_widgets['mesa']['mesa_apply_button'].setEnabled(True)
         self.gpu_widgets['nvidia']['nvidia_apply_button'].setEnabled(True)
         self.gpu_widgets['render_selector']['render_selector_apply_button'].setEnabled(True)
-        self.gpu_widgets['frame_control']['frame_control_apply_button'].setEnabled(True)
+        self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].setEnabled(True)
         self.launch_options_widgets['launch_apply_button'].setEnabled(True)
 
         self.refresh_cpu_values()
