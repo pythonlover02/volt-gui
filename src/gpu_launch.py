@@ -75,6 +75,9 @@ class GPULaunchManager:
         ("Display Elements:", 'frame_display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
         ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
         ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
+        ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
+        ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
+        ("Anisotropic Filtering:", 'anisotropic_filter_combo', ["unset"] + [str(i) for i in range(0, 17)]),
     ]
     
     MESA_ENV_MAPPINGS = {
@@ -211,6 +214,24 @@ class GPULaunchManager:
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
             'prefix': 'fps_limit_method='
+        },
+        'texture_filter_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'values': {
+                'bicubic': 'bicubic',
+                'retro': 'retro',
+                'trilinear': 'trilinear'
+            }
+        },
+        'mipmap_lod_bias_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'direct_value': True,
+            'prefix': 'picmip='
+        },
+        'anisotropic_filter_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'direct_value': True,
+            'prefix': 'af='
         }
     }
 
