@@ -659,7 +659,6 @@ class GPULaunchManager:
                     mangohud_config_parts.append(mapped_value)
         
         if mangohud_config_parts:
-            mangohud_config_parts.insert(0, 'read_cfg')
             config_value = ','.join(mangohud_config_parts)
             env_vars.append(f'MANGOHUD_CONFIG={config_value}')
         
