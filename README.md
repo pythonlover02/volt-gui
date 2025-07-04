@@ -59,7 +59,7 @@ A graphical user interface for configuring GPU related environment variables and
   - Choose /proc/sys/kernel/nmi_watchdog value
   - Choose /proc/sys/vm/laptop_mode value
 
-- Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, ej:
+- Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, example:
   ```
   gamemoderun PROTON_USE_WINED3D=1
   ```
@@ -77,13 +77,13 @@ A graphical user interface for configuring GPU related environment variables and
 - The `python3-venv` package its required on Debian/Debian based distros.
 - Linux operating system
 
-### Additional requirements in the case you build the program using Nuitka:
+## Additional requirements in the case you build the program using Nuitka:
 
 - C/C++ Compiler
 - patchelf
 - ccache (optional, for optimizing compiling times)
 
-### Additional requirements for some Options:
+## Additional requirements for some Options:
 If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
