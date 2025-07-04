@@ -27,7 +27,7 @@ PYINSTALLER_OPTS=(
 
 # Cleanup function
 cleanup() {
-    rm -rf dist/ build/ **__pycache__*/ "${SPEC_FILE}" 2>/dev/null || true
+    rm -rf dist/ build/ "${SPEC_FILE}" 2>/dev/null || true
 }
 
 # Check for required commands

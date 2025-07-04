@@ -21,8 +21,8 @@ class GPULaunchManager:
     MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
-        ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "on", "off"]),
-        ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "on", "off"]),
+        ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
+        ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "default interval 0", "default interval 1", "on", "off"]),
         ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
         ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', 
          ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
@@ -60,26 +60,34 @@ class GPULaunchManager:
     ]
 
     RENDER_SETTINGS = [
-        ("GLX Vendor Library:", 'glx_vendor_combo', ["unset", "nvidia", "mesa"]),
+        ("OpenGL Provider:", 'ogl_provider_combo', [
+            "unset", 
+            "nvidia", 
+            "mesa", 
+            "mesa (software rendering)", 
+            "mesa (zink)"
+        ]),
         ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
-        ("OpenGL Software Rendering:", 'libgl_software_combo', ["unset", "on", "off"]),
         ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
     ]
 
-    FRAME_CONTROL_SETTINGS = [
-        ("Display Elements:", 'frame_display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
-        ("Fps Limit:", 'frame_fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
-        ("Fps Limit Method:", 'frame_fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
+    RENDER_PIPELINE_SETTINGS = [
+        ("Display Elements:", 'display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
+        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
+        ("Fps Limit Method:", 'fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
+        ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
+        ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
+        ("Anisotropic Filtering:", 'anisotropic_filter_combo', ["unset"] + [str(i) for i in range(0, 17)]),
     ]
     
     MESA_ENV_MAPPINGS = {
-        'mesa_vsync_gl_combo': {
-            'var_name': 'vblank_mode',
-            'values': {'on': '3', 'off': '0'}
-        },
         'mesa_vsync_vk_combo': {
             'var_name': 'MESA_VK_WSI_PRESENT_MODE',
-            'values': {'on': 'fifo', 'off': 'immediate'}
+            'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
+        },
+        'mesa_vsync_gl_combo': {
+            'var_name': 'vblank_mode',
+            'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
         },
         'mesa_thread_opt_combo': {
             'var_name': 'mesa_glthread',
@@ -171,18 +179,18 @@ class GPULaunchManager:
     }
     
     RENDER_ENV_MAPPINGS = {
-        'glx_vendor_combo': {
+        'ogl_provider_combo': {
             'var_name': '__GLX_VENDOR_LIBRARY_NAME',
-            'direct_value': True
+            'values': {
+                'nvidia': 'nvidia',
+                'mesa': 'mesa',
+                'mesa (software rendering)': 'mesa',
+                'mesa (zink)': 'mesa'
+            }
         },
         'dri_prime_combo': {
             'var_name': 'DRI_PRIME',
             'direct_value': True,
-            'dependency': 'mesa_only'
-        },
-        'libgl_software_combo': {
-            'var_name': 'LIBGL_ALWAYS_SOFTWARE',
-            'values': {'on': '1', 'off': '0'},
             'dependency': 'mesa_only'
         },
         'vulkan_render_combo': {
@@ -191,21 +199,39 @@ class GPULaunchManager:
         }
     }
 
-    FRAME_CONTROL_ENV_MAPPINGS = {
-        'frame_display_combo': {
+    RENDER_PIPELINE_ENV_MAPPINGS = {
+        'display_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4',}
         },
-        'frame_fps_limit_combo': {
+        'fps_limit_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'unlimited': '0'},
             'direct_value': True,
             'prefix': 'fps_limit='
         },
-        'frame_fps_method_combo': {
+        'fps_method_combo': {
             'var_name': 'MANGOHUD_CONFIG',
             'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
             'prefix': 'fps_limit_method='
+        },
+        'texture_filter_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'values': {
+                'bicubic': 'bicubic',
+                'retro': 'retro',
+                'trilinear': 'trilinear'
+            }
+        },
+        'mipmap_lod_bias_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'direct_value': True,
+            'prefix': 'picmip='
+        },
+        'anisotropic_filter_combo': {
+            'var_name': 'MANGOHUD_CONFIG',
+            'direct_value': True,
+            'prefix': 'af='
         }
     }
 
@@ -268,7 +294,7 @@ class GPULaunchManager:
     @staticmethod
     def create_gpu_settings_tab():
         """
-        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and frame control subtabs.
+        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and render pipeline subtabs.
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
@@ -278,19 +304,19 @@ class GPULaunchManager:
         mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
         nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
         render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
-        frame_control_tab, frame_control_widgets = GPULaunchManager._create_frame_control_tab()
+        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager._create_render_pipeline_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
-        gpu_subtabs.addTab(frame_control_tab, "Frame Control")
+        gpu_subtabs.addTab(render_pipeline_tab, "Render Pipeline")
         gpu_layout.addWidget(gpu_subtabs)
         
         widgets = {
             'mesa': mesa_widgets,
             'nvidia': nvidia_widgets,
             'render_selector': render_selector_widgets,
-            'frame_control': frame_control_widgets
+            'render_pipeline': render_pipeline_widgets
         }
         
         return gpu_tab, widgets
@@ -364,27 +390,23 @@ class GPULaunchManager:
         widgets['vulkan_render_combo'].clear()
         widgets['vulkan_render_combo'].addItems(vulkan_options)
         widgets['vulkan_render_combo'].setCurrentText("unset")
-        
-        widgets['glx_vendor_combo'].currentTextChanged.connect(lambda: GPULaunchManager._handle_glx_vendor_change(widgets))
-        
-        GPULaunchManager._handle_glx_vendor_change(widgets)
 
         return render_tab, widgets
 
     @staticmethod
-    def _create_frame_control_tab():
+    def _create_render_pipeline_tab():
         """
-        Creates the frame control tab for managing FPS and display settings.
+        Creates the render pipeline tab for managing FPS, filters and display settings.
         """
         mangohud_available = GPULaunchManager.find_available_mangohud()
         
-        frame_control_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.FRAME_CONTROL_SETTINGS, "frame_control_apply_button")
+        render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         
         if not mangohud_available:
             for widget in widgets.values():
                 widget.setEnabled(False)
 
-        return frame_control_tab, widgets
+        return render_pipeline_tab, widgets
 
     @staticmethod
     def create_launch_options_tab():
@@ -476,17 +498,6 @@ class GPULaunchManager:
         layout.addWidget(button_container)
 
     @staticmethod
-    def _handle_glx_vendor_change(widgets):
-        """
-        Handles GLX vendor selection changes to enable/disable Mesa-only options.
-        """
-        glx_vendor = widgets['glx_vendor_combo'].currentText()
-        mesa_enabled = glx_vendor == "mesa"
-        
-        widgets['dri_prime_combo'].setEnabled(mesa_enabled)
-        widgets['libgl_software_combo'].setEnabled(mesa_enabled)
-
-    @staticmethod
     def _generate_mesa_env_vars(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
@@ -551,76 +562,77 @@ class GPULaunchManager:
         """
         env_vars = []
         
-        if not render_widgets or 'glx_vendor_combo' not in render_widgets:
+        if not render_widgets or 'ogl_provider_combo' not in render_widgets:
             return env_vars
             
-        glx_vendor = render_widgets['glx_vendor_combo'].currentText()
-        mesa_enabled = glx_vendor == "mesa"
+        provider = render_widgets['ogl_provider_combo'].currentText()
+        vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
         
-        for widget_key, mapping in GPULaunchManager.RENDER_ENV_MAPPINGS.items():
-            if widget_key not in render_widgets:
-                continue
+        if provider != "unset":
+            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['ogl_provider_combo']
+            mapped_value = mapping['values'].get(provider)
+            if mapped_value:
+                env_vars.append(f"{mapping['var_name']}={mapped_value}")
                 
-            widget = render_widgets[widget_key]
-            value = widget.currentText()
-            if value == "unset":
-                continue
-                
-            if mapping.get('dependency') == 'mesa_only' and not mesa_enabled:
-                continue
-                
-            var_name = mapping['var_name']
+                if provider == "mesa (software rendering)":
+                    env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
+                elif provider == "mesa (zink)":
+                    env_vars.append("MESA_LOADER_DRIVER_OVERRIDE=zink")
+                    env_vars.append("LIBGL_KOPPER_DRI2=1")
+                    if "(software rendering)" in vulkan_selection.lower():
+                        env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
+        
+        if provider.startswith("mesa"):
+            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['dri_prime_combo']
+            value = render_widgets['dri_prime_combo'].currentText()
+            if value != "unset":
+                env_vars.append(f"{mapping['var_name']}={value}")
+        
+        mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['vulkan_render_combo']
+        value = vulkan_selection
+        if value != "unset":
+            if "(software rendering)" in value.lower():
+                vulkan_selection_name = re.sub(r'\s*\(software rendering\)', '', value, flags=re.IGNORECASE)
+            else:
+                vulkan_selection_name = value
             
-            if mapping.get('special_handling') == 'vulkan_icd':
-                vulkan_selection = value
-                if "(software rendering)" in vulkan_selection.lower():
-                    vulkan_selection = re.sub(r'\s*\(software rendering\)', '', vulkan_selection, flags=re.IGNORECASE)
-                
-                icd_files = []
-                
-                try:
-                    for file in os.listdir(GPULaunchManager.ICD_DIR):
-                        if file.endswith('.json'):
-                            base_name = file[:-5]
-                            if '.' in base_name:
-                                pure_name = base_name.split('.')[0]
-                                if pure_name == vulkan_selection:
-                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                            else:
-                                if base_name == vulkan_selection:
-                                    icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                except OSError:
-                    pass
-                
-                if icd_files:
-                    driver_paths = ":".join(icd_files)
-                    env_vars.append(f'{var_name}={driver_paths}')
-                    env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
+            icd_files = []
             
-            elif mapping.get('direct_value', False):
-                env_vars.append(f'{var_name}={value}')
+            try:
+                for file in os.listdir(GPULaunchManager.ICD_DIR):
+                    if file.endswith('.json'):
+                        base_name = file[:-5]
+                        if '.' in base_name:
+                            pure_name = base_name.split('.')[0]
+                            if pure_name == vulkan_selection_name:
+                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
+                        else:
+                            if base_name == vulkan_selection_name:
+                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
+            except OSError:
+                pass
             
-            elif 'values' in mapping:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    env_vars.append(f'{var_name}={mapped_value}')
+            if icd_files:
+                driver_paths = ":".join(icd_files)
+                env_vars.append(f"{mapping['var_name']}={driver_paths}")
+                env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
         
         return env_vars
 
     @staticmethod
-    def _generate_frame_control_env_vars(frame_control_widgets):
+    def _generate_render_pipeline_env_vars(render_pipeline_widgets):
         """
-        Generates environment variables for frame control settings.
+        Generates environment variables for render pipeline settings.
         """
         env_vars = []
         mangohud_config_parts = []
         use_mangohud = False
         
-        for widget_key, mapping in GPULaunchManager.FRAME_CONTROL_ENV_MAPPINGS.items():
-            if widget_key not in frame_control_widgets:
+        for widget_key, mapping in GPULaunchManager.RENDER_PIPELINE_ENV_MAPPINGS.items():
+            if widget_key not in render_pipeline_widgets:
                 continue
                 
-            widget = frame_control_widgets[widget_key]
+            widget = render_pipeline_widgets[widget_key]
             value = widget.currentText()
             if value == "unset":
                 continue
@@ -653,7 +665,7 @@ class GPULaunchManager:
         return env_vars, use_mangohud
 
     @staticmethod
-    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, frame_control_widgets, launch_options_widgets):
+    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, launch_options_widgets):
         """
         Writes GPU settings to a temporary file for volt-helper to process.
         """
@@ -665,14 +677,14 @@ class GPULaunchManager:
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        frame_env_vars, use_mangohud = GPULaunchManager._generate_frame_control_env_vars(frame_control_widgets)
+        render_pipeline_env_vars, use_mangohud = GPULaunchManager._generate_render_pipeline_env_vars(render_pipeline_widgets)
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"
         elif use_mangohud and not launch_options:
             launch_options = "mangohud"
 
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + frame_env_vars
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + render_pipeline_env_vars
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.conf') as temp_file:
             for env_var in all_env_vars:
