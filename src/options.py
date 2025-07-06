@@ -227,8 +227,8 @@ class OptionsTab(QWidget):
         scroll_layout.setContentsMargins(10, 10, 10, 10)
         
         self._add_theme_option(scroll_layout)
-        self._add_tray_option(scroll_layout)
         self._add_transparency_option(scroll_layout)
+        self._add_tray_option(scroll_layout)
         self._add_start_minimized_option(scroll_layout)
         
         scroll_layout.addStretch(1)
@@ -252,23 +252,6 @@ class OptionsTab(QWidget):
         theme_layout.addWidget(self.theme_combo)
         layout.addLayout(theme_layout)
 
-    def _add_tray_option(self, layout):
-        """
-        Add system tray option to layout.
-        """
-        tray_layout = QHBoxLayout()
-        tray_label = QLabel("Run in System Tray:")
-        tray_label.setWordWrap(True)
-        tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        self.tray_combo = QComboBox()
-        self.tray_combo.addItems(["enable", "disable"])
-        self.tray_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        tray_layout.addWidget(tray_label)
-        tray_layout.addWidget(self.tray_combo)
-        layout.addLayout(tray_layout)
-
     def _add_transparency_option(self, layout):
         """
         Add transparency option to layout.
@@ -285,6 +268,23 @@ class OptionsTab(QWidget):
         transparency_layout.addWidget(transparency_label)
         transparency_layout.addWidget(self.transparency_combo)
         layout.addLayout(transparency_layout)
+
+    def _add_tray_option(self, layout):
+        """
+        Add system tray option to layout.
+        """
+        tray_layout = QHBoxLayout()
+        tray_label = QLabel("Run in System Tray:")
+        tray_label.setWordWrap(True)
+        tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.tray_combo = QComboBox()
+        self.tray_combo.addItems(["enable", "disable"])
+        self.tray_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        tray_layout.addWidget(tray_label)
+        tray_layout.addWidget(self.tray_combo)
+        layout.addLayout(tray_layout)
 
     def _add_start_minimized_option(self, layout):
         """
@@ -310,8 +310,8 @@ class OptionsTab(QWidget):
         """
         self.options_manager.widgets = {
             'theme_combo': self.theme_combo,
-            'tray_combo': self.tray_combo,
             'transparency_combo': self.transparency_combo,
+            'tray_combo': self.tray_combo,
             'start_minimized_combo': self.start_minimized_combo,
             'apply_button': self.apply_button
         }
