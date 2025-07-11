@@ -3,6 +3,7 @@ import re
 import glob
 import tempfile
 import subprocess
+import shutil
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
@@ -17,7 +18,7 @@ class GPULaunchManager:
     
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
-    MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
+    SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
@@ -66,8 +67,8 @@ class GPULaunchManager:
             "mesa (software rendering)", 
             "mesa (zink)"
         ]),
-        ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
-        ("Vulkan GPU:", 'vulkan_device_combo', ["unset"]),
+        ("Select OpenGL Renderer (Mesa):", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
+        ("Select Vulkan Renderer:", 'vulkan_device_combo', ["unset"]),
     ]
 
     RENDER_PIPELINE_SETTINGS = [
@@ -235,11 +236,27 @@ class GPULaunchManager:
     }
 
     @staticmethod
+    def is_vulkaninfo_available():
+        """
+        Checks if vulkaninfo is available in the system PATH.
+        """
+        for search_path in GPULaunchManager.SEARCH_PATHS:
+            try:
+                mangohud_files = glob.glob(os.path.join(search_path, "vulkaninfo*"))
+                for file_path in mangohud_files:
+                    if os.access(file_path, os.X_OK):
+                        return True
+            except Exception:
+                continue
+        
+        return False
+
+    @staticmethod
     def find_available_mangohud():
         """
         Dynamically find MangoHUD availability in system paths and Flatpak.
         """
-        for search_path in GPULaunchManager.MANGOHUD_SEARCH_PATHS:
+        for search_path in GPULaunchManager.SEARCH_PATHS:
             try:
                 mangohud_files = glob.glob(os.path.join(search_path, "mangohud*"))
                 for file_path in mangohud_files:
@@ -393,12 +410,15 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
-        vulkan_options = ["unset"] + vulkan_devices
+        if GPULaunchManager.is_vulkaninfo_available():
+            vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
+            vulkan_options = ["unset"] + vulkan_devices
+            widgets['vulkan_device_combo'].device_map = device_map
+        else:
+            widgets['vulkan_device_combo'].setEnabled(False)
+
         widgets['vulkan_device_combo'].clear()
         widgets['vulkan_device_combo'].addItems(vulkan_options)
-        widgets['vulkan_device_combo'].setCurrentText("unset")
-        widgets['vulkan_device_combo'].device_map = device_map
 
         return render_tab, widgets
 
