@@ -17,7 +17,6 @@ class GPULaunchManager:
     
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
-    ICD_DIR = "/usr/share/vulkan/icd.d/"
     MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
@@ -68,7 +67,7 @@ class GPULaunchManager:
             "mesa (zink)"
         ]),
         ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
-        ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
+        ("Vulkan GPU:", 'vulkan_device_combo', ["unset"]),
     ]
 
     RENDER_PIPELINE_SETTINGS = [
@@ -193,9 +192,9 @@ class GPULaunchManager:
             'direct_value': True,
             'dependency': 'mesa_only'
         },
-        'vulkan_render_combo': {
-            'var_name': 'VK_DRIVER_FILES',
-            'special_handling': 'vulkan_icd'
+        'vulkan_device_combo': {
+            'var_name': 'MESA_VK_DEVICE_SELECT',
+            'special_handling': 'vulkan_device'
         }
     }
 
@@ -259,37 +258,45 @@ class GPULaunchManager:
         return False
 
     @staticmethod
-    def _get_vulkan_icd_options():
+    def _get_vulkan_device_options():
         """
-        Gets available Vulkan ICD (Installable Client Driver) options.
+        Gets available Vulkan GPU devices using vulkaninfo.
         """
-        options = []
+        devices = []
+        device_map = {}
         
         try:
-            icd_files = {}
-            for file in os.listdir(GPULaunchManager.ICD_DIR):
-                if file.endswith('.json'):
-                    base_name = file[:-5]
-                    
-                    if '.' in base_name:
-                        pure_name = base_name.split('.')[0]
-                        if pure_name not in icd_files:
-                            icd_files[pure_name] = []
-                        icd_files[pure_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                    else:
-                        if base_name not in icd_files:
-                            icd_files[base_name] = []
-                        icd_files[base_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
+            result = subprocess.run(["vulkaninfo"], capture_output=True, text=True, check=True)
+            lines = result.stdout.split('\n')
             
-            for name, paths in icd_files.items():
-                if 'lvp' in name.lower():
-                    options.append(f"{name} (software rendering)")
-                else:
-                    options.append(name)
-        except OSError:
+            current_device = {}
+            for line in lines:
+                line = line.strip()
+                if 'vendorID' in line and '=' in line:
+                    vendor_id = line.split('=')[1].strip()
+                    current_device['vendorID'] = vendor_id
+                elif 'deviceID' in line and '=' in line:
+                    device_id = line.split('=')[1].strip()
+                    current_device['deviceID'] = device_id
+                elif 'deviceName' in line and '=' in line:
+                    device_name = line.split('=')[1].strip()
+                    current_device['deviceName'] = device_name
+                    
+                    if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
+                        display_name = current_device['deviceName'].lower()
+                        if 'llvmpipe' in display_name:
+                            display_name = 'llvmpipe (software rendering)'
+                        
+                        device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
+                        devices.append(display_name)
+                        device_map[display_name] = device_key
+                        
+                        current_device = {}
+        
+        except Exception:
             pass
         
-        return sorted(options)
+        return devices, device_map
 
     @staticmethod
     def create_gpu_settings_tab():
@@ -386,10 +393,12 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
-        widgets['vulkan_render_combo'].clear()
-        widgets['vulkan_render_combo'].addItems(vulkan_options)
-        widgets['vulkan_render_combo'].setCurrentText("unset")
+        vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
+        vulkan_options = ["unset"] + vulkan_devices
+        widgets['vulkan_device_combo'].clear()
+        widgets['vulkan_device_combo'].addItems(vulkan_options)
+        widgets['vulkan_device_combo'].setCurrentText("unset")
+        widgets['vulkan_device_combo'].device_map = device_map
 
         return render_tab, widgets
 
@@ -566,7 +575,7 @@ class GPULaunchManager:
             return env_vars
             
         provider = render_widgets['ogl_provider_combo'].currentText()
-        vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
+        vulkan_selection = render_widgets['vulkan_device_combo'].currentText()
         
         if provider != "unset":
             mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['ogl_provider_combo']
@@ -588,34 +597,11 @@ class GPULaunchManager:
             if value != "unset":
                 env_vars.append(f"{mapping['var_name']}={value}")
         
-        mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['vulkan_render_combo']
-        value = vulkan_selection
-        if value != "unset":
-            if "(software rendering)" in value.lower():
-                vulkan_selection_name = re.sub(r'\s*\(software rendering\)', '', value, flags=re.IGNORECASE)
-            else:
-                vulkan_selection_name = value
-            
-            icd_files = []
-            
-            try:
-                for file in os.listdir(GPULaunchManager.ICD_DIR):
-                    if file.endswith('.json'):
-                        base_name = file[:-5]
-                        if '.' in base_name:
-                            pure_name = base_name.split('.')[0]
-                            if pure_name == vulkan_selection_name:
-                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                        else:
-                            if base_name == vulkan_selection_name:
-                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-            except OSError:
-                pass
-            
-            if icd_files:
-                driver_paths = ":".join(icd_files)
-                env_vars.append(f"{mapping['var_name']}={driver_paths}")
-                env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
+        if vulkan_selection != "unset":
+            device_map = getattr(render_widgets['vulkan_device_combo'], 'device_map', {})
+            device_key = device_map.get(vulkan_selection)
+            if device_key:
+                env_vars.append(f"MESA_VK_DEVICE_SELECT={device_key}!")
         
         return env_vars
 
