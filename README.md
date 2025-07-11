@@ -88,6 +88,7 @@ If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
 - [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency.
+- `glxinfo` its required to use the OpenGL Render Selector.
 - `vulkaninfo` and the `vulkan mesa layer` are required to use the Vulkan Render Selector.
 
 ## Installation:
@@ -181,9 +182,8 @@ volt flatpak run net.pcsx2.PCSX2
 
 ## Render Selector explained:
 
-- `OpenGL Provider` Select a OpenGL provider between the NVIDIA Proprietary Drivers and Mesa Drivers.
-- `Select OpenGL Renderer (Mesa)` In this case “select” means the GPU will be first in the reported physical devices list, It applies to OpenGL and only for GPUs using the Mesa Drivers. Something to add its that the `OpenGL Provider` settings have priority over this.
-- `Select Vulkan Renderer` Selects the GPU that will be used to render Vulkan programs. Those GPUs are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux.
+- `Select OpenGL Renderer (Mesa)` Selects the GPU/Renderer that will be used to render OpenGL programs. Those GPUs are obtained trough `glxinfo`.
+- `Select Vulkan Renderer` Selects the GPU/Renderer that will be used to render Vulkan programs. Those GPUs are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux.
 
 ## Technical References:
 
