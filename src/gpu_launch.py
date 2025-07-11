@@ -24,8 +24,7 @@ class GPULaunchManager:
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
         ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "default interval 0", "default interval 1", "on", "off"]),
         ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
-        ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', 
-         ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
+        ("OpenGL MSAA:", 'mesa_msaa_combo', ["unset", "on", "off"]),
         ("Texture Dithering:", 'mesa_dither_combo', ["unset", "on", "off"]),
         ("Shader Cache:", 'mesa_shader_cache_combo', ["unset", "on", "off"]),
         ("Shader Cache Size (GB):", 'mesa_cache_size_combo', ["unset"] + [str(i) for i in range(1, 11)]),
@@ -90,6 +89,10 @@ class GPULaunchManager:
             'var_name': 'mesa_glthread',
             'values': {'on': 'true', 'off': 'false'}
         },
+        'mesa_msaa_combo': {
+            'var_name': 'DRI_NO_MSAA',
+            'values': {'on': '0', 'off': '1'}
+        },
         'mesa_dither_combo': {
             'var_name': 'MESA_NO_DITHER',
             'values': {'on': '0', 'off': '1'}
@@ -117,14 +120,6 @@ class GPULaunchManager:
         'mesa_fake_vk_combo': {
             'var_name': 'MESA_VK_VERSION_OVERRIDE',
             'direct_value': True
-        },
-        'mesa_extension_override_combo': {
-            'var_name': 'MESA_EXTENSION_OVERRIDE',
-            'values': {
-                'try to disable anisotropic': '-GL_EXT_texture_filter_anisotropic',
-                'try to disable antialiasing': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled',
-                'try to disable both': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled -GL_EXT_texture_filter_anisotropic'
-            }
         }
     }
     
@@ -532,18 +527,15 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        # Check if glxinfo is available and populate OpenGL options accordingly
         if GPULaunchManager.is_glxinfo_available():
             opengl_options, gpu_env_map = GPULaunchManager._get_opengl_gpu_options()
             widgets['ogl_renderer_combo'].clear()
             widgets['ogl_renderer_combo'].addItems(opengl_options)
-            widgets['ogl_renderer_combo'].env_map = gpu_env_map  # Store environment mappings
+            widgets['ogl_renderer_combo'].env_map = gpu_env_map
         else:
-            # Disable OpenGL selector if glxinfo is not available
             widgets['ogl_renderer_combo'].setEnabled(False)
             widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
         
-        # Check if vulkaninfo is available and populate Vulkan options accordingly
         if GPULaunchManager.is_vulkaninfo_available():
             vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
             vulkan_options = ["unset"] + vulkan_devices
@@ -551,7 +543,6 @@ class GPULaunchManager:
             widgets['vulkan_device_combo'].addItems(vulkan_options)
             widgets['vulkan_device_combo'].device_map = device_map
         else:
-            # Disable Vulkan selector if vulkaninfo is not available
             widgets['vulkan_device_combo'].setEnabled(False)
             widgets['vulkan_device_combo'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
 
