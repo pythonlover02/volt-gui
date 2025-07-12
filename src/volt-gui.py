@@ -20,6 +20,29 @@ from kernel import KernelManager
 from config import ConfigManager
 
 
+def unbind_pyinstaller_libs():
+    """
+    Unbind PyInstaller libraries, use system libraries instead.
+    Not ideal but it should be less buggy and time consuming than going disabling library by library.
+    Also lets do this to avoid having to add any binaries the optional settings depend on (vulkaninfo, glxinfo, scx*, mangohud)
+    Nuitka isnt affected by this issues.
+    """
+    if getattr(sys, 'frozen', False):
+        try:
+            os.environ.pop('LD_LIBRARY_PATH', None)
+            os.environ.pop('LD_PRELOAD', None)
+            
+            # Remove PyInstaller's temporary library path
+            lib_path = os.path.join(sys._MEIPASS, 'lib') if hasattr(sys, '_MEIPASS') else None
+            if lib_path and lib_path in sys.path:
+                sys.path.remove(lib_path)
+                
+        except Exception as e:
+            print(f"Warning: Failed to unbind PyInstaller libraries: {e}")
+
+unbind_pyinstaller_libs()
+
+
 def check_sudo_execution():
     """
     Check if the application is run with sudo and exit if it is.
