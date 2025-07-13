@@ -581,7 +581,7 @@ class GPULaunchManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setContentsMargins(10, 10, 0, 0)
         
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
