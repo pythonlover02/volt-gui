@@ -3,6 +3,7 @@ import re
 import glob
 import tempfile
 import subprocess
+import shutil
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
@@ -17,15 +18,13 @@ class GPULaunchManager:
     
     VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
     VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
-    ICD_DIR = "/usr/share/vulkan/icd.d/"
-    MANGOHUD_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
+    SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
     MESA_SETTINGS = [
         ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
         ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "default interval 0", "default interval 1", "on", "off"]),
         ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
-        ("OpenGL Extension Overrides:", 'mesa_extension_override_combo', 
-         ["unset", "try to disable anisotropic", "try to disable antialiasing", "try to disable both"]),
+        ("OpenGL MSAA:", 'mesa_msaa_combo', ["unset", "on", "off"]),
         ("Texture Dithering:", 'mesa_dither_combo', ["unset", "on", "off"]),
         ("Shader Cache:", 'mesa_shader_cache_combo', ["unset", "on", "off"]),
         ("Shader Cache Size (GB):", 'mesa_cache_size_combo', ["unset"] + [str(i) for i in range(1, 11)]),
@@ -60,15 +59,12 @@ class GPULaunchManager:
     ]
 
     RENDER_SETTINGS = [
-        ("OpenGL Provider:", 'ogl_provider_combo', [
+        ("OpenGL Renderer:", 'ogl_renderer_combo', [
             "unset", 
-            "nvidia", 
-            "mesa", 
-            "mesa (software rendering)", 
-            "mesa (zink)"
+            "llvmpipe (software rendering)", 
+            "zink"
         ]),
-        ("Mesa Select GPU:", 'dri_prime_combo', ["unset"] + [str(i) for i in range(0, 11)]),
-        ("Vulkan ICD:", 'vulkan_render_combo', ["unset"]),
+        ("Select Vulkan Renderer:", 'vulkan_device_combo', ["unset"]),
     ]
 
     RENDER_PIPELINE_SETTINGS = [
@@ -92,6 +88,10 @@ class GPULaunchManager:
         'mesa_thread_opt_combo': {
             'var_name': 'mesa_glthread',
             'values': {'on': 'true', 'off': 'false'}
+        },
+        'mesa_msaa_combo': {
+            'var_name': 'DRI_NO_MSAA',
+            'values': {'on': '0', 'off': '1'}
         },
         'mesa_dither_combo': {
             'var_name': 'MESA_NO_DITHER',
@@ -120,14 +120,6 @@ class GPULaunchManager:
         'mesa_fake_vk_combo': {
             'var_name': 'MESA_VK_VERSION_OVERRIDE',
             'direct_value': True
-        },
-        'mesa_extension_override_combo': {
-            'var_name': 'MESA_EXTENSION_OVERRIDE',
-            'values': {
-                'try to disable anisotropic': '-GL_EXT_texture_filter_anisotropic',
-                'try to disable antialiasing': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled',
-                'try to disable both': '-GL_EXT_framebuffer_multisample -GL_EXT_framebuffer_multisample_blit_scaled -GL_EXT_texture_filter_anisotropic'
-            }
         }
     }
     
@@ -178,27 +170,6 @@ class GPULaunchManager:
         }
     }
     
-    RENDER_ENV_MAPPINGS = {
-        'ogl_provider_combo': {
-            'var_name': '__GLX_VENDOR_LIBRARY_NAME',
-            'values': {
-                'nvidia': 'nvidia',
-                'mesa': 'mesa',
-                'mesa (software rendering)': 'mesa',
-                'mesa (zink)': 'mesa'
-            }
-        },
-        'dri_prime_combo': {
-            'var_name': 'DRI_PRIME',
-            'direct_value': True,
-            'dependency': 'mesa_only'
-        },
-        'vulkan_render_combo': {
-            'var_name': 'VK_DRIVER_FILES',
-            'special_handling': 'vulkan_icd'
-        }
-    }
-
     RENDER_PIPELINE_ENV_MAPPINGS = {
         'display_combo': {
             'var_name': 'MANGOHUD_CONFIG',
@@ -236,60 +207,230 @@ class GPULaunchManager:
     }
 
     @staticmethod
-    def find_available_mangohud():
+    def _truncate_name_at_slash(name):
         """
-        Dynamically find MangoHUD availability in system paths and Flatpak.
+        Truncates a name at the first occurrence of '/'.
         """
-        for search_path in GPULaunchManager.MANGOHUD_SEARCH_PATHS:
+        if '/' in name:
+            return name.split('/')[0].strip()
+        return name
+
+    @staticmethod
+    def find_available(program_name, search_flatpak=True):
+        """
+        Generic function to find if a program is available in system paths or Flatpak.
+        Args:
+            program_name (str): Name of the program to search for
+            search_flatpak (bool): Whether to also search in Flatpak packages        
+        Returns:
+            bool: True if program is found, False otherwise
+        """
+        for search_path in GPULaunchManager.SEARCH_PATHS:
             try:
-                mangohud_files = glob.glob(os.path.join(search_path, "mangohud*"))
-                for file_path in mangohud_files:
+                program_files = glob.glob(os.path.join(search_path, f"{program_name}*"))
+                for file_path in program_files:
                     if os.access(file_path, os.X_OK):
                         return True
             except Exception:
                 continue
         
-        try:
-            result = subprocess.run(["flatpak", "list"], capture_output=True, text=True, check=True)
-            if "mangohud" in result.stdout.lower():
-                return True
-        except Exception:
-            pass
+        if search_flatpak:
+            try:
+                result = subprocess.run(["flatpak", "list"], capture_output=True, text=True, check=True)
+                if program_name.lower() in result.stdout.lower():
+                    return True
+            except Exception:
+                pass
         
         return False
 
     @staticmethod
-    def _get_vulkan_icd_options():
+    def is_vulkaninfo_available():
         """
-        Gets available Vulkan ICD (Installable Client Driver) options.
+        Checks if vulkaninfo is available in the system PATH.
         """
-        options = []
+        return GPULaunchManager.find_available("vulkaninfo", search_flatpak=False)
+
+    @staticmethod
+    def is_glxinfo_available():
+        """
+        Checks if glxinfo is available in the system PATH.
+        """
+        return GPULaunchManager.find_available("glxinfo", search_flatpak=False)
+
+    @staticmethod
+    def is_mangohud_available():
+        """
+        Checks if MangoHUD is available in system paths or Flatpak.
+        """
+        return GPULaunchManager.find_available("mangohud", search_flatpak=True)
+
+    @staticmethod
+    def _get_vulkan_device_options():
+        """
+        Gets available Vulkan GPU devices using vulkaninfo.
+        """
+        devices = []
+        device_map = {}
+        
+        if not GPULaunchManager.is_vulkaninfo_available():
+            return devices, device_map
         
         try:
-            icd_files = {}
-            for file in os.listdir(GPULaunchManager.ICD_DIR):
-                if file.endswith('.json'):
-                    base_name = file[:-5]
-                    
-                    if '.' in base_name:
-                        pure_name = base_name.split('.')[0]
-                        if pure_name not in icd_files:
-                            icd_files[pure_name] = []
-                        icd_files[pure_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                    else:
-                        if base_name not in icd_files:
-                            icd_files[base_name] = []
-                        icd_files[base_name].append(os.path.join(GPULaunchManager.ICD_DIR, file))
+            result = subprocess.run(["vulkaninfo"], capture_output=True, text=True, check=True)
+            lines = result.stdout.split('\n')
             
-            for name, paths in icd_files.items():
-                if 'lvp' in name.lower():
-                    options.append(f"{name} (software rendering)")
-                else:
-                    options.append(name)
-        except OSError:
+            current_device = {}
+            for line in lines:
+                line = line.strip()
+                if 'vendorID' in line and '=' in line:
+                    vendor_id = line.split('=')[1].strip()
+                    current_device['vendorID'] = vendor_id
+                elif 'deviceID' in line and '=' in line:
+                    device_id = line.split('=')[1].strip()
+                    current_device['deviceID'] = device_id
+                elif 'deviceName' in line and '=' in line:
+                    device_name = line.split('=')[1].strip()
+                    current_device['deviceName'] = device_name
+                    
+                    if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
+                        # Truncate device name at the first slash
+                        truncated_name = GPULaunchManager._truncate_name_at_slash(current_device['deviceName'])
+                        display_name = truncated_name.lower()
+                        
+                        if 'llvmpipe' in display_name:
+                            display_name = 'llvmpipe (software rendering)'
+                        else:
+                            display_name = truncated_name.lower()
+                        
+                        device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
+                        devices.append(display_name)
+                        device_map[display_name] = device_key
+                        
+                        current_device = {}
+        
+        except Exception:
             pass
         
-        return sorted(options)
+        return devices, device_map
+
+    @staticmethod
+    def _get_opengl_gpu_options():
+        """
+        Gets available OpenGL GPU devices using glxinfo with different env vars.
+        """
+        gpu_list = []
+        gpu_env_map = {}
+        
+        if not GPULaunchManager.is_glxinfo_available():
+            # Return only fixed options if glxinfo is not available
+            fixed_options = {
+                "llvmpipe (software rendering)": {
+                    "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                    "LIBGL_ALWAYS_SOFTWARE": "1"
+                },
+                "zink": {
+                    "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                    "MESA_LOADER_DRIVER_OVERRIDE": "zink",
+                    "LIBGL_KOPPER_DRI2": "1"
+                }
+            }
+            
+            for name, env_vars in fixed_options.items():
+                gpu_env_map[name] = env_vars
+            
+            options = ["unset"] + list(fixed_options.keys())
+            return options, gpu_env_map
+        
+        # NVIDIA GPU
+        try:
+            env = os.environ.copy()
+            env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
+            result = subprocess.run(
+                ["glxinfo"],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            for line in result.stdout.split('\n'):
+                if "OpenGL renderer string:" in line:
+                    gpu_name = line.split(':', 1)[1].strip()
+                    # Truncate GPU name at the first slash
+                    gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                    gpu_name = gpu_name.lower()
+                    
+                    if gpu_name not in gpu_env_map:
+                        gpu_list.append(gpu_name)
+                        gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
+                    break
+        except Exception:
+            pass
+        
+        # Mesa GPUs with DRI_PRIME
+        index = 0
+        while index < 5:  # Limit to 5 devices
+            try:
+                env = os.environ.copy()
+                env["__GLX_VENDOR_LIBRARY_NAME"] = "mesa"
+                env["DRI_PRIME"] = str(index)
+                result = subprocess.run(
+                    ["glxinfo"],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                renderer_found = False
+                for line in result.stdout.split('\n'):
+                    if "OpenGL renderer string:" in line:
+                        gpu_name = line.split(':', 1)[1].strip()
+                        # Truncate GPU name at the first slash
+                        gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                        gpu_name = gpu_name.lower()
+                        
+                        # Check for software renderer or duplicate
+                        if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
+                            break
+                            
+                        gpu_list.append(gpu_name)
+                        gpu_env_map[gpu_name] = {
+                            "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                            "DRI_PRIME": str(index)
+                        }
+                        renderer_found = True
+                        break
+                
+                # If no renderer found or llvmpipe detected, break the loop
+                if not renderer_found:
+                    break
+                    
+                index += 1
+            except Exception:
+                break
+        
+        # Fixed Mesa options
+        fixed_options = {
+            "llvmpipe (software rendering)": {
+                "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                "LIBGL_ALWAYS_SOFTWARE": "1"
+            },
+            "zink": {
+                "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                "MESA_LOADER_DRIVER_OVERRIDE": "zink",
+                "LIBGL_KOPPER_DRI2": "1"
+            }
+        }
+        
+        # Add fixed options to the map
+        for name, env_vars in fixed_options.items():
+            gpu_env_map[name] = env_vars
+        
+        # Create full option list
+        options = ["unset"] + gpu_list + list(fixed_options.keys())
+        
+        return options, gpu_env_map
 
     @staticmethod
     def create_gpu_settings_tab():
@@ -386,10 +527,24 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        vulkan_options = ["unset"] + GPULaunchManager._get_vulkan_icd_options()
-        widgets['vulkan_render_combo'].clear()
-        widgets['vulkan_render_combo'].addItems(vulkan_options)
-        widgets['vulkan_render_combo'].setCurrentText("unset")
+        if GPULaunchManager.is_glxinfo_available():
+            opengl_options, gpu_env_map = GPULaunchManager._get_opengl_gpu_options()
+            widgets['ogl_renderer_combo'].clear()
+            widgets['ogl_renderer_combo'].addItems(opengl_options)
+            widgets['ogl_renderer_combo'].env_map = gpu_env_map
+        else:
+            widgets['ogl_renderer_combo'].setEnabled(False)
+            widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
+        
+        if GPULaunchManager.is_vulkaninfo_available():
+            vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
+            vulkan_options = ["unset"] + vulkan_devices
+            widgets['vulkan_device_combo'].clear()
+            widgets['vulkan_device_combo'].addItems(vulkan_options)
+            widgets['vulkan_device_combo'].device_map = device_map
+        else:
+            widgets['vulkan_device_combo'].setEnabled(False)
+            widgets['vulkan_device_combo'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
 
         return render_tab, widgets
 
@@ -398,13 +553,15 @@ class GPULaunchManager:
         """
         Creates the render pipeline tab for managing FPS, filters and display settings.
         """
-        mangohud_available = GPULaunchManager.find_available_mangohud()
+        mangohud_available = GPULaunchManager.is_mangohud_available()
         
         render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         
         if not mangohud_available:
             for widget in widgets.values():
-                widget.setEnabled(False)
+                if hasattr(widget, 'setEnabled'):
+                    widget.setEnabled(False)
+                    widget.setToolTip("MangoHUD not found - render pipeline options disabled")
 
         return render_pipeline_tab, widgets
 
@@ -424,7 +581,7 @@ class GPULaunchManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setContentsMargins(10, 10, 0, 0)
         
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
@@ -562,60 +719,21 @@ class GPULaunchManager:
         """
         env_vars = []
         
-        if not render_widgets or 'ogl_provider_combo' not in render_widgets:
-            return env_vars
-            
-        provider = render_widgets['ogl_provider_combo'].currentText()
-        vulkan_selection = render_widgets['vulkan_render_combo'].currentText()
+        if 'ogl_renderer_combo' in render_widgets:
+            selected = render_widgets['ogl_renderer_combo'].currentText()
+            if selected != "unset":
+                env_map = getattr(render_widgets['ogl_renderer_combo'], 'env_map', {})
+                env_dict = env_map.get(selected, {})
+                for var, value in env_dict.items():
+                    env_vars.append(f"{var}={value}")
         
-        if provider != "unset":
-            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['ogl_provider_combo']
-            mapped_value = mapping['values'].get(provider)
-            if mapped_value:
-                env_vars.append(f"{mapping['var_name']}={mapped_value}")
-                
-                if provider == "mesa (software rendering)":
-                    env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
-                elif provider == "mesa (zink)":
-                    env_vars.append("MESA_LOADER_DRIVER_OVERRIDE=zink")
-                    env_vars.append("LIBGL_KOPPER_DRI2=1")
-                    if "(software rendering)" in vulkan_selection.lower():
-                        env_vars.append("LIBGL_ALWAYS_SOFTWARE=1")
-        
-        if provider.startswith("mesa"):
-            mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['dri_prime_combo']
-            value = render_widgets['dri_prime_combo'].currentText()
-            if value != "unset":
-                env_vars.append(f"{mapping['var_name']}={value}")
-        
-        mapping = GPULaunchManager.RENDER_ENV_MAPPINGS['vulkan_render_combo']
-        value = vulkan_selection
-        if value != "unset":
-            if "(software rendering)" in value.lower():
-                vulkan_selection_name = re.sub(r'\s*\(software rendering\)', '', value, flags=re.IGNORECASE)
-            else:
-                vulkan_selection_name = value
-            
-            icd_files = []
-            
-            try:
-                for file in os.listdir(GPULaunchManager.ICD_DIR):
-                    if file.endswith('.json'):
-                        base_name = file[:-5]
-                        if '.' in base_name:
-                            pure_name = base_name.split('.')[0]
-                            if pure_name == vulkan_selection_name:
-                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-                        else:
-                            if base_name == vulkan_selection_name:
-                                icd_files.append(os.path.join(GPULaunchManager.ICD_DIR, file))
-            except OSError:
-                pass
-            
-            if icd_files:
-                driver_paths = ":".join(icd_files)
-                env_vars.append(f"{mapping['var_name']}={driver_paths}")
-                env_vars.append('DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1')
+        if 'vulkan_device_combo' in render_widgets:
+            vulkan_selection = render_widgets['vulkan_device_combo'].currentText()
+            if vulkan_selection != "unset":
+                device_map = getattr(render_widgets['vulkan_device_combo'], 'device_map', {})
+                device_key = device_map.get(vulkan_selection)
+                if device_key:
+                    env_vars.append(f"MESA_VK_DEVICE_SELECT={device_key}!")
         
         return env_vars
 

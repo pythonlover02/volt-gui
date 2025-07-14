@@ -16,8 +16,32 @@ from cpu import CPUManager
 from disk import DiskManager
 from extras import ExtrasManager
 from options import OptionsTab
+from about import AboutManager
 from kernel import KernelManager
 from config import ConfigManager
+
+
+def unbind_pyinstaller_libs():
+    """
+    Unbind PyInstaller libraries, use system libraries instead.
+    Not ideal but it should be less buggy and time consuming than going disabling library by library.
+    Also lets do this to avoid having to add any binaries the optional settings depend on (vulkaninfo, glxinfo, scx*, mangohud)
+    Nuitka isnt affected by this issues.
+    """
+    if getattr(sys, 'frozen', False):
+        try:
+            os.environ.pop('LD_LIBRARY_PATH', None)
+            os.environ.pop('LD_PRELOAD', None)
+            
+            # Remove PyInstaller's temporary library path
+            lib_path = os.path.join(sys._MEIPASS, 'lib') if hasattr(sys, '_MEIPASS') else None
+            if lib_path and lib_path in sys.path:
+                sys.path.remove(lib_path)
+                
+        except Exception as e:
+            print(f"Warning: Failed to unbind PyInstaller libraries: {e}")
+
+unbind_pyinstaller_libs()
 
 
 def check_sudo_execution():
@@ -118,6 +142,7 @@ class MainWindow(QMainWindow):
         self.disk_widgets = {}
         self.gpu_widgets = {}
         self.extras_widgets = {}
+        self.about_widgets = {}
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -165,6 +190,7 @@ class MainWindow(QMainWindow):
 
         self.options_tab = OptionsTab(self.tab_widget, self)
         self.tab_widget.addTab(self.options_tab, "Options")
+        self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
         self.setCentralWidget(central_widget)
@@ -268,6 +294,13 @@ class MainWindow(QMainWindow):
         """
         extras_tab, self.extras_widgets = ExtrasManager.create_extras_tab()
         self.tab_widget.addTab(extras_tab, "Extras")
+
+    def setup_about_tab(self):
+        """
+        Set up the about tab.
+        """
+        about_tab, self.about_widgets = AboutManager.create_about_tab()
+        self.tab_widget.addTab(about_tab, "About")
 
     def setup_system_tray(self):
         """
