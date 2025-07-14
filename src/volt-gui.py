@@ -16,6 +16,7 @@ from cpu import CPUManager
 from disk import DiskManager
 from extras import ExtrasManager
 from options import OptionsTab
+from about import AboutManager
 from kernel import KernelManager
 from config import ConfigManager
 
@@ -141,6 +142,7 @@ class MainWindow(QMainWindow):
         self.disk_widgets = {}
         self.gpu_widgets = {}
         self.extras_widgets = {}
+        self.about_widgets = {}
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -188,6 +190,7 @@ class MainWindow(QMainWindow):
 
         self.options_tab = OptionsTab(self.tab_widget, self)
         self.tab_widget.addTab(self.options_tab, "Options")
+        self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
         self.setCentralWidget(central_widget)
@@ -291,6 +294,13 @@ class MainWindow(QMainWindow):
         """
         extras_tab, self.extras_widgets = ExtrasManager.create_extras_tab()
         self.tab_widget.addTab(extras_tab, "Extras")
+
+    def setup_about_tab(self):
+        """
+        Set up the about tab.
+        """
+        about_tab, self.about_widgets = AboutManager.create_about_tab()
+        self.tab_widget.addTab(about_tab, "About")
 
     def setup_system_tray(self):
         """
