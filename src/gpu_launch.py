@@ -1,3 +1,4 @@
+import sys
 import os
 import re
 import glob
@@ -216,6 +217,26 @@ class GPULaunchManager:
         return name
 
     @staticmethod
+    def _get_clean_env():
+        """
+        Create a clean environment for subprocess calls, removing PyInstaller library paths.
+        """
+        env = os.environ.copy()
+        
+        if getattr(sys, 'frozen', False):
+            # Remove PyInstaller library paths that might interfere
+            env.pop('LD_LIBRARY_PATH', None)
+            env.pop('LD_PRELOAD', None)
+            
+            # Clean PATH to remove PyInstaller temp directory
+            if hasattr(sys, '_MEIPASS') and 'PATH' in env:
+                paths = env['PATH'].split(os.pathsep)
+                clean_paths = [p for p in paths if sys._MEIPASS not in p]
+                env['PATH'] = os.pathsep.join(clean_paths)
+        
+        return env
+
+    @staticmethod
     def find_available(program_name, search_flatpak=True):
         """
         Generic function to find if a program is available in system paths or Flatpak.
@@ -277,7 +298,15 @@ class GPULaunchManager:
             return devices, device_map
         
         try:
-            result = subprocess.run(["vulkaninfo"], capture_output=True, text=True, check=True)
+            # Use clean environment to avoid PyInstaller library conflicts
+            clean_env = GPULaunchManager._get_clean_env()
+            result = subprocess.run(
+                ["vulkaninfo"], 
+                capture_output=True, 
+                text=True, 
+                check=True,
+                env=clean_env
+            )
             lines = result.stdout.split('\n')
             
             current_device = {}
@@ -342,9 +371,12 @@ class GPULaunchManager:
             options = ["unset"] + list(fixed_options.keys())
             return options, gpu_env_map
         
+        # clean environment
+        base_clean_env = GPULaunchManager._get_clean_env()
+        
         # NVIDIA GPU
         try:
-            env = os.environ.copy()
+            env = base_clean_env.copy()
             env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
             result = subprocess.run(
                 ["glxinfo"],
@@ -371,7 +403,8 @@ class GPULaunchManager:
         index = 0
         while index < 5:  # Limit to 5 devices
             try:
-                env = os.environ.copy()
+                # clean environment
+                env = base_clean_env.copy()
                 env["__GLX_VENDOR_LIBRARY_NAME"] = "mesa"
                 env["DRI_PRIME"] = str(index)
                 result = subprocess.run(
