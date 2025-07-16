@@ -62,7 +62,7 @@ class CPUManager:
         """
         cpu_tab = QWidget()
         main_layout = QVBoxLayout(cpu_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(9, 0, 9, 0)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -142,7 +142,7 @@ class CPUManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 10)
+        button_layout.setContentsMargins(11, 10, 11, 10)
 
         widgets['cpu_apply_button'] = QPushButton("Apply")
         widgets['cpu_apply_button'].setMinimumSize(100, 30)

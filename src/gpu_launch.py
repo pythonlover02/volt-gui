@@ -526,7 +526,7 @@ class GPULaunchManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(0, 10, 0, 0)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         widgets = {}
         
@@ -605,7 +605,7 @@ class GPULaunchManager:
         """
         launch_tab = QWidget()
         main_layout = QVBoxLayout(launch_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(9, 9, 9, 0)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -614,12 +614,13 @@ class GPULaunchManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(10, 10, 0, 0)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
         setting_layout = QVBoxLayout(setting_container)
-        setting_layout.setContentsMargins(0, 10, 0, 0)
+        setting_layout.setContentsMargins(0, 0, 0, 0)
         
         path_label = QLabel("Launch Options:")
         path_label.setWordWrap(True)
@@ -645,8 +646,6 @@ class GPULaunchManager:
         
         GPULaunchManager.create_launch_apply_button(main_layout, widgets)
         
-        main_layout.addSpacing(9)
-        
         return launch_tab, widgets
 
     @staticmethod
@@ -666,6 +665,7 @@ class GPULaunchManager:
         button_layout.addStretch(1)
         button_layout.addWidget(widgets[button_name])
         button_layout.addStretch(1)
+
         layout.addWidget(button_container)
 
     @staticmethod
@@ -676,7 +676,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
+        button_layout.setContentsMargins(11, 10, 11, 0)
 
         widgets['launch_apply_button'] = QPushButton("Apply")
         widgets['launch_apply_button'].setMinimumSize(100, 30)
@@ -686,6 +686,7 @@ class GPULaunchManager:
         button_layout.addWidget(widgets['launch_apply_button'])
         button_layout.addStretch(1)
         layout.addWidget(button_container)
+        layout.addSpacing(9)
 
     @staticmethod
     def _generate_mesa_env_vars(mesa_widgets):

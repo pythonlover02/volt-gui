@@ -72,8 +72,8 @@ class ExtrasManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for item in items:
             container = ExtrasManager._create_item_container(item)
@@ -92,7 +92,7 @@ class ExtrasManager:
         """
         container = QWidget()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setContentsMargins(10, 0, 0, 0)
         container_layout.setSpacing(5)
         
         title_label = QLabel(item_info["label"])

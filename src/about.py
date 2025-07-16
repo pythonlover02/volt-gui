@@ -23,7 +23,7 @@ class AboutManager:
         """
         about_tab = QWidget()
         main_layout = QVBoxLayout(about_tab)
-        main_layout.setContentsMargins(10, 10, 0, 0)
+        main_layout.setContentsMargins(9, 0, 9, 0)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -32,8 +32,8 @@ class AboutManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for item in AboutManager._get_about_info():
             container = AboutManager._create_info_container(item)

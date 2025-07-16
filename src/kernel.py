@@ -177,6 +177,7 @@ class KernelManager:
         """
         kernel_tab = QWidget()
         kernel_layout = QVBoxLayout(kernel_tab)
+        kernel_layout.setContentsMargins(9, 0, 9, 0)
         widgets = {}
         
         scroll_area = QScrollArea()
@@ -186,7 +187,8 @@ class KernelManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
             KernelManager._create_setting_section(scroll_layout, widgets, setting_name, setting_info)
@@ -196,6 +198,8 @@ class KernelManager:
         kernel_layout.addWidget(scroll_area)
         
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
+
+        kernel_layout.addSpacing(9)
         
         widgets['kernel_settings_applied'] = False
         widgets['is_process_running'] = False
@@ -247,7 +251,7 @@ class KernelManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
+        button_layout.setContentsMargins(11, 10, 11, 0)
         
         widgets['kernel_apply_button'] = QPushButton("Apply")
         widgets['kernel_apply_button'].setMinimumSize(100, 30)
