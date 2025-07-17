@@ -199,8 +199,6 @@ class KernelManager:
         
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
 
-        kernel_layout.addSpacing(9)
-        
         widgets['kernel_settings_applied'] = False
         widgets['is_process_running'] = False
         widgets['process'] = None
@@ -262,6 +260,7 @@ class KernelManager:
         button_layout.addStretch(1)
         
         kernel_layout.addWidget(button_container)
+        kernel_layout.addSpacing(9)
 
     @staticmethod
     def refresh_kernel_values(widgets):
