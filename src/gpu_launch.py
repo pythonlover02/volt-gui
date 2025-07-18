@@ -237,7 +237,7 @@ class GPULaunchManager:
         return env
 
     @staticmethod
-    def find_available(program_name, search_flatpak=True):
+    def get_available(program_name, search_flatpak=True):
         """
         Generic function to find if a program is available in system paths or Flatpak.
         Args:
@@ -266,25 +266,25 @@ class GPULaunchManager:
         return False
 
     @staticmethod
-    def is_vulkaninfo_available():
+    def get_available_vulkaninfo():
         """
         Checks if vulkaninfo is available in the system PATH.
         """
-        return GPULaunchManager.find_available("vulkaninfo", search_flatpak=False)
+        return GPULaunchManager.get_available("vulkaninfo", search_flatpak=False)
 
     @staticmethod
-    def is_glxinfo_available():
+    def get_available_glxinfo():
         """
         Checks if glxinfo is available in the system PATH.
         """
-        return GPULaunchManager.find_available("glxinfo", search_flatpak=False)
+        return GPULaunchManager.get_available("glxinfo", search_flatpak=False)
 
     @staticmethod
-    def is_mangohud_available():
+    def get_available_mangohud():
         """
         Checks if MangoHUD is available in system paths or Flatpak.
         """
-        return GPULaunchManager.find_available("mangohud", search_flatpak=True)
+        return GPULaunchManager.get_available("mangohud", search_flatpak=True)
 
     @staticmethod
     def _get_vulkan_device_options():
@@ -294,7 +294,7 @@ class GPULaunchManager:
         devices = []
         device_map = {}
         
-        if not GPULaunchManager.is_vulkaninfo_available():
+        if not GPULaunchManager.get_available_vulkaninfo():
             return devices, device_map
         
         try:
@@ -351,7 +351,7 @@ class GPULaunchManager:
         gpu_list = []
         gpu_env_map = {}
         
-        if not GPULaunchManager.is_glxinfo_available():
+        if not GPULaunchManager.get_available_glxinfo():
             # Return only fixed options if glxinfo is not available
             fixed_options = {
                 "llvmpipe (software rendering)": {
@@ -560,7 +560,7 @@ class GPULaunchManager:
         """
         render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        if GPULaunchManager.is_glxinfo_available():
+        if GPULaunchManager.get_available_glxinfo():
             opengl_options, gpu_env_map = GPULaunchManager._get_opengl_gpu_options()
             widgets['ogl_renderer_combo'].clear()
             widgets['ogl_renderer_combo'].addItems(opengl_options)
@@ -569,7 +569,7 @@ class GPULaunchManager:
             widgets['ogl_renderer_combo'].setEnabled(False)
             widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
         
-        if GPULaunchManager.is_vulkaninfo_available():
+        if GPULaunchManager.get_available_vulkaninfo():
             vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
             vulkan_options = ["unset"] + vulkan_devices
             widgets['vulkan_device_combo'].clear()
@@ -586,7 +586,7 @@ class GPULaunchManager:
         """
         Creates the render pipeline tab for managing FPS, filters and display settings.
         """
-        mangohud_available = GPULaunchManager.is_mangohud_available()
+        mangohud_available = GPULaunchManager.get_available_mangohud()
         
         render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         

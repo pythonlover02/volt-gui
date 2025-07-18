@@ -120,8 +120,9 @@ class KernelManager:
         try:
             with open(setting_path, 'r') as f:
                 return f.read().strip()
-        except Exception:
-            return "Error"
+        except Exception as e:
+            print(f"Error reading kernel setting {setting_path}: {e}")
+            return None
 
     @staticmethod
     def _get_dynamic_current_value(setting_path):
@@ -137,9 +138,14 @@ class KernelManager:
                 return match.group(1)
             else:
                 values = content.split()
-                return values[0] if values else "Error"
-        except Exception:
-            return "Error"
+                if values:
+                    return values[0]
+                else:
+                    print(f"Warning: No values found in dynamic setting {setting_path}")
+                    return None
+        except Exception as e:
+            print(f"Error reading dynamic kernel setting {setting_path}: {e}")
+            return None
 
     @staticmethod
     def _get_dynamic_possible_values(setting_path):
@@ -154,9 +160,14 @@ class KernelManager:
             clean_content = re.sub(r'[\[\]]', '', content)
             possible_values = clean_content.split()
             
-            return possible_values if possible_values else ["Error"]
-        except Exception:
-            return ["Error"]
+            if possible_values:
+                return possible_values
+            else:
+                print(f"Warning: No possible values found in dynamic setting {setting_path}")
+                return None
+        except Exception as e:
+            print(f"Error reading possible values for {setting_path}: {e}")
+            return None
 
     @staticmethod
     def _get_dynamic_text_with_values(base_text, setting_path):
@@ -164,7 +175,7 @@ class KernelManager:
         Generate dynamic text that includes the possible values from the system.
         """
         possible_values = KernelManager._get_dynamic_possible_values(setting_path)
-        if possible_values and possible_values[0] != "Error":
+        if possible_values:
             values_text = " ".join(possible_values)
             return f"{base_text}\nPossible values: {values_text}"
         else:
@@ -273,7 +284,11 @@ class KernelManager:
                 current = KernelManager._get_dynamic_current_value(info['path'])
             else:
                 current = KernelManager._get_current_value(info['path'])
-            widgets[f'{name}_current_value'].setText(f"current value: {current}")
+            
+            if current is not None:
+                widgets[f'{name}_current_value'].setText(f"current value: {current}")
+            else:
+                widgets[f'{name}_current_value'].setText("current value: Error reading")
             
             if info['is_dynamic'] and f'{name}_text_label' in widgets:
                 updated_text = KernelManager._get_dynamic_text_with_values(info['text'], info['path'])

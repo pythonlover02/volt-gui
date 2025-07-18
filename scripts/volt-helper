@@ -6,81 +6,10 @@ DISK_RESULT=""
 KERNEL_RESULT=""
 GPU_RESULT=""
 
-show_usage() {
-    # Display usage information and examples for the script
-    echo "Usage: $SCRIPT_NAME [OPTIONS]"
-    echo ""
-    echo "Options:"
-    echo "  -c <governor:name> [scheduler:name]     Configure CPU governor and/or scheduler"
-    echo "  -d <disk:scheduler> [...]               Configure disk I/O schedulers"
-    echo "  -k <path:value> [...]                   Configure kernel parameters"
-    echo "  -g <settings_file>                      Generate GPU launch script from settings file"
-    echo "  -h, --help                              Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $SCRIPT_NAME -c governor:performance scheduler:scx_simple"
-    echo "  $SCRIPT_NAME -c governor:powersave"
-    echo "  $SCRIPT_NAME -c scheduler:scx_simple"
-    echo "  $SCRIPT_NAME -d sda:mq-deadline sdb:none"
-    echo ""
-    echo "Notes:"
-    echo "  - Use 'none' for CPU scheduler to terminate all schedulers"
-    echo "  - Multiple flags can be combined in any order"
-    echo "  - GPU settings file should contain key=value pairs"
-    exit 0
-}
-
-get_current_scheduler() {
-    # Retrieve the currently running SCX scheduler
-    for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
-        echo "$proc"
-        return 0
-    done
-    echo ""
-}
-
-is_scheduler_running() {
-    # Check if a specific scheduler process is running
-    local scheduler="$1"
-    pgrep -f "$scheduler" > /dev/null 2>&1
-}
-
-is_scheduler_available() {
-    # Check if a scheduler command is available in PATH
-    local scheduler="$1"
-    command -v "$scheduler" > /dev/null 2>&1
-}
-
-get_available_disk_schedulers() {
-    # Get available schedulers for a specific disk
-    local disk_name="$1"
-    local scheduler_path="/sys/block/$disk_name/queue/scheduler"
-    if [ -f "$scheduler_path" ]; then
-        cat "$scheduler_path" | tr -d '[]'
-    fi
-}
-
-is_governor_available() {
-    # Check if a CPU governor is available
-    local governor="$1"
-    local governor_path="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
-    if [ -f "$governor_path" ]; then
-        grep -q "$governor" "$governor_path"
-    else
-        return 1
-    fi
-}
-
 apply_governor() {
     # Apply CPU governor to all available CPU cores
     local governor="$1"
     echo "Applying CPU governor: $governor"
-    
-    # Check if governor is available
-    if ! is_governor_available "$governor"; then
-        echo "  Error: Governor $governor not available"
-        return 1
-    fi
     
     local success=0
     for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
@@ -100,21 +29,46 @@ apply_governor() {
 }
 
 terminate_existing_schedulers() {
-    # Terminate all running SCX schedulers using progressive signal escalation
+    # Terminate the running SCX scheduler using PID-based approach
     echo "Terminating existing SCX schedulers..."
-    for proc in $(ps -eo comm | grep "^scx_" 2>/dev/null); do
-        echo "Attempting to terminate $proc"
-        pkill -INT -f "$proc" 2>/dev/null && sleep 0.5
-        
-        if is_scheduler_running "$proc"; then
-            pkill -TERM -f "$proc" 2>/dev/null && sleep 0.5
-            
-            if is_scheduler_running "$proc"; then
-                pkill -KILL -f "$proc" 2>/dev/null && sleep 0.2
-            fi
-        fi
-    done
-    sleep 1
+    
+    # Get the PID of the running scheduler
+    local scheduler_pid=$(pgrep -f '^scx_' 2>/dev/null | head -n1)
+    
+    if [ -z "$scheduler_pid" ]; then
+        echo "  No schedulers found"
+        return 0
+    fi
+
+    echo "  Found scheduler PID: $scheduler_pid"
+
+    # First try graceful SIGINT
+    echo "  Sending SIGINT to $scheduler_pid"
+    kill -INT "$scheduler_pid" 2>/dev/null
+    sleep 0.5
+
+    # Check if still running
+    if kill -0 "$scheduler_pid" 2>/dev/null; then
+        echo "  Sending SIGTERM to $scheduler_pid"
+        kill -TERM "$scheduler_pid" 2>/dev/null
+        sleep 0.5
+    fi
+
+    # Check if still running
+    if kill -0 "$scheduler_pid" 2>/dev/null; then
+        echo "  Sending SIGKILL to $scheduler_pid"
+        kill -KILL "$scheduler_pid" 2>/dev/null
+        sleep 0.2
+    fi
+
+    # Final verification
+    if kill -0 "$scheduler_pid" 2>/dev/null; then
+        echo "  Warning: Could not terminate PID: $scheduler_pid"
+        return 1
+    else
+        echo "  Scheduler terminated successfully"
+        return 0
+    fi
 }
 
 start_new_scheduler() {
@@ -122,43 +76,25 @@ start_new_scheduler() {
     local scheduler="$1"
     echo "Starting scheduler: $scheduler"
     
-    if is_scheduler_available "$scheduler"; then
-        "$scheduler" &
-        local scheduler_pid=$!
-        sleep 1
-        
-        if kill -0 "$scheduler_pid" 2>/dev/null; then
-            echo "  Scheduler $scheduler started successfully (PID: $scheduler_pid)"
-            return 0
-        else
-            echo "  Error: Scheduler $scheduler failed to start"
-            return 1
-        fi
+    "$scheduler" &
+    local scheduler_pid=$!
+    sleep 1
+    
+    if kill -0 "$scheduler_pid" 2>/dev/null; then
+        echo "  Scheduler $scheduler started successfully (PID: $scheduler_pid)"
+        return 0
     else
-        echo "  Error: Scheduler $scheduler not found"
+        echo "  Error: Scheduler $scheduler failed to start"
         return 1
     fi
 }
 
 handle_scheduler() {
-    # Handle scheduler termination and startup logic
-    local scheduler="$1"
-    
-    local current_scheduler=$(get_current_scheduler)
-    
-    # If the requested scheduler is already running, skip
-    if [ "$scheduler" != "none" ] && [ -n "$current_scheduler" ] && [ "$scheduler" = "$current_scheduler" ]; then
-        echo "Scheduler $scheduler is already running, no changes needed"
-        return 0
-    fi
-    
     # Always terminate existing schedulers first
-    if [ -n "$current_scheduler" ]; then
-        terminate_existing_schedulers
-    fi
+    terminate_existing_schedulers
     
-    # Start new scheduler if not "none"
-    if [ "$scheduler" != "none" ]; then
+    # Start new scheduler if requested (even if it's the same name)
+    if [ -n "$scheduler" ] && [ "$scheduler" != "none" ]; then
         start_new_scheduler "$scheduler"
         return $?
     fi
@@ -237,7 +173,6 @@ apply_disk_scheduler() {
     
     if ! grep -q "$scheduler" "$scheduler_path"; then
         echo "Error: Scheduler '$scheduler' not available for disk $disk_name"
-        echo "Available schedulers: $(get_available_disk_schedulers "$disk_name")"
         return 1
     fi
     
@@ -564,9 +499,6 @@ parse_arguments() {
                 echo
                 shift 2
                 ;;
-            -h|--help)
-                show_usage
-                ;;
             *)
                 echo "Error: Unknown option '$1'"
                 echo "Use -h or --help for usage information"
@@ -583,10 +515,6 @@ parse_arguments() {
     
     print_operation_summary "$cpu_requested" "$disk_requested" "$kernel_requested" "$gpu_requested"
 }
-
-if [ $# -eq 0 ]; then
-    show_usage
-fi
 
 parse_arguments "$@"
 

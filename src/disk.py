@@ -15,35 +15,27 @@ class DiskManager:
     BASE_OPTIONS = ["unset"]
 
     @staticmethod
-    def get_disk_scheduler_info():
+    def get_schedulers():
         """
         Gets information about all disk schedulers with improved format handling.
         """
         disk_info = {}
-        
         try:
             scheduler_files = glob.glob(DiskManager.DISK_SCHEDULER_PATH_PATTERN)
-            
             for file_path in scheduler_files:
                 disk_name = file_path.split('/')[-3]
-                
                 try:
                     with open(file_path, 'r') as f:
                         content = f.read().strip()
-                    
-                    scheduler_info = DiskManager._parse_scheduler_content(content)
-                    
-                    if scheduler_info:
-                        scheduler_info['path'] = file_path
-                        disk_info[disk_name] = scheduler_info
-                    
+                        scheduler_info = DiskManager._parse_scheduler_content(content)
+                        if scheduler_info:
+                            scheduler_info['path'] = file_path
+                            disk_info[disk_name] = scheduler_info
                 except Exception as e:
                     print(f"Warning: Failed to read scheduler info for {disk_name}: {e}")
                     continue
-                    
         except Exception as e:
             print(f"Warning: Failed to get disk scheduler info: {e}")
-        
         return disk_info
 
     @staticmethod
@@ -63,7 +55,6 @@ class DiskManager:
             
             available = DiskManager.BASE_OPTIONS.copy()
             current = None
-            
             bracket_pattern = re.compile(r'\[([^\]]+)\]')
             
             for token in tokens:
@@ -78,15 +69,7 @@ class DiskManager:
             
             if current is None:
                 print(f"Warning: No current scheduler found in brackets for content: '{content}'")
-                
-                if len(available) > 1:
-                    current = available[1]
-                    print(f"Warning: Using '{current}' as fallback current scheduler")
-                else:
-                    current = DiskManager.DEFAULT_SCHEDULER
-                    if current not in available:
-                        available.append(current)
-                    print(f"Warning: Using default scheduler '{current}' as fallback")
+                return None
             
             if current not in available:
                 available.append(current)
@@ -102,8 +85,7 @@ class DiskManager:
             
         except Exception as e:
             print(f"Error parsing scheduler content '{content}': {e}")
-            fallback_available = DiskManager.BASE_OPTIONS + [DiskManager.DEFAULT_SCHEDULER]
-            return {'current': DiskManager.DEFAULT_SCHEDULER, 'available': fallback_available}
+            return None
 
     @staticmethod
     def create_disk_tab():
@@ -128,7 +110,7 @@ class DiskManager:
         widgets['disk_combos'] = {}
         widgets['disk_labels'] = {}
         
-        disk_info = DiskManager.get_disk_scheduler_info()
+        disk_info = DiskManager.get_schedulers()
         
         sorted_disk_names = sorted(disk_info.keys())
         
@@ -203,7 +185,7 @@ class DiskManager:
         """
         Updates the UI with current disk scheduler information.
         """
-        disk_info = DiskManager.get_disk_scheduler_info()
+        disk_info = DiskManager.get_schedulers()
         
         for disk_name, scheduler_info in disk_info.items():
             if disk_name in widgets['disk_labels'] and disk_name in widgets['disk_combos']:
