@@ -54,28 +54,6 @@ class OptionsManager:
         if self.main_window:
             self._apply_all_options()
 
-    def create_option_apply_button(self, parent_layout):
-        """
-        Create and setup the apply button for options.
-        """
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(11, 10, 11, 0)
-
-        apply_button = QPushButton("Apply")
-        apply_button.setMinimumSize(100, 30)
-        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(apply_button)
-        button_layout.addStretch(1)
-        
-        parent_layout.addWidget(button_container)
-        parent_layout.addSpacing(9)
-        
-        return apply_button
-
     def _set_default_values(self):
         """
         Set default values for all widgets.
@@ -195,11 +173,33 @@ class OptionsTab(QWidget):
         scroll_area = self._create_scroll_area()
         main_layout.addWidget(scroll_area)
         
-        self.apply_button = self.options_manager.create_option_apply_button(main_layout)
+        self.apply_button = self.create_option_apply_button(main_layout)
         
         self._register_widgets()
         self.apply_button.clicked.connect(self.save_and_apply_options)
         self.options_manager.load_options()
+
+    def create_option_apply_button(self, parent_layout):
+        """
+        Create and setup the apply button for options.
+        """
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(11, 10, 11, 0)
+
+        apply_button = QPushButton("Apply")
+        apply_button.setMinimumSize(100, 30)
+        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(apply_button)
+        button_layout.addStretch(1)
+        
+        parent_layout.addWidget(button_container)
+        parent_layout.addSpacing(9)
+        
+        return apply_button
 
     def save_and_apply_options(self):
         """
