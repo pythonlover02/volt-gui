@@ -57,13 +57,13 @@ class AboutManager:
         
         label_text = QLabel(info_item["label"])
         label_text.setAlignment(Qt.AlignCenter)
-        label_text.setStyleSheet("font-weight: bold; font-size: 14px;")
+        label_text.setStyleSheet("font-weight: bold; font-size: 16px;")
         container_layout.addWidget(label_text)
         
         text_label = QLabel(info_item["text"])
         text_label.setAlignment(Qt.AlignCenter)
         text_label.setWordWrap(True)
-        text_label.setStyleSheet("color: #999; font-weight: 300;")
+        text_label.setStyleSheet("color: #E0E0E0; font-size: 13px; line-height: 1.4;")
         container_layout.addWidget(text_label)
         
         return container

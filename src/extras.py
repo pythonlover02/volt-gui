@@ -97,13 +97,13 @@ class ExtrasManager:
         
         title_label = QLabel(item_info["label"])
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
         container_layout.addWidget(title_label)
         
         desc_label = QLabel(item_info["description"])
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #999; font-weight: 300;")
+        desc_label.setStyleSheet("color: #E0E0E0; font-size: 13px; line-height: 1.4;")
         container_layout.addWidget(desc_label)
         
         button = QPushButton("Open")

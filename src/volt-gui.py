@@ -15,10 +15,11 @@ from gpu_launch import GPULaunchManager
 from cpu import CPUManager
 from disk import DiskManager
 from extras import ExtrasManager
-from options import OptionsTab
+from options import OptionsManager
 from about import AboutManager
 from kernel import KernelManager
 from config import ConfigManager
+from welcome import WelcomeManager
 
 
 def check_sudo_execution():
@@ -120,6 +121,9 @@ class MainWindow(QMainWindow):
         self.gpu_widgets = {}
         self.extras_widgets = {}
         self.about_widgets = {}
+        
+        self.welcome_window = None
+        self.options_manager = None
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -140,6 +144,10 @@ class MainWindow(QMainWindow):
         self._initial_setup_complete = True
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
+        
+        if self.options_manager and self.options_manager.get_welcome_message_setting():
+            QTimer.singleShot(100, self.show_welcome_window)
+        
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
 
@@ -165,12 +173,24 @@ class MainWindow(QMainWindow):
         self.setup_launch_options_tab()
         self.setup_extras_tab()
 
-        self.options_tab = OptionsTab(self.tab_widget, self)
-        self.tab_widget.addTab(self.options_tab, "Options")
+        self.options_manager = OptionsManager(self.tab_widget, self)
+        self.tab_widget.addTab(self.options_manager.get_widget(), "Options")
+        
         self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
         self.setCentralWidget(central_widget)
+
+    def show_welcome_window(self):
+        """
+        Show the separate welcome window.
+        """
+        if self.welcome_window is None:
+            self.welcome_window = WelcomeManager.create_welcome_window(self)
+        
+        self.welcome_window.show()
+        self.welcome_window.activateWindow()
+        self.welcome_window.raise_()
 
     def setup_profile_selector(self):
         """
@@ -684,15 +704,41 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "volt-gui", "Settings applied successfully")
 
-    def quit_application(self):
+    def _cleanup_resources(self):
         """
-        Quit the application properly, ensuring all settings are saved.
+        Centralized cleanup method to avoid code duplication.
         """
         self.save_settings()
         ConfigManager.save_current_profile_preference(self.current_profile)
-        self.options_tab.options_manager.save_options()
+        if self.options_manager:
+            self.options_manager.save_options()
         self.instance_checker.cleanup()
+        
+        if self.welcome_window:
+            self.welcome_window.close()
+            self.welcome_window = None
+
+    def quit_application(self):
+        """
+        Quit the application properly, ensuring all settings are saved, only for the systray quit.
+        """
+        self._cleanup_resources()
         QApplication.quit()
+
+    def closeEvent(self, event):
+        """
+        Handle the main window close event. If system tray is enabled, hide to tray.
+        If system tray is disabled, quit the application.
+        """
+        if self.use_system_tray and hasattr(self, 'tray_icon'):
+            self.hide()
+            if self.welcome_window:
+                self.welcome_window.hide()
+            event.ignore()
+        else:
+            self._cleanup_resources()
+            QApplication.quit()
+            event.accept()
 
 
 def main():
