@@ -20,6 +20,7 @@ from about import AboutManager
 from kernel import KernelManager
 from config import ConfigManager
 from welcome import WelcomeManager
+from workarounds import WorkaroundManager
 
 
 def check_sudo_execution():
@@ -608,6 +609,7 @@ class MainWindow(QMainWindow):
     def apply_all_settings(self):
         """
         Collects all settings (CPU, Disk, GPU, Kernel) and applies them in one go using volt-helper.
+        Uses clean environment to avoid PyInstaller interference.
         """
         if (self.cpu_widgets.get('is_process_running', False) or 
             self.disk_widgets.get('is_process_running', False) or 
@@ -663,6 +665,9 @@ class MainWindow(QMainWindow):
             all_args = ["pkexec", "/usr/local/bin/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
 
             process = QProcess()
+            # Apply clean environment to avoid PyInstaller interference
+            WorkaroundManager.setup_clean_process(process)
+            
             process.start(all_args[0], all_args[1:])
             process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
 
@@ -746,6 +751,7 @@ def main():
     Main application entry point.
     """
     check_sudo_execution()
+    WorkaroundManager.setup_qt_platform()
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

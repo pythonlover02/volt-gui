@@ -3,10 +3,10 @@ import os
 import re
 import glob
 import tempfile
-import subprocess
 import shutil
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QProcess
+from workarounds import WorkaroundManager
 
 
 class GPULaunchManager:
@@ -214,34 +214,10 @@ class GPULaunchManager:
         return name
 
     @staticmethod
-    def _get_clean_env():
-        """
-        Create a clean environment for subprocess calls, removing PyInstaller library paths.
-        """
-        env = os.environ.copy()
-        
-        if getattr(sys, 'frozen', False):
-            # Remove PyInstaller library paths that might interfere
-            env.pop('LD_LIBRARY_PATH', None)
-            env.pop('LD_PRELOAD', None)
-            
-            # Clean PATH to remove PyInstaller temp directory
-            if hasattr(sys, '_MEIPASS') and 'PATH' in env:
-                paths = env['PATH'].split(os.pathsep)
-                clean_paths = [p for p in paths if sys._MEIPASS not in p]
-                env['PATH'] = os.pathsep.join(clean_paths)
-        
-        return env
-
-    @staticmethod
     def get_available(program_name, search_flatpak=True):
         """
         Generic function to find if a program is available in system paths or Flatpak.
-        Args:
-            program_name (str): Name of the program to search for
-            search_flatpak (bool): Whether to also search in Flatpak packages        
-        Returns:
-            bool: True if program is found, False otherwise
+        Uses clean environment for process calls.
         """
         for search_path in GPULaunchManager.SEARCH_PATHS:
             try:
@@ -254,9 +230,15 @@ class GPULaunchManager:
         
         if search_flatpak:
             try:
-                result = subprocess.run(["flatpak", "list"], capture_output=True, text=True, check=True)
-                if program_name.lower() in result.stdout.lower():
-                    return True
+                process = QProcess()
+                # Use clean environment for flatpak list
+                WorkaroundManager.setup_clean_process(process)
+                process.start("flatpak", ["list"])
+                
+                if process.waitForFinished(10000):  # 10 second timeout
+                    output = process.readAllStandardOutput().data().decode()
+                    if program_name.lower() in output.lower():
+                        return True
             except Exception:
                 pass
         
@@ -286,7 +268,7 @@ class GPULaunchManager:
     @staticmethod
     def _get_vulkan_device_options():
         """
-        Gets available Vulkan GPU devices using vulkaninfo.
+        Gets available Vulkan GPU devices using vulkaninfo with clean environment.
         """
         devices = []
         device_map = {}
@@ -295,45 +277,43 @@ class GPULaunchManager:
             return devices, device_map
         
         try:
-            # Use clean environment to avoid PyInstaller library conflicts
-            clean_env = GPULaunchManager._get_clean_env()
-            result = subprocess.run(
-                ["vulkaninfo"], 
-                capture_output=True, 
-                text=True, 
-                check=True,
-                env=clean_env
-            )
-            lines = result.stdout.split('\n')
+            process = QProcess()
+            # Use clean environment for vulkaninfo
+            WorkaroundManager.setup_clean_process(process)
+            process.start("vulkaninfo")
             
-            current_device = {}
-            for line in lines:
-                line = line.strip()
-                if 'vendorID' in line and '=' in line:
-                    vendor_id = line.split('=')[1].strip()
-                    current_device['vendorID'] = vendor_id
-                elif 'deviceID' in line and '=' in line:
-                    device_id = line.split('=')[1].strip()
-                    current_device['deviceID'] = device_id
-                elif 'deviceName' in line and '=' in line:
-                    device_name = line.split('=')[1].strip()
-                    current_device['deviceName'] = device_name
-                    
-                    if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
-                        # Truncate device name at the first slash
-                        truncated_name = GPULaunchManager._truncate_name_at_slash(current_device['deviceName'])
-                        display_name = truncated_name.lower()
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                lines = output.split('\n')
+                
+                current_device = {}
+                for line in lines:
+                    line = line.strip()
+                    if 'vendorID' in line and '=' in line:
+                        vendor_id = line.split('=')[1].strip()
+                        current_device['vendorID'] = vendor_id
+                    elif 'deviceID' in line and '=' in line:
+                        device_id = line.split('=')[1].strip()
+                        current_device['deviceID'] = device_id
+                    elif 'deviceName' in line and '=' in line:
+                        device_name = line.split('=')[1].strip()
+                        current_device['deviceName'] = device_name
                         
-                        if 'llvmpipe' in display_name:
-                            display_name = 'llvmpipe (software rendering)'
-                        else:
+                        if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
+                            # Truncate device name at the first slash
+                            truncated_name = GPULaunchManager._truncate_name_at_slash(current_device['deviceName'])
                             display_name = truncated_name.lower()
-                        
-                        device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
-                        devices.append(display_name)
-                        device_map[display_name] = device_key
-                        
-                        current_device = {}
+                            
+                            if 'llvmpipe' in display_name:
+                                display_name = 'llvmpipe (software rendering)'
+                            else:
+                                display_name = truncated_name.lower()
+                            
+                            device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
+                            devices.append(display_name)
+                            device_map[display_name] = device_key
+                            
+                            current_device = {}
         
         except Exception:
             pass
@@ -343,7 +323,7 @@ class GPULaunchManager:
     @staticmethod
     def _get_opengl_gpu_options():
         """
-        Gets available OpenGL GPU devices using glxinfo with different env vars.
+        Gets available OpenGL GPU devices using glxinfo with clean environment and different env vars.
         """
         gpu_list = []
         gpu_env_map = {}
@@ -368,31 +348,29 @@ class GPULaunchManager:
             options = ["unset"] + list(fixed_options.keys())
             return options, gpu_env_map
         
-        # clean environment
-        base_clean_env = GPULaunchManager._get_clean_env()
-        
         # NVIDIA GPU
         try:
-            env = base_clean_env.copy()
-            env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
-            result = subprocess.run(
-                ["glxinfo"],
-                env=env,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            for line in result.stdout.split('\n'):
-                if "OpenGL renderer string:" in line:
-                    gpu_name = line.split(':', 1)[1].strip()
-                    # Truncate GPU name at the first slash
-                    gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
-                    gpu_name = gpu_name.lower()
-                    
-                    if gpu_name not in gpu_env_map:
-                        gpu_list.append(gpu_name)
-                        gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
-                    break
+            process = QProcess()
+            # Start with clean environment
+            clean_env = WorkaroundManager.get_clean_env()
+            # Add NVIDIA-specific environment variable
+            clean_env.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
+            process.setEnvironment(clean_env)
+            process.start("glxinfo")
+            
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                for line in output.split('\n'):
+                    if "OpenGL renderer string:" in line:
+                        gpu_name = line.split(':', 1)[1].strip()
+                        # Truncate GPU name at the first slash
+                        gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                        gpu_name = gpu_name.lower()
+                        
+                        if gpu_name not in gpu_env_map:
+                            gpu_list.append(gpu_name)
+                            gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
+                        break
         except Exception:
             pass
         
@@ -400,42 +378,42 @@ class GPULaunchManager:
         index = 0
         while index < 5:  # Limit to 5 devices
             try:
-                # clean environment
-                env = base_clean_env.copy()
-                env["__GLX_VENDOR_LIBRARY_NAME"] = "mesa"
-                env["DRI_PRIME"] = str(index)
-                result = subprocess.run(
-                    ["glxinfo"],
-                    env=env,
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
+                process = QProcess()
+                # Start with clean environment
+                clean_env = WorkaroundManager.get_clean_env()
+                # Add Mesa-specific environment variables
+                clean_env.append("__GLX_VENDOR_LIBRARY_NAME=mesa")
+                clean_env.append(f"DRI_PRIME={index}")
+                process.setEnvironment(clean_env)
+                process.start("glxinfo")
                 
-                renderer_found = False
-                for line in result.stdout.split('\n'):
-                    if "OpenGL renderer string:" in line:
-                        gpu_name = line.split(':', 1)[1].strip()
-                        # Truncate GPU name at the first slash
-                        gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
-                        gpu_name = gpu_name.lower()
-                        
-                        # Check for software renderer or duplicate
-                        if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
-                            break
-                            
-                        gpu_list.append(gpu_name)
-                        gpu_env_map[gpu_name] = {
-                            "__GLX_VENDOR_LIBRARY_NAME": "mesa",
-                            "DRI_PRIME": str(index)
-                        }
-                        renderer_found = True
-                        break
-                
-                # If no renderer found or llvmpipe detected, break the loop
-                if not renderer_found:
-                    break
+                if process.waitForFinished(10000):  # 10 second timeout
+                    output = process.readAllStandardOutput().data().decode()
                     
+                    renderer_found = False
+                    for line in output.split('\n'):
+                        if "OpenGL renderer string:" in line:
+                            gpu_name = line.split(':', 1)[1].strip()
+                            # Truncate GPU name at the first slash
+                            gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                            gpu_name = gpu_name.lower()
+                            
+                            # Check for software renderer or duplicate
+                            if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
+                                break
+                                
+                            gpu_list.append(gpu_name)
+                            gpu_env_map[gpu_name] = {
+                                "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                                "DRI_PRIME": str(index)
+                            }
+                            renderer_found = True
+                            break
+                    
+                    # If no renderer found or llvmpipe detected, break the loop
+                    if not renderer_found:
+                        break
+                        
                 index += 1
             except Exception:
                 break
