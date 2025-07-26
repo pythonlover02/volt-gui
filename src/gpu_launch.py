@@ -67,7 +67,7 @@ class GPULaunchManager:
 
     RENDER_PIPELINE_SETTINGS = [
         ("Display Elements:", 'display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
-        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
+        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"]),
         ("Fps Limit Method:", 'fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
         ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
         ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
