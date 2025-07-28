@@ -106,6 +106,35 @@ class SingleInstanceChecker:
             pass
 
 
+class SignalHandler:
+    """
+    Handle UNIX signals for shutdown.
+    """
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.setup_signal_handlers()
+
+    def setup_signal_handlers(self):
+        """
+        Set up signal handlers for SIGINT (Ctrl+C) and SIGTERM.
+        """
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
+    def signal_handler(self, signum, frame):
+        """
+        Handle received signals by closing the application.
+        """
+        print(f"\nReceived signal {signum}, closing...")
+        
+        # Perform cleanup through the main window
+        self.main_window._cleanup_resources()
+        
+        # Exit the application
+        QApplication.quit()
+        sys.exit(0)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, instance_checker):
         """
@@ -764,6 +793,7 @@ def main():
 
     main_window = MainWindow(instance_checker)
     app.setQuitOnLastWindowClosed(not main_window.use_system_tray)
+    signal_handler = SignalHandler(main_window)
 
     sys.exit(app.exec())
 
