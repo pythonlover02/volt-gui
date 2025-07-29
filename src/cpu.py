@@ -161,7 +161,7 @@ class CPUManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(11, 10, 11, 10)
+        button_layout.setContentsMargins(11, 10, 11, 9)
 
         widgets['cpu_apply_button'] = QPushButton("Apply")
         widgets['cpu_apply_button'].setMinimumSize(100, 30)
