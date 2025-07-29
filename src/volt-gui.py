@@ -127,10 +127,7 @@ class SignalHandler:
         """
         print(f"\nReceived signal {signum}, closing...")
         
-        # Perform cleanup through the main window
         self.main_window._cleanup_resources()
-        
-        # Exit the application
         QApplication.quit()
         sys.exit(0)
 
