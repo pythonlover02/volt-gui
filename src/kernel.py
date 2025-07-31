@@ -1,7 +1,6 @@
 import re
-import subprocess
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit, QFrame, QSystemTrayIcon)
-from PySide6.QtCore import Qt, QProcess
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit
+from PySide6.QtCore import Qt
 
 
 class KernelManager:

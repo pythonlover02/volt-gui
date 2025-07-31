@@ -1,10 +1,7 @@
-import sys
 import os
-import re
 import glob
 import tempfile
-import shutil
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
 from PySide6.QtCore import Qt, QProcess
 from workarounds import WorkaroundManager
 

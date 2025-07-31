@@ -1,10 +1,9 @@
 import os
 import configparser
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox)
+from pathlib import Path
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox, QApplication
 from PySide6.QtCore import Qt
 from theme import ThemeManager
-from pathlib import Path
-from PySide6.QtWidgets import QApplication
 
 
 class OptionsManager:

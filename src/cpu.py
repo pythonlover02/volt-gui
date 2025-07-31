@@ -1,9 +1,9 @@
 import glob
-import re
-import subprocess
 import os
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon)
-from PySide6.QtCore import (Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QSizePolicy
+from PySide6.QtCore import Qt, QProcess
+from workarounds import WorkaroundManager
+
 
 class CPUManager:
     """
@@ -64,9 +64,15 @@ class CPUManager:
         Gets the current CPU scheduler.
         """
         try:
-            result = subprocess.run(["ps", "-eo", "comm"], capture_output=True, text=True, check=True)
-            processes = result.stdout.strip().splitlines()
-            return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
+            process = QProcess()
+            WorkaroundManager.setup_clean_process(process)
+            process.start("ps", ["-eo", "comm"])
+            
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                processes = output.strip().splitlines()
+                return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
+            return "none"
         except Exception as e:
             print(f"Error getting current scheduler: {e}")
             return None

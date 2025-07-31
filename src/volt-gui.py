@@ -1,14 +1,11 @@
 import sys
 import os
-import glob
-import subprocess
 import signal
 import socket
 import threading
-import configparser
 from pathlib import Path
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QCheckBox, QSpinBox, QDoubleSpinBox, QScrollArea, QFrame, QInputDialog)
-from PySide6.QtCore import Qt, QEvent, QProcess, Signal, QObject, QTimer, QPropertyAnimation, QEasingCurve, QSize
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
+from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
 from theme import ThemeManager
 from gpu_launch import GPULaunchManager

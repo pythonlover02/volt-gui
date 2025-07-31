@@ -2,7 +2,6 @@ import os
 import configparser
 from pathlib import Path
 from kernel import KernelManager
-from disk import DiskManager
 
 
 class ConfigManager:

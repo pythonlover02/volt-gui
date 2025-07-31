@@ -2,6 +2,7 @@ import sys
 import os
 from PySide6.QtCore import QProcess
 
+
 class WorkaroundManager:
     """
     Utility class for managing workarounds.
@@ -19,7 +20,7 @@ class WorkaroundManager:
     @staticmethod
     def get_clean_env():
         """
-        Create a clean environment for subprocess calls, removing PyInstaller library paths.
+        Create a clean environment for process calls, removing PyInstaller library paths.
         Returns a list of strings in QProcess environment format.
         """
         env = os.environ.copy()

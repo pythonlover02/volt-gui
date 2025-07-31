@@ -1,9 +1,8 @@
 import glob
 import re
-import subprocess
-import os
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon)
-from PySide6.QtCore import (Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QSizePolicy
+from PySide6.QtCore import Qt
+
 
 class DiskManager:
     """
