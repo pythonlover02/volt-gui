@@ -17,7 +17,8 @@ class WelcomeManager:
         {
             "title": "Optional Dependencies:",
             "description": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
-                        "\n\n• MangoHud if you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency. \nNote that you might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
+                        "\n\n• MangoHud if you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency." 
+                        "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
             "copyable_blocks": [
                 "flatpak install mangohud"
             ],
@@ -34,7 +35,8 @@ class WelcomeManager:
         {
             "title": "Key Notes:", 
             "description": "• The apply buttons in the CPU/GPU/Disk/Kernel tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab pressing apply to apply all the settings."
-                        "\n\n• Kernel/Disk/CPU settings apply system-wide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                        "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                        "\n\n• Note: If the OpenGL Render Selector its set to an NVIDIA GPU, it might broke some Linux Native games, this its an NVIDIA problem, mainly present on the Legacy Drivers (=>470)."
                         "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
                         "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
                         "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file.",
