@@ -36,7 +36,7 @@ class WelcomeManager:
             "title": "Key Notes:", 
             "description": "• The apply buttons in the CPU/GPU/Disk/Kernel tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab pressing apply to apply all the settings."
                         "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
-                        "\n\n• Note: If the OpenGL Render Selector its set to an NVIDIA GPU, it might broke some Linux Native games, this its an NVIDIA problem, mainly present on the Legacy Drivers (=>470)."
+                        "\n\n• Note: If the OpenGL Render Selector its set to an NVIDIA GPU, it might broke some Linux Native games, this its an NVIDIA problem, mainly present on the Legacy Drivers (<=470)."
                         "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some old OpenGL games, hopefully mangohud fixes those issues on the future."
                         "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
                         "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
