@@ -204,10 +204,12 @@ class GPULaunchManager:
     @staticmethod
     def _truncate_name_at_slash(name):
         """
-        Truncates a name at the first occurrence of '/'.
+        Truncates a name at the first occurrence of '/' or '('.
         """
         if '/' in name:
             return name.split('/')[0].strip()
+        if '(' in name:
+            return name.split('(')[0].strip()
         return name
 
     @staticmethod
