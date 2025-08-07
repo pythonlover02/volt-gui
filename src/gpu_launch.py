@@ -202,7 +202,7 @@ class GPULaunchManager:
     }
 
     @staticmethod
-    def _truncate_name_at_slash(name):
+    def truncate_name_at_slash(name):
         """
         Truncates a name at the first occurrence of '/' or '('.
         """
@@ -265,7 +265,7 @@ class GPULaunchManager:
         return GPULaunchManager.get_available("mangohud", search_flatpak=True)
 
     @staticmethod
-    def _get_vulkan_device_options():
+    def get_vulkan_device_options():
         """
         Gets available Vulkan GPU devices using vulkaninfo with clean environment.
         """
@@ -300,7 +300,7 @@ class GPULaunchManager:
                         
                         if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
                             # Truncate device name at the first slash
-                            truncated_name = GPULaunchManager._truncate_name_at_slash(current_device['deviceName'])
+                            truncated_name = GPULaunchManager.truncate_name_at_slash(current_device['deviceName'])
                             display_name = truncated_name.lower()
                             
                             if 'llvmpipe' in display_name:
@@ -320,7 +320,7 @@ class GPULaunchManager:
         return devices, device_map
 
     @staticmethod
-    def _get_opengl_gpu_options():
+    def get_opengl_gpu_options():
         """
         Gets available OpenGL GPU devices using glxinfo with clean environment and different env vars.
         """
@@ -363,7 +363,7 @@ class GPULaunchManager:
                     if "OpenGL renderer string:" in line:
                         gpu_name = line.split(':', 1)[1].strip()
                         # Truncate GPU name at the first slash
-                        gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                        gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
                         gpu_name = gpu_name.lower()
                         
                         if gpu_name not in gpu_env_map:
@@ -394,7 +394,7 @@ class GPULaunchManager:
                         if "OpenGL renderer string:" in line:
                             gpu_name = line.split(':', 1)[1].strip()
                             # Truncate GPU name at the first slash
-                            gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
+                            gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
                             gpu_name = gpu_name.lower()
                             
                             # Check for software renderer or duplicate
@@ -449,10 +449,10 @@ class GPULaunchManager:
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
-        nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
-        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager._create_render_pipeline_tab()
+        mesa_tab, mesa_widgets = GPULaunchManager.create_mesa_tab()
+        nvidia_tab, nvidia_widgets = GPULaunchManager.create_nvidia_tab()
+        render_selector_tab, render_selector_widgets = GPULaunchManager.create_render_selector_tab()
+        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_render_pipeline_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -470,21 +470,21 @@ class GPULaunchManager:
         return gpu_tab, widgets
 
     @staticmethod
-    def _create_mesa_tab():
+    def create_mesa_tab():
         """
         Creates the Mesa settings tab.
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
+        return GPULaunchManager.create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
 
     @staticmethod
-    def _create_nvidia_tab():
+    def create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
+        return GPULaunchManager.create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
     
     @staticmethod
-    def _create_settings_tab(settings_layouts, apply_button_name):
+    def create_settings_tab(settings_layouts, apply_button_name):
         """
         Helper method to create a settings tab with the specified configuration.
         """
@@ -528,14 +528,14 @@ class GPULaunchManager:
         return tab, widgets
 
     @staticmethod
-    def _create_render_selector_tab():
+    def create_render_selector_tab():
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         """
-        render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
+        render_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
         if GPULaunchManager.get_available_glxinfo():
-            opengl_options, gpu_env_map = GPULaunchManager._get_opengl_gpu_options()
+            opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
             widgets['ogl_renderer_combo'].clear()
             widgets['ogl_renderer_combo'].addItems(opengl_options)
             widgets['ogl_renderer_combo'].env_map = gpu_env_map
@@ -544,7 +544,7 @@ class GPULaunchManager:
             widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
         
         if GPULaunchManager.get_available_vulkaninfo():
-            vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
+            vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
             vulkan_options = ["unset"] + vulkan_devices
             widgets['vulkan_device_combo'].clear()
             widgets['vulkan_device_combo'].addItems(vulkan_options)
@@ -556,13 +556,13 @@ class GPULaunchManager:
         return render_tab, widgets
 
     @staticmethod
-    def _create_render_pipeline_tab():
+    def create_render_pipeline_tab():
         """
         Creates the render pipeline tab for managing FPS, filters and display settings.
         """
         mangohud_available = GPULaunchManager.get_available_mangohud()
         
-        render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
+        render_pipeline_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         
         if not mangohud_available:
             for widget in widgets.values():
@@ -663,7 +663,7 @@ class GPULaunchManager:
         layout.addSpacing(9)
 
     @staticmethod
-    def _generate_mesa_env_vars(mesa_widgets):
+    def generate_mesa_env_vars(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
         """
@@ -689,7 +689,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_nvidia_env_vars(nvidia_widgets):
+    def generate_nvidia_env_vars(nvidia_widgets):
         """
         Generates script content for NVIDIA environment variables.
         """
@@ -721,7 +721,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_render_selector_env_vars(render_widgets):
+    def generate_render_selector_env_vars(render_widgets):
         """
         Generates environment variables for render selector settings in key=value format.
         """
@@ -746,7 +746,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_render_pipeline_env_vars(render_pipeline_widgets):
+    def generate_render_pipeline_env_vars(render_pipeline_widgets):
         """
         Generates environment variables for render pipeline settings.
         """
@@ -795,15 +795,15 @@ class GPULaunchManager:
         """
         Writes GPU settings to a temporary file for volt-helper to process.
         """
-        mesa_env_vars = GPULaunchManager._generate_mesa_env_vars(mesa_widgets)
-        nvidia_env_vars = GPULaunchManager._generate_nvidia_env_vars(nvidia_widgets)
-        render_env_vars = GPULaunchManager._generate_render_selector_env_vars(render_selector_widgets)
+        mesa_env_vars = GPULaunchManager.generate_mesa_env_vars(mesa_widgets)
+        nvidia_env_vars = GPULaunchManager.generate_nvidia_env_vars(nvidia_widgets)
+        render_env_vars = GPULaunchManager.generate_render_selector_env_vars(render_selector_widgets)
             
         launch_options = ""
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        render_pipeline_env_vars, use_mangohud = GPULaunchManager._generate_render_pipeline_env_vars(render_pipeline_widgets)
+        render_pipeline_env_vars, use_mangohud = GPULaunchManager.generate_render_pipeline_env_vars(render_pipeline_widgets)
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"

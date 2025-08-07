@@ -26,7 +26,7 @@ class DiskManager:
                 try:
                     with open(file_path, 'r') as f:
                         content = f.read().strip()
-                        scheduler_info = DiskManager._parse_scheduler_content(content)
+                        scheduler_info = DiskManager.parse_scheduler_content(content)
                         if scheduler_info:
                             scheduler_info['path'] = file_path
                             disk_info[disk_name] = scheduler_info
@@ -38,7 +38,7 @@ class DiskManager:
         return disk_info
 
     @staticmethod
-    def _parse_scheduler_content(content):
+    def parse_scheduler_content(content):
         """
         Parse scheduler content with improved error handling for various formats.
         """

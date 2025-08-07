@@ -18,13 +18,13 @@ class OptionsManager:
         self.options_path.parent.mkdir(parents=True, exist_ok=True)
         self.widgets = {}
         self.widget = QWidget(self.parent)
-        self._setup_ui()
+        self.setup_ui()
 
     def get_widget(self):
         """Get the widget for adding to tab widget."""
         return self.widget
 
-    def _setup_ui(self):
+    def setup_ui(self):
         """
         Set up the user interface for the options tab.
         """
@@ -32,16 +32,16 @@ class OptionsManager:
         main_layout.setContentsMargins(9, 0, 9, 0)
         main_layout.setSpacing(10)
         
-        scroll_area = self._create_scroll_area()
+        scroll_area = self.create_scroll_area()
         main_layout.addWidget(scroll_area)
         
-        self.apply_button = self._create_option_apply_button(main_layout)
+        self.apply_button = self.create_option_apply_button(main_layout)
         
-        self._register_widgets()
+        self.register_widgets()
         self.apply_button.clicked.connect(self.save_and_apply_options)
         self.load_options()
 
-    def _create_option_apply_button(self, parent_layout):
+    def create_option_apply_button(self, parent_layout):
         """
         Create and setup the apply button for options.
         """
@@ -74,7 +74,7 @@ class OptionsManager:
         else:
             QMessageBox.information(self.main_window, "volt-gui", "Options saved successfully")
 
-    def _create_scroll_area(self):
+    def create_scroll_area(self):
         """
         Create and configure the scroll area with all option widgets.
         """
@@ -88,17 +88,17 @@ class OptionsManager:
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 0)
         
-        self._add_theme_option(scroll_layout)
-        self._add_transparency_option(scroll_layout)
-        self._add_tray_option(scroll_layout)
-        self._add_start_minimized_option(scroll_layout)
-        self._add_welcome_message_option(scroll_layout)
+        self.add_theme_option(scroll_layout)
+        self.add_transparency_option(scroll_layout)
+        self.add_tray_option(scroll_layout)
+        self.add_start_minimized_option(scroll_layout)
+        self.add_welcome_message_option(scroll_layout)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         return scroll_area
 
-    def _add_theme_option(self, layout):
+    def add_theme_option(self, layout):
         """
         Add theme selection option to layout.
         """
@@ -115,7 +115,7 @@ class OptionsManager:
         theme_layout.addWidget(self.theme_combo)
         layout.addLayout(theme_layout)
 
-    def _add_transparency_option(self, layout):
+    def add_transparency_option(self, layout):
         """
         Add transparency option to layout.
         """
@@ -132,7 +132,7 @@ class OptionsManager:
         transparency_layout.addWidget(self.transparency_combo)
         layout.addLayout(transparency_layout)
 
-    def _add_tray_option(self, layout):
+    def add_tray_option(self, layout):
         """
         Add system tray option to layout.
         """
@@ -149,7 +149,7 @@ class OptionsManager:
         tray_layout.addWidget(self.tray_combo)
         layout.addLayout(tray_layout)
 
-    def _add_start_minimized_option(self, layout):
+    def add_start_minimized_option(self, layout):
         """
         Add start minimized option to layout.
         """
@@ -167,7 +167,7 @@ class OptionsManager:
         start_minimized_layout.addWidget(self.start_minimized_combo)
         layout.addLayout(start_minimized_layout)
 
-    def _add_welcome_message_option(self, layout):
+    def add_welcome_message_option(self, layout):
         """
         Add welcome message option to layout.
         """
@@ -185,7 +185,7 @@ class OptionsManager:
         welcome_message_layout.addWidget(self.welcome_message_combo)
         layout.addLayout(welcome_message_layout)
 
-    def _register_widgets(self):
+    def register_widgets(self):
         """
         Register all widgets with the options manager.
         """
@@ -202,7 +202,7 @@ class OptionsManager:
         """
         Load options from the configuration file.
         """
-        self._set_default_values()
+        self.set_default_values()
         
         if not self.options_path.exists():
             self.save_options()
@@ -211,8 +211,8 @@ class OptionsManager:
         options = configparser.ConfigParser()
         options.read(self.options_path)
         
-        self._apply_options_values(options)
-        self._apply_all_options()
+        self.apply_options_values(options)
+        self.apply_all_options()
 
     def save_options(self):
         """
@@ -233,9 +233,9 @@ class OptionsManager:
             options.write(optionsfile)
             
         if self.main_window:
-            self._apply_all_options()
+            self.apply_all_options()
 
-    def _set_default_values(self):
+    def set_default_values(self):
         """
         Set default values for all widgets.
         """
@@ -245,7 +245,7 @@ class OptionsManager:
         self.widgets['start_minimized_combo'].setCurrentText("disable")
         self.widgets['welcome_message_combo'].setCurrentText("enable")
 
-    def _apply_options_values(self, options):
+    def apply_options_values(self, options):
         """
         Apply values from options file to widgets.
         """
@@ -271,7 +271,7 @@ class OptionsManager:
                 self.main_window.profile_selector.setCurrentText(last_profile)
                 self.main_window.current_profile = last_profile
 
-    def _apply_all_options(self):
+    def apply_all_options(self):
         """
         Apply all options to the application.
         """

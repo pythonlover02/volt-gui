@@ -124,7 +124,7 @@ class SignalHandler:
         """
         print(f"\nReceived signal {signum}, closing...")
         
-        self.main_window._cleanup_resources()
+        self.main_window.cleanup_resources()
         QApplication.quit()
         sys.exit(0)
 
@@ -732,7 +732,7 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "volt-gui", "Settings applied successfully")
 
-    def _cleanup_resources(self):
+    def cleanup_resources(self):
         """
         Centralized cleanup method to avoid code duplication.
         """
@@ -750,7 +750,7 @@ class MainWindow(QMainWindow):
         """
         Quit the application properly, ensuring all settings are saved, only for the systray quit.
         """
-        self._cleanup_resources()
+        self.cleanup_resources()
         QApplication.quit()
 
     def closeEvent(self, event):
@@ -764,7 +764,7 @@ class MainWindow(QMainWindow):
                 self.welcome_window.hide()
             event.ignore()
         else:
-            self._cleanup_resources()
+            self.cleanup_resources()
             QApplication.quit()
             event.accept()
 

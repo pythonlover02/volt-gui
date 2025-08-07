@@ -112,7 +112,7 @@ class KernelManager:
     }
 
     @staticmethod
-    def _get_current_value(setting_path):
+    def get_current_value(setting_path):
         """
         Get current value of a kernel setting.
         """
@@ -124,7 +124,7 @@ class KernelManager:
             return None
 
     @staticmethod
-    def _get_dynamic_current_value(setting_path):
+    def get_dynamic_current_value(setting_path):
         """
         Get current value of a dynamic setting (extracts value in brackets).
         """
@@ -147,7 +147,7 @@ class KernelManager:
             return None
 
     @staticmethod
-    def _get_dynamic_possible_values(setting_path):
+    def get_dynamic_possible_values(setting_path):
         """
         Get all possible values for a dynamic setting.
         Returns a list of possible values extracted from the system file.
@@ -169,11 +169,11 @@ class KernelManager:
             return None
 
     @staticmethod
-    def _get_dynamic_text_with_values(base_text, setting_path):
+    def get_dynamic_text_with_values(base_text, setting_path):
         """
         Generate dynamic text that includes the possible values from the system.
         """
-        possible_values = KernelManager._get_dynamic_possible_values(setting_path)
+        possible_values = KernelManager.get_dynamic_possible_values(setting_path)
         if possible_values:
             values_text = " ".join(possible_values)
             return f"{base_text}\nPossible values: {values_text}"
@@ -201,7 +201,7 @@ class KernelManager:
         scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
-            KernelManager._create_setting_section(scroll_layout, widgets, setting_name, setting_info)
+            KernelManager.create_setting_section(scroll_layout, widgets, setting_name, setting_info)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -216,7 +216,7 @@ class KernelManager:
         return kernel_tab, widgets
 
     @staticmethod
-    def _create_setting_section(kernel_layout, widgets, setting_name, setting_info):
+    def create_setting_section(kernel_layout, widgets, setting_name, setting_info):
         """
         Create a UI section for a single kernel setting.
         """
@@ -233,7 +233,7 @@ class KernelManager:
         setting_layout.addWidget(current_value_label)
         
         if setting_info['is_dynamic']:
-            display_text = KernelManager._get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
+            display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
         else:
             display_text = setting_info['text']
 
@@ -280,9 +280,9 @@ class KernelManager:
         """
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             if info['is_dynamic']:
-                current = KernelManager._get_dynamic_current_value(info['path'])
+                current = KernelManager.get_dynamic_current_value(info['path'])
             else:
-                current = KernelManager._get_current_value(info['path'])
+                current = KernelManager.get_current_value(info['path'])
             
             if current is not None:
                 widgets[f'{name}_current_value'].setText(f"current value: {current}")
@@ -290,5 +290,5 @@ class KernelManager:
                 widgets[f'{name}_current_value'].setText("current value: Error reading")
             
             if info['is_dynamic'] and f'{name}_text_label' in widgets:
-                updated_text = KernelManager._get_dynamic_text_with_values(info['text'], info['path'])
+                updated_text = KernelManager.get_dynamic_text_with_values(info['text'], info['path'])
                 widgets[f'{name}_text_label'].setText(updated_text)

@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 class AboutManager:
     
     @staticmethod
-    def _get_about_info():
+    def get_about_info():
         """
         Returns a list of dictionaries containing about information.
         """
@@ -35,8 +35,8 @@ class AboutManager:
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 0)
         
-        for item in AboutManager._get_about_info():
-            container = AboutManager._create_info_container(item)
+        for item in AboutManager.get_about_info():
+            container = AboutManager.create_info_container(item)
             scroll_layout.addWidget(container)
         
         scroll_layout.addStretch(1)
@@ -46,7 +46,7 @@ class AboutManager:
         return about_tab, {}
     
     @staticmethod
-    def _create_info_container(info_item):
+    def create_info_container(info_item):
         """
         Creates a container widget for an individual info item.
         """
