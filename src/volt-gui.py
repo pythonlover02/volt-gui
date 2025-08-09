@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
         self.instance_checker = instance_checker
         self.use_system_tray = True
         self.start_minimized = False
+        self.start_maximized = False
         self.current_profile = "Default"
         self.cpu_widgets = {}
         self.kernel_widgets = {}
@@ -156,8 +157,6 @@ class MainWindow(QMainWindow):
 
         self.apply_dark_theme()
         self.setup_ui()
-        
-        self.use_system_tray, self.start_minimized = ConfigManager.load_options_settings()
         
         if self.use_system_tray:
             self.setup_system_tray()
@@ -611,8 +610,12 @@ class MainWindow(QMainWindow):
     def show_and_activate(self):
         """
         Show the window and bring it to the foreground.
+        Shows maximized if the option is enabled.
         """
-        self.show()
+        if self.start_maximized:
+            self.showMaximized()
+        else:
+            self.show()
         self.activateWindow()
         self.raise_()
 

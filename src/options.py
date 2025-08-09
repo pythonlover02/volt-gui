@@ -92,6 +92,7 @@ class OptionsManager:
         self.add_transparency_option(scroll_layout)
         self.add_tray_option(scroll_layout)
         self.add_start_minimized_option(scroll_layout)
+        self.add_start_maximized_option(scroll_layout)
         self.add_welcome_message_option(scroll_layout)
         
         scroll_layout.addStretch(1)
@@ -167,6 +168,24 @@ class OptionsManager:
         start_minimized_layout.addWidget(self.start_minimized_combo)
         layout.addLayout(start_minimized_layout)
 
+    def add_start_maximized_option(self, layout):
+        """
+        Add start maximized option to layout.
+        """
+        start_maximized_layout = QHBoxLayout()
+        start_maximized_label = QLabel("Open Maximized:")
+        start_maximized_label.setWordWrap(True)
+        start_maximized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.start_maximized_combo = QComboBox()
+        self.start_maximized_combo.addItems(["enable", "disable"])
+        self.start_maximized_combo.setCurrentText("disable")
+        self.start_maximized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        start_maximized_layout.addWidget(start_maximized_label)
+        start_maximized_layout.addWidget(self.start_maximized_combo)
+        layout.addLayout(start_maximized_layout)
+
     def add_welcome_message_option(self, layout):
         """
         Add welcome message option to layout.
@@ -194,6 +213,7 @@ class OptionsManager:
             'transparency_combo': self.transparency_combo,
             'tray_combo': self.tray_combo,
             'start_minimized_combo': self.start_minimized_combo,
+            'start_maximized_combo': self.start_maximized_combo,
             'welcome_message_combo': self.welcome_message_combo,
             'apply_button': self.apply_button
         }
@@ -220,12 +240,13 @@ class OptionsManager:
         """
         options = configparser.ConfigParser()
         
-        options['Theme'] = {'selected_theme': self.widgets['theme_combo'].currentText()}
-        options['SystemTray'] = {'run_in_tray': self.widgets['tray_combo'].currentText()}
-        options['Appearance'] = {'transparency': self.widgets['transparency_combo'].currentText()}
-        options['StartupBehavior'] = {'start_minimized': self.widgets['start_minimized_combo'].currentText()}
-        options['WelcomeMessage'] = {'show_welcome': self.widgets['welcome_message_combo'].currentText()}
-        options['Profile'] = {'last_selected': getattr(self.main_window, 'current_profile', 'Default')}
+        options['Theme'] = {'ActiveTheme': self.widgets['theme_combo'].currentText()}
+        options['SystemTray'] = {'Enable': self.widgets['tray_combo'].currentText()}
+        options['Transparency'] = {'Enable': self.widgets['transparency_combo'].currentText()}
+        options['StartupMinimized'] = {'Enable': self.widgets['start_minimized_combo'].currentText()}
+        options['StartupMaximized'] = {'Enable': self.widgets['start_maximized_combo'].currentText()}
+        options['WelcomeMessage'] = {'Show': self.widgets['welcome_message_combo'].currentText()}
+        options['Profile'] = {'LastActiveProfile': getattr(self.main_window, 'current_profile', 'Default')}
         
         os.makedirs(os.path.dirname(self.options_path), exist_ok=True)
         
@@ -243,33 +264,25 @@ class OptionsManager:
         self.widgets['tray_combo'].setCurrentText("enable")
         self.widgets['transparency_combo'].setCurrentText("enable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
+        self.widgets['start_maximized_combo'].setCurrentText("disable")
         self.widgets['welcome_message_combo'].setCurrentText("enable")
 
     def apply_options_values(self, options):
         """
         Apply values from options file to widgets.
         """
-        if 'Theme' in options and 'selected_theme' in options['Theme']:
-            self.widgets['theme_combo'].setCurrentText(options['Theme']['selected_theme'])
-            
-        if 'SystemTray' in options and 'run_in_tray' in options['SystemTray']:
-            self.widgets['tray_combo'].setCurrentText(options['SystemTray']['run_in_tray'])
-            
-        if 'Appearance' in options and 'transparency' in options['Appearance']:
-            self.widgets['transparency_combo'].setCurrentText(options['Appearance']['transparency'])
+        self.widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
+        self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="enable"))
+        self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="enable"))
+        self.widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
+        self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
+        self.widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
         
-        if 'StartupBehavior' in options and 'start_minimized' in options['StartupBehavior']:
-            self.widgets['start_minimized_combo'].setCurrentText(options['StartupBehavior'].get('start_minimized', 'disable'))
-        
-        if 'WelcomeMessage' in options and 'show_welcome' in options['WelcomeMessage']:
-            self.widgets['welcome_message_combo'].setCurrentText(options['WelcomeMessage'].get('show_welcome', 'enable'))
-        
-        if 'Profile' in options and 'last_selected' in options['Profile'] and self.main_window:
-            last_profile = options['Profile']['last_selected']
-            index = self.main_window.profile_selector.findText(last_profile)
-            if index >= 0:
-                self.main_window.profile_selector.setCurrentText(last_profile)
-                self.main_window.current_profile = last_profile
+        last_profile = options['Profile']['LastActiveProfile']
+        index = self.main_window.profile_selector.findText(last_profile)
+        if index >= 0:
+            self.main_window.profile_selector.setCurrentText(last_profile)
+            self.main_window.current_profile = last_profile
 
     def apply_all_options(self):
         """
@@ -279,6 +292,7 @@ class OptionsManager:
         self.apply_transparency_options()
         self.apply_theme_options()
         self.apply_start_minimized_options()
+        self.apply_start_maximized_options()
         self.apply_welcome_message_options()
 
     def apply_theme_options(self):
@@ -335,6 +349,15 @@ class OptionsManager:
             start_minimized = self.widgets['start_minimized_combo'].currentText() == 'enable'
             self.main_window.start_minimized = start_minimized
             print(f"Start minimized option applied: {start_minimized}")
+
+    def apply_start_maximized_options(self):
+        """
+        Apply the start maximized option to the application.
+        """
+        if self.main_window:
+            start_maximized = self.widgets['start_maximized_combo'].currentText() == 'enable'
+            self.main_window.start_maximized = start_maximized
+            print(f"Start maximized option applied: {start_maximized}")
 
     def apply_welcome_message_options(self):
         """
