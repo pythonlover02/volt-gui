@@ -34,7 +34,8 @@ class WelcomeManager:
         },
         {
             "title": "Key Notes:", 
-            "description": "• The apply buttons in the CPU/GPU/Disk/Kernel tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab pressing apply to apply all the settings."
+            "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
+                        "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
                         "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
                         "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
                         "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
