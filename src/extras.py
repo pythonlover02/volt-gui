@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 class ExtrasManager:
     
     @staticmethod
-    def _get_useful_links():
+    def get_useful_links():
         """
         Returns a list of dictionaries containing useful link information.
         """
@@ -19,7 +19,7 @@ class ExtrasManager:
         ]
     
     @staticmethod
-    def _get_useful_programs():
+    def get_useful_programs():
         """
         Returns a list of dictionaries containing useful program information.
         """
@@ -47,8 +47,8 @@ class ExtrasManager:
         extras_layout.setSpacing(10)
         
         extras_subtabs = QTabWidget()
-        useful_links_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_links())
-        useful_programs_tab = ExtrasManager._create_scrollable_tab(ExtrasManager._get_useful_programs())
+        useful_links_tab = ExtrasManager.create_scrollable_tab(ExtrasManager.get_useful_links())
+        useful_programs_tab = ExtrasManager.create_scrollable_tab(ExtrasManager.get_useful_programs())
         
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
         extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
@@ -57,7 +57,7 @@ class ExtrasManager:
         return extras_tab, {}
 
     @staticmethod
-    def _create_scrollable_tab(items):
+    def create_scrollable_tab(items):
         """
         Creates a scrollable tab widget containing the provided items.
         """
@@ -72,11 +72,11 @@ class ExtrasManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for item in items:
-            container = ExtrasManager._create_item_container(item)
+            container = ExtrasManager.create_item_container(item)
             scroll_layout.addWidget(container)
         
         scroll_layout.addStretch(1)
@@ -86,24 +86,24 @@ class ExtrasManager:
         return tab
     
     @staticmethod
-    def _create_item_container(item_info):
+    def create_item_container(item_info):
         """
         Creates a container widget for an individual link/program item.
         """
         container = QWidget()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setContentsMargins(10, 0, 0, 0)
         container_layout.setSpacing(5)
         
         title_label = QLabel(item_info["label"])
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
         container_layout.addWidget(title_label)
         
         desc_label = QLabel(item_info["description"])
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #999; font-weight: 300;")
+        desc_label.setStyleSheet("color: #E0E0E0; font-size: 13px; line-height: 1.4;")
         container_layout.addWidget(desc_label)
         
         button = QPushButton("Open")

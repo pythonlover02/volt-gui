@@ -1,14 +1,9 @@
 import os
-import re
 import glob
 import tempfile
-import subprocess
-import shutil
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
-)
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
+from PySide6.QtCore import Qt, QProcess
+from workarounds import WorkaroundManager
 
 
 class GPULaunchManager:
@@ -69,7 +64,7 @@ class GPULaunchManager:
 
     RENDER_PIPELINE_SETTINGS = [
         ("Display Elements:", 'display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
-        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "15", "20", "24", "25", "30", "40", "45", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "200", "240", "360"]),
+        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"]),
         ("Fps Limit Method:", 'fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
         ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
         ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
@@ -207,23 +202,21 @@ class GPULaunchManager:
     }
 
     @staticmethod
-    def _truncate_name_at_slash(name):
+    def truncate_name_at_slash(name):
         """
-        Truncates a name at the first occurrence of '/'.
+        Truncates a name at the first occurrence of '/' or '('.
         """
         if '/' in name:
             return name.split('/')[0].strip()
+        if '(' in name:
+            return name.split('(')[0].strip()
         return name
 
     @staticmethod
-    def find_available(program_name, search_flatpak=True):
+    def get_available(program_name, search_flatpak=True):
         """
         Generic function to find if a program is available in system paths or Flatpak.
-        Args:
-            program_name (str): Name of the program to search for
-            search_flatpak (bool): Whether to also search in Flatpak packages        
-        Returns:
-            bool: True if program is found, False otherwise
+        Uses clean environment for process calls.
         """
         for search_path in GPULaunchManager.SEARCH_PATHS:
             try:
@@ -236,78 +229,90 @@ class GPULaunchManager:
         
         if search_flatpak:
             try:
-                result = subprocess.run(["flatpak", "list"], capture_output=True, text=True, check=True)
-                if program_name.lower() in result.stdout.lower():
-                    return True
+                process = QProcess()
+                # Use clean environment for flatpak list
+                WorkaroundManager.setup_clean_process(process)
+                process.start("flatpak", ["list"])
+                
+                if process.waitForFinished(10000):  # 10 second timeout
+                    output = process.readAllStandardOutput().data().decode()
+                    if program_name.lower() in output.lower():
+                        return True
             except Exception:
                 pass
         
         return False
 
     @staticmethod
-    def is_vulkaninfo_available():
+    def get_available_vulkaninfo():
         """
         Checks if vulkaninfo is available in the system PATH.
         """
-        return GPULaunchManager.find_available("vulkaninfo", search_flatpak=False)
+        return GPULaunchManager.get_available("vulkaninfo", search_flatpak=False)
 
     @staticmethod
-    def is_glxinfo_available():
+    def get_available_glxinfo():
         """
         Checks if glxinfo is available in the system PATH.
         """
-        return GPULaunchManager.find_available("glxinfo", search_flatpak=False)
+        return GPULaunchManager.get_available("glxinfo", search_flatpak=False)
 
     @staticmethod
-    def is_mangohud_available():
+    def get_available_mangohud():
         """
         Checks if MangoHUD is available in system paths or Flatpak.
         """
-        return GPULaunchManager.find_available("mangohud", search_flatpak=True)
+        return GPULaunchManager.get_available("mangohud", search_flatpak=True)
 
     @staticmethod
-    def _get_vulkan_device_options():
+    def get_vulkan_device_options():
         """
-        Gets available Vulkan GPU devices using vulkaninfo.
+        Gets available Vulkan GPU devices using vulkaninfo with clean environment.
         """
         devices = []
         device_map = {}
         
-        if not GPULaunchManager.is_vulkaninfo_available():
+        if not GPULaunchManager.get_available_vulkaninfo():
             return devices, device_map
         
         try:
-            result = subprocess.run(["vulkaninfo"], capture_output=True, text=True, check=True)
-            lines = result.stdout.split('\n')
+            process = QProcess()
+            # Use clean environment for vulkaninfo
+            WorkaroundManager.setup_clean_process(process)
+            process.start("vulkaninfo")
             
-            current_device = {}
-            for line in lines:
-                line = line.strip()
-                if 'vendorID' in line and '=' in line:
-                    vendor_id = line.split('=')[1].strip()
-                    current_device['vendorID'] = vendor_id
-                elif 'deviceID' in line and '=' in line:
-                    device_id = line.split('=')[1].strip()
-                    current_device['deviceID'] = device_id
-                elif 'deviceName' in line and '=' in line:
-                    device_name = line.split('=')[1].strip()
-                    current_device['deviceName'] = device_name
-                    
-                    if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
-                        # Truncate device name at the first slash
-                        truncated_name = GPULaunchManager._truncate_name_at_slash(current_device['deviceName'])
-                        display_name = truncated_name.lower()
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                lines = output.split('\n')
+                
+                current_device = {}
+                for line in lines:
+                    line = line.strip()
+                    if 'vendorID' in line and '=' in line:
+                        vendor_id = line.split('=')[1].strip()
+                        current_device['vendorID'] = vendor_id
+                    elif 'deviceID' in line and '=' in line:
+                        device_id = line.split('=')[1].strip()
+                        current_device['deviceID'] = device_id
+                    elif 'deviceName' in line and '=' in line:
+                        device_name = line.split('=')[1].strip()
+                        current_device['deviceName'] = device_name
                         
-                        if 'llvmpipe' in display_name:
-                            display_name = 'llvmpipe (software rendering)'
-                        else:
+                        if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
+                            # Truncate device name at the first slash
+                            truncated_name = GPULaunchManager.truncate_name_at_slash(current_device['deviceName'])
                             display_name = truncated_name.lower()
-                        
-                        device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
-                        devices.append(display_name)
-                        device_map[display_name] = device_key
-                        
-                        current_device = {}
+                            
+                            if 'llvmpipe' in display_name:
+                                display_name = 'llvmpipe (software rendering)'
+                            else:
+                                display_name = truncated_name.lower()
+                            
+                            device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
+                            devices.append(display_name)
+                            device_map[display_name] = device_key
+                            
+                            current_device = {}
         
         except Exception:
             pass
@@ -315,14 +320,14 @@ class GPULaunchManager:
         return devices, device_map
 
     @staticmethod
-    def _get_opengl_gpu_options():
+    def get_opengl_gpu_options():
         """
-        Gets available OpenGL GPU devices using glxinfo with different env vars.
+        Gets available OpenGL GPU devices using glxinfo with clean environment and different env vars.
         """
         gpu_list = []
         gpu_env_map = {}
         
-        if not GPULaunchManager.is_glxinfo_available():
+        if not GPULaunchManager.get_available_glxinfo():
             # Return only fixed options if glxinfo is not available
             fixed_options = {
                 "llvmpipe (software rendering)": {
@@ -344,26 +349,27 @@ class GPULaunchManager:
         
         # NVIDIA GPU
         try:
-            env = os.environ.copy()
-            env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
-            result = subprocess.run(
-                ["glxinfo"],
-                env=env,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            for line in result.stdout.split('\n'):
-                if "OpenGL renderer string:" in line:
-                    gpu_name = line.split(':', 1)[1].strip()
-                    # Truncate GPU name at the first slash
-                    gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
-                    gpu_name = gpu_name.lower()
-                    
-                    if gpu_name not in gpu_env_map:
-                        gpu_list.append(gpu_name)
-                        gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
-                    break
+            process = QProcess()
+            # Start with clean environment
+            clean_env = WorkaroundManager.get_clean_env()
+            # Add NVIDIA-specific environment variable
+            clean_env.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
+            process.setEnvironment(clean_env)
+            process.start("glxinfo")
+            
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                for line in output.split('\n'):
+                    if "OpenGL renderer string:" in line:
+                        gpu_name = line.split(':', 1)[1].strip()
+                        # Truncate GPU name at the first slash
+                        gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
+                        gpu_name = gpu_name.lower()
+                        
+                        if gpu_name not in gpu_env_map:
+                            gpu_list.append(gpu_name)
+                            gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
+                        break
         except Exception:
             pass
         
@@ -371,41 +377,42 @@ class GPULaunchManager:
         index = 0
         while index < 5:  # Limit to 5 devices
             try:
-                env = os.environ.copy()
-                env["__GLX_VENDOR_LIBRARY_NAME"] = "mesa"
-                env["DRI_PRIME"] = str(index)
-                result = subprocess.run(
-                    ["glxinfo"],
-                    env=env,
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
+                process = QProcess()
+                # Start with clean environment
+                clean_env = WorkaroundManager.get_clean_env()
+                # Add Mesa-specific environment variables
+                clean_env.append("__GLX_VENDOR_LIBRARY_NAME=mesa")
+                clean_env.append(f"DRI_PRIME={index}")
+                process.setEnvironment(clean_env)
+                process.start("glxinfo")
                 
-                renderer_found = False
-                for line in result.stdout.split('\n'):
-                    if "OpenGL renderer string:" in line:
-                        gpu_name = line.split(':', 1)[1].strip()
-                        # Truncate GPU name at the first slash
-                        gpu_name = GPULaunchManager._truncate_name_at_slash(gpu_name)
-                        gpu_name = gpu_name.lower()
-                        
-                        # Check for software renderer or duplicate
-                        if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
-                            break
-                            
-                        gpu_list.append(gpu_name)
-                        gpu_env_map[gpu_name] = {
-                            "__GLX_VENDOR_LIBRARY_NAME": "mesa",
-                            "DRI_PRIME": str(index)
-                        }
-                        renderer_found = True
-                        break
-                
-                # If no renderer found or llvmpipe detected, break the loop
-                if not renderer_found:
-                    break
+                if process.waitForFinished(10000):  # 10 second timeout
+                    output = process.readAllStandardOutput().data().decode()
                     
+                    renderer_found = False
+                    for line in output.split('\n'):
+                        if "OpenGL renderer string:" in line:
+                            gpu_name = line.split(':', 1)[1].strip()
+                            # Truncate GPU name at the first slash
+                            gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
+                            gpu_name = gpu_name.lower()
+                            
+                            # Check for software renderer or duplicate
+                            if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
+                                break
+                                
+                            gpu_list.append(gpu_name)
+                            gpu_env_map[gpu_name] = {
+                                "__GLX_VENDOR_LIBRARY_NAME": "mesa",
+                                "DRI_PRIME": str(index)
+                            }
+                            renderer_found = True
+                            break
+                    
+                    # If no renderer found or llvmpipe detected, break the loop
+                    if not renderer_found:
+                        break
+                        
                 index += 1
             except Exception:
                 break
@@ -442,10 +449,10 @@ class GPULaunchManager:
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab, mesa_widgets = GPULaunchManager._create_mesa_tab()
-        nvidia_tab, nvidia_widgets = GPULaunchManager._create_nvidia_tab()
-        render_selector_tab, render_selector_widgets = GPULaunchManager._create_render_selector_tab()
-        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager._create_render_pipeline_tab()
+        mesa_tab, mesa_widgets = GPULaunchManager.create_mesa_tab()
+        nvidia_tab, nvidia_widgets = GPULaunchManager.create_nvidia_tab()
+        render_selector_tab, render_selector_widgets = GPULaunchManager.create_render_selector_tab()
+        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_render_pipeline_tab()
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -463,21 +470,21 @@ class GPULaunchManager:
         return gpu_tab, widgets
 
     @staticmethod
-    def _create_mesa_tab():
+    def create_mesa_tab():
         """
         Creates the Mesa settings tab.
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
+        return GPULaunchManager.create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
 
     @staticmethod
-    def _create_nvidia_tab():
+    def create_nvidia_tab():
         """
         Creates the NVIDIA settings tab.
         """
-        return GPULaunchManager._create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
+        return GPULaunchManager.create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
     
     @staticmethod
-    def _create_settings_tab(settings_layouts, apply_button_name):
+    def create_settings_tab(settings_layouts, apply_button_name):
         """
         Helper method to create a settings tab with the specified configuration.
         """
@@ -493,7 +500,7 @@ class GPULaunchManager:
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(0, 10, 0, 0)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         widgets = {}
         
@@ -521,14 +528,14 @@ class GPULaunchManager:
         return tab, widgets
 
     @staticmethod
-    def _create_render_selector_tab():
+    def create_render_selector_tab():
         """
         Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
         """
-        render_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
+        render_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
         
-        if GPULaunchManager.is_glxinfo_available():
-            opengl_options, gpu_env_map = GPULaunchManager._get_opengl_gpu_options()
+        if GPULaunchManager.get_available_glxinfo():
+            opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
             widgets['ogl_renderer_combo'].clear()
             widgets['ogl_renderer_combo'].addItems(opengl_options)
             widgets['ogl_renderer_combo'].env_map = gpu_env_map
@@ -536,8 +543,8 @@ class GPULaunchManager:
             widgets['ogl_renderer_combo'].setEnabled(False)
             widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
         
-        if GPULaunchManager.is_vulkaninfo_available():
-            vulkan_devices, device_map = GPULaunchManager._get_vulkan_device_options()
+        if GPULaunchManager.get_available_vulkaninfo():
+            vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
             vulkan_options = ["unset"] + vulkan_devices
             widgets['vulkan_device_combo'].clear()
             widgets['vulkan_device_combo'].addItems(vulkan_options)
@@ -549,13 +556,13 @@ class GPULaunchManager:
         return render_tab, widgets
 
     @staticmethod
-    def _create_render_pipeline_tab():
+    def create_render_pipeline_tab():
         """
         Creates the render pipeline tab for managing FPS, filters and display settings.
         """
-        mangohud_available = GPULaunchManager.is_mangohud_available()
+        mangohud_available = GPULaunchManager.get_available_mangohud()
         
-        render_pipeline_tab, widgets = GPULaunchManager._create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
+        render_pipeline_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
         
         if not mangohud_available:
             for widget in widgets.values():
@@ -572,7 +579,7 @@ class GPULaunchManager:
         """
         launch_tab = QWidget()
         main_layout = QVBoxLayout(launch_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(9, 9, 9, 0)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -581,12 +588,13 @@ class GPULaunchManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(10, 10, 0, 0)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
         setting_layout = QVBoxLayout(setting_container)
-        setting_layout.setContentsMargins(0, 10, 0, 0)
+        setting_layout.setContentsMargins(0, 0, 0, 0)
         
         path_label = QLabel("Launch Options:")
         path_label.setWordWrap(True)
@@ -612,8 +620,6 @@ class GPULaunchManager:
         
         GPULaunchManager.create_launch_apply_button(main_layout, widgets)
         
-        main_layout.addSpacing(9)
-        
         return launch_tab, widgets
 
     @staticmethod
@@ -633,6 +639,7 @@ class GPULaunchManager:
         button_layout.addStretch(1)
         button_layout.addWidget(widgets[button_name])
         button_layout.addStretch(1)
+
         layout.addWidget(button_container)
 
     @staticmethod
@@ -643,7 +650,7 @@ class GPULaunchManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
+        button_layout.setContentsMargins(11, 10, 11, 0)
 
         widgets['launch_apply_button'] = QPushButton("Apply")
         widgets['launch_apply_button'].setMinimumSize(100, 30)
@@ -653,9 +660,10 @@ class GPULaunchManager:
         button_layout.addWidget(widgets['launch_apply_button'])
         button_layout.addStretch(1)
         layout.addWidget(button_container)
+        layout.addSpacing(9)
 
     @staticmethod
-    def _generate_mesa_env_vars(mesa_widgets):
+    def generate_mesa_env_vars(mesa_widgets):
         """
         Generates script content for Mesa environment variables.
         """
@@ -681,7 +689,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_nvidia_env_vars(nvidia_widgets):
+    def generate_nvidia_env_vars(nvidia_widgets):
         """
         Generates script content for NVIDIA environment variables.
         """
@@ -713,7 +721,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_render_selector_env_vars(render_widgets):
+    def generate_render_selector_env_vars(render_widgets):
         """
         Generates environment variables for render selector settings in key=value format.
         """
@@ -738,7 +746,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def _generate_render_pipeline_env_vars(render_pipeline_widgets):
+    def generate_render_pipeline_env_vars(render_pipeline_widgets):
         """
         Generates environment variables for render pipeline settings.
         """
@@ -787,15 +795,15 @@ class GPULaunchManager:
         """
         Writes GPU settings to a temporary file for volt-helper to process.
         """
-        mesa_env_vars = GPULaunchManager._generate_mesa_env_vars(mesa_widgets)
-        nvidia_env_vars = GPULaunchManager._generate_nvidia_env_vars(nvidia_widgets)
-        render_env_vars = GPULaunchManager._generate_render_selector_env_vars(render_selector_widgets)
+        mesa_env_vars = GPULaunchManager.generate_mesa_env_vars(mesa_widgets)
+        nvidia_env_vars = GPULaunchManager.generate_nvidia_env_vars(nvidia_widgets)
+        render_env_vars = GPULaunchManager.generate_render_selector_env_vars(render_selector_widgets)
             
         launch_options = ""
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        render_pipeline_env_vars, use_mangohud = GPULaunchManager._generate_render_pipeline_env_vars(render_pipeline_widgets)
+        render_pipeline_env_vars, use_mangohud = GPULaunchManager.generate_render_pipeline_env_vars(render_pipeline_widgets)
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"

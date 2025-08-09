@@ -1,47 +1,23 @@
 import sys
 import os
-import glob
-import subprocess
 import signal
 import socket
 import threading
-import configparser
 from pathlib import Path
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QCheckBox, QSpinBox, QDoubleSpinBox, QScrollArea, QFrame, QInputDialog)
-from PySide6.QtCore import Qt, QEvent, QProcess, Signal, QObject, QTimer, QPropertyAnimation, QEasingCurve, QSize
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
+from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
 from theme import ThemeManager
 from gpu_launch import GPULaunchManager
 from cpu import CPUManager
 from disk import DiskManager
 from extras import ExtrasManager
-from options import OptionsTab
+from options import OptionsManager
 from about import AboutManager
 from kernel import KernelManager
 from config import ConfigManager
-
-
-def unbind_pyinstaller_libs():
-    """
-    Unbind PyInstaller libraries, use system libraries instead.
-    Not ideal but it should be less buggy and time consuming than going disabling library by library.
-    Also lets do this to avoid having to add any binaries the optional settings depend on (vulkaninfo, glxinfo, scx*, mangohud)
-    Nuitka isnt affected by this issues.
-    """
-    if getattr(sys, 'frozen', False):
-        try:
-            os.environ.pop('LD_LIBRARY_PATH', None)
-            os.environ.pop('LD_PRELOAD', None)
-            
-            # Remove PyInstaller's temporary library path
-            lib_path = os.path.join(sys._MEIPASS, 'lib') if hasattr(sys, '_MEIPASS') else None
-            if lib_path and lib_path in sys.path:
-                sys.path.remove(lib_path)
-                
-        except Exception as e:
-            print(f"Warning: Failed to unbind PyInstaller libraries: {e}")
-
-unbind_pyinstaller_libs()
+from welcome import WelcomeManager
+from workarounds import WorkaroundManager
 
 
 def check_sudo_execution():
@@ -127,6 +103,32 @@ class SingleInstanceChecker:
             pass
 
 
+class SignalHandler:
+    """
+    Handle UNIX signals for shutdown.
+    """
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.setup_signal_handlers()
+
+    def setup_signal_handlers(self):
+        """
+        Set up signal handlers for SIGINT (Ctrl+C) and SIGTERM.
+        """
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
+    def signal_handler(self, signum, frame):
+        """
+        Handle received signals by closing the application.
+        """
+        print(f"\nReceived signal {signum}, closing...")
+        
+        self.main_window.cleanup_resources()
+        QApplication.quit()
+        sys.exit(0)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, instance_checker):
         """
@@ -136,6 +138,7 @@ class MainWindow(QMainWindow):
         self.instance_checker = instance_checker
         self.use_system_tray = True
         self.start_minimized = False
+        self.start_maximized = False
         self.current_profile = "Default"
         self.cpu_widgets = {}
         self.kernel_widgets = {}
@@ -143,6 +146,9 @@ class MainWindow(QMainWindow):
         self.gpu_widgets = {}
         self.extras_widgets = {}
         self.about_widgets = {}
+        
+        self.welcome_window = None
+        self.options_manager = None
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -151,8 +157,6 @@ class MainWindow(QMainWindow):
 
         self.apply_dark_theme()
         self.setup_ui()
-        
-        self.use_system_tray, self.start_minimized = ConfigManager.load_options_settings()
         
         if self.use_system_tray:
             self.setup_system_tray()
@@ -163,6 +167,10 @@ class MainWindow(QMainWindow):
         self._initial_setup_complete = True
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
+        
+        if self.options_manager and self.options_manager.get_welcome_message_setting():
+            QTimer.singleShot(100, self.show_welcome_window)
+        
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
 
@@ -188,12 +196,24 @@ class MainWindow(QMainWindow):
         self.setup_launch_options_tab()
         self.setup_extras_tab()
 
-        self.options_tab = OptionsTab(self.tab_widget, self)
-        self.tab_widget.addTab(self.options_tab, "Options")
+        self.options_manager = OptionsManager(self.tab_widget, self)
+        self.tab_widget.addTab(self.options_manager.get_widget(), "Options")
+        
         self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
         self.setCentralWidget(central_widget)
+
+    def show_welcome_window(self):
+        """
+        Show the separate welcome window.
+        """
+        if self.welcome_window is None:
+            self.welcome_window = WelcomeManager.create_welcome_window(self)
+        
+        self.welcome_window.show()
+        self.welcome_window.activateWindow()
+        self.welcome_window.raise_()
 
     def setup_profile_selector(self):
         """
@@ -590,8 +610,12 @@ class MainWindow(QMainWindow):
     def show_and_activate(self):
         """
         Show the window and bring it to the foreground.
+        Shows maximized if the option is enabled.
         """
-        self.show()
+        if self.start_maximized:
+            self.showMaximized()
+        else:
+            self.show()
         self.activateWindow()
         self.raise_()
 
@@ -611,6 +635,7 @@ class MainWindow(QMainWindow):
     def apply_all_settings(self):
         """
         Collects all settings (CPU, Disk, GPU, Kernel) and applies them in one go using volt-helper.
+        Uses clean environment to avoid PyInstaller interference.
         """
         if (self.cpu_widgets.get('is_process_running', False) or 
             self.disk_widgets.get('is_process_running', False) or 
@@ -666,6 +691,9 @@ class MainWindow(QMainWindow):
             all_args = ["pkexec", "/usr/local/bin/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
 
             process = QProcess()
+            # Apply clean environment to avoid PyInstaller interference
+            WorkaroundManager.setup_clean_process(process)
+            
             process.start(all_args[0], all_args[1:])
             process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
 
@@ -707,15 +735,41 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "volt-gui", "Settings applied successfully")
 
-    def quit_application(self):
+    def cleanup_resources(self):
         """
-        Quit the application properly, ensuring all settings are saved.
+        Centralized cleanup method to avoid code duplication.
         """
         self.save_settings()
         ConfigManager.save_current_profile_preference(self.current_profile)
-        self.options_tab.options_manager.save_options()
+        if self.options_manager:
+            self.options_manager.save_options()
         self.instance_checker.cleanup()
+        
+        if self.welcome_window:
+            self.welcome_window.close()
+            self.welcome_window = None
+
+    def quit_application(self):
+        """
+        Quit the application properly, ensuring all settings are saved, only for the systray quit.
+        """
+        self.cleanup_resources()
         QApplication.quit()
+
+    def closeEvent(self, event):
+        """
+        Handle the main window close event. If system tray is enabled, hide to tray.
+        If system tray is disabled, quit the application.
+        """
+        if self.use_system_tray and hasattr(self, 'tray_icon'):
+            self.hide()
+            if self.welcome_window:
+                self.welcome_window.hide()
+            event.ignore()
+        else:
+            self.cleanup_resources()
+            QApplication.quit()
+            event.accept()
 
 
 def main():
@@ -723,6 +777,7 @@ def main():
     Main application entry point.
     """
     check_sudo_execution()
+    WorkaroundManager.setup_qt_platform()
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
@@ -735,6 +790,7 @@ def main():
 
     main_window = MainWindow(instance_checker)
     app.setQuitOnLastWindowClosed(not main_window.use_system_tray)
+    signal_handler = SignalHandler(main_window)
 
     sys.exit(app.exec())
 

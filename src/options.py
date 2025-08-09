@@ -1,58 +1,45 @@
 import os
 import configparser
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox)
+from pathlib import Path
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox, QApplication
 from PySide6.QtCore import Qt
 from theme import ThemeManager
-from pathlib import Path
-from PySide6.QtWidgets import QApplication
 
 
 class OptionsManager:
     """
-    Manages application settings and preferences.
+    Manages application settings and preferences with integrated UI.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, parent, main_window):
+        self.parent = parent
+        self.main_window = main_window
         self.options_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         self.options_path.parent.mkdir(parents=True, exist_ok=True)
         self.widgets = {}
-        self.main_window = main_window
+        self.widget = QWidget(self.parent)
+        self.setup_ui()
 
-    def load_options(self):
-        """
-        Load options from the configuration file.
-        """
-        self._set_default_values()
-        
-        if not self.options_path.exists():
-            self.save_options()
-            return
-            
-        options = configparser.ConfigParser()
-        options.read(self.options_path)
-        
-        self._apply_options_values(options)
-        self._apply_all_options()
+    def get_widget(self):
+        """Get the widget for adding to tab widget."""
+        return self.widget
 
-    def save_options(self):
+    def setup_ui(self):
         """
-        Save current options to the configuration file.
+        Set up the user interface for the options tab.
         """
-        options = configparser.ConfigParser()
+        main_layout = QVBoxLayout(self.widget)
+        main_layout.setContentsMargins(9, 0, 9, 0)
+        main_layout.setSpacing(10)
         
-        options['Theme'] = {'selected_theme': self.widgets['theme_combo'].currentText()}
-        options['SystemTray'] = {'run_in_tray': self.widgets['tray_combo'].currentText()}
-        options['Appearance'] = {'transparency': self.widgets['transparency_combo'].currentText()}
-        options['StartupBehavior'] = {'start_minimized': self.widgets['start_minimized_combo'].currentText()}
-        options['Profile'] = {'last_selected': getattr(self.main_window, 'current_profile', 'Default')}
+        scroll_area = self.create_scroll_area()
+        main_layout.addWidget(scroll_area)
         
-        os.makedirs(os.path.dirname(self.options_path), exist_ok=True)
+        self.apply_button = self.create_option_apply_button(main_layout)
         
-        with open(self.options_path, 'w') as optionsfile:
-            options.write(optionsfile)
-            
-        if self.main_window:
-            self._apply_all_options()
+        self.register_widgets()
+        self.apply_button.clicked.connect(self.save_and_apply_options)
+        self.load_options()
 
     def create_option_apply_button(self, parent_layout):
         """
@@ -61,7 +48,7 @@ class OptionsManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
+        button_layout.setContentsMargins(11, 10, 11, 0)
 
         apply_button = QPushButton("Apply")
         apply_button.setMinimumSize(100, 30)
@@ -76,7 +63,200 @@ class OptionsManager:
         
         return apply_button
 
-    def _set_default_values(self):
+    def save_and_apply_options(self):
+        """
+        Save current options and apply them to the application.
+        """
+        self.save_options()
+        
+        if self.main_window and hasattr(self.main_window, 'tray_icon'):
+            self.main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
+        else:
+            QMessageBox.information(self.main_window, "volt-gui", "Options saved successfully")
+
+    def create_scroll_area(self):
+        """
+        Create and configure the scroll area with all option widgets.
+        """
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        scroll_widget = QWidget()
+        scroll_widget.setProperty("scrollContainer", True)
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
+        
+        self.add_theme_option(scroll_layout)
+        self.add_transparency_option(scroll_layout)
+        self.add_tray_option(scroll_layout)
+        self.add_start_minimized_option(scroll_layout)
+        self.add_start_maximized_option(scroll_layout)
+        self.add_welcome_message_option(scroll_layout)
+        
+        scroll_layout.addStretch(1)
+        scroll_area.setWidget(scroll_widget)
+        return scroll_area
+
+    def add_theme_option(self, layout):
+        """
+        Add theme selection option to layout.
+        """
+        theme_layout = QHBoxLayout()
+        theme_label = QLabel("Selected Theme:")
+        theme_label.setWordWrap(True)
+        theme_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["amd", "intel", "nvidia"])
+        self.theme_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        theme_layout.addWidget(theme_label)
+        theme_layout.addWidget(self.theme_combo)
+        layout.addLayout(theme_layout)
+
+    def add_transparency_option(self, layout):
+        """
+        Add transparency option to layout.
+        """
+        transparency_layout = QHBoxLayout()
+        transparency_label = QLabel("Transparency:")
+        transparency_label.setWordWrap(True)
+        transparency_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.transparency_combo = QComboBox()
+        self.transparency_combo.addItems(["enable", "disable"])
+        self.transparency_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        transparency_layout.addWidget(transparency_label)
+        transparency_layout.addWidget(self.transparency_combo)
+        layout.addLayout(transparency_layout)
+
+    def add_tray_option(self, layout):
+        """
+        Add system tray option to layout.
+        """
+        tray_layout = QHBoxLayout()
+        tray_label = QLabel("Run in System Tray:")
+        tray_label.setWordWrap(True)
+        tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.tray_combo = QComboBox()
+        self.tray_combo.addItems(["enable", "disable"])
+        self.tray_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        tray_layout.addWidget(tray_label)
+        tray_layout.addWidget(self.tray_combo)
+        layout.addLayout(tray_layout)
+
+    def add_start_minimized_option(self, layout):
+        """
+        Add start minimized option to layout.
+        """
+        start_minimized_layout = QHBoxLayout()
+        start_minimized_label = QLabel("Open Minimized:")
+        start_minimized_label.setWordWrap(True)
+        start_minimized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.start_minimized_combo = QComboBox()
+        self.start_minimized_combo.addItems(["enable", "disable"])
+        self.start_minimized_combo.setCurrentText("disable")
+        self.start_minimized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        start_minimized_layout.addWidget(start_minimized_label)
+        start_minimized_layout.addWidget(self.start_minimized_combo)
+        layout.addLayout(start_minimized_layout)
+
+    def add_start_maximized_option(self, layout):
+        """
+        Add start maximized option to layout.
+        """
+        start_maximized_layout = QHBoxLayout()
+        start_maximized_label = QLabel("Open Maximized:")
+        start_maximized_label.setWordWrap(True)
+        start_maximized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.start_maximized_combo = QComboBox()
+        self.start_maximized_combo.addItems(["enable", "disable"])
+        self.start_maximized_combo.setCurrentText("disable")
+        self.start_maximized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        start_maximized_layout.addWidget(start_maximized_label)
+        start_maximized_layout.addWidget(self.start_maximized_combo)
+        layout.addLayout(start_maximized_layout)
+
+    def add_welcome_message_option(self, layout):
+        """
+        Add welcome message option to layout.
+        """
+        welcome_message_layout = QHBoxLayout()
+        welcome_message_label = QLabel("Welcome Message:")
+        welcome_message_label.setWordWrap(True)
+        welcome_message_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        self.welcome_message_combo = QComboBox()
+        self.welcome_message_combo.addItems(["enable", "disable"])
+        self.welcome_message_combo.setCurrentText("enable")
+        self.welcome_message_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        welcome_message_layout.addWidget(welcome_message_label)
+        welcome_message_layout.addWidget(self.welcome_message_combo)
+        layout.addLayout(welcome_message_layout)
+
+    def register_widgets(self):
+        """
+        Register all widgets with the options manager.
+        """
+        self.widgets = {
+            'theme_combo': self.theme_combo,
+            'transparency_combo': self.transparency_combo,
+            'tray_combo': self.tray_combo,
+            'start_minimized_combo': self.start_minimized_combo,
+            'start_maximized_combo': self.start_maximized_combo,
+            'welcome_message_combo': self.welcome_message_combo,
+            'apply_button': self.apply_button
+        }
+
+    def load_options(self):
+        """
+        Load options from the configuration file.
+        """
+        self.set_default_values()
+        
+        if not self.options_path.exists():
+            self.save_options()
+            return
+            
+        options = configparser.ConfigParser()
+        options.read(self.options_path)
+        
+        self.apply_options_values(options)
+        self.apply_all_options()
+
+    def save_options(self):
+        """
+        Save current options to the configuration file.
+        """
+        options = configparser.ConfigParser()
+        
+        options['Theme'] = {'ActiveTheme': self.widgets['theme_combo'].currentText()}
+        options['SystemTray'] = {'Enable': self.widgets['tray_combo'].currentText()}
+        options['Transparency'] = {'Enable': self.widgets['transparency_combo'].currentText()}
+        options['StartupMinimized'] = {'Enable': self.widgets['start_minimized_combo'].currentText()}
+        options['StartupMaximized'] = {'Enable': self.widgets['start_maximized_combo'].currentText()}
+        options['WelcomeMessage'] = {'Show': self.widgets['welcome_message_combo'].currentText()}
+        options['Profile'] = {'LastActiveProfile': getattr(self.main_window, 'current_profile', 'Default')}
+        
+        os.makedirs(os.path.dirname(self.options_path), exist_ok=True)
+        
+        with open(self.options_path, 'w') as optionsfile:
+            options.write(optionsfile)
+            
+        if self.main_window:
+            self.apply_all_options()
+
+    def set_default_values(self):
         """
         Set default values for all widgets.
         """
@@ -84,31 +264,27 @@ class OptionsManager:
         self.widgets['tray_combo'].setCurrentText("enable")
         self.widgets['transparency_combo'].setCurrentText("enable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
+        self.widgets['start_maximized_combo'].setCurrentText("disable")
+        self.widgets['welcome_message_combo'].setCurrentText("enable")
 
-    def _apply_options_values(self, options):
+    def apply_options_values(self, options):
         """
         Apply values from options file to widgets.
         """
-        if 'Theme' in options and 'selected_theme' in options['Theme']:
-            self.widgets['theme_combo'].setCurrentText(options['Theme']['selected_theme'])
-            
-        if 'SystemTray' in options and 'run_in_tray' in options['SystemTray']:
-            self.widgets['tray_combo'].setCurrentText(options['SystemTray']['run_in_tray'])
-            
-        if 'Appearance' in options and 'transparency' in options['Appearance']:
-            self.widgets['transparency_combo'].setCurrentText(options['Appearance']['transparency'])
+        self.widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
+        self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="enable"))
+        self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="enable"))
+        self.widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
+        self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
+        self.widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
         
-        if 'StartupBehavior' in options and 'start_minimized' in options['StartupBehavior']:
-            self.widgets['start_minimized_combo'].setCurrentText(options['StartupBehavior'].get('start_minimized', 'disable'))
-        
-        if 'Profile' in options and 'last_selected' in options['Profile'] and self.main_window:
-            last_profile = options['Profile']['last_selected']
-            index = self.main_window.profile_selector.findText(last_profile)
-            if index >= 0:
-                self.main_window.profile_selector.setCurrentText(last_profile)
-                self.main_window.current_profile = last_profile
+        last_profile = options['Profile']['LastActiveProfile']
+        index = self.main_window.profile_selector.findText(last_profile)
+        if index >= 0:
+            self.main_window.profile_selector.setCurrentText(last_profile)
+            self.main_window.current_profile = last_profile
 
-    def _apply_all_options(self):
+    def apply_all_options(self):
         """
         Apply all options to the application.
         """
@@ -116,6 +292,8 @@ class OptionsManager:
         self.apply_transparency_options()
         self.apply_theme_options()
         self.apply_start_minimized_options()
+        self.apply_start_maximized_options()
+        self.apply_welcome_message_options()
 
     def apply_theme_options(self):
         """
@@ -172,146 +350,26 @@ class OptionsManager:
             self.main_window.start_minimized = start_minimized
             print(f"Start minimized option applied: {start_minimized}")
 
+    def apply_start_maximized_options(self):
+        """
+        Apply the start maximized option to the application.
+        """
+        if self.main_window:
+            start_maximized = self.widgets['start_maximized_combo'].currentText() == 'enable'
+            self.main_window.start_maximized = start_maximized
+            print(f"Start maximized option applied: {start_maximized}")
 
-class OptionsTab(QWidget):
-    """
-    Options tab widget for the application.
-    """
+    def apply_welcome_message_options(self):
+        """
+        Apply the welcome message option to the application.
+        """
+        if self.main_window:
+            show_welcome = self.widgets['welcome_message_combo'].currentText() == 'enable'
+            self.main_window.show_welcome = show_welcome
+            print(f"Welcome message option applied: {show_welcome}")
 
-    def __init__(self, parent, main_window):
-        super().__init__(parent)
-        self.main_window = main_window
-        self.options_manager = OptionsManager(main_window)
-        self.setup_ui()
-
-    def setup_ui(self):
+    def get_welcome_message_setting(self):
         """
-        Set up the user interface for the options tab.
+        Get the current welcome message setting.
         """
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(10)
-        
-        scroll_area = self._create_scroll_area()
-        main_layout.addWidget(scroll_area)
-        
-        self.apply_button = self.options_manager.create_option_apply_button(main_layout)
-        
-        self._register_widgets()
-        self.apply_button.clicked.connect(self.save_and_apply_options)
-        self.options_manager.load_options()
-
-    def save_and_apply_options(self):
-        """
-        Save current options and apply them to the application.
-        """
-        self.options_manager.save_options()
-        
-        if self.main_window and hasattr(self.main_window, 'tray_icon'):
-            self.main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
-        else:
-            QMessageBox.information(self.main_window, "volt-gui", "Options saved successfully")
-
-    def _create_scroll_area(self):
-        """
-        Create and configure the scroll area with all option widgets.
-        """
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_widget.setProperty("scrollContainer", True)
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
-        
-        self._add_theme_option(scroll_layout)
-        self._add_transparency_option(scroll_layout)
-        self._add_tray_option(scroll_layout)
-        self._add_start_minimized_option(scroll_layout)
-        
-        scroll_layout.addStretch(1)
-        scroll_area.setWidget(scroll_widget)
-        return scroll_area
-
-    def _add_theme_option(self, layout):
-        """
-        Add theme selection option to layout.
-        """
-        theme_layout = QHBoxLayout()
-        theme_label = QLabel("Selected Theme:")
-        theme_label.setWordWrap(True)
-        theme_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["amd", "intel", "nvidia"])
-        self.theme_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        theme_layout.addWidget(theme_label)
-        theme_layout.addWidget(self.theme_combo)
-        layout.addLayout(theme_layout)
-
-    def _add_transparency_option(self, layout):
-        """
-        Add transparency option to layout.
-        """
-        transparency_layout = QHBoxLayout()
-        transparency_label = QLabel("Transparency:")
-        transparency_label.setWordWrap(True)
-        transparency_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        self.transparency_combo = QComboBox()
-        self.transparency_combo.addItems(["enable", "disable"])
-        self.transparency_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        transparency_layout.addWidget(transparency_label)
-        transparency_layout.addWidget(self.transparency_combo)
-        layout.addLayout(transparency_layout)
-
-    def _add_tray_option(self, layout):
-        """
-        Add system tray option to layout.
-        """
-        tray_layout = QHBoxLayout()
-        tray_label = QLabel("Run in System Tray:")
-        tray_label.setWordWrap(True)
-        tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        self.tray_combo = QComboBox()
-        self.tray_combo.addItems(["enable", "disable"])
-        self.tray_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        tray_layout.addWidget(tray_label)
-        tray_layout.addWidget(self.tray_combo)
-        layout.addLayout(tray_layout)
-
-    def _add_start_minimized_option(self, layout):
-        """
-        Add start minimized option to layout.
-        """
-        start_minimized_layout = QHBoxLayout()
-        start_minimized_label = QLabel("Open Minimized:")
-        start_minimized_label.setWordWrap(True)
-        start_minimized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        self.start_minimized_combo = QComboBox()
-        self.start_minimized_combo.addItems(["enable", "disable"])
-        self.start_minimized_combo.setCurrentText("disable")
-        self.start_minimized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        start_minimized_layout.addWidget(start_minimized_label)
-        start_minimized_layout.addWidget(self.start_minimized_combo)
-        layout.addLayout(start_minimized_layout)
-
-    def _register_widgets(self):
-        """
-        Register all widgets with the options manager.
-        """
-        self.options_manager.widgets = {
-            'theme_combo': self.theme_combo,
-            'transparency_combo': self.transparency_combo,
-            'tray_combo': self.tray_combo,
-            'start_minimized_combo': self.start_minimized_combo,
-            'apply_button': self.apply_button
-        }
+        return self.widgets['welcome_message_combo'].currentText() == 'enable'

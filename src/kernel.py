@@ -1,7 +1,6 @@
 import re
-import subprocess
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit, QFrame, QSystemTrayIcon)
-from PySide6.QtCore import Qt, QProcess
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit
+from PySide6.QtCore import Qt
 
 
 class KernelManager:
@@ -113,18 +112,19 @@ class KernelManager:
     }
 
     @staticmethod
-    def _get_current_value(setting_path):
+    def get_current_value(setting_path):
         """
         Get current value of a kernel setting.
         """
         try:
             with open(setting_path, 'r') as f:
                 return f.read().strip()
-        except Exception:
-            return "Error"
+        except Exception as e:
+            print(f"Error reading kernel setting {setting_path}: {e}")
+            return None
 
     @staticmethod
-    def _get_dynamic_current_value(setting_path):
+    def get_dynamic_current_value(setting_path):
         """
         Get current value of a dynamic setting (extracts value in brackets).
         """
@@ -137,12 +137,17 @@ class KernelManager:
                 return match.group(1)
             else:
                 values = content.split()
-                return values[0] if values else "Error"
-        except Exception:
-            return "Error"
+                if values:
+                    return values[0]
+                else:
+                    print(f"Warning: No values found in dynamic setting {setting_path}")
+                    return None
+        except Exception as e:
+            print(f"Error reading dynamic kernel setting {setting_path}: {e}")
+            return None
 
     @staticmethod
-    def _get_dynamic_possible_values(setting_path):
+    def get_dynamic_possible_values(setting_path):
         """
         Get all possible values for a dynamic setting.
         Returns a list of possible values extracted from the system file.
@@ -154,17 +159,22 @@ class KernelManager:
             clean_content = re.sub(r'[\[\]]', '', content)
             possible_values = clean_content.split()
             
-            return possible_values if possible_values else ["Error"]
-        except Exception:
-            return ["Error"]
+            if possible_values:
+                return possible_values
+            else:
+                print(f"Warning: No possible values found in dynamic setting {setting_path}")
+                return None
+        except Exception as e:
+            print(f"Error reading possible values for {setting_path}: {e}")
+            return None
 
     @staticmethod
-    def _get_dynamic_text_with_values(base_text, setting_path):
+    def get_dynamic_text_with_values(base_text, setting_path):
         """
         Generate dynamic text that includes the possible values from the system.
         """
-        possible_values = KernelManager._get_dynamic_possible_values(setting_path)
-        if possible_values and possible_values[0] != "Error":
+        possible_values = KernelManager.get_dynamic_possible_values(setting_path)
+        if possible_values:
             values_text = " ".join(possible_values)
             return f"{base_text}\nPossible values: {values_text}"
         else:
@@ -177,6 +187,7 @@ class KernelManager:
         """
         kernel_tab = QWidget()
         kernel_layout = QVBoxLayout(kernel_tab)
+        kernel_layout.setContentsMargins(9, 0, 9, 0)
         widgets = {}
         
         scroll_area = QScrollArea()
@@ -186,17 +197,18 @@ class KernelManager:
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         for setting_name, setting_info in KernelManager.KERNEL_SETTINGS.items():
-            KernelManager._create_setting_section(scroll_layout, widgets, setting_name, setting_info)
+            KernelManager.create_setting_section(scroll_layout, widgets, setting_name, setting_info)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         kernel_layout.addWidget(scroll_area)
         
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
-        
+
         widgets['kernel_settings_applied'] = False
         widgets['is_process_running'] = False
         widgets['process'] = None
@@ -204,7 +216,7 @@ class KernelManager:
         return kernel_tab, widgets
 
     @staticmethod
-    def _create_setting_section(kernel_layout, widgets, setting_name, setting_info):
+    def create_setting_section(kernel_layout, widgets, setting_name, setting_info):
         """
         Create a UI section for a single kernel setting.
         """
@@ -221,7 +233,7 @@ class KernelManager:
         setting_layout.addWidget(current_value_label)
         
         if setting_info['is_dynamic']:
-            display_text = KernelManager._get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
+            display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
         else:
             display_text = setting_info['text']
 
@@ -247,7 +259,7 @@ class KernelManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 0)
+        button_layout.setContentsMargins(11, 10, 11, 0)
         
         widgets['kernel_apply_button'] = QPushButton("Apply")
         widgets['kernel_apply_button'].setMinimumSize(100, 30)
@@ -258,6 +270,7 @@ class KernelManager:
         button_layout.addStretch(1)
         
         kernel_layout.addWidget(button_container)
+        kernel_layout.addSpacing(9)
 
     @staticmethod
     def refresh_kernel_values(widgets):
@@ -267,11 +280,15 @@ class KernelManager:
         """
         for name, info in KernelManager.KERNEL_SETTINGS.items():
             if info['is_dynamic']:
-                current = KernelManager._get_dynamic_current_value(info['path'])
+                current = KernelManager.get_dynamic_current_value(info['path'])
             else:
-                current = KernelManager._get_current_value(info['path'])
-            widgets[f'{name}_current_value'].setText(f"current value: {current}")
+                current = KernelManager.get_current_value(info['path'])
+            
+            if current is not None:
+                widgets[f'{name}_current_value'].setText(f"current value: {current}")
+            else:
+                widgets[f'{name}_current_value'].setText("current value: Error reading")
             
             if info['is_dynamic'] and f'{name}_text_label' in widgets:
-                updated_text = KernelManager._get_dynamic_text_with_values(info['text'], info['path'])
+                updated_text = KernelManager.get_dynamic_text_with_values(info['text'], info['path'])
                 widgets[f'{name}_text_label'].setText(updated_text)

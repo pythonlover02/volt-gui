@@ -1,9 +1,9 @@
 import glob
-import re
-import subprocess
 import os
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QFrame, QSizePolicy, QSystemTrayIcon)
-from PySide6.QtCore import (Qt, QProcess, QPropertyAnimation, QEasingCurve, QSize)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QSizePolicy
+from PySide6.QtCore import Qt, QProcess
+from workarounds import WorkaroundManager
+
 
 class CPUManager:
     """
@@ -11,33 +11,24 @@ class CPUManager:
     """
     
     CPU_GOVERNOR_PATH = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
-    DEFAULT_GOVERNOR = "powersave"
-    AVAILABLE_GOVERNORS = ["unset", "performance", "powersave", "userspace", "ondemand", "conservative", "schedutil"]
     SCHEDULER_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     BASE_SCHEDULERS = ["unset", "none"]
 
     @staticmethod
-    def get_current_governor():
+    def get_available_governors():
         """
-        Gets the current CPU governor setting.
+        Gets the available CPU governors from the system.
         """
         try:
-            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r") as f:
-                return f.read().strip()
-        except Exception:
-            return CPUManager.DEFAULT_GOVERNOR
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors", "r") as f:
+                governors = f.read().strip().split()
+                return ["unset"] + governors
+        except Exception as e:
+            print(f"Error reading available governors: {e}")
+            return None
 
     @staticmethod
-    def _find_running_scheduler():
-        """
-        Internal method to detect the currently running CPU scheduler.
-        """
-        result = subprocess.run(["ps", "-eo", "comm"], capture_output=True, text=True, check=True)
-        processes = result.stdout.strip().splitlines()
-        return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
-
-    @staticmethod
-    def find_available_schedulers():
+    def get_available_schedulers():
         """
         Dynamically find available scx_ schedulers in the configured paths.
         """
@@ -56,13 +47,44 @@ class CPUManager:
         return schedulers
 
     @staticmethod
+    def get_current_governor():
+        """
+        Gets the current CPU governor.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r") as f:
+                return f.read().strip()
+        except Exception as e:
+            print(f"Error reading current governor: {e}")
+            return None
+
+    @staticmethod
+    def get_current_scheduler():
+        """
+        Gets the current CPU scheduler.
+        """
+        try:
+            process = QProcess()
+            WorkaroundManager.setup_clean_process(process)
+            process.start("ps", ["-eo", "comm"])
+            
+            if process.waitForFinished(10000):  # 10 second timeout
+                output = process.readAllStandardOutput().data().decode()
+                processes = output.strip().splitlines()
+                return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
+            return "none"
+        except Exception as e:
+            print(f"Error getting current scheduler: {e}")
+            return None
+
+    @staticmethod
     def create_cpu_tab():
         """
         Creates and returns the CPU management tab widget.
         """
         cpu_tab = QWidget()
         main_layout = QVBoxLayout(cpu_tab)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(9, 0, 9, 0)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -82,9 +104,12 @@ class CPUManager:
         gov_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         widgets['gov_combo'] = QComboBox()
-        widgets['gov_combo'].addItems(CPUManager.AVAILABLE_GOVERNORS)
+        available_governors = CPUManager.get_available_governors()
+        widgets['gov_combo'].addItems(available_governors)
         widgets['gov_combo'].setCurrentText("unset")
         widgets['gov_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        widgets['available_governors'] = available_governors
         
         gov_layout.addWidget(gov_label)
         gov_layout.addWidget(widgets['gov_combo'])
@@ -100,7 +125,7 @@ class CPUManager:
         sched_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         widgets['sched_combo'] = QComboBox()
-        available_schedulers = CPUManager.find_available_schedulers()
+        available_schedulers = CPUManager.get_available_schedulers()
         widgets['sched_combo'].addItems(available_schedulers)
         widgets['sched_combo'].setCurrentText("unset")
         widgets['sched_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -142,7 +167,7 @@ class CPUManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(10, 10, 10, 10)
+        button_layout.setContentsMargins(11, 10, 11, 9)
 
         widgets['cpu_apply_button'] = QPushButton("Apply")
         widgets['cpu_apply_button'].setMinimumSize(100, 30)
@@ -168,12 +193,12 @@ class CPUManager:
         
         widgets['current_sched_value'].setText("Updating...")
         try:
-            running_scheduler = CPUManager._find_running_scheduler()
+            running_scheduler = CPUManager.get_current_scheduler()
             
             if running_scheduler != "none" and "<defunc>" in running_scheduler:
                 running_scheduler = "none"
             
-            current_available = CPUManager.find_available_schedulers()
+            current_available = CPUManager.get_available_schedulers()
             
             if widgets.get('scheduler_locked', False):
                 scx_schedulers_found = len([s for s in current_available if s.startswith("scx_")]) > 0
