@@ -1,6 +1,6 @@
 # volt-gui:
 
-A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seing that it could be useful for other Linux users i have decided to Open Source it.
+A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seeing that it could be useful for other Linux users i have decided to Open Source it.
 
 ![Badge Language](https://img.shields.io/github/languages/top/pythonlover02/volt-gui)
 [![Stars](https://img.shields.io/github/stars/pythonlover02/volt-gui?style=social)](https://github.com/pythonlover02/volt-gui/stargazers)
