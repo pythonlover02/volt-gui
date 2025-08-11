@@ -496,6 +496,18 @@ class ThemeManager:
             border: none;
             border-radius: 3px;
         }}
+        
+        QToolTip {{
+            background-color: {c['surface_bg']};
+            color: {c['text_color']};
+            border: 1px solid {c['accent_color']};
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 10pt;
+            font-family: "Segoe UI", sans-serif;
+            font-weight: 400;
+            opacity: 230;
+        }}
         """
 
     @classmethod
@@ -522,6 +534,8 @@ class ThemeManager:
         palette.setColor(QPalette.Disabled, QPalette.Window, QColor(c['darker_bg']))
         palette.setColor(QPalette.Disabled, QPalette.Base, QColor(c['darker_bg']))
         palette.setColor(QPalette.Disabled, QPalette.Button, QColor(c['darker_bg']))
+        palette.setColor(QPalette.ToolTipBase, QColor(c['surface_bg']))
+        palette.setColor(QPalette.ToolTipText, QColor(c['text_color']))
         
         return palette
 
