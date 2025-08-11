@@ -28,6 +28,30 @@ class CPUManager:
             return None
 
     @staticmethod
+    def get_cpuinfo_min_freq():
+        """
+        Gets the minimum possible CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading cpuinfo_min_freq: {e}")
+            return None
+
+    @staticmethod
+    def get_cpuinfo_max_freq():
+        """
+        Gets the maximum possible CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading cpuinfo_max_freq: {e}")
+            return None
+
+    @staticmethod
     def get_available_schedulers():
         """
         Dynamically find available scx_ schedulers in the configured paths.
@@ -56,6 +80,30 @@ class CPUManager:
                 return f.read().strip()
         except Exception as e:
             print(f"Error reading current governor: {e}")
+            return None
+
+    @staticmethod
+    def get_current_scaling_min_freq():
+        """
+        Gets the current scaling minimum CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading scaling_min_freq: {e}")
+            return None
+
+    @staticmethod
+    def get_current_scaling_max_freq():
+        """
+        Gets the current scaling maximum CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading scaling_max_freq: {e}")
             return None
 
     @staticmethod
@@ -118,6 +166,46 @@ class CPUManager:
         widgets['current_gov_value'] = QLabel("Updating...")
         widgets['current_gov_value'].setContentsMargins(0, 0, 0, 10)
         scroll_layout.addWidget(widgets['current_gov_value'])
+
+        min_freq_mhz = CPUManager.get_cpuinfo_min_freq()
+        max_freq_mhz = CPUManager.get_cpuinfo_max_freq()
+
+        max_freq_layout = QHBoxLayout()
+        max_freq_label = QLabel("CPU Max Frequency (MHz):")
+        max_freq_label.setWordWrap(True)
+        max_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        widgets['max_freq_combo'] = QComboBox()
+        freq_range = [str(f) for f in range(min_freq_mhz, max_freq_mhz + 100, 100)]
+        widgets['max_freq_combo'].addItems(["unset"] + list(reversed(freq_range)))
+        widgets['max_freq_combo'].setCurrentText("unset")
+        widgets['max_freq_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        max_freq_layout.addWidget(max_freq_label)
+        max_freq_layout.addWidget(widgets['max_freq_combo'])
+        scroll_layout.addLayout(max_freq_layout)
+
+        widgets['current_max_freq_value'] = QLabel("Updating...")
+        widgets['current_max_freq_value'].setContentsMargins(0, 0, 0, 10)
+        scroll_layout.addWidget(widgets['current_max_freq_value'])
+
+        min_freq_layout = QHBoxLayout()
+        min_freq_label = QLabel("CPU Min Frequency (MHz):")
+        min_freq_label.setWordWrap(True)
+        min_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        widgets['min_freq_combo'] = QComboBox()
+        widgets['min_freq_combo'].addItems(["unset"] + freq_range)
+        widgets['min_freq_combo'].setCurrentText("unset")
+        widgets['min_freq_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        min_freq_layout.addWidget(min_freq_label)
+        min_freq_layout.addWidget(widgets['min_freq_combo'])
+        scroll_layout.addLayout(min_freq_layout)
+
+        widgets['current_min_freq_value'] = QLabel("Updating...")
+        widgets['current_min_freq_value'].setContentsMargins(0, 0, 0, 10)
+        scroll_layout.addWidget(widgets['current_min_freq_value'])
         
         sched_layout = QHBoxLayout()
         sched_label = QLabel("Pluggable CPU Scheduler:")
@@ -193,6 +281,22 @@ class CPUManager:
             widgets['current_gov_value'].setText(f"current: {current_governor}")
         except Exception:
             widgets['current_gov_value'].setText("Error")
+
+        if widgets.get('max_freq_combo'):
+            widgets['current_max_freq_value'].setText("Updating...")
+            try:
+                current_max_freq = CPUManager.get_current_scaling_max_freq()
+                widgets['current_max_freq_value'].setText(f"current: {current_max_freq}")
+            except Exception:
+                widgets['current_max_freq_value'].setText("Error")
+
+        if widgets.get('min_freq_combo'):
+            widgets['current_min_freq_value'].setText("Updating...")
+            try:
+                current_min_freq = CPUManager.get_current_scaling_min_freq()
+                widgets['current_min_freq_value'].setText(f"current: {current_min_freq}")
+            except Exception:
+                widgets['current_min_freq_value'].setText("Error")
         
         widgets['current_sched_value'].setText("Updating...")
         try:

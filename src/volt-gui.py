@@ -647,11 +647,31 @@ class MainWindow(QMainWindow):
 
             cpu_args = []
             cpu_governor = self.cpu_widgets['gov_combo'].currentText()
+            
+            if self.cpu_widgets.get('max_freq_combo'):
+                cpu_max_freq = self.cpu_widgets['max_freq_combo'].currentText()
+            else:
+                cpu_max_freq = "unset"
+
+            if self.cpu_widgets.get('min_freq_combo'):
+                cpu_min_freq = self.cpu_widgets['min_freq_combo'].currentText()
+            else:
+                cpu_min_freq = "unset"
+
             cpu_scheduler = self.cpu_widgets['sched_combo'].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
                 cpu_parts.append(f"governor:{cpu_governor}")
+
+            if cpu_max_freq != "unset":
+                max_freq_khz = int(cpu_max_freq) * 1000
+                cpu_parts.append(f"max_freq:{max_freq_khz}")
+            
+            if cpu_min_freq != "unset":
+                min_freq_khz = int(cpu_min_freq) * 1000
+                cpu_parts.append(f"min_freq:{min_freq_khz}")
+
             if cpu_scheduler != "unset":
                 cpu_parts.append(f"scheduler:{cpu_scheduler}")
 
