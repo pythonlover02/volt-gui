@@ -125,19 +125,22 @@ class CPUManager:
         sched_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
         widgets['sched_combo'] = QComboBox()
+        
         available_schedulers = CPUManager.get_available_schedulers()
-        widgets['sched_combo'].addItems(available_schedulers)
-        widgets['sched_combo'].setCurrentText("unset")
-        widgets['sched_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        widgets['available_schedulers'] = available_schedulers
-        
         scx_schedulers_found = len([s for s in available_schedulers if s.startswith("scx_")]) > 0
-        if not scx_schedulers_found:
-            widgets['sched_combo'].setEnabled(False)
-            widgets['scheduler_locked'] = True
+        
+        if scx_schedulers_found:
+            widgets['sched_combo'].addItems(available_schedulers)
+            widgets['sched_combo'].setCurrentText("unset")
+            widgets['available_schedulers'] = available_schedulers
         else:
-            widgets['scheduler_locked'] = False
+            widgets['sched_combo'].addItems(CPUManager.BASE_SCHEDULERS)
+            widgets['sched_combo'].setCurrentText("unset")
+            widgets['sched_combo'].setEnabled(False)
+            widgets['sched_combo'].setToolTip("SCX schedulers not found - CPU scheduler selection disabled")
+            widgets['available_schedulers'] = CPUManager.BASE_SCHEDULERS
+        
+        widgets['sched_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         sched_layout.addWidget(sched_label)
         sched_layout.addWidget(widgets['sched_combo'])
@@ -198,20 +201,9 @@ class CPUManager:
             if running_scheduler != "none" and "<defunc>" in running_scheduler:
                 running_scheduler = "none"
             
-            current_available = CPUManager.get_available_schedulers()
-            
-            if widgets.get('scheduler_locked', False):
-                scx_schedulers_found = len([s for s in current_available if s.startswith("scx_")]) > 0
-                if scx_schedulers_found:
-                    widgets['sched_combo'].setEnabled(True)
-                    widgets['scheduler_locked'] = False
-                    widgets['available_schedulers'] = current_available
-                    current_selection = widgets['sched_combo'].currentText()
-                    widgets['sched_combo'].clear()
-                    widgets['sched_combo'].addItems(current_available)
-                    if current_selection in current_available:
-                        widgets['sched_combo'].setCurrentText(current_selection)
-            else:
+            if widgets['sched_combo'].isEnabled():
+                current_available = CPUManager.get_available_schedulers()
+                
                 if running_scheduler not in widgets['available_schedulers'] and running_scheduler != "none":
                     widgets['available_schedulers'].append(running_scheduler)
                     current_selection = widgets['sched_combo'].currentText()
