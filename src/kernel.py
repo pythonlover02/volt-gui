@@ -181,6 +181,18 @@ class KernelManager:
             return f"{base_text}\nPossible values: Unable to read from system"
 
     @staticmethod
+    def get_available_setting(setting_path):
+        """
+        Check if a kernel setting file is available.
+        """
+        try:
+            with open(setting_path, 'r') as f:
+                f.read()
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
     def create_kernel_tab(main_window):
         """
         Create and return the kernel settings tab widget.
@@ -231,9 +243,13 @@ class KernelManager:
         
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
+        is_accessible = KernelManager.get_available_setting(setting_info['path'])
         
         if setting_info['is_dynamic']:
-            display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
+            if is_accessible:
+                display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
+            else:
+                display_text = f"{setting_info['text']}\nPossible values: not available"
         else:
             display_text = setting_info['text']
 
@@ -245,6 +261,10 @@ class KernelManager:
         input_widget = QLineEdit()
         input_widget.setPlaceholderText("enter value")
         setting_layout.addWidget(input_widget)
+        
+        if not is_accessible:
+            input_widget.setEnabled(False)
+            input_widget.setToolTip(f"Kernel setting not avaliable - {setting_name} disabled")
         
         widgets[f'{setting_name}_input'] = input_widget
         widgets[f'{setting_name}_current_value'] = current_value_label
@@ -279,6 +299,10 @@ class KernelManager:
         Also updates dynamic text labels with current possible values.
         """
         for name, info in KernelManager.KERNEL_SETTINGS.items():
+            if not KernelManager.get_available_setting(info['path']):
+                widgets[f'{name}_current_value'].setText("current value: not available")
+                continue
+                
             if info['is_dynamic']:
                 current = KernelManager.get_dynamic_current_value(info['path'])
             else:

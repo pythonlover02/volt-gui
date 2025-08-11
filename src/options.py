@@ -278,7 +278,7 @@ class OptionsManager:
         self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
         self.widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
         
-        last_profile = options['Profile']['LastActiveProfile']
+        last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
         index = self.main_window.profile_selector.findText(last_profile)
         if index >= 0:
             self.main_window.profile_selector.setCurrentText(last_profile)

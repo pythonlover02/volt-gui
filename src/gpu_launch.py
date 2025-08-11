@@ -568,7 +568,7 @@ class GPULaunchManager:
             for widget in widgets.values():
                 if hasattr(widget, 'setEnabled'):
                     widget.setEnabled(False)
-                    widget.setToolTip("MangoHUD not found - render pipeline options disabled")
+                    widget.setToolTip("MangoHUD not found - Render pipeline options disabled")
 
         return render_pipeline_tab, widgets
 
