@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
         self.instance_checker = instance_checker
-        self.use_system_tray = True
+        self.use_system_tray = False
         self.start_minimized = False
         self.start_maximized = False
         self.current_profile = "Default"

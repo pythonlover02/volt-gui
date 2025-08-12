@@ -261,7 +261,7 @@ class OptionsManager:
         Set default values for all widgets.
         """
         self.widgets['theme_combo'].setCurrentText("amd")
-        self.widgets['tray_combo'].setCurrentText("enable")
+        self.widgets['tray_combo'].setCurrentText("disable")
         self.widgets['transparency_combo'].setCurrentText("enable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
         self.widgets['start_maximized_combo'].setCurrentText("disable")
@@ -272,7 +272,7 @@ class OptionsManager:
         Apply values from options file to widgets.
         """
         self.widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
-        self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="enable"))
+        self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="disable"))
         self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="enable"))
         self.widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
         self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
