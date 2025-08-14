@@ -120,7 +120,6 @@ class KernelManager:
             with open(setting_path, 'r') as f:
                 return f.read().strip()
         except Exception as e:
-            print(f"Error reading kernel setting {setting_path}: {e}")
             return None
 
     @staticmethod
@@ -140,10 +139,8 @@ class KernelManager:
                 if values:
                     return values[0]
                 else:
-                    print(f"Warning: No values found in dynamic setting {setting_path}")
                     return None
         except Exception as e:
-            print(f"Error reading dynamic kernel setting {setting_path}: {e}")
             return None
 
     @staticmethod
@@ -162,10 +159,8 @@ class KernelManager:
             if possible_values:
                 return possible_values
             else:
-                print(f"Warning: No possible values found in dynamic setting {setting_path}")
                 return None
         except Exception as e:
-            print(f"Error reading possible values for {setting_path}: {e}")
             return None
 
     @staticmethod
@@ -264,7 +259,7 @@ class KernelManager:
         
         if not is_accessible:
             input_widget.setEnabled(False)
-            input_widget.setToolTip(f"Kernel setting not avaliable - {setting_name} disabled")
+            input_widget.setToolTip(f"Setting file its not available - {setting_name} disabled")
         
         widgets[f'{setting_name}_input'] = input_widget
         widgets[f'{setting_name}_current_value'] = current_value_label
