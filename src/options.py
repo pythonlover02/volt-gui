@@ -262,7 +262,7 @@ class OptionsManager:
         """
         self.widgets['theme_combo'].setCurrentText("amd")
         self.widgets['tray_combo'].setCurrentText("disable")
-        self.widgets['transparency_combo'].setCurrentText("enable")
+        self.widgets['transparency_combo'].setCurrentText("disable")
         self.widgets['start_minimized_combo'].setCurrentText("disable")
         self.widgets['start_maximized_combo'].setCurrentText("disable")
         self.widgets['welcome_message_combo'].setCurrentText("enable")
@@ -273,7 +273,7 @@ class OptionsManager:
         """
         self.widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
         self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="disable"))
-        self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="enable"))
+        self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="disable"))
         self.widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
         self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
         self.widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
