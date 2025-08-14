@@ -25,6 +25,7 @@ A graphical user interface for configuring GPU related environment variables and
 
 - CPU Management
   - Governor Selection: Choose from available CPU governors
+  - Adjust the maximum and minimum CPU frequencies within the permitted range.
   - Scheduler Configuration: Select CPU pluggable schedulers (requires [scx](https://github.com/sched-ext/scx) and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`)
 - GPU Configuration
   - Mesa Drivers: Configure Mesa Drivers specific environment variables
