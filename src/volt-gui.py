@@ -158,9 +158,6 @@ class MainWindow(QMainWindow):
         self.apply_dark_theme()
         self.setup_ui()
         
-        if self.use_system_tray:
-            self.setup_system_tray()
-
         self.update_quit_behavior()
         self.setup_refresh_timer()
         self.load_saved_settings()
