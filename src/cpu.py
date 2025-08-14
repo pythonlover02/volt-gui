@@ -154,7 +154,7 @@ class CPUManager:
         widgets = {}
         
         gov_layout = QHBoxLayout()
-        gov_label = QLabel("CPU Governor:")
+        gov_label = QLabel("Governor:")
         gov_label.setWordWrap(True)
         gov_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
@@ -184,7 +184,7 @@ class CPUManager:
         freq_info_accessible = min_freq_mhz is not None and max_freq_mhz is not None
 
         max_freq_layout = QHBoxLayout()
-        max_freq_label = QLabel("CPU Max Frequency (MHz):")
+        max_freq_label = QLabel("Max Frequency (MHz):")
         max_freq_label.setWordWrap(True)
         max_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
@@ -215,7 +215,7 @@ class CPUManager:
         scroll_layout.addWidget(widgets['current_max_freq_value'])
 
         min_freq_layout = QHBoxLayout()
-        min_freq_label = QLabel("CPU Min Frequency (MHz):")
+        min_freq_label = QLabel("Min Frequency (MHz):")
         min_freq_label.setWordWrap(True)
         min_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -246,7 +246,7 @@ class CPUManager:
         scroll_layout.addWidget(widgets['current_min_freq_value'])
         
         sched_layout = QHBoxLayout()
-        sched_label = QLabel("Pluggable CPU Scheduler:")
+        sched_label = QLabel("Pluggable Scheduler:")
         sched_label.setWordWrap(True)
         sched_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
