@@ -146,9 +146,9 @@ class MainWindow(QMainWindow):
         self.gpu_widgets = {}
         self.extras_widgets = {}
         self.about_widgets = {}
+        self.options_widgets = {}
         
         self.welcome_window = None
-        self.options_manager = None
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
         
-        if self.options_manager and self.options_manager.get_welcome_message_setting():
+        if OptionsManager.get_welcome_message_setting(self.options_widgets):
             QTimer.singleShot(100, self.show_welcome_window)
         
         if not self.start_minimized:
@@ -192,10 +192,7 @@ class MainWindow(QMainWindow):
         self.setup_kernel_tab()
         self.setup_launch_options_tab()
         self.setup_extras_tab()
-
-        self.options_manager = OptionsManager(self.tab_widget, self)
-        self.tab_widget.addTab(self.options_manager.get_widget(), "Options")
-        
+        self.setup_options_tab()
         self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
@@ -311,6 +308,14 @@ class MainWindow(QMainWindow):
         """
         extras_tab, self.extras_widgets = ExtrasManager.create_extras_tab()
         self.tab_widget.addTab(extras_tab, "Extras")
+
+    def setup_options_tab(self):
+        """
+        Set up the options tab.
+        """
+        options_tab, self.options_widgets = OptionsManager.create_options_tab(self)
+        self.options_widgets['options_apply_button'].clicked.connect(lambda: OptionsManager.save_and_apply_options(self.options_widgets))
+        self.tab_widget.addTab(options_tab, "Options")
 
     def setup_about_tab(self):
         """
@@ -442,6 +447,8 @@ class MainWindow(QMainWindow):
                 self.disk_widgets, 
                 self.current_profile
             )
+            
+            OptionsManager.load_options(self.options_widgets)
         except Exception as e:
             print(f"Warning: Failed to load settings: {e}")
 
@@ -758,8 +765,7 @@ class MainWindow(QMainWindow):
         """
         self.save_settings()
         ConfigManager.save_current_profile_preference(self.current_profile)
-        if self.options_manager:
-            self.options_manager.save_options()
+        OptionsManager.save_options(self.options_widgets)
         self.instance_checker.cleanup()
         
         if self.welcome_window:
