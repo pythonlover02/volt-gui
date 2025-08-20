@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel, QSizePolicy, QMainWindow, QApplication, QPushButton, QStackedWidget, QFrame, QTextEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel, QSizePolicy, QMainWindow, QApplication, QPushButton, QStackedWidget, QFrame, QTextEdit, QGraphicsOpacityEffect
 from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QCursor
 

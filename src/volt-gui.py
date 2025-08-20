@@ -3,7 +3,6 @@ import os
 import signal
 import socket
 import threading
-from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
 from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
