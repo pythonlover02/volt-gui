@@ -37,6 +37,7 @@ class WelcomeManager:
             "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
                         "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
                         "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                        "\n\n• On the Kernel settings you can modify parameters related to RAM, CPU, Network, and more. I do my best to provide the most accurate recommended values and descriptions possible. If you find any errors or have a way to make them better, please feel free to report them on GitHub."
                         "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
                         "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
                         "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
