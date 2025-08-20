@@ -38,64 +38,64 @@ A graphical user interface for configuring GPU related environment variables and
 - Kernel Configuration
   - Choose /proc/sys/vm/compaction_proactiveness value
   - Choose /proc/sys/vm/watermark_boost_factor value
+  - Choose /proc/sys/vm/watermark_scale_factor value
+  - Choose /proc/sys/vm/extfrag_threshold value
+  - Choose /proc/sys/vm/compact_unevictable_allowed value
+  - Choose /proc/sys/vm/defrag_mode value
   - Choose /proc/sys/vm/min_free_kbytes value
-  - Choose /proc/sys/vm/max_map_count value
-  - Choose /proc/sys/vm/swappiness value
-  - Choose /proc/sys/vm/dirty_ratio value
-  - Choose /proc/sys/vm/dirty_background_ratio value
-  - Choose /proc/sys/vm/dirty_expire_centisecs value
-  - Choose /proc/sys/vm/dirty_writeback_centisecs value
-  - Choose /proc/sys/vm/vfs_cache_pressure value
-  - Choose /sys/kernel/mm/transparent_hugepage/enabled value
-  - Choose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
-  - Choose /sys/kernel/mm/transparent_hugepage/defrag value
-  - Choose /proc/sys/vm/zone_reclaim_mode value
-  - Choose /proc/sys/vm/page_lock_unfairness value
-  - Choose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
-  - Choose /proc/sys/kernel/sched_autogroup_enabled value
-  - Choose /proc/sys/kernel/watchdog value
-  - Choose /proc/sys/kernel/nmi_watchdog value
-  - Choose /proc/sys/vm/laptop_mode value
-  - Choose /proc/sys/kernel/numa_balancing value
   - Choose /proc/sys/vm/overcommit_memory value
   - Choose /proc/sys/vm/overcommit_ratio value
   - Choose /proc/sys/vm/admin_reserve_kbytes value
   - Choose /proc/sys/vm/user_reserve_kbytes value
-  - Choose /proc/sys/vm/min_unmapped_ratio value
-  - Choose /proc/sys/vm/extfrag_threshold value
-  - Choose /proc/sys/vm/page-cluster value
-  - Choose /proc/sys/vm/percpu_pagelist_high_fraction value
+  - Choose /proc/sys/vm/max_map_count value
   - Choose /proc/sys/vm/mmap_min_addr value
+  - Choose /proc/sys/vm/page_lock_unfairness value
+  - Choose /proc/sys/vm/swappiness value
+  - Choose /proc/sys/vm/page-cluster value
+  - Choose /proc/sys/vm/vfs_cache_pressure value
+  - Choose /proc/sys/vm/percpu_pagelist_high_fraction value
+  - Choose /proc/sys/vm/zone_reclaim_mode value
+  - Choose /proc/sys/vm/min_unmapped_ratio value
+  - Choose /proc/sys/vm/min_slab_ratio value
+  - Choose /proc/sys/vm/numa_stat value
   - Choose /proc/sys/vm/oom_kill_allocating_task value
-  - Choose /proc/sys/vm/stat_interval value
-  - Choose /proc/sys/kernel/randomize_va_space value
+  - Choose /proc/sys/vm/oom_dump_tasks value
+  - Choose /proc/sys/vm/panic_on_oom value
+  - Choose /proc/sys/vm/dirty_ratio value
+  - Choose /proc/sys/vm/dirty_background_ratio value
   - Choose /proc/sys/vm/dirty_bytes value
   - Choose /proc/sys/vm/dirty_background_bytes value
+  - Choose /proc/sys/vm/dirty_expire_centisecs value
+  - Choose /proc/sys/vm/dirty_writeback_centisecs value
+  - Choose /proc/sys/vm/dirtytime_expire_seconds value
+  - Choose /proc/sys/vm/laptop_mode value
+  - Choose /proc/sys/vm/nr_hugepages value
+  - Choose /proc/sys/vm/nr_overcommit_hugepages value
+  - Choose /proc/sys/vm/hugetlb_optimize_vmemmap value
+  - Choose /proc/sys/vm/stat_interval value
+  - Choose /sys/kernel/mm/transparent_hugepage/enabled value
+  - Choose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
+  - Choose /sys/kernel/mm/transparent_hugepage/defrag value
+  - Choose /sys/class/rtc/rtc0/max_user_freq value
+  - Choose /proc/sys/kernel/numa_balancing value
+  - Choose /proc/sys/kernel/randomize_va_space value
+  - Choose /proc/sys/kernel/perf_event_paranoid value
+  - Choose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
+  - Choose /proc/sys/kernel/sched_autogroup_enabled value
   - Choose /proc/sys/kernel/sched_rt_runtime_us value
+  - Choose /proc/sys/kernel/sched_rt_period_us value
   - Choose /proc/sys/kernel/sched_schedstats value
   - Choose /proc/sys/kernel/timer_migration value
-  - Choose /proc/sys/kernel/perf_event_paranoid value
+  - Choose /proc/sys/kernel/watchdog value
+  - Choose /proc/sys/kernel/nmi_watchdog value
   - Choose /proc/sys/kernel/hung_task_timeout_secs value
   - Choose /proc/sys/kernel/pid_max value
-  - Choose /sys/class/rtc/rtc0/max_user_freq value
   - Choose /proc/sys/fs/file-max value
   - Choose /proc/sys/net/core/rmem_max value
   - Choose /proc/sys/net/core/wmem_max value
   - Choose /proc/sys/net/ipv4/tcp_fastopen value
-  - Choose /proc/sys/vm/watermark_scale_factor value
-  - Choose /proc/sys/vm/oom_dump_tasks value
-  - Choose /proc/sys/vm/panic_on_oom value
-  - Choose /proc/sys/vm/dirtytime_expire_seconds value
-  - Choose /proc/sys/kernel/sched_rt_period_us value
   - Choose /proc/sys/net/ipv4/tcp_window_scaling value
   - Choose /proc/sys/net/ipv4/tcp_timestamps value
-  - Choose /proc/sys/vm/nr_hugepages value
-  - Choose /proc/sys/vm/nr_overcommit_hugepages value
-  - Choose /proc/sys/vm/hugetlb_optimize_vmemmap value
-  - Choose /proc/sys/vm/compact_unevictable_allowed value
-  - Choose /proc/sys/vm/defrag_mode value
-  - Choose /proc/sys/vm/min_slab_ratio value
-  - Choose /proc/sys/vm/numa_stat value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, example:
   ```

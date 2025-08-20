@@ -24,54 +24,24 @@ class KernelManager:
             'text': 'Controls kswapd aggressiveness (units of 10,000). Higher values mean more free memory maintained. Default is 10 (0.1% of memory).\nRecommended: 10 (default) or higher for latency-sensitive workloads',
             'is_dynamic': False
         },
+        'extfrag_threshold': {
+            'path': '/proc/sys/vm/extfrag_threshold',
+            'text': 'External fragmentation threshold that triggers compaction (0-1000). Higher values reduce compaction overhead.\nRecommended: 500',
+            'is_dynamic': False
+        },
+        'compact_unevictable_allowed': {
+            'path': '/proc/sys/vm/compact_unevictable_allowed',
+            'text': 'Allow compaction to examine unevictable (mlocked) pages. May cause minor page faults but improves compaction effectiveness.\nRecommended: 1 (default), 0 for RT systems',
+            'is_dynamic': False
+        },
+        'defrag_mode': {
+            'path': '/proc/sys/vm/defrag_mode',
+            'text': 'Proactive fragmentation prevention for hugepage allocations. Reduces long-term fragmentation at cost of immediate overhead.\nRecommended: 0(less overhead), 1 (for long-running systems)',
+            'is_dynamic': False
+        },
         'min_free_kbytes': {
             'path': '/proc/sys/vm/min_free_kbytes',
             'text': 'Minimum reserved memory. Do not set below 1024 KB or above 5% of system memory.\nRecommended values: 1024-...',
-            'is_dynamic': False
-        },
-        'max_map_count': {
-            'path': '/proc/sys/vm/max_map_count',
-            'text': 'Maximum memory mappings per process. Essential for applications using many shared libraries and memory-mapped files.\nRecommended: 2147483642 (SteamDeck Value) or 1048576 (Arch Linux)',
-            'is_dynamic': False
-        },
-        'swappiness': {
-            'path': '/proc/sys/vm/swappiness',
-            'text': 'Kernel preference for swap vs RAM reclaim (0-200). Lower values prioritize keeping data in RAM for latency-sensitive workloads.\nRecommended: 10 (16GB+ RAM), 30-60 (8GB RAM)',
-            'is_dynamic': False
-        },
-        'vfs_cache_pressure': {
-            'path': '/proc/sys/vm/vfs_cache_pressure',
-            'text': 'Tendency to reclaim filesystem caches relative to pagecache/swap. Lower values improve asset loading performance by keeping metadata cached.\nRecommended: 50',
-            'is_dynamic': False
-        },
-        'thp_enabled': {
-            'path': '/sys/kernel/mm/transparent_hugepage/enabled',
-            'text': 'Transparent Huge Pages reduce TLB pressure but may cause allocation stalls. "madvise" enables only where beneficial.\nRecommended: madvise',
-            'is_dynamic': True
-        },
-        'thp_shmem_enabled': {
-            'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled',
-            'text': 'THP for shared memory segments. "advise" enables only when explicitly requested.\nRecommended: advise',
-            'is_dynamic': True
-        },
-        'thp_defrag': {
-            'path': '/sys/kernel/mm/transparent_hugepage/defrag',
-            'text': 'THP defragmentation strategy. "defer" prevents allocation stalls during high-priority tasks.\nRecommended: defer',
-            'is_dynamic': True
-        },
-        'zone_reclaim_mode': {
-            'path': '/proc/sys/vm/zone_reclaim_mode',
-            'text': 'NUMA memory reclaim behavior (bitmask: 0=reclaim off 1=reclaim on, 2=write dirty pages, 4=swap pages). Usually degrades performance due to unnecessary reclaim overhead.\nRecommended: 0',
-            'is_dynamic': False
-        },
-        'page_lock_unfairness': {
-            'path': '/proc/sys/vm/page_lock_unfairness',
-            'text': 'Number of times page lock can be stolen from waiter before fair handoff. Higher values favor readers which can improve read performance for asset streaming workloads.\nRecommended: 5',
-            'is_dynamic': False
-        },
-        'numa_balancing': {
-            'path': '/proc/sys/kernel/numa_balancing',
-            'text': 'Automatic NUMA memory migration. Creates overhead without significant benefits for most workloads.\nRecommended: 0',
             'is_dynamic': False
         },
         'overcommit_memory': {
@@ -94,14 +64,24 @@ class KernelManager:
             'text': 'Memory reserved for user processes when overcommit_memory=2. Default: min(3% of process size, 128MB).\nRecommended: 131072',
             'is_dynamic': False
         },
-        'min_unmapped_ratio': {
-            'path': '/proc/sys/vm/min_unmapped_ratio',
-            'text': 'Minimum percentage of unmapped pages before zone reclaim (NUMA only). Higher values delay local reclaim, improving cache locality.\nRecommended: 1',
+        'max_map_count': {
+            'path': '/proc/sys/vm/max_map_count',
+            'text': 'Maximum memory mappings per process. Essential for applications using many shared libraries and memory-mapped files.\nRecommended: 2147483642 (SteamDeck Value) or 1048576 (Arch Linux)',
             'is_dynamic': False
         },
-        'extfrag_threshold': {
-            'path': '/proc/sys/vm/extfrag_threshold',
-            'text': 'External fragmentation threshold that triggers compaction (0-1000). Higher values reduce compaction overhead.\nRecommended: 500',
+        'mmap_min_addr': {
+            'path': '/proc/sys/vm/mmap_min_addr',
+            'text': 'Minimum virtual address for mmap operations. Security feature with minimal performance impact.\nRecommended: 65536',
+            'is_dynamic': False
+        },
+        'page_lock_unfairness': {
+            'path': '/proc/sys/vm/page_lock_unfairness',
+            'text': 'Number of times page lock can be stolen from waiter before fair handoff. Higher values favor readers which can improve read performance for asset streaming workloads.\nRecommended: 5',
+            'is_dynamic': False
+        },
+        'swappiness': {
+            'path': '/proc/sys/vm/swappiness',
+            'text': 'Kernel preference for swap vs RAM reclaim (0-200). Lower values prioritize keeping data in RAM for latency-sensitive workloads.\nRecommended: 10 (16GB+ RAM), 30-60 (8GB RAM)',
             'is_dynamic': False
         },
         'page-cluster': {
@@ -109,14 +89,34 @@ class KernelManager:
             'text': 'Number of pages to read/write together during swap operations as log2. Set to 0 for SSD-based systems.\nRecommended: 0',
             'is_dynamic': False
         },
+        'vfs_cache_pressure': {
+            'path': '/proc/sys/vm/vfs_cache_pressure',
+            'text': 'Tendency to reclaim filesystem caches relative to pagecache/swap. Lower values improve asset loading performance by keeping metadata cached.\nRecommended: 50',
+            'is_dynamic': False
+        },
         'percpu_pagelist_high_fraction': {
             'path': '/proc/sys/vm/percpu_pagelist_high_fraction',
             'text': 'Per-CPU page list size as fraction of zone size (0=default kernel algorithm, min value is 8). Higher values reduce contention on multi-core systems.\nRecommended: 8+ or 0 (reverts to the default behavior)',
             'is_dynamic': False
         },
-        'mmap_min_addr': {
-            'path': '/proc/sys/vm/mmap_min_addr',
-            'text': 'Minimum virtual address for mmap operations. Security feature with minimal performance impact.\nRecommended: 65536',
+        'zone_reclaim_mode': {
+            'path': '/proc/sys/vm/zone_reclaim_mode',
+            'text': 'NUMA memory reclaim behavior (bitmask: 0=reclaim off 1=reclaim on, 2=write dirty pages, 4=swap pages). Usually degrades performance due to unnecessary reclaim overhead.\nRecommended: 0',
+            'is_dynamic': False
+        },
+        'min_unmapped_ratio': {
+            'path': '/proc/sys/vm/min_unmapped_ratio',
+            'text': 'Minimum percentage of unmapped pages before zone reclaim (NUMA only). Higher values delay local reclaim, improving cache locality.\nRecommended: 1',
+            'is_dynamic': False
+        },
+        'min_slab_ratio': {
+            'path': '/proc/sys/vm/min_slab_ratio',
+            'text': 'Percentage of zone pages that must be reclaimable slab before zone reclaim (NUMA only). Higher values delay expensive remote allocation.\nRecommended: 5 (default), 3-8 range for tuning',
+            'is_dynamic': False
+        },
+        'numa_stat': {
+            'path': '/proc/sys/vm/numa_stat',
+            'text': 'Enable NUMA statistics collection. Disabling reduces allocation overhead but breaks monitoring tools.\nRecommended: 0 (performance), 1 (monitoring/debugging)',
             'is_dynamic': False
         },
         'oom_kill_allocating_task': {
@@ -134,11 +134,6 @@ class KernelManager:
             'text': 'System behavior on OOM: 0=kill process, 1=panic on system OOM, 2=always panic.\nRecommended: 0 (default behavior)',
             'is_dynamic': False
         },
-        'stat_interval': {
-            'path': '/proc/sys/vm/stat_interval',
-            'text': 'VM statistics update interval (seconds). Higher values reduce CPU overhead.\nRecommended: 10',
-            'is_dynamic': False
-        },
         'dirty_ratio': {
             'path': '/proc/sys/vm/dirty_ratio',
             'text': 'Maximum percentage of available memory for dirty pages before synchronous writes. Lower values reduce I/O latency spikes. Mutually exclusive with dirty_bytes.\nRecommended: 10',
@@ -149,16 +144,6 @@ class KernelManager:
             'text': 'Percentage of available memory at which background writeback begins. Should be 1/3 of dirty_ratio. Mutually exclusive with dirty_background_bytes.\nRecommended: 3',
             'is_dynamic': False
         },
-        'dirty_expire_centisecs': {
-            'path': '/proc/sys/vm/dirty_expire_centisecs',
-            'text': 'Maximum time dirty data remains in memory (centiseconds). Shorter intervals improve responsiveness.\nRecommended: 3000',
-            'is_dynamic': False
-        },
-        'dirty_writeback_centisecs': {
-            'path': '/proc/sys/vm/dirty_writeback_centisecs',
-            'text': 'Interval between periodic writeback wakeups (centiseconds). Longer intervals reduce CPU overhead.\nRecommended: 1500',
-            'is_dynamic': False
-        },
         'dirty_bytes': {
             'path': '/proc/sys/vm/dirty_bytes',
             'text': 'Absolute dirty memory limit (bytes). Provides consistent behavior regardless of RAM size. Mutually exclusive with dirty_ratio.\nRecommended: 67108864 (64MB)',
@@ -167,6 +152,16 @@ class KernelManager:
         'dirty_background_bytes': {
             'path': '/proc/sys/vm/dirty_background_bytes',
             'text': 'Absolute background writeback threshold (bytes). Should be 50% of dirty_bytes. Mutually exclusive with dirty_background_ratio.\nRecommended: 33554432 (32MB)',
+            'is_dynamic': False
+        },
+        'dirty_expire_centisecs': {
+            'path': '/proc/sys/vm/dirty_expire_centisecs',
+            'text': 'Maximum time dirty data remains in memory (centiseconds). Shorter intervals improve responsiveness.\nRecommended: 3000',
+            'is_dynamic': False
+        },
+        'dirty_writeback_centisecs': {
+            'path': '/proc/sys/vm/dirty_writeback_centisecs',
+            'text': 'Interval between periodic writeback wakeups (centiseconds). Longer intervals reduce CPU overhead.\nRecommended: 1500',
             'is_dynamic': False
         },
         'dirtytime_expire_seconds': {
@@ -194,29 +189,44 @@ class KernelManager:
             'text': 'Optimize hugepage metadata memory usage (saves ~7 pages per 2MB hugepage). May add overhead during allocation/deallocation.\nRecommended: 1 (enable for memory savings), 0 (disable for allocation speed)',
             'is_dynamic': False
         },
-        'compact_unevictable_allowed': {
-            'path': '/proc/sys/vm/compact_unevictable_allowed',
-            'text': 'Allow compaction to examine unevictable (mlocked) pages. May cause minor page faults but improves compaction effectiveness.\nRecommended: 1 (default), 0 for RT systems',
+        'stat_interval': {
+            'path': '/proc/sys/vm/stat_interval',
+            'text': 'VM statistics update interval (seconds). Higher values reduce CPU overhead.\nRecommended: 10',
             'is_dynamic': False
         },
-        'defrag_mode': {
-            'path': '/proc/sys/vm/defrag_mode',
-            'text': 'Proactive fragmentation prevention for hugepage allocations. Reduces long-term fragmentation at cost of immediate overhead.\nRecommended: 0(less overhead), 1 (for long-running systems)',
+        'thp_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/enabled',
+            'text': 'Transparent Huge Pages reduce TLB pressure but may cause allocation stalls. "madvise" enables only where beneficial.\nRecommended: madvise',
+            'is_dynamic': True
+        },
+        'thp_shmem_enabled': {
+            'path': '/sys/kernel/mm/transparent_hugepage/shmem_enabled',
+            'text': 'THP for shared memory segments. "advise" enables only when explicitly requested.\nRecommended: advise',
+            'is_dynamic': True
+        },
+        'thp_defrag': {
+            'path': '/sys/kernel/mm/transparent_hugepage/defrag',
+            'text': 'THP defragmentation strategy. "defer" prevents allocation stalls during high-priority tasks.\nRecommended: defer',
+            'is_dynamic': True
+        },
+        'max_user_freq': {
+            'path': '/sys/class/rtc/rtc0/max_user_freq',
+            'text': 'Maximum RTC interrupt frequency (Hz) for userspace. Higher values provide better timer precision.\nRecommended: 64',
             'is_dynamic': False
         },
-        'min_slab_ratio': {
-            'path': '/proc/sys/vm/min_slab_ratio',
-            'text': 'Percentage of zone pages that must be reclaimable slab before zone reclaim (NUMA only). Higher values delay expensive remote allocation.\nRecommended: 5 (default), 3-8 range for tuning',
-            'is_dynamic': False
-        },
-        'numa_stat': {
-            'path': '/proc/sys/vm/numa_stat',
-            'text': 'Enable NUMA statistics collection. Disabling reduces allocation overhead but breaks monitoring tools.\nRecommended: 0 (performance), 1 (monitoring/debugging)',
+        'numa_balancing': {
+            'path': '/proc/sys/kernel/numa_balancing',
+            'text': 'Automatic NUMA memory migration. Creates overhead without significant benefits for most workloads.\nRecommended: 0',
             'is_dynamic': False
         },
         'randomize_va_space': {
             'path': '/proc/sys/kernel/randomize_va_space',
             'text': 'Address space layout randomization: 0=disabled, 1=conservative, 2=full. Lower values reduce address translation overhead.\nRecommended: 0 (performance), 2 (security)',
+            'is_dynamic': False
+        },
+        'perf_event_paranoid': {
+            'path': '/proc/sys/kernel/perf_event_paranoid',
+            'text': 'Performance monitoring access: -1=unrestricted, 0=user+kernel, 1=user only, 2=kernel only, 3=no access.\nRecommended: 2',
             'is_dynamic': False
         },
         'sched_cfs_bandwidth_slice_us': {
@@ -259,11 +269,6 @@ class KernelManager:
             'text': 'NMI-based hard lockup detection. Disables performance-counter based monitoring.\nRecommended: 0',
             'is_dynamic': False
         },
-        'perf_event_paranoid': {
-            'path': '/proc/sys/kernel/perf_event_paranoid',
-            'text': 'Performance monitoring access: -1=unrestricted, 0=user+kernel, 1=user only, 2=kernel only, 3=no access.\nRecommended: 2',
-            'is_dynamic': False
-        },
         'hung_task_timeout_secs': {
             'path': '/proc/sys/kernel/hung_task_timeout_secs',
             'text': 'Timeout for detecting hung tasks (seconds). 0 disables detection to prevent false positives during long sessions.\nRecommended: 0 or 120 (Default)',
@@ -272,11 +277,6 @@ class KernelManager:
         'pid_max': {
             'path': '/proc/sys/kernel/pid_max',
             'text': 'Maximum process ID value. Higher values support systems running many concurrent processes.\nRecommended: 4194304',
-            'is_dynamic': False
-        },
-        'max_user_freq': {
-            'path': '/sys/class/rtc/rtc0/max_user_freq',
-            'text': 'Maximum RTC interrupt frequency (Hz) for userspace. Higher values provide better timer precision.\nRecommended: 64',
             'is_dynamic': False
         },
         'file_max': {
