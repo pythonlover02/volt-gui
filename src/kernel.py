@@ -96,7 +96,7 @@ class KernelManager:
         },
         'min_unmapped_ratio': {
             'path': '/proc/sys/vm/min_unmapped_ratio',
-            'text': 'Minimum percentage of unmapped pages before zone reclaim (NUMA only).\nRecommended: 1',
+            'text': 'Minimum percentage of unmapped pages before zone reclaim (NUMA only). Higher values delay local reclaim, improving cache locality.\nRecommended: 1',
             'is_dynamic': False
         },
         'extfrag_threshold': {
@@ -177,6 +177,41 @@ class KernelManager:
         'laptop_mode': {
             'path': '/proc/sys/vm/laptop_mode',
             'text': 'Power-saving write delay mechanism. Disable for performance-oriented systems.\nRecommended: 0',
+            'is_dynamic': False
+        },
+        'nr_hugepages': {
+            'path': '/proc/sys/vm/nr_hugepages',
+            'text': 'Number of persistent hugepages allocated. Critical for applications requiring guaranteed hugepage memory (databases, VMs, HPC).\nRecommended: 0 (default), or calculated based on application needs',
+            'is_dynamic': False
+        },
+        'nr_overcommit_hugepages': {
+            'path': '/proc/sys/vm/nr_overcommit_hugepages',
+            'text': 'Maximum number of additional hugepages that can be allocated dynamically beyond nr_hugepages.\nRecommended: 0 (conservative), or set based on peak demand',
+            'is_dynamic': False
+        },
+        'hugetlb_optimize_vmemmap': {
+            'path': '/proc/sys/vm/hugetlb_optimize_vmemmap',
+            'text': 'Optimize hugepage metadata memory usage (saves ~7 pages per 2MB hugepage). May add overhead during allocation/deallocation.\nRecommended: 1 (enable for memory savings), 0 (disable for allocation speed)',
+            'is_dynamic': False
+        },
+        'compact_unevictable_allowed': {
+            'path': '/proc/sys/vm/compact_unevictable_allowed',
+            'text': 'Allow compaction to examine unevictable (mlocked) pages. May cause minor page faults but improves compaction effectiveness.\nRecommended: 1 (default), 0 for RT systems',
+            'is_dynamic': False
+        },
+        'defrag_mode': {
+            'path': '/proc/sys/vm/defrag_mode',
+            'text': 'Proactive fragmentation prevention for hugepage allocations. Reduces long-term fragmentation at cost of immediate overhead.\nRecommended: 0(less overhead), 1 (for long-running systems)',
+            'is_dynamic': False
+        },
+        'min_slab_ratio': {
+            'path': '/proc/sys/vm/min_slab_ratio',
+            'text': 'Percentage of zone pages that must be reclaimable slab before zone reclaim (NUMA only). Higher values delay expensive remote allocation.\nRecommended: 5 (default), 3-8 range for tuning',
+            'is_dynamic': False
+        },
+        'numa_stat': {
+            'path': '/proc/sys/vm/numa_stat',
+            'text': 'Enable NUMA statistics collection. Disabling reduces allocation overhead but breaks monitoring tools.\nRecommended: 0 (performance), 1 (monitoring/debugging)',
             'is_dynamic': False
         },
         'randomize_va_space': {

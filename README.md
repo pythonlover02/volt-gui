@@ -89,6 +89,13 @@ A graphical user interface for configuring GPU related environment variables and
   - Choose /proc/sys/kernel/sched_rt_period_us value
   - Choose /proc/sys/net/ipv4/tcp_window_scaling value
   - Choose /proc/sys/net/ipv4/tcp_timestamps value
+  - Choose /proc/sys/vm/nr_hugepages value
+  - Choose /proc/sys/vm/nr_overcommit_hugepages value
+  - Choose /proc/sys/vm/hugetlb_optimize_vmemmap value
+  - Choose /proc/sys/vm/compact_unevictable_allowed value
+  - Choose /proc/sys/vm/defrag_mode value
+  - Choose /proc/sys/vm/min_slab_ratio value
+  - Choose /proc/sys/vm/numa_stat value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, example:
   ```
