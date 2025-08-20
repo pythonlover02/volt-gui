@@ -56,6 +56,39 @@ A graphical user interface for configuring GPU related environment variables and
   - Choose /proc/sys/kernel/watchdog value
   - Choose /proc/sys/kernel/nmi_watchdog value
   - Choose /proc/sys/vm/laptop_mode value
+  - Choose /proc/sys/kernel/numa_balancing value
+  - Choose /proc/sys/vm/overcommit_memory value
+  - Choose /proc/sys/vm/overcommit_ratio value
+  - Choose /proc/sys/vm/admin_reserve_kbytes value
+  - Choose /proc/sys/vm/user_reserve_kbytes value
+  - Choose /proc/sys/vm/min_unmapped_ratio value
+  - Choose /proc/sys/vm/extfrag_threshold value
+  - Choose /proc/sys/vm/page-cluster value
+  - Choose /proc/sys/vm/percpu_pagelist_high_fraction value
+  - Choose /proc/sys/vm/mmap_min_addr value
+  - Choose /proc/sys/vm/oom_kill_allocating_task value
+  - Choose /proc/sys/vm/stat_interval value
+  - Choose /proc/sys/kernel/randomize_va_space value
+  - Choose /proc/sys/vm/dirty_bytes value
+  - Choose /proc/sys/vm/dirty_background_bytes value
+  - Choose /proc/sys/kernel/sched_rt_runtime_us value
+  - Choose /proc/sys/kernel/sched_schedstats value
+  - Choose /proc/sys/kernel/timer_migration value
+  - Choose /proc/sys/kernel/perf_event_paranoid value
+  - Choose /proc/sys/kernel/hung_task_timeout_secs value
+  - Choose /proc/sys/kernel/pid_max value
+  - Choose /sys/class/rtc/rtc0/max_user_freq value
+  - Choose /proc/sys/fs/file-max value
+  - Choose /proc/sys/net/core/rmem_max value
+  - Choose /proc/sys/net/core/wmem_max value
+  - Choose /proc/sys/net/ipv4/tcp_fastopen value
+  - Choose /proc/sys/vm/watermark_scale_factor value
+  - Choose /proc/sys/vm/oom_dump_tasks value
+  - Choose /proc/sys/vm/panic_on_oom value
+  - Choose /proc/sys/vm/dirtytime_expire_seconds value
+  - Choose /proc/sys/kernel/sched_rt_period_us value
+  - Choose /proc/sys/net/ipv4/tcp_window_scaling value
+  - Choose /proc/sys/net/ipv4/tcp_timestamps value
 
 - Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, example:
   ```
