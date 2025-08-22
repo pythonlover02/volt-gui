@@ -349,24 +349,29 @@ class WelcomeManager:
     @staticmethod
     def finish_wizard(widgets):
         """
-        Finish the wizard and emit the finished signal if available.
+        Finish the wizard and close the window.
         """
-        if 'finished_callback' in widgets and widgets['finished_callback']:
-            widgets['finished_callback']()
+        if 'welcome_window' in widgets and widgets['welcome_window']:
+            widgets['welcome_window'].close()
 
     @staticmethod
-    def create_welcome_tab():
+    def create_welcome_window(main_window):
         """
-        Creates and returns the welcome tab widget.
+        Creates a separate welcome window with the welcome wizard.
         """
-        welcome_tab = QWidget()
-        main_layout = QVBoxLayout(welcome_tab)
+        welcome_window = QMainWindow()
+        welcome_window.setWindowTitle("volt-gui - Welcome Setup")
+        welcome_window.setMinimumSize(540, 380)
+        welcome_window.setAttribute(Qt.WA_DeleteOnClose, False)
+
+        central_widget = QWidget()
+        main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(16)
         
         widgets = {}
         widgets['current_step'] = 0
-        
+        widgets['welcome_window'] = welcome_window
         widgets['stacked_widget'] = QStackedWidget()
         
         for i, section in enumerate(WelcomeManager.WELCOME_SECTIONS):
@@ -381,21 +386,6 @@ class WelcomeManager:
         widgets['finish_button'].clicked.connect(lambda: WelcomeManager.finish_wizard(widgets))
         
         WelcomeManager.update_navigation(widgets)
-        
-        return welcome_tab, widgets
-
-    @staticmethod
-    def create_welcome_window(main_window):
-        """
-        Creates a separate welcome window with the welcome wizard.
-        """
-        welcome_window = QMainWindow()
-        welcome_window.setWindowTitle("volt-gui - Welcome Setup")
-        welcome_window.setMinimumSize(540, 380)
-        welcome_window.setAttribute(Qt.WA_DeleteOnClose, False)
-        
-        welcome_tab, widgets = WelcomeManager.create_welcome_tab()
-        widgets['finished_callback'] = welcome_window.close
-        welcome_window.setCentralWidget(welcome_tab)
+        welcome_window.setCentralWidget(central_widget)
         
         return welcome_window
