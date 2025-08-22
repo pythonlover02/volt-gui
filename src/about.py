@@ -13,7 +13,7 @@ class AboutManager:
             {"label": "Description", "text": "Simple GUI program for modifying and creating the `volt` script and more. Providing an intuitive interface for configuration management, with the objective of getting the maximum performance posible of a PC"},
             {"label": "License", "text": "GPL-3.0 License"},
             {"label": "Author", "text": "pythonlover02"},
-            {"label": "Version", "text": "1.1.1"},
+            {"label": "Version", "text": "1.2.0"},
         ]
     
     @staticmethod

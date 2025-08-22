@@ -45,6 +45,8 @@ class ConfigManager:
         
         config['CPU'] = {
             'governor': cpu_widgets['gov_combo'].currentText(),
+            'max_freq': cpu_widgets['max_freq_combo'].currentText(),
+            'min_freq': cpu_widgets['min_freq_combo'].currentText(),
             'scheduler': cpu_widgets['sched_combo'].currentText()
         }
         
@@ -106,6 +108,8 @@ class ConfigManager:
         
         if 'CPU' in config:
             cpu_widgets['gov_combo'].setCurrentText(config['CPU'].get('governor', 'unset'))
+            cpu_widgets['max_freq_combo'].setCurrentText(config['CPU'].get('max_freq', 'unset'))
+            cpu_widgets['min_freq_combo'].setCurrentText(config['CPU'].get('min_freq', 'unset'))
             cpu_widgets['sched_combo'].setCurrentText(config['CPU'].get('scheduler', 'unset'))
         
         if 'Mesa' in config and 'mesa' in gpu_widgets:

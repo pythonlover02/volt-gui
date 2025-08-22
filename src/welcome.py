@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel, QSizePolicy, QMainWindow, QApplication, QPushButton, QStackedWidget, QFrame, QTextEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel, QSizePolicy, QMainWindow, QApplication, QPushButton, QStackedWidget, QFrame, QTextEdit, QGraphicsOpacityEffect
 from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QCursor
 
@@ -37,6 +37,7 @@ class WelcomeManager:
             "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
                         "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
                         "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                        "\n\n• On the Kernel settings you can modify parameters related to RAM, CPU, Network, and more. I do my best to provide the most accurate recommended values and descriptions possible. If you find any errors or have a way to make them better, please feel free to report them on GitHub."
                         "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
                         "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
                         "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
@@ -348,24 +349,29 @@ class WelcomeManager:
     @staticmethod
     def finish_wizard(widgets):
         """
-        Finish the wizard and emit the finished signal if available.
+        Finish the wizard and close the window.
         """
-        if 'finished_callback' in widgets and widgets['finished_callback']:
-            widgets['finished_callback']()
+        if 'welcome_window' in widgets and widgets['welcome_window']:
+            widgets['welcome_window'].close()
 
     @staticmethod
-    def create_welcome_tab():
+    def create_welcome_window(main_window):
         """
-        Creates and returns the welcome tab widget.
+        Creates a separate welcome window with the welcome wizard.
         """
-        welcome_tab = QWidget()
-        main_layout = QVBoxLayout(welcome_tab)
+        welcome_window = QMainWindow()
+        welcome_window.setWindowTitle("volt-gui - Welcome Setup")
+        welcome_window.setMinimumSize(540, 380)
+        welcome_window.setAttribute(Qt.WA_DeleteOnClose, False)
+
+        central_widget = QWidget()
+        main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(16)
         
         widgets = {}
         widgets['current_step'] = 0
-        
+        widgets['welcome_window'] = welcome_window
         widgets['stacked_widget'] = QStackedWidget()
         
         for i, section in enumerate(WelcomeManager.WELCOME_SECTIONS):
@@ -380,21 +386,6 @@ class WelcomeManager:
         widgets['finish_button'].clicked.connect(lambda: WelcomeManager.finish_wizard(widgets))
         
         WelcomeManager.update_navigation(widgets)
-        
-        return welcome_tab, widgets
-
-    @staticmethod
-    def create_welcome_window(main_window):
-        """
-        Creates a separate welcome window with the welcome wizard.
-        """
-        welcome_window = QMainWindow()
-        welcome_window.setWindowTitle("volt-gui - Welcome Setup")
-        welcome_window.setMinimumSize(540, 380)
-        welcome_window.setAttribute(Qt.WA_DeleteOnClose, False)
-        
-        welcome_tab, widgets = WelcomeManager.create_welcome_tab()
-        widgets['finished_callback'] = welcome_window.close
-        welcome_window.setCentralWidget(welcome_tab)
+        welcome_window.setCentralWidget(central_widget)
         
         return welcome_window
