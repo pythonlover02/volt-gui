@@ -136,12 +136,12 @@ If this software is not provided, its options will be locked.
    
    Using Pyinstaller:
    ```bash
-   ./build-pyinstaller.sh
+   ./make-pyinstaller.sh
    ```
    
    Using Nuitka:
    ```bash
-   ./build-nuitka.sh
+   ./make-nuitka.sh
    ```
 
    *Note: Both use a Python virtual environment to avoid system wide package installation using pip*
@@ -220,8 +220,8 @@ volt flatpak run net.pcsx2.PCSX2
 
 ## Render Selector explained:
 
-- `Select OpenGL Renderer (Mesa)` Selects the GPU/Renderer that will be used to render OpenGL programs. Those GPUs are obtained trough `glxinfo`.
-- `Select Vulkan Renderer` Selects the GPU/Renderer that will be used to render Vulkan programs. Those GPUs are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux.
+- `Select OpenGL Renderer` Selects the GPU/Renderer that will be used to render OpenGL programs. Those GPUs are obtained trough `glxinfo`.
+- `Select Vulkan Renderer` Selects the GPU/Renderer that will be used to render Vulkan programs. Those GPUs are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux. More info its provided on the Welcome Window that opens once you open volt-gui.
 
 ## Technical References:
 

@@ -15,7 +15,7 @@ VENV_DIR="py_env"
 REQ_FILE="requirements.txt"
 REQ_HASH_FILE="$VENV_DIR/requirements.sha256"
 SRC_FILE="src/volt-gui.py"
-RELEASE_DIR="release"
+BIN_DIR="bin"
 BASE_FILENAME=$(basename "$SRC_FILE" .py)
 
 # Nuitka options for the application
@@ -83,10 +83,10 @@ build_executable() {
     fi
 }
 
-# Move to release directory
-move_to_release() {
-    mkdir -p "$RELEASE_DIR"
-    mv "$BASE_FILENAME" "$RELEASE_DIR/" 2>/dev/null || true
+# Move to bin directory
+move_to_bin() {
+    mkdir -p "$BIN_DIR"
+    mv "$BASE_FILENAME" "$BIN_DIR/" 2>/dev/null || true
 }
 
 # Main execution
@@ -102,14 +102,14 @@ main() {
     
     update_dependencies
     build_executable
-    move_to_release
+    move_to_bin
 
     echo -e "\n${GREEN}Build successful!${NC}"
-    echo -e "Executable: ${YELLOW}$RELEASE_DIR/$(basename "$BASE_FILENAME")${NC}"
+    echo -e "Executable: ${YELLOW}$BIN_DIR/$(basename "$BASE_FILENAME")${NC}"
     
     # Show file size
     if command -v du &> /dev/null; then
-        local size=$(du -h "$RELEASE_DIR"/* 2>/dev/null | cut -f1 || echo "Unknown")
+        local size=$(du -h "$BIN_DIR"/* 2>/dev/null | cut -f1 || echo "Unknown")
         echo -e "File size: ${YELLOW}$size${NC}"
     fi
 }
