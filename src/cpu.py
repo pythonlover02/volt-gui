@@ -10,9 +10,20 @@ class CPUManager:
     Main CPU management class that handles CPU governors and schedulers.
     """
     
-    CPU_GOVERNOR_PATH = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
     SCHEDULER_SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     BASE_SCHEDULERS = ["unset", "none"]
+
+    @staticmethod
+    def get_available_setting(setting_path):
+        """
+        Check if a CPU setting file is available.
+        """
+        try:
+            with open(setting_path, "r") as f:
+                f.read()
+            return True
+        except Exception:
+            return False
 
     @staticmethod
     def get_available_governors():
@@ -25,7 +36,27 @@ class CPUManager:
                 return ["unset"] + governors
         except Exception as e:
             print(f"Error reading available governors: {e}")
+            return ["unset"]
+
+    @staticmethod
+    def get_cpuinfo_min_freq():
+        """
+        Gets the minimum possible CPU frequency in MHz.
+        """
+        if not CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"):
             return None
+        with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", "r") as f:
+            return int(f.read().strip()) // 1000
+
+    @staticmethod
+    def get_cpuinfo_max_freq():
+        """
+        Gets the maximum possible CPU frequency in MHz.
+        """
+        if not CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"):
+            return None
+        with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", "r") as f:
+            return int(f.read().strip()) // 1000
 
     @staticmethod
     def get_available_schedulers():
@@ -56,6 +87,30 @@ class CPUManager:
                 return f.read().strip()
         except Exception as e:
             print(f"Error reading current governor: {e}")
+            return None
+
+    @staticmethod
+    def get_current_scaling_min_freq():
+        """
+        Gets the current scaling minimum CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading scaling_min_freq: {e}")
+            return None
+
+    @staticmethod
+    def get_current_scaling_max_freq():
+        """
+        Gets the current scaling maximum CPU frequency in MHz.
+        """
+        try:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r") as f:
+                return int(f.read().strip()) // 1000
+        except (IOError, ValueError, FileNotFoundError) as e:
+            print(f"Error reading scaling_max_freq: {e}")
             return None
 
     @staticmethod
@@ -99,7 +154,7 @@ class CPUManager:
         widgets = {}
         
         gov_layout = QHBoxLayout()
-        gov_label = QLabel("CPU Governor:")
+        gov_label = QLabel("Governor:")
         gov_label.setWordWrap(True)
         gov_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
@@ -111,6 +166,11 @@ class CPUManager:
         
         widgets['available_governors'] = available_governors
         
+        gov_accessible = CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+        if not gov_accessible:
+            widgets['gov_combo'].setEnabled(False)
+            widgets['gov_combo'].setToolTip("CPU Governor file its not available - Governor selection disabled")
+        
         gov_layout.addWidget(gov_label)
         gov_layout.addWidget(widgets['gov_combo'])
         scroll_layout.addLayout(gov_layout)
@@ -118,9 +178,75 @@ class CPUManager:
         widgets['current_gov_value'] = QLabel("Updating...")
         widgets['current_gov_value'].setContentsMargins(0, 0, 0, 10)
         scroll_layout.addWidget(widgets['current_gov_value'])
+
+        min_freq_mhz = CPUManager.get_cpuinfo_min_freq()
+        max_freq_mhz = CPUManager.get_cpuinfo_max_freq()
+        freq_info_accessible = min_freq_mhz is not None and max_freq_mhz is not None
+
+        max_freq_layout = QHBoxLayout()
+        max_freq_label = QLabel("Max Frequency (MHz):")
+        max_freq_label.setWordWrap(True)
+        max_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        widgets['max_freq_combo'] = QComboBox()
+        if freq_info_accessible:
+            freq_range = [str(f) for f in range(min_freq_mhz, max_freq_mhz + 100, 100)]
+            widgets['max_freq_combo'].addItems(["unset"] + list(reversed(freq_range)))
+        else:
+            widgets['max_freq_combo'].addItems(["unset"])
+        
+        widgets['max_freq_combo'].setCurrentText("unset")
+        widgets['max_freq_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        max_freq_accessible = CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq")
+        if not max_freq_accessible or not freq_info_accessible:
+            widgets['max_freq_combo'].setEnabled(False)
+            if not freq_info_accessible:
+                widgets['max_freq_combo'].setToolTip("CPU frequency info files not available - Max Frequency selection disabled")
+            else:
+                widgets['max_freq_combo'].setToolTip("CPU max frequency file its not available - Max Frequency selection disabled")
+        
+        max_freq_layout.addWidget(max_freq_label)
+        max_freq_layout.addWidget(widgets['max_freq_combo'])
+        scroll_layout.addLayout(max_freq_layout)
+
+        widgets['current_max_freq_value'] = QLabel("Updating...")
+        widgets['current_max_freq_value'].setContentsMargins(0, 0, 0, 10)
+        scroll_layout.addWidget(widgets['current_max_freq_value'])
+
+        min_freq_layout = QHBoxLayout()
+        min_freq_label = QLabel("Min Frequency (MHz):")
+        min_freq_label.setWordWrap(True)
+        min_freq_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        widgets['min_freq_combo'] = QComboBox()
+        
+        if freq_info_accessible:
+            widgets['min_freq_combo'].addItems(["unset"] + freq_range)
+        else:
+            widgets['min_freq_combo'].addItems(["unset"])
+        
+        widgets['min_freq_combo'].setCurrentText("unset")
+        widgets['min_freq_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        min_freq_accessible = CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq")
+        if not min_freq_accessible or not freq_info_accessible:
+            widgets['min_freq_combo'].setEnabled(False)
+            if not freq_info_accessible:
+                widgets['min_freq_combo'].setToolTip("CPU frequency info files not available - Min Frequency selection disabled")
+            else:
+                widgets['min_freq_combo'].setToolTip("CPU min frequency file its not available - Min Frequency selection disabled")
+
+        min_freq_layout.addWidget(min_freq_label)
+        min_freq_layout.addWidget(widgets['min_freq_combo'])
+        scroll_layout.addLayout(min_freq_layout)
+
+        widgets['current_min_freq_value'] = QLabel("Updating...")
+        widgets['current_min_freq_value'].setContentsMargins(0, 0, 0, 10)
+        scroll_layout.addWidget(widgets['current_min_freq_value'])
         
         sched_layout = QHBoxLayout()
-        sched_label = QLabel("Pluggable CPU Scheduler:")
+        sched_label = QLabel("Pluggable Scheduler:")
         sched_label.setWordWrap(True)
         sched_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
@@ -170,7 +296,7 @@ class CPUManager:
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(11, 10, 11, 9)
+        button_layout.setContentsMargins(11, 10, 11, 0)
 
         widgets['cpu_apply_button'] = QPushButton("Apply")
         widgets['cpu_apply_button'].setMinimumSize(100, 30)
@@ -181,18 +307,53 @@ class CPUManager:
         button_layout.addStretch(1)
         
         parent_layout.addWidget(button_container)
+        parent_layout.addSpacing(9)
 
     @staticmethod
     def refresh_cpu_values(widgets):
         """
         Updates the UI with current CPU governor and scheduler information.
         """
-        widgets['current_gov_value'].setText("Updating...")
-        try:
-            current_governor = CPUManager.get_current_governor()
-            widgets['current_gov_value'].setText(f"current: {current_governor}")
-        except Exception:
-            widgets['current_gov_value'].setText("Error")
+        if not CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"):
+            widgets['current_gov_value'].setText("current: unset")
+        else:
+            widgets['current_gov_value'].setText("Updating...")
+            try:
+                current_governor = CPUManager.get_current_governor()
+                if current_governor is not None:
+                    widgets['current_gov_value'].setText(f"current: {current_governor}")
+                else:
+                    widgets['current_gov_value'].setText("current: Error reading")
+            except Exception:
+                widgets['current_gov_value'].setText("current: Error")
+
+        if widgets.get('max_freq_combo'):
+            if not CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"):
+                widgets['current_max_freq_value'].setText("current: unset")
+            else:
+                widgets['current_max_freq_value'].setText("Updating...")
+                try:
+                    current_max_freq = CPUManager.get_current_scaling_max_freq()
+                    if current_max_freq is not None:
+                        widgets['current_max_freq_value'].setText(f"current: {current_max_freq}")
+                    else:
+                        widgets['current_max_freq_value'].setText("current: Error reading")
+                except Exception:
+                    widgets['current_max_freq_value'].setText("current: Error")
+
+        if widgets.get('min_freq_combo'):
+            if not CPUManager.get_available_setting("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq"):
+                widgets['current_min_freq_value'].setText("current: unset")
+            else:
+                widgets['current_min_freq_value'].setText("Updating...")
+                try:
+                    current_min_freq = CPUManager.get_current_scaling_min_freq()
+                    if current_min_freq is not None:
+                        widgets['current_min_freq_value'].setText(f"current: {current_min_freq}")
+                    else:
+                        widgets['current_min_freq_value'].setText("current: Error reading")
+                except Exception:
+                    widgets['current_min_freq_value'].setText("current: Error")
         
         widgets['current_sched_value'].setText("Updating...")
         try:
@@ -211,7 +372,10 @@ class CPUManager:
                     widgets['sched_combo'].addItems(widgets['available_schedulers'])
                     widgets['sched_combo'].setCurrentText(current_selection)
             
-            widgets['current_sched_value'].setText(f"current: {running_scheduler}")
+            if running_scheduler is not None:
+                widgets['current_sched_value'].setText(f"current: {running_scheduler}")
+            else:
+                widgets['current_sched_value'].setText("current: Error reading")
             
         except Exception:
-            widgets['current_sched_value'].setText("Error")
+            widgets['current_sched_value'].setText("current: Error")

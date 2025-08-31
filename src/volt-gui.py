@@ -3,7 +3,6 @@ import os
 import signal
 import socket
 import threading
-from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
 from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
@@ -136,7 +135,7 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
         self.instance_checker = instance_checker
-        self.use_system_tray = True
+        self.use_system_tray = False
         self.start_minimized = False
         self.start_maximized = False
         self.current_profile = "Default"
@@ -146,9 +145,9 @@ class MainWindow(QMainWindow):
         self.gpu_widgets = {}
         self.extras_widgets = {}
         self.about_widgets = {}
+        self.options_widgets = {}
         
         self.welcome_window = None
-        self.options_manager = None
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
         self.setWindowTitle("volt-gui")
@@ -158,9 +157,6 @@ class MainWindow(QMainWindow):
         self.apply_dark_theme()
         self.setup_ui()
         
-        if self.use_system_tray:
-            self.setup_system_tray()
-
         self.update_quit_behavior()
         self.setup_refresh_timer()
         self.load_saved_settings()
@@ -168,7 +164,7 @@ class MainWindow(QMainWindow):
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
         
-        if self.options_manager and self.options_manager.get_welcome_message_setting():
+        if OptionsManager.get_welcome_message_setting(self.options_widgets):
             QTimer.singleShot(100, self.show_welcome_window)
         
         if not self.start_minimized:
@@ -195,10 +191,7 @@ class MainWindow(QMainWindow):
         self.setup_kernel_tab()
         self.setup_launch_options_tab()
         self.setup_extras_tab()
-
-        self.options_manager = OptionsManager(self.tab_widget, self)
-        self.tab_widget.addTab(self.options_manager.get_widget(), "Options")
-        
+        self.setup_options_tab()
         self.setup_about_tab()
 
         main_layout.addWidget(self.tab_widget)
@@ -314,6 +307,14 @@ class MainWindow(QMainWindow):
         """
         extras_tab, self.extras_widgets = ExtrasManager.create_extras_tab()
         self.tab_widget.addTab(extras_tab, "Extras")
+
+    def setup_options_tab(self):
+        """
+        Set up the options tab.
+        """
+        options_tab, self.options_widgets = OptionsManager.create_options_tab(self)
+        self.options_widgets['options_apply_button'].clicked.connect(lambda: OptionsManager.save_and_apply_options(self.options_widgets))
+        self.tab_widget.addTab(options_tab, "Options")
 
     def setup_about_tab(self):
         """
@@ -445,6 +446,8 @@ class MainWindow(QMainWindow):
                 self.disk_widgets, 
                 self.current_profile
             )
+            
+            OptionsManager.load_options(self.options_widgets)
         except Exception as e:
             print(f"Warning: Failed to load settings: {e}")
 
@@ -647,11 +650,31 @@ class MainWindow(QMainWindow):
 
             cpu_args = []
             cpu_governor = self.cpu_widgets['gov_combo'].currentText()
+            
+            if self.cpu_widgets.get('max_freq_combo'):
+                cpu_max_freq = self.cpu_widgets['max_freq_combo'].currentText()
+            else:
+                cpu_max_freq = "unset"
+
+            if self.cpu_widgets.get('min_freq_combo'):
+                cpu_min_freq = self.cpu_widgets['min_freq_combo'].currentText()
+            else:
+                cpu_min_freq = "unset"
+
             cpu_scheduler = self.cpu_widgets['sched_combo'].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
                 cpu_parts.append(f"governor:{cpu_governor}")
+
+            if cpu_max_freq != "unset":
+                max_freq_khz = int(cpu_max_freq) * 1000
+                cpu_parts.append(f"max_freq:{max_freq_khz}")
+            
+            if cpu_min_freq != "unset":
+                min_freq_khz = int(cpu_min_freq) * 1000
+                cpu_parts.append(f"min_freq:{min_freq_khz}")
+
             if cpu_scheduler != "unset":
                 cpu_parts.append(f"scheduler:{cpu_scheduler}")
 
@@ -741,8 +764,7 @@ class MainWindow(QMainWindow):
         """
         self.save_settings()
         ConfigManager.save_current_profile_preference(self.current_profile)
-        if self.options_manager:
-            self.options_manager.save_options()
+        OptionsManager.save_options(self.options_widgets)
         self.instance_checker.cleanup()
         
         if self.welcome_window:

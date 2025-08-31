@@ -11,73 +11,15 @@ class OptionsManager:
     Manages application settings and preferences with integrated UI.
     """
 
-    def __init__(self, parent, main_window):
-        self.parent = parent
-        self.main_window = main_window
-        self.options_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
-        self.options_path.parent.mkdir(parents=True, exist_ok=True)
-        self.widgets = {}
-        self.widget = QWidget(self.parent)
-        self.setup_ui()
-
-    def get_widget(self):
-        """Get the widget for adding to tab widget."""
-        return self.widget
-
-    def setup_ui(self):
+    @staticmethod
+    def create_options_tab(main_window):
         """
-        Set up the user interface for the options tab.
+        Creates and returns the options management tab widget.
         """
-        main_layout = QVBoxLayout(self.widget)
+        options_tab = QWidget()
+        main_layout = QVBoxLayout(options_tab)
         main_layout.setContentsMargins(9, 0, 9, 0)
-        main_layout.setSpacing(10)
         
-        scroll_area = self.create_scroll_area()
-        main_layout.addWidget(scroll_area)
-        
-        self.apply_button = self.create_option_apply_button(main_layout)
-        
-        self.register_widgets()
-        self.apply_button.clicked.connect(self.save_and_apply_options)
-        self.load_options()
-
-    def create_option_apply_button(self, parent_layout):
-        """
-        Create and setup the apply button for options.
-        """
-        button_container = QWidget()
-        button_container.setProperty("buttonContainer", True)
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(11, 10, 11, 0)
-
-        apply_button = QPushButton("Apply")
-        apply_button.setMinimumSize(100, 30)
-        apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        button_layout.addStretch(1)
-        button_layout.addWidget(apply_button)
-        button_layout.addStretch(1)
-        
-        parent_layout.addWidget(button_container)
-        parent_layout.addSpacing(9)
-        
-        return apply_button
-
-    def save_and_apply_options(self):
-        """
-        Save current options and apply them to the application.
-        """
-        self.save_options()
-        
-        if self.main_window and hasattr(self.main_window, 'tray_icon'):
-            self.main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", self.main_window.tray_icon.MessageIcon.Information, 2000)
-        else:
-            QMessageBox.information(self.main_window, "volt-gui", "Options saved successfully")
-
-    def create_scroll_area(self):
-        """
-        Create and configure the scroll area with all option widgets.
-        """
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -88,288 +30,310 @@ class OptionsManager:
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 0)
         
-        self.add_theme_option(scroll_layout)
-        self.add_transparency_option(scroll_layout)
-        self.add_tray_option(scroll_layout)
-        self.add_start_minimized_option(scroll_layout)
-        self.add_start_maximized_option(scroll_layout)
-        self.add_welcome_message_option(scroll_layout)
+        widgets = {}
         
-        scroll_layout.addStretch(1)
-        scroll_area.setWidget(scroll_widget)
-        return scroll_area
-
-    def add_theme_option(self, layout):
-        """
-        Add theme selection option to layout.
-        """
         theme_layout = QHBoxLayout()
         theme_label = QLabel("Selected Theme:")
         theme_label.setWordWrap(True)
         theme_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["amd", "intel", "nvidia"])
-        self.theme_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['theme_combo'] = QComboBox()
+        widgets['theme_combo'].addItems(["amd", "intel", "nvidia"])
+        widgets['theme_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         theme_layout.addWidget(theme_label)
-        theme_layout.addWidget(self.theme_combo)
-        layout.addLayout(theme_layout)
+        theme_layout.addWidget(widgets['theme_combo'])
+        scroll_layout.addLayout(theme_layout)
 
-    def add_transparency_option(self, layout):
-        """
-        Add transparency option to layout.
-        """
         transparency_layout = QHBoxLayout()
         transparency_label = QLabel("Transparency:")
         transparency_label.setWordWrap(True)
         transparency_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.transparency_combo = QComboBox()
-        self.transparency_combo.addItems(["enable", "disable"])
-        self.transparency_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['transparency_combo'] = QComboBox()
+        widgets['transparency_combo'].addItems(["enable", "disable"])
+        widgets['transparency_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         transparency_layout.addWidget(transparency_label)
-        transparency_layout.addWidget(self.transparency_combo)
-        layout.addLayout(transparency_layout)
+        transparency_layout.addWidget(widgets['transparency_combo'])
+        scroll_layout.addLayout(transparency_layout)
 
-    def add_tray_option(self, layout):
-        """
-        Add system tray option to layout.
-        """
         tray_layout = QHBoxLayout()
         tray_label = QLabel("Run in System Tray:")
         tray_label.setWordWrap(True)
         tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.tray_combo = QComboBox()
-        self.tray_combo.addItems(["enable", "disable"])
-        self.tray_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['tray_combo'] = QComboBox()
+        widgets['tray_combo'].addItems(["enable", "disable"])
+        widgets['tray_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         tray_layout.addWidget(tray_label)
-        tray_layout.addWidget(self.tray_combo)
-        layout.addLayout(tray_layout)
+        tray_layout.addWidget(widgets['tray_combo'])
+        scroll_layout.addLayout(tray_layout)
 
-    def add_start_minimized_option(self, layout):
-        """
-        Add start minimized option to layout.
-        """
         start_minimized_layout = QHBoxLayout()
         start_minimized_label = QLabel("Open Minimized:")
         start_minimized_label.setWordWrap(True)
         start_minimized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.start_minimized_combo = QComboBox()
-        self.start_minimized_combo.addItems(["enable", "disable"])
-        self.start_minimized_combo.setCurrentText("disable")
-        self.start_minimized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['start_minimized_combo'] = QComboBox()
+        widgets['start_minimized_combo'].addItems(["enable", "disable"])
+        widgets['start_minimized_combo'].setCurrentText("disable")
+        widgets['start_minimized_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         start_minimized_layout.addWidget(start_minimized_label)
-        start_minimized_layout.addWidget(self.start_minimized_combo)
-        layout.addLayout(start_minimized_layout)
+        start_minimized_layout.addWidget(widgets['start_minimized_combo'])
+        scroll_layout.addLayout(start_minimized_layout)
 
-    def add_start_maximized_option(self, layout):
-        """
-        Add start maximized option to layout.
-        """
         start_maximized_layout = QHBoxLayout()
         start_maximized_label = QLabel("Open Maximized:")
         start_maximized_label.setWordWrap(True)
         start_maximized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.start_maximized_combo = QComboBox()
-        self.start_maximized_combo.addItems(["enable", "disable"])
-        self.start_maximized_combo.setCurrentText("disable")
-        self.start_maximized_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['start_maximized_combo'] = QComboBox()
+        widgets['start_maximized_combo'].addItems(["enable", "disable"])
+        widgets['start_maximized_combo'].setCurrentText("disable")
+        widgets['start_maximized_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         start_maximized_layout.addWidget(start_maximized_label)
-        start_maximized_layout.addWidget(self.start_maximized_combo)
-        layout.addLayout(start_maximized_layout)
+        start_maximized_layout.addWidget(widgets['start_maximized_combo'])
+        scroll_layout.addLayout(start_maximized_layout)
 
-    def add_welcome_message_option(self, layout):
-        """
-        Add welcome message option to layout.
-        """
         welcome_message_layout = QHBoxLayout()
         welcome_message_label = QLabel("Welcome Message:")
         welcome_message_label.setWordWrap(True)
         welcome_message_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        self.welcome_message_combo = QComboBox()
-        self.welcome_message_combo.addItems(["enable", "disable"])
-        self.welcome_message_combo.setCurrentText("enable")
-        self.welcome_message_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        widgets['welcome_message_combo'] = QComboBox()
+        widgets['welcome_message_combo'].addItems(["enable", "disable"])
+        widgets['welcome_message_combo'].setCurrentText("enable")
+        widgets['welcome_message_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         welcome_message_layout.addWidget(welcome_message_label)
-        welcome_message_layout.addWidget(self.welcome_message_combo)
-        layout.addLayout(welcome_message_layout)
+        welcome_message_layout.addWidget(widgets['welcome_message_combo'])
+        scroll_layout.addLayout(welcome_message_layout)
+        
+        scroll_layout.addStretch(1)
+        scroll_area.setWidget(scroll_widget)
+        main_layout.addWidget(scroll_area)
+        
+        OptionsManager.create_option_apply_button(main_layout, widgets, main_window)
+        
+        widgets['main_window'] = main_window
+        widgets['options_path'] = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
+        widgets['options_path'].parent.mkdir(parents=True, exist_ok=True)
+        
+        OptionsManager.set_default_values(widgets)
+        
+        return options_tab, widgets
 
-    def register_widgets(self):
+    @staticmethod
+    def create_option_apply_button(parent_layout, widgets, main_window):
         """
-        Register all widgets with the options manager.
+        Creates and adds the options apply button to the layout.
         """
-        self.widgets = {
-            'theme_combo': self.theme_combo,
-            'transparency_combo': self.transparency_combo,
-            'tray_combo': self.tray_combo,
-            'start_minimized_combo': self.start_minimized_combo,
-            'start_maximized_combo': self.start_maximized_combo,
-            'welcome_message_combo': self.welcome_message_combo,
-            'apply_button': self.apply_button
-        }
+        button_container = QWidget()
+        button_container.setProperty("buttonContainer", True)
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(11, 10, 11, 0)
 
-    def load_options(self):
+        widgets['options_apply_button'] = QPushButton("Apply")
+        widgets['options_apply_button'].setMinimumSize(100, 30)
+        widgets['options_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(widgets['options_apply_button'])
+        button_layout.addStretch(1)
+        
+        parent_layout.addWidget(button_container)
+        parent_layout.addSpacing(9)
+
+    @staticmethod
+    def set_default_values(widgets):
+        """
+        Set default values for all widgets.
+        """
+        widgets['theme_combo'].setCurrentText("amd")
+        widgets['tray_combo'].setCurrentText("disable")
+        widgets['transparency_combo'].setCurrentText("disable")
+        widgets['start_minimized_combo'].setCurrentText("disable")
+        widgets['start_maximized_combo'].setCurrentText("disable")
+        widgets['welcome_message_combo'].setCurrentText("enable")
+
+    @staticmethod
+    def load_options(widgets):
         """
         Load options from the configuration file.
         """
-        self.set_default_values()
+        OptionsManager.set_default_values(widgets)
         
-        if not self.options_path.exists():
-            self.save_options()
+        if not widgets['options_path'].exists():
+            OptionsManager.save_options(widgets)
             return
             
         options = configparser.ConfigParser()
-        options.read(self.options_path)
+        options.read(widgets['options_path'])
         
-        self.apply_options_values(options)
-        self.apply_all_options()
+        OptionsManager.apply_options_values(options, widgets)
+        OptionsManager.apply_all_options(widgets)
 
-    def save_options(self):
+    @staticmethod
+    def save_options(widgets):
         """
         Save current options to the configuration file.
         """
         options = configparser.ConfigParser()
         
-        options['Theme'] = {'ActiveTheme': self.widgets['theme_combo'].currentText()}
-        options['SystemTray'] = {'Enable': self.widgets['tray_combo'].currentText()}
-        options['Transparency'] = {'Enable': self.widgets['transparency_combo'].currentText()}
-        options['StartupMinimized'] = {'Enable': self.widgets['start_minimized_combo'].currentText()}
-        options['StartupMaximized'] = {'Enable': self.widgets['start_maximized_combo'].currentText()}
-        options['WelcomeMessage'] = {'Show': self.widgets['welcome_message_combo'].currentText()}
-        options['Profile'] = {'LastActiveProfile': getattr(self.main_window, 'current_profile', 'Default')}
+        main_window = widgets['main_window']
         
-        os.makedirs(os.path.dirname(self.options_path), exist_ok=True)
+        options['Theme'] = {'ActiveTheme': widgets['theme_combo'].currentText()}
+        options['SystemTray'] = {'Enable': widgets['tray_combo'].currentText()}
+        options['Transparency'] = {'Enable': widgets['transparency_combo'].currentText()}
+        options['StartupMinimized'] = {'Enable': widgets['start_minimized_combo'].currentText()}
+        options['StartupMaximized'] = {'Enable': widgets['start_maximized_combo'].currentText()}
+        options['WelcomeMessage'] = {'Show': widgets['welcome_message_combo'].currentText()}
+        options['Profile'] = {'LastActiveProfile': getattr(main_window, 'current_profile', 'Default')}
         
-        with open(self.options_path, 'w') as optionsfile:
+        os.makedirs(os.path.dirname(widgets['options_path']), exist_ok=True)
+        
+        with open(widgets['options_path'], 'w') as optionsfile:
             options.write(optionsfile)
             
-        if self.main_window:
-            self.apply_all_options()
+        OptionsManager.apply_all_options(widgets)
 
-    def set_default_values(self):
-        """
-        Set default values for all widgets.
-        """
-        self.widgets['theme_combo'].setCurrentText("amd")
-        self.widgets['tray_combo'].setCurrentText("enable")
-        self.widgets['transparency_combo'].setCurrentText("enable")
-        self.widgets['start_minimized_combo'].setCurrentText("disable")
-        self.widgets['start_maximized_combo'].setCurrentText("disable")
-        self.widgets['welcome_message_combo'].setCurrentText("enable")
-
-    def apply_options_values(self, options):
+    @staticmethod
+    def apply_options_values(options, widgets):
         """
         Apply values from options file to widgets.
         """
-        self.widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
-        self.widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="enable"))
-        self.widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="enable"))
-        self.widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
-        self.widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
-        self.widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
+        main_window = widgets['main_window']
+        
+        widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
+        widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="disable"))
+        widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="disable"))
+        widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
+        widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
+        widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
         
         last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
-        index = self.main_window.profile_selector.findText(last_profile)
+        index = main_window.profile_selector.findText(last_profile)
         if index >= 0:
-            self.main_window.profile_selector.setCurrentText(last_profile)
-            self.main_window.current_profile = last_profile
+            main_window.profile_selector.setCurrentText(last_profile)
+            main_window.current_profile = last_profile
 
-    def apply_all_options(self):
+    @staticmethod
+    def apply_all_options(widgets):
         """
         Apply all options to the application.
         """
-        self.apply_system_tray_options()
-        self.apply_transparency_options()
-        self.apply_theme_options()
-        self.apply_start_minimized_options()
-        self.apply_start_maximized_options()
-        self.apply_welcome_message_options()
+        OptionsManager.apply_system_tray_options(widgets)
+        OptionsManager.apply_transparency_options(widgets)
+        OptionsManager.apply_theme_options(widgets)
+        OptionsManager.apply_start_minimized_options(widgets)
+        OptionsManager.apply_start_maximized_options(widgets)
+        OptionsManager.apply_welcome_message_options(widgets)
 
-    def apply_theme_options(self):
+    @staticmethod
+    def apply_theme_options(widgets):
         """
         Apply the selected theme to the application.
         """
-        if self.main_window:
-            theme_name = self.widgets['theme_combo'].currentText()
+        main_window = widgets['main_window']
+        if main_window:
+            theme_name = widgets['theme_combo'].currentText()
             ThemeManager.apply_theme(QApplication.instance(), theme_name)
             print(f"Theme option applied: {theme_name}")
 
-    def apply_system_tray_options(self):
+    @staticmethod
+    def apply_system_tray_options(widgets):
         """
         Apply system tray options to the main window.
         """
-        if self.main_window:
-            run_in_tray = self.widgets['tray_combo'].currentText() == 'enable'
-            old_option = self.main_window.use_system_tray
-            self.main_window.use_system_tray = run_in_tray
+        main_window = widgets['main_window']
+        if main_window:
+            run_in_tray = widgets['tray_combo'].currentText() == 'enable'
+            old_option = main_window.use_system_tray
+            main_window.use_system_tray = run_in_tray
             
             if old_option != run_in_tray:
                 if run_in_tray:
-                    if not hasattr(self.main_window, 'tray_icon'):
-                        self.main_window.setup_system_tray()
+                    if not hasattr(main_window, 'tray_icon'):
+                        main_window.setup_system_tray()
                 else:
-                    if hasattr(self.main_window, 'tray_icon'):
-                        self.main_window.tray_icon.hide()
-                        self.main_window.tray_icon.deleteLater()
-                        delattr(self.main_window, 'tray_icon')
-                        if not self.main_window.isVisible():
-                            self.main_window.show_and_activate()
+                    if hasattr(main_window, 'tray_icon'):
+                        main_window.tray_icon.hide()
+                        main_window.tray_icon.deleteLater()
+                        delattr(main_window, 'tray_icon')
+                        if not main_window.isVisible():
+                            main_window.show_and_activate()
                 
-                self.main_window.update_quit_behavior()
+                main_window.update_quit_behavior()
             
             print(f"System tray option applied: {run_in_tray}")
             
-    def apply_transparency_options(self):
+    @staticmethod
+    def apply_transparency_options(widgets):
         """
         Apply window transparency options to the main window.
         """
-        if self.main_window:
-            transparency_enabled = self.widgets['transparency_combo'].currentText() == 'enable'
+        main_window = widgets['main_window']
+        if main_window:
+            transparency_enabled = widgets['transparency_combo'].currentText() == 'enable'
             if transparency_enabled:
-                self.main_window.setWindowOpacity(0.9)
+                main_window.setWindowOpacity(0.9)
             else:
-                self.main_window.setWindowOpacity(1.0)
+                main_window.setWindowOpacity(1.0)
             print(f"Transparency option applied: {transparency_enabled}")
 
-    def apply_start_minimized_options(self):
+    @staticmethod
+    def apply_start_minimized_options(widgets):
         """
         Apply the start minimized option to the application.
         """
-        if self.main_window:
-            start_minimized = self.widgets['start_minimized_combo'].currentText() == 'enable'
-            self.main_window.start_minimized = start_minimized
+        main_window = widgets['main_window']
+        if main_window:
+            start_minimized = widgets['start_minimized_combo'].currentText() == 'enable'
+            main_window.start_minimized = start_minimized
             print(f"Start minimized option applied: {start_minimized}")
 
-    def apply_start_maximized_options(self):
+    @staticmethod
+    def apply_start_maximized_options(widgets):
         """
         Apply the start maximized option to the application.
         """
-        if self.main_window:
-            start_maximized = self.widgets['start_maximized_combo'].currentText() == 'enable'
-            self.main_window.start_maximized = start_maximized
+        main_window = widgets['main_window']
+        if main_window:
+            start_maximized = widgets['start_maximized_combo'].currentText() == 'enable'
+            main_window.start_maximized = start_maximized
             print(f"Start maximized option applied: {start_maximized}")
 
-    def apply_welcome_message_options(self):
+    @staticmethod
+    def apply_welcome_message_options(widgets):
         """
         Apply the welcome message option to the application.
         """
-        if self.main_window:
-            show_welcome = self.widgets['welcome_message_combo'].currentText() == 'enable'
-            self.main_window.show_welcome = show_welcome
+        main_window = widgets['main_window']
+        if main_window:
+            show_welcome = widgets['welcome_message_combo'].currentText() == 'enable'
+            main_window.show_welcome = show_welcome
             print(f"Welcome message option applied: {show_welcome}")
 
-    def get_welcome_message_setting(self):
+    @staticmethod
+    def get_welcome_message_setting(widgets):
         """
         Get the current welcome message setting.
         """
-        return self.widgets['welcome_message_combo'].currentText() == 'enable'
+        return widgets['welcome_message_combo'].currentText() == 'enable'
+
+    @staticmethod
+    def save_and_apply_options(widgets):
+        """
+        Save current options and apply them to the application.
+        """
+        main_window = widgets['main_window']
+        OptionsManager.save_options(widgets)
+        
+        if main_window and hasattr(main_window, 'tray_icon'):
+            main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", main_window.tray_icon.MessageIcon.Information, 2000)
+        else:
+            QMessageBox.information(main_window, "volt-gui", "Options saved successfully")

@@ -10,6 +10,20 @@ apply_governor() {
     done
 }
 
+apply_max_freq() {
+    local max_freq="$1"
+    for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
+        echo "$max_freq" > "$CPU_PATH"
+    done
+}
+
+apply_min_freq() {
+    local min_freq="$1"
+    for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq; do
+        echo "$min_freq" > "$CPU_PATH"
+    done
+}
+
 terminate_existing_schedulers() {
     local scheduler_pid=$(pgrep -f '^scx_' 2>/dev/null | head -n1)
     
@@ -52,19 +66,33 @@ manage_cpu() {
     
     local governor=""
     local scheduler=""
+    local max_freq=""
+    local min_freq=""
     
     for arg in "${cpu_args[@]}"; do
         if [[ "$arg" == governor:* ]]; then
             governor="${arg#governor:}"
         elif [[ "$arg" == scheduler:* ]]; then
             scheduler="${arg#scheduler:}"
+        elif [[ "$arg" == max_freq:* ]]; then
+            max_freq="${arg#max_freq:}"
+        elif [[ "$arg" == min_freq:* ]]; then
+            min_freq="${arg#min_freq:}"
         fi
     done
     
     if [ -n "$governor" ]; then
         apply_governor "$governor"
     fi
+
+    if [ -n "$min_freq" ]; then
+        apply_min_freq "$min_freq"
+    fi
     
+    if [ -n "$max_freq" ]; then
+        apply_max_freq "$max_freq"
+    fi
+
     if [ -n "$scheduler" ]; then
         handle_scheduler "$scheduler"
     fi
