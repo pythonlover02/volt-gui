@@ -237,6 +237,7 @@ Documentation used:
 - [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
 - [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
 - [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
+- [Linux Kernel - Subsystem Documentation](https://docs.kernel.org/subsystem-apis.html)
 
 ## Contributing:
 
