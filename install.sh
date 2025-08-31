@@ -11,20 +11,20 @@ fi
 
 # Configuration
 INSTALL_DIR="/usr/local/bin"
-RELEASE_DIR="release"
-EXECUTABLE="$RELEASE_DIR/volt-gui"
+BIN_DIR="bin"
+EXECUTABLE="$BIN_DIR/volt-gui"
 HELPER_SCRIPT="scripts/volt-helper"
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
-# Check release directory
-if [[ ! -d "$RELEASE_DIR" ]]; then
-  echo -e "\033[31mError: Release directory not found. Run build.sh first.\033[0m" >&2
+# Check bin directory
+if [[ ! -d "$BIN_DIR" ]]; then
+  echo -e "\033[31mError: bin directory not found. Run make-pyinstaller.sh or make-nuitka.sh first.\033[0m" >&2
   exit 1
 fi
 
 # Check main executable
 if [[ ! -f "$EXECUTABLE" ]]; then
-  echo -e "\033[31mError: Executable 'volt-gui' not found in release directory. Run build.sh first.\033[0m" >&2
+  echo -e "\033[31mError: Executable 'volt-gui' not found in bin directory. Run make-pyinstaller.sh or make-nuitka.sh first.\033[0m" >&2
   exit 1
 fi
 
