@@ -800,6 +800,7 @@ def main():
     """
     check_sudo_execution()
     WorkaroundManager.setup_qt_platform()
+    OptionsManager.get_early_scaling_factor()
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

@@ -99,6 +99,19 @@ class OptionsManager:
         start_maximized_layout.addWidget(widgets['start_maximized_combo'])
         scroll_layout.addLayout(start_maximized_layout)
 
+        scaling_layout = QHBoxLayout()
+        scaling_label = QLabel("Interface Scaling:")
+        scaling_label.setWordWrap(True)
+        scaling_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        
+        widgets['scaling_combo'] = QComboBox()
+        widgets['scaling_combo'].addItems(["1.0", "1.25", "1.5", "1.75", "2.0"])
+        widgets['scaling_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        scaling_layout.addWidget(scaling_label)
+        scaling_layout.addWidget(widgets['scaling_combo'])
+        scroll_layout.addLayout(scaling_layout)
+
         welcome_message_layout = QHBoxLayout()
         welcome_message_label = QLabel("Welcome Message:")
         welcome_message_label.setWordWrap(True)
@@ -158,7 +171,26 @@ class OptionsManager:
         widgets['transparency_combo'].setCurrentText("disable")
         widgets['start_minimized_combo'].setCurrentText("disable")
         widgets['start_maximized_combo'].setCurrentText("disable")
+        widgets['scaling_combo'].setCurrentText("1.0")
         widgets['welcome_message_combo'].setCurrentText("enable")
+
+    @staticmethod
+    def get_early_scaling_factor():
+        """
+        Get the scaling factor before the main application starts.
+        This method is called early in the main function.
+        """
+        
+        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
+        scaling_factor = "1.0"
+        
+        if config_path.exists():
+            options = configparser.ConfigParser()
+            options.read(config_path)
+            scaling_factor = options.get('Scaling', 'Factor', fallback="1.0")
+        
+        os.environ['QT_SCALE_FACTOR'] = scaling_factor
+        return scaling_factor
 
     @staticmethod
     def load_options(widgets):
@@ -191,6 +223,7 @@ class OptionsManager:
         options['Transparency'] = {'Enable': widgets['transparency_combo'].currentText()}
         options['StartupMinimized'] = {'Enable': widgets['start_minimized_combo'].currentText()}
         options['StartupMaximized'] = {'Enable': widgets['start_maximized_combo'].currentText()}
+        options['Scaling'] = {'Factor': widgets['scaling_combo'].currentText()}
         options['WelcomeMessage'] = {'Show': widgets['welcome_message_combo'].currentText()}
         options['Profile'] = {'LastActiveProfile': getattr(main_window, 'current_profile', 'Default')}
         
@@ -213,6 +246,7 @@ class OptionsManager:
         widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="disable"))
         widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
         widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
+        widgets['scaling_combo'].setCurrentText(options.get('Scaling', 'Factor', fallback="1.0"))
         widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
         
         last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
@@ -231,6 +265,7 @@ class OptionsManager:
         OptionsManager.apply_theme_options(widgets)
         OptionsManager.apply_start_minimized_options(widgets)
         OptionsManager.apply_start_maximized_options(widgets)
+        OptionsManager.apply_scaling_options(widgets)
         OptionsManager.apply_welcome_message_options(widgets)
 
     @staticmethod
@@ -318,6 +353,18 @@ class OptionsManager:
             main_window.show_welcome = show_welcome
             print(f"Welcome message option applied: {show_welcome}")
 
+    @staticmethod  
+    def apply_scaling_options(widgets):
+        """
+        Apply interface scaling options to the application.
+        """
+        main_window = widgets['main_window']
+        if main_window:
+            scaling_factor = float(widgets['scaling_combo'].currentText())
+            os.environ['QT_SCALE_FACTOR'] = str(scaling_factor)
+            main_window.scaling_factor = scaling_factor
+            print(f"Scaling option applied: {scaling_factor}")
+
     @staticmethod
     def get_welcome_message_setting(widgets):
         """
@@ -331,9 +378,19 @@ class OptionsManager:
         Save current options and apply them to the application.
         """
         main_window = widgets['main_window']
+        
+        # Check if scaling factor has changed
+        old_scaling = getattr(main_window, 'scaling_factor', 1.0)
+        new_scaling = float(widgets['scaling_combo'].currentText())
+        scaling_changed = old_scaling != new_scaling
+        
         OptionsManager.save_options(widgets)
         
+        message = "Options saved successfully"
+        if scaling_changed:
+            message += ".\nInterface scaling will take full effect after restarting the application."
+        
         if main_window and hasattr(main_window, 'tray_icon'):
-            main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", main_window.tray_icon.MessageIcon.Information, 2000)
+            main_window.tray_icon.showMessage("volt-gui", message, main_window.tray_icon.MessageIcon.Information, 3000)
         else:
-            QMessageBox.information(main_window, "volt-gui", "Options saved successfully")
+            QMessageBox.information(main_window, "volt-gui", message)
