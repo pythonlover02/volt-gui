@@ -180,7 +180,6 @@ class OptionsManager:
         Get the scaling factor before the main application starts.
         This method is called early in the main function.
         """
-        
         config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         scaling_factor = "1.0"
         
