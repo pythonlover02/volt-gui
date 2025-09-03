@@ -214,33 +214,3 @@ class ConfigManager:
             print(f"Warning: Failed to load session config: {e}")
         
         return "Default"
-
-    @staticmethod
-    def load_options_settings():
-        """
-        Load options settings from configuration file.
-        """
-        options_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
-        use_system_tray = True
-        start_minimized = False
-
-        if not options_path.exists():
-            return use_system_tray, start_minimized
-
-        config = configparser.ConfigParser()
-        try:
-            config.read(options_path)
-
-            if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-                use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
-
-            if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-                if use_system_tray:
-                    start_minimized = config['StartupBehavior'].get('start_minimized', 'disable') == 'enable'
-                else:
-                    start_minimized = False
-
-        except Exception as e:
-            print(f"Warning: Failed to load options settings: {e}")
-
-        return use_system_tray, start_minimized
