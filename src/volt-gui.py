@@ -436,9 +436,7 @@ class MainWindow(QMainWindow):
         Load previously saved settings from configuration file.
         """
         try:
-            last_profile = ConfigManager.load_current_profile_preference()
-            self.current_profile = last_profile
-            
+            OptionsManager.load_options(self.options_widgets)
             ConfigManager.load_config(
                 self.cpu_widgets, 
                 self.gpu_widgets, 
@@ -446,8 +444,6 @@ class MainWindow(QMainWindow):
                 self.disk_widgets, 
                 self.current_profile
             )
-            
-            OptionsManager.load_options(self.options_widgets)
         except Exception as e:
             print(f"Warning: Failed to load settings: {e}")
 
@@ -471,7 +467,6 @@ class MainWindow(QMainWindow):
                 print(f"Warning: Failed to save current profile settings: {e}")
 
         self.current_profile = profile_name
-        ConfigManager.save_current_profile_preference(profile_name)
         ConfigManager.load_config(
             self.cpu_widgets, 
             self.gpu_widgets, 
@@ -515,7 +510,6 @@ class MainWindow(QMainWindow):
                 )
 
                 self.current_profile = profile_name
-                ConfigManager.save_current_profile_preference(profile_name)
                 self.update_profile_list()
                 self.profile_selector.setCurrentText(profile_name)
 
@@ -548,7 +542,6 @@ class MainWindow(QMainWindow):
                 ConfigManager.delete_profile(current_profile)
 
                 self.current_profile = "Default"
-                ConfigManager.save_current_profile_preference("Default")
                 self.update_profile_list()
                 self.profile_selector.setCurrentText("Default")
 
@@ -763,7 +756,6 @@ class MainWindow(QMainWindow):
         Centralized cleanup method to avoid code duplication.
         """
         self.save_settings()
-        ConfigManager.save_current_profile_preference(self.current_profile)
         OptionsManager.save_options(self.options_widgets)
         self.instance_checker.cleanup()
         
