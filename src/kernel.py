@@ -47,6 +47,11 @@ class KernelManager:
             }
         },
         "Memory": {
+            'compaction_proactiveness': {
+                'path': '/proc/sys/vm/compaction_proactiveness',
+                'text': 'Controls memory compaction aggressiveness (0-100). Lower values reduce CPU overhead during intensive workloads.\nRecommended: 0',
+                'is_dynamic': False
+            },
             'watermark_boost_factor': {
                 'path': '/proc/sys/vm/watermark_boost_factor',
                 'text': 'Memory reclaim aggressiveness during fragmentation (units of 10,000). Lower values prevent background reclaim during high-load scenarios.\nRecommended: 0',
@@ -55,6 +60,21 @@ class KernelManager:
             'watermark_scale_factor': {
                 'path': '/proc/sys/vm/watermark_scale_factor',
                 'text': 'Controls kswapd aggressiveness (units of 10,000). Higher values mean more free memory maintained. Default is 10 (0.1% of memory).\nRecommended: 10 (default) or higher for latency-sensitive workloads',
+                'is_dynamic': False
+            },
+            'extfrag_threshold': {
+                'path': '/proc/sys/vm/extfrag_threshold',
+                'text': 'External fragmentation threshold that triggers compaction (0-1000). Higher values reduce compaction overhead.\nRecommended: 500',
+                'is_dynamic': False
+            },
+            'compact_unevictable_allowed': {
+                'path': '/proc/sys/vm/compact_unevictable_allowed',
+                'text': 'Allow compaction to examine unevictable (mlocked) pages. May cause minor page faults but improves compaction effectiveness.\nRecommended: 1 (default), 0 for RT systems',
+                'is_dynamic': False
+            },
+            'defrag_mode': {
+                'path': '/proc/sys/vm/defrag_mode',
+                'text': 'Proactive fragmentation prevention for hugepage allocations. Reduces long-term fragmentation at cost of immediate overhead.\nRecommended: 0(less overhead), 1 (for long-running systems)',
                 'is_dynamic': False
             },
             'swappiness': {
@@ -87,9 +107,69 @@ class KernelManager:
                 'text': 'Percentage of physical RAM (plus swap) available when overcommit_memory=2.\nRecommended: 60',
                 'is_dynamic': False
             },
+            'admin_reserve_kbytes': {
+                'path': '/proc/sys/vm/admin_reserve_kbytes',
+                'text': 'Memory reserved for root processes during OOM conditions. Default: min(3% of RAM, 8MB).\nRecommended: 8192 (8GB+ RAM), 4096 (4GB RAM)',
+                'is_dynamic': False
+            },
+            'user_reserve_kbytes': {
+                'path': '/proc/sys/vm/user_reserve_kbytes',
+                'text': 'Memory reserved for user processes when overcommit_memory=2. Default: min(3% of process size, 128MB).\nRecommended: 131072',
+                'is_dynamic': False
+            },
             'max_map_count': {
                 'path': '/proc/sys/vm/max_map_count',
                 'text': 'Maximum memory mappings per process. Essential for applications using many shared libraries and memory-mapped files.\nRecommended: 2147483642 (SteamDeck Value) or 1048576 (Arch Linux)',
+                'is_dynamic': False
+            },
+            'page_lock_unfairness': {
+                'path': '/proc/sys/vm/page_lock_unfairness',
+                'text': 'Number of times page lock can be stolen from waiter before fair handoff. Higher values favor readers which can improve read performance for asset streaming workloads.\nRecommended: 5',
+                'is_dynamic': False
+            },
+            'percpu_pagelist_high_fraction': {
+                'path': '/proc/sys/vm/percpu_pagelist_high_fraction',
+                'text': 'Per-CPU page list size as fraction of zone size (0=default kernel algorithm, min value is 8). Higher values reduce contention on multi-core systems.\nRecommended: 8+ or 0 (reverts to the default behavior)',
+                'is_dynamic': False
+            },
+            'zone_reclaim_mode': {
+                'path': '/proc/sys/vm/zone_reclaim_mode',
+                'text': 'NUMA memory reclaim behavior (bitmask: 0=reclaim off 1=reclaim on, 2=write dirty pages, 4=swap pages). Usually degrades performance due to unnecessary reclaim overhead.\nRecommended: 0',
+                'is_dynamic': False
+            },
+            'min_unmapped_ratio': {
+                'path': '/proc/sys/vm/min_unmapped_ratio',
+                'text': 'Minimum percentage of unmapped pages before zone reclaim (NUMA only). Higher values delay local reclaim, improving cache locality.\nRecommended: 1',
+                'is_dynamic': False
+            },
+            'min_slab_ratio': {
+                'path': '/proc/sys/vm/min_slab_ratio',
+                'text': 'Percentage of zone pages that must be reclaimable slab before zone reclaim (NUMA only). Higher values delay expensive remote allocation.\nRecommended: 5 (default), 3-8 range for tuning',
+                'is_dynamic': False
+            },
+            'numa_stat': {
+                'path': '/proc/sys/vm/numa_stat',
+                'text': 'Enable NUMA statistics collection. Disabling reduces allocation overhead but breaks monitoring tools.\nRecommended: 0 (performance), 1 (monitoring/debugging)',
+                'is_dynamic': False
+            },
+            'nr_hugepages': {
+                'path': '/proc/sys/vm/nr_hugepages',
+                'text': 'Number of persistent hugepages allocated. Critical for applications requiring guaranteed hugepage memory (databases, VMs, HPC).\nRecommended: 0 (default), or calculated based on application needs',
+                'is_dynamic': False
+            },
+            'nr_overcommit_hugepages': {
+                'path': '/proc/sys/vm/nr_overcommit_hugepages',
+                'text': 'Maximum number of additional hugepages that can be allocated dynamically beyond nr_hugepages.\nRecommended: 0 (conservative), or set based on peak demand',
+                'is_dynamic': False
+            },
+            'hugetlb_optimize_vmemmap': {
+                'path': '/proc/sys/vm/hugetlb_optimize_vmemmap',
+                'text': 'Optimize hugepage metadata memory usage (saves ~7 pages per 2MB hugepage). May add overhead during allocation/deallocation.\nRecommended: 1 (enable for memory savings), 0 (disable for allocation speed)',
+                'is_dynamic': False
+            },
+            'stat_interval': {
+                'path': '/proc/sys/vm/stat_interval',
+                'text': 'VM statistics update interval (seconds). Higher values reduce CPU overhead.\nRecommended: 10',
                 'is_dynamic': False
             },
             'thp_enabled': {
@@ -119,6 +199,16 @@ class KernelManager:
                 'text': 'Percentage of available memory at which background writeback begins. Should be 1/3 of dirty_ratio. Mutually exclusive with dirty_background_bytes.\nRecommended: 3',
                 'is_dynamic': False
             },
+            'dirty_bytes': {
+                'path': '/proc/sys/vm/dirty_bytes',
+                'text': 'Absolute dirty memory limit (bytes). Provides consistent behavior regardless of RAM size. Mutually exclusive with dirty_ratio.\nRecommended: 67108864 (64MB)',
+                'is_dynamic': False
+            },
+            'dirty_background_bytes': {
+                'path': '/proc/sys/vm/dirty_background_bytes',
+                'text': 'Absolute background writeback threshold (bytes). Should be 50% of dirty_bytes. Mutually exclusive with dirty_background_ratio.\nRecommended: 33554432 (32MB)',
+                'is_dynamic': False
+            },
             'dirty_expire_centisecs': {
                 'path': '/proc/sys/vm/dirty_expire_centisecs',
                 'text': 'Maximum time dirty data remains in memory (centiseconds). Shorter intervals improve responsiveness.\nRecommended: 3000',
@@ -127,6 +217,11 @@ class KernelManager:
             'dirty_writeback_centisecs': {
                 'path': '/proc/sys/vm/dirty_writeback_centisecs',
                 'text': 'Interval between periodic writeback wakeups (centiseconds). Longer intervals reduce CPU overhead.\nRecommended: 1500',
+                'is_dynamic': False
+            },
+            'dirtytime_expire_seconds': {
+                'path': '/proc/sys/vm/dirtytime_expire_seconds',
+                'text': 'Interval for lazy timestamp updates on filesystems with dirtytime mount option (seconds).\nRecommended: 43200 (12 hours)',
                 'is_dynamic': False
             },
             'laptop_mode': {
@@ -166,9 +261,19 @@ class KernelManager:
                 'text': 'OOM killer targets the task that triggered OOM instead of scanning all tasks. Improves recovery speed.\nRecommended: 1',
                 'is_dynamic': False
             },
+            'oom_dump_tasks': {
+                'path': '/proc/sys/vm/oom_dump_tasks',
+                'text': 'Enable task dump when OOM killer is invoked. Useful for debugging but adds overhead on large systems.\nRecommended: 0 (disable for performance), 1 (enable for debugging)',
+                'is_dynamic': False
+            },
             'panic_on_oom': {
                 'path': '/proc/sys/vm/panic_on_oom',
                 'text': 'System behavior on OOM: 0=kill process, 1=panic on system OOM, 2=always panic.\nRecommended: 0 (default behavior)',
+                'is_dynamic': False
+            },
+            'max_user_freq': {
+                'path': '/sys/class/rtc/rtc0/max_user_freq',
+                'text': 'Maximum RTC interrupt frequency (Hz) for userspace. Higher values provide better timer precision.\nRecommended: 64',
                 'is_dynamic': False
             }
         },
