@@ -76,10 +76,11 @@ class ConfigManager:
             
         if kernel_widgets:
             kernel_config = {}
-            for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-                value = kernel_widgets[f'{setting_name}_input'].text().strip()
-                if value:
-                    kernel_config[setting_name] = value
+            for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
+                for setting_name in category.keys():
+                    value = kernel_widgets[f'{setting_name}_input'].text().strip()
+                    if value:
+                        kernel_config[setting_name] = value
             if kernel_config:
                 config['Kernel'] = kernel_config
         
@@ -138,9 +139,11 @@ class ConfigManager:
                 
         if kernel_widgets and 'Kernel' in config:
             for setting_name, value in config['Kernel'].items():
-                if setting_name in KernelManager.KERNEL_SETTINGS:
-                    input_widget = kernel_widgets[f'{setting_name}_input']
-                    input_widget.setText(value)
+                for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
+                    if setting_name in category:
+                        input_widget = kernel_widgets[f'{setting_name}_input']
+                        input_widget.setText(value)
+                        break
         
         if disk_widgets and 'disk_combos' in disk_widgets and 'Disk' in config:
             for disk_name, scheduler in config['Disk'].items():

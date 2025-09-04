@@ -685,13 +685,14 @@ class MainWindow(QMainWindow):
 
             kernel_args = []
             kernel_has_settings = False
-            for name, info in KernelManager.KERNEL_SETTINGS.items():
-                value = self.kernel_widgets[f'{name}_input'].text().strip()
-                if value:
-                    if not kernel_args:
-                        kernel_args.append("-k")
-                    kernel_args.append(f"{info['path']}:{value}")
-                    kernel_has_settings = True
+            for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
+                for name, info in category.items():
+                    value = self.kernel_widgets[f'{name}_input'].text().strip()
+                    if value:
+                        if not kernel_args:
+                            kernel_args.append("-k")
+                        kernel_args.append(f"{info['path']}:{value}")
+                        kernel_has_settings = True
 
             gpu_args = []
             settings_file = GPULaunchManager.write_settings_file(
