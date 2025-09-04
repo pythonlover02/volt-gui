@@ -76,10 +76,11 @@ class ConfigManager:
             
         if kernel_widgets:
             kernel_config = {}
-            for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-                value = kernel_widgets[f'{setting_name}_input'].text().strip()
-                if value:
-                    kernel_config[setting_name] = value
+            for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
+                for setting_name in category.keys():
+                    value = kernel_widgets[f'{setting_name}_input'].text().strip()
+                    if value:
+                        kernel_config[setting_name] = value
             if kernel_config:
                 config['Kernel'] = kernel_config
         
@@ -138,9 +139,11 @@ class ConfigManager:
                 
         if kernel_widgets and 'Kernel' in config:
             for setting_name, value in config['Kernel'].items():
-                if setting_name in KernelManager.KERNEL_SETTINGS:
-                    input_widget = kernel_widgets[f'{setting_name}_input']
-                    input_widget.setText(value)
+                for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
+                    if setting_name in category:
+                        input_widget = kernel_widgets[f'{setting_name}_input']
+                        input_widget.setText(value)
+                        break
         
         if disk_widgets and 'disk_combos' in disk_widgets and 'Disk' in config:
             for disk_name, scheduler in config['Disk'].items():
@@ -163,84 +166,3 @@ class ConfigManager:
             return True
         
         return False
-
-    @staticmethod
-    def save_current_profile_preference(profile_name):
-        """
-        Save the currently selected profile as the last used profile.
-        """
-        config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
-        config_dir.mkdir(parents=True, exist_ok=True)
-        
-        config_path = config_dir / "volt-session.ini"
-        config = configparser.ConfigParser()
-        
-        if config_path.exists():
-            try:
-                config.read(config_path)
-            except:
-                pass
-        
-        if not config.has_section('Session'):
-            config.add_section('Session')
-        
-        config.set('Session', 'last_profile', profile_name)
-        
-        try:
-            with open(config_path, 'w') as configfile:
-                config.write(configfile)
-        except Exception as e:
-            print(f"Warning: Failed to save session config: {e}")
-
-    @staticmethod
-    def load_current_profile_preference():
-        """
-        Load the last used profile from session config.
-        """
-        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-session.ini"))
-        
-        if not config_path.exists():
-            return "Default"
-        
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_path)
-            if config.has_section('Session') and config.has_option('Session', 'last_profile'):
-                last_profile = config.get('Session', 'last_profile')
-                available_profiles = ConfigManager.get_available_profiles()
-                if last_profile in available_profiles:
-                    return last_profile
-        except Exception as e:
-            print(f"Warning: Failed to load session config: {e}")
-        
-        return "Default"
-
-    @staticmethod
-    def load_options_settings():
-        """
-        Load options settings from configuration file.
-        """
-        options_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
-        use_system_tray = True
-        start_minimized = False
-
-        if not options_path.exists():
-            return use_system_tray, start_minimized
-
-        config = configparser.ConfigParser()
-        try:
-            config.read(options_path)
-
-            if 'SystemTray' in config and 'run_in_tray' in config['SystemTray']:
-                use_system_tray = config['SystemTray']['run_in_tray'] == 'enable'
-
-            if 'StartupBehavior' in config and 'start_minimized' in config['StartupBehavior']:
-                if use_system_tray:
-                    start_minimized = config['StartupBehavior'].get('start_minimized', 'disable') == 'enable'
-                else:
-                    start_minimized = False
-
-        except Exception as e:
-            print(f"Warning: Failed to load options settings: {e}")
-
-        return use_system_tray, start_minimized

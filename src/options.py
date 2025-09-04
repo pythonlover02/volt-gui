@@ -11,6 +11,58 @@ class OptionsManager:
     Manages application settings and preferences with integrated UI.
     """
 
+    OPTIONS_SETTINGS = {
+        'theme': {
+            'label': 'Selected Theme:',
+            'section': 'Theme',
+            'config_key': 'ActiveTheme',
+            'choices': ["amd", "intel", "nvidia"],
+            'default': 'amd'
+        },
+        'transparency': {
+            'label': 'Transparency:',
+            'section': 'Transparency',
+            'config_key': 'Enable',
+            'choices': ["enable", "disable"],
+            'default': 'disable'
+        },
+        'tray': {
+            'label': 'Run in System Tray:',
+            'section': 'SystemTray',
+            'config_key': 'Enable',
+            'choices': ["enable", "disable"],
+            'default': 'disable'
+        },
+        'start_minimized': {
+            'label': 'Open Minimized:',
+            'section': 'StartupMinimized',
+            'config_key': 'Enable',
+            'choices': ["enable", "disable"],
+            'default': 'disable'
+        },
+        'start_maximized': {
+            'label': 'Open Maximized:',
+            'section': 'StartupMaximized',
+            'config_key': 'Enable',
+            'choices': ["enable", "disable"],
+            'default': 'disable'
+        },
+        'scaling': {
+            'label': 'Interface Scaling:',
+            'section': 'Scaling',
+            'config_key': 'Factor',
+            'choices': ["1.0", "1.25", "1.5", "1.75", "2.0"],
+            'default': '1.0'
+        },
+        'welcome_message': {
+            'label': 'Welcome Message:',
+            'section': 'WelcomeMessage',
+            'config_key': 'Show',
+            'choices': ["enable", "disable"],
+            'default': 'enable'
+        }
+    }
+
     @staticmethod
     def create_options_tab(main_window):
         """
@@ -32,86 +84,20 @@ class OptionsManager:
         
         widgets = {}
         
-        theme_layout = QHBoxLayout()
-        theme_label = QLabel("Selected Theme:")
-        theme_label.setWordWrap(True)
-        theme_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['theme_combo'] = QComboBox()
-        widgets['theme_combo'].addItems(["amd", "intel", "nvidia"])
-        widgets['theme_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        theme_layout.addWidget(theme_label)
-        theme_layout.addWidget(widgets['theme_combo'])
-        scroll_layout.addLayout(theme_layout)
-
-        transparency_layout = QHBoxLayout()
-        transparency_label = QLabel("Transparency:")
-        transparency_label.setWordWrap(True)
-        transparency_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['transparency_combo'] = QComboBox()
-        widgets['transparency_combo'].addItems(["enable", "disable"])
-        widgets['transparency_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        transparency_layout.addWidget(transparency_label)
-        transparency_layout.addWidget(widgets['transparency_combo'])
-        scroll_layout.addLayout(transparency_layout)
-
-        tray_layout = QHBoxLayout()
-        tray_label = QLabel("Run in System Tray:")
-        tray_label.setWordWrap(True)
-        tray_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['tray_combo'] = QComboBox()
-        widgets['tray_combo'].addItems(["enable", "disable"])
-        widgets['tray_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        tray_layout.addWidget(tray_label)
-        tray_layout.addWidget(widgets['tray_combo'])
-        scroll_layout.addLayout(tray_layout)
-
-        start_minimized_layout = QHBoxLayout()
-        start_minimized_label = QLabel("Open Minimized:")
-        start_minimized_label.setWordWrap(True)
-        start_minimized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['start_minimized_combo'] = QComboBox()
-        widgets['start_minimized_combo'].addItems(["enable", "disable"])
-        widgets['start_minimized_combo'].setCurrentText("disable")
-        widgets['start_minimized_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        start_minimized_layout.addWidget(start_minimized_label)
-        start_minimized_layout.addWidget(widgets['start_minimized_combo'])
-        scroll_layout.addLayout(start_minimized_layout)
-
-        start_maximized_layout = QHBoxLayout()
-        start_maximized_label = QLabel("Open Maximized:")
-        start_maximized_label.setWordWrap(True)
-        start_maximized_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['start_maximized_combo'] = QComboBox()
-        widgets['start_maximized_combo'].addItems(["enable", "disable"])
-        widgets['start_maximized_combo'].setCurrentText("disable")
-        widgets['start_maximized_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        start_maximized_layout.addWidget(start_maximized_label)
-        start_maximized_layout.addWidget(widgets['start_maximized_combo'])
-        scroll_layout.addLayout(start_maximized_layout)
-
-        welcome_message_layout = QHBoxLayout()
-        welcome_message_label = QLabel("Welcome Message:")
-        welcome_message_label.setWordWrap(True)
-        welcome_message_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        
-        widgets['welcome_message_combo'] = QComboBox()
-        widgets['welcome_message_combo'].addItems(["enable", "disable"])
-        widgets['welcome_message_combo'].setCurrentText("enable")
-        widgets['welcome_message_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
-        welcome_message_layout.addWidget(welcome_message_label)
-        welcome_message_layout.addWidget(widgets['welcome_message_combo'])
-        scroll_layout.addLayout(welcome_message_layout)
+        for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
+            option_layout = QHBoxLayout()
+            option_label = QLabel(option_info['label'])
+            option_label.setWordWrap(True)
+            option_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            
+            widgets[f'{option_key}_combo'] = QComboBox()
+            widgets[f'{option_key}_combo'].addItems(option_info['choices'])
+            widgets[f'{option_key}_combo'].setCurrentText(option_info['default'])
+            widgets[f'{option_key}_combo'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            
+            option_layout.addWidget(option_label)
+            option_layout.addWidget(widgets[f'{option_key}_combo'])
+            scroll_layout.addLayout(option_layout)
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -153,12 +139,25 @@ class OptionsManager:
         """
         Set default values for all widgets.
         """
-        widgets['theme_combo'].setCurrentText("amd")
-        widgets['tray_combo'].setCurrentText("disable")
-        widgets['transparency_combo'].setCurrentText("disable")
-        widgets['start_minimized_combo'].setCurrentText("disable")
-        widgets['start_maximized_combo'].setCurrentText("disable")
-        widgets['welcome_message_combo'].setCurrentText("enable")
+        for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
+            widgets[f'{option_key}_combo'].setCurrentText(option_info['default'])
+
+    @staticmethod
+    def get_early_scaling_factor():
+        """
+        Get the scaling factor before the main application starts.
+        This method is called early in the main function.
+        """
+        config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
+        scaling_factor = "1.0"
+        
+        if config_path.exists():
+            options = configparser.ConfigParser()
+            options.read(config_path)
+            scaling_factor = options.get('Scaling', 'Factor', fallback="1.0")
+        
+        os.environ['QT_SCALE_FACTOR'] = scaling_factor
+        return scaling_factor
 
     @staticmethod
     def load_options(widgets):
@@ -183,15 +182,13 @@ class OptionsManager:
         Save current options to the configuration file.
         """
         options = configparser.ConfigParser()
-        
         main_window = widgets['main_window']
         
-        options['Theme'] = {'ActiveTheme': widgets['theme_combo'].currentText()}
-        options['SystemTray'] = {'Enable': widgets['tray_combo'].currentText()}
-        options['Transparency'] = {'Enable': widgets['transparency_combo'].currentText()}
-        options['StartupMinimized'] = {'Enable': widgets['start_minimized_combo'].currentText()}
-        options['StartupMaximized'] = {'Enable': widgets['start_maximized_combo'].currentText()}
-        options['WelcomeMessage'] = {'Show': widgets['welcome_message_combo'].currentText()}
+        for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
+            if option_info['section'] not in options:
+                options[option_info['section']] = {}
+            options[option_info['section']][option_info['config_key']] = widgets[f'{option_key}_combo'].currentText()
+        
         options['Profile'] = {'LastActiveProfile': getattr(main_window, 'current_profile', 'Default')}
         
         os.makedirs(os.path.dirname(widgets['options_path']), exist_ok=True)
@@ -208,12 +205,10 @@ class OptionsManager:
         """
         main_window = widgets['main_window']
         
-        widgets['theme_combo'].setCurrentText(options.get('Theme', 'ActiveTheme', fallback="amd"))
-        widgets['tray_combo'].setCurrentText(options.get('SystemTray', 'Enable', fallback="disable"))
-        widgets['transparency_combo'].setCurrentText(options.get('Transparency', 'Enable', fallback="disable"))
-        widgets['start_minimized_combo'].setCurrentText(options.get('StartupMinimized', 'Enable', fallback="disable"))
-        widgets['start_maximized_combo'].setCurrentText(options.get('StartupMaximized', 'Enable', fallback="disable"))
-        widgets['welcome_message_combo'].setCurrentText(options.get('WelcomeMessage', 'Show', fallback="enable"))
+        for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
+            default_value = option_info['default']
+            value = options.get(option_info['section'], option_info['config_key'], fallback=default_value)
+            widgets[f'{option_key}_combo'].setCurrentText(value)
         
         last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
         index = main_window.profile_selector.findText(last_profile)
@@ -231,6 +226,7 @@ class OptionsManager:
         OptionsManager.apply_theme_options(widgets)
         OptionsManager.apply_start_minimized_options(widgets)
         OptionsManager.apply_start_maximized_options(widgets)
+        OptionsManager.apply_scaling_options(widgets)
         OptionsManager.apply_welcome_message_options(widgets)
 
     @staticmethod
@@ -268,7 +264,6 @@ class OptionsManager:
                             main_window.show_and_activate()
                 
                 main_window.update_quit_behavior()
-            
             print(f"System tray option applied: {run_in_tray}")
             
     @staticmethod
@@ -318,6 +313,18 @@ class OptionsManager:
             main_window.show_welcome = show_welcome
             print(f"Welcome message option applied: {show_welcome}")
 
+    @staticmethod  
+    def apply_scaling_options(widgets):
+        """
+        Apply interface scaling options to the application.
+        """
+        main_window = widgets['main_window']
+        if main_window:
+            scaling_factor = float(widgets['scaling_combo'].currentText())
+            os.environ['QT_SCALE_FACTOR'] = str(scaling_factor)
+            main_window.scaling_factor = scaling_factor
+            print(f"Scaling option applied: {scaling_factor}")
+
     @staticmethod
     def get_welcome_message_setting(widgets):
         """
@@ -331,9 +338,19 @@ class OptionsManager:
         Save current options and apply them to the application.
         """
         main_window = widgets['main_window']
+        
+        # Check if scaling factor has changed
+        old_scaling = getattr(main_window, 'scaling_factor', 1.0)
+        new_scaling = float(widgets['scaling_combo'].currentText())
+        scaling_changed = old_scaling != new_scaling
+        
         OptionsManager.save_options(widgets)
         
+        message = "Options saved successfully"
+        if scaling_changed:
+            message += ".\nInterface scaling will take full effect after restarting the application."
+        
         if main_window and hasattr(main_window, 'tray_icon'):
-            main_window.tray_icon.showMessage("volt-gui", "Options saved successfully", main_window.tray_icon.MessageIcon.Information, 2000)
+            main_window.tray_icon.showMessage("volt-gui", message, main_window.tray_icon.MessageIcon.Information, 3000)
         else:
-            QMessageBox.information(main_window, "volt-gui", "Options saved successfully")
+            QMessageBox.information(main_window, "volt-gui", message)
