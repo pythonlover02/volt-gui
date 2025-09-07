@@ -1,12 +1,7 @@
-import sys
-import os
+import sys, os
 from PySide6.QtCore import QProcess
 
-
 class WorkaroundManager:
-    """
-    Utility class for managing workarounds.
-    """
     
     @staticmethod
     def setup_qt_platform():
@@ -24,19 +19,13 @@ class WorkaroundManager:
         Returns a list of strings in QProcess environment format.
         """
         env = os.environ.copy()
-        
         if getattr(sys, 'frozen', False):
-            # Remove PyInstaller library paths that might interfere
             env.pop('LD_LIBRARY_PATH', None)
             env.pop('LD_PRELOAD', None)
-            
-            # Clean PATH to remove PyInstaller temp directory
-            if hasattr(sys, '_MEIPASS') and 'PATH' in env:
-                paths = env['PATH'].split(os.pathsep)
-                clean_paths = [p for p in paths if sys._MEIPASS not in p]
-                env['PATH'] = os.pathsep.join(clean_paths)
-        
-        # Convert to QProcess environment format (list of "KEY=VALUE" strings)
+        if hasattr(sys, '_MEIPASS') and 'PATH' in env:
+            paths = env['PATH'].split(os.pathsep)
+            clean_paths = [p for p in paths if sys._MEIPASS not in p]
+            env['PATH'] = os.pathsep.join(clean_paths)
         return [f"{key}={value}" for key, value in env.items()]
     
     @staticmethod
@@ -44,7 +33,7 @@ class WorkaroundManager:
         """
         Setup a QProcess with clean environment.
         Args:
-            process (QProcess): The QProcess instance to configure
+        process (QProcess): The QProcess instance to configure
         """
         clean_env = WorkaroundManager.get_clean_env()
         process.setEnvironment(clean_env)

@@ -1,12 +1,8 @@
 import re
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit, QFrame, QTabWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QLineEdit, QTabWidget
 from PySide6.QtCore import Qt
 
-
 class KernelManager:
-    """
-    Main class for managing kernel settings.
-    """
     
     KERNEL_SETTINGS_CATEGORIES = {
         "CPU": {
@@ -89,7 +85,7 @@ class KernelManager:
             },
             'vfs_cache_pressure': {
                 'path': '/proc/sys/vm/vfs_cache_pressure',
-                'text': 'Tendency to reclaim filesystem caches relative to pagecache/swap. Lower values improve asset loading performance by keeping metadata cached.\nRecommended: 50',
+                'text': 'Tenderness to reclaim filesystem caches relative to pagecache/swap. Lower values improve asset loading performance by keeping metadata cached.\nRecommended: 50',
                 'is_dynamic': False
             },
             'min_free_kbytes': {
@@ -327,22 +323,21 @@ class KernelManager:
     for category in KERNEL_SETTINGS_CATEGORIES.values():
         KERNEL_SETTINGS.update(category)
 
-    # The rest of the class methods remain unchanged
     @staticmethod
     def get_current_value(setting_path):
         """
-        Get current value of a kernel setting.
+        Read and return current value from setting file
         """
         try:
             with open(setting_path, 'r') as f:
                 return f.read().strip()
-        except Exception as e:
+        except Exception:
             return None
 
     @staticmethod
     def get_dynamic_current_value(setting_path):
         """
-        Get current value of a dynamic setting (extracts value in brackets).
+        Extract current value from dynamic settings (e.g., [current] option1 option2)
         """
         try:
             with open(setting_path, 'r') as f:
@@ -357,14 +352,13 @@ class KernelManager:
                     return values[0]
                 else:
                     return None
-        except Exception as e:
+        except Exception:
             return None
 
     @staticmethod
     def get_dynamic_possible_values(setting_path):
         """
-        Get all possible values for a dynamic setting.
-        Returns a list of possible values extracted from the system file.
+        Extract all possible values from dynamic settings
         """
         try:
             with open(setting_path, 'r') as f:
@@ -377,13 +371,13 @@ class KernelManager:
                 return possible_values
             else:
                 return None
-        except Exception as e:
+        except Exception:
             return None
 
     @staticmethod
     def get_dynamic_text_with_values(base_text, setting_path):
         """
-        Generate dynamic text that includes the possible values from the system.
+        Append possible values to setting description text
         """
         possible_values = KernelManager.get_dynamic_possible_values(setting_path)
         if possible_values:
@@ -395,7 +389,7 @@ class KernelManager:
     @staticmethod
     def get_available_setting(setting_path):
         """
-        Check if a kernel setting file is available.
+        Check if setting file is accessible
         """
         try:
             with open(setting_path, 'r') as f:
@@ -407,7 +401,7 @@ class KernelManager:
     @staticmethod
     def create_kernel_tab(main_window):
         """
-        Create and return the kernel settings tab widget with tabs for each category.
+        Create and return kernel settings tab with all widgets
         """
         kernel_tab = QWidget()
         kernel_layout = QVBoxLayout(kernel_tab)
@@ -440,7 +434,6 @@ class KernelManager:
             kernel_subtabs.addTab(category_tab, category_name)
         
         kernel_layout.addWidget(kernel_subtabs)
-        
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
 
         widgets['kernel_settings_applied'] = False
@@ -452,7 +445,7 @@ class KernelManager:
     @staticmethod
     def create_setting_section(kernel_layout, widgets, setting_name, setting_info):
         """
-        Create a UI section for a single kernel setting.
+        Create GUI section for individual kernel setting
         """
         setting_container = QWidget()
         setting_container.setProperty("settingContainer", True)
@@ -496,7 +489,7 @@ class KernelManager:
     @staticmethod
     def create_kernel_apply_button(kernel_layout, widgets, main_window):
         """
-        Create the apply button UI element and connect its signal.
+        Create apply button for kernel settings
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -517,8 +510,7 @@ class KernelManager:
     @staticmethod
     def refresh_kernel_values(widgets):
         """
-        Refresh all kernel setting values in the UI.
-        Also updates dynamic text labels with current possible values.
+        Update all kernel setting current values in the GUI
         """
         for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
             for name, info in category.items():
@@ -533,8 +525,6 @@ class KernelManager:
                 
                 if current is not None:
                     widgets[f'{name}_current_value'].setText(f"current value: {current}")
-                else:
-                    widgets[f'{name}_current_value'].setText("current value: Error reading")
                 
                 if info['is_dynamic'] and f'{name}_text_label' in widgets:
                     updated_text = KernelManager.get_dynamic_text_with_values(info['text'], info['path'])

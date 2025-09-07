@@ -1,10 +1,6 @@
 from PySide6.QtGui import QPalette, QColor
 
-
 class ThemeManager:
-    """
-    Defines the application themes.
-    """
     
     AMD_COLORS = {
         'bg_color': "#1A1A1A",

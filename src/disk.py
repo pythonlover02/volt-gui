@@ -1,22 +1,28 @@
-import glob
-import re
+import glob, re
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QSizePolicy
 from PySide6.QtCore import Qt
 
-
 class DiskManager:
-    """
-    Main Disk management class that handles disk I/O schedulers.
-    """
-    
+
     DISK_SCHEDULER_PATH_PATTERN = "/sys/block/*/queue/scheduler"
-    DEFAULT_SCHEDULER = "mq-deadline"
-    BASE_OPTIONS = ["unset"]
+
+    DISK_SETTINGS_CATEGORIES = {
+        "Scheduler": {
+            'sched': {
+                'label': "Scheduler:",
+                'items': ["unset"]
+            }
+        }
+    }
+    
+    DISK_SETTINGS = {}
+    for category in DISK_SETTINGS_CATEGORIES.values():
+        DISK_SETTINGS.update(category)
 
     @staticmethod
     def get_schedulers():
         """
-        Gets information about all disk schedulers with improved format handling.
+        Get scheduler information for all available disks.
         """
         disk_info = {}
         try:
@@ -30,29 +36,26 @@ class DiskManager:
                         if scheduler_info:
                             scheduler_info['path'] = file_path
                             disk_info[disk_name] = scheduler_info
-                except Exception as e:
-                    print(f"Warning: Failed to read scheduler info for {disk_name}: {e}")
+                except Exception:
                     continue
-        except Exception as e:
-            print(f"Warning: Failed to get disk scheduler info: {e}")
+        except Exception:
+            pass
         return disk_info
 
     @staticmethod
     def parse_scheduler_content(content):
         """
-        Parse scheduler content with improved error handling for various formats.
+        Parse scheduler content to extract available and current schedulers.
         """
         if not content or not content.strip():
-            print("Warning: Empty scheduler content")
             return None
         
         try:
             tokens = content.split()
             if not tokens:
-                print("Warning: No scheduler tokens found")
                 return None
             
-            available = DiskManager.BASE_OPTIONS.copy()
+            available = DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"]['sched']['items'].copy()
             current = None
             bracket_pattern = re.compile(r'\[([^\]]+)\]')
             
@@ -67,7 +70,6 @@ class DiskManager:
                         available.append(token)
             
             if current is None:
-                print(f"Warning: No current scheduler found in brackets for content: '{content}'")
                 return None
             
             if current not in available:
@@ -82,14 +84,13 @@ class DiskManager:
             
             return {'current': current, 'available': unique_available}
             
-        except Exception as e:
-            print(f"Error parsing scheduler content '{content}': {e}")
+        except Exception:
             return None
 
     @staticmethod
     def create_disk_tab():
         """
-        Creates and returns the disk management tab widget.
+        Create the disk management tab with all its widgets.
         """
         disk_tab = QWidget()
         main_layout = QVBoxLayout(disk_tab)
@@ -106,45 +107,45 @@ class DiskManager:
         scroll_layout.setContentsMargins(10, 10, 10, 0)
         
         widgets = {}
-        widgets['disk_combos'] = {}
-        widgets['disk_labels'] = {}
+        widgets['disk_settings'] = {}
         
         disk_info = DiskManager.get_schedulers()
-        
         sorted_disk_names = sorted(disk_info.keys())
         
         for disk_name in sorted_disk_names:
             scheduler_info = disk_info[disk_name]
             
-            disk_layout = QHBoxLayout()
+            disk_widgets = {}
             
-            disk_label = QLabel(f"{disk_name} scheduler:")
-            disk_label.setWordWrap(True)
-            disk_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            for setting_key, setting_info in DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"].items():
+                layout = QHBoxLayout()
+                label = QLabel(f"{disk_name} {setting_info['label']}")
+                label.setWordWrap(True)
+                label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+                
+                disk_widgets[setting_key] = QComboBox()
+                
+                available_schedulers = scheduler_info['available']
+                if setting_info['items'][0] in available_schedulers:
+                    sorted_schedulers = [setting_info['items'][0]] + sorted([s for s in available_schedulers if s != setting_info['items'][0]])
+                else:
+                    sorted_schedulers = sorted(available_schedulers)
+                
+                disk_widgets[setting_key].addItems(sorted_schedulers)
+                disk_widgets[setting_key].setCurrentText(setting_info['items'][0])
+                disk_widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                
+                layout.addWidget(label)
+                layout.addWidget(disk_widgets[setting_key])
+                scroll_layout.addLayout(layout)
+                
+                current_scheduler = scheduler_info['current']
+                current_value_label = QLabel(f"current: {current_scheduler}")
+                current_value_label.setContentsMargins(0, 0, 0, 10)
+                scroll_layout.addWidget(current_value_label)
+                disk_widgets[f'current_{setting_key}_value'] = current_value_label
             
-            disk_combo = QComboBox()
-            available_schedulers = scheduler_info['available']
-            if 'unset' in available_schedulers:
-                sorted_schedulers = ['unset'] + sorted([s for s in available_schedulers if s != 'unset'])
-            else:
-                sorted_schedulers = sorted(available_schedulers)
-            
-            disk_combo.addItems(sorted_schedulers)
-            disk_combo.setCurrentText("unset")
-            disk_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-            
-            disk_layout.addWidget(disk_label)
-            disk_layout.addWidget(disk_combo)
-            scroll_layout.addLayout(disk_layout)
-            
-            current_scheduler = scheduler_info['current']
-            current_display = f"current: {current_scheduler}"
-            current_label = QLabel(current_display)
-            current_label.setContentsMargins(0, 0, 0, 10)
-            scroll_layout.addWidget(current_label)
-            
-            widgets['disk_combos'][disk_name] = disk_combo
-            widgets['disk_labels'][disk_name] = current_label
+            widgets['disk_settings'][disk_name] = disk_widgets
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -161,7 +162,7 @@ class DiskManager:
     @staticmethod
     def create_disk_apply_button(parent_layout, widgets):
         """
-        Creates and adds the disk apply button to the layout.
+        Create and add the disk apply button to the layout.
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -182,13 +183,12 @@ class DiskManager:
     @staticmethod
     def refresh_disk_values(widgets):
         """
-        Updates the UI with current disk scheduler information.
+        Refresh the current disk scheduler values displayed in the interface.
         """
         disk_info = DiskManager.get_schedulers()
         
         for disk_name, scheduler_info in disk_info.items():
-            if disk_name in widgets['disk_labels'] and disk_name in widgets['disk_combos']:
-                label = widgets['disk_labels'][disk_name]
+            if disk_name in widgets['disk_settings']:
+                disk_widgets = widgets['disk_settings'][disk_name]
                 current_scheduler = scheduler_info['current']
-                
-                label.setText(f"current: {current_scheduler}")
+                disk_widgets['current_sched_value'].setText(f"current: {current_scheduler}")

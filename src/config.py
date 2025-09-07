@@ -1,18 +1,16 @@
-import os
-import configparser
+import os, configparser
 from pathlib import Path
 from kernel import KernelManager
-
+from cpu import CPUManager
+from disk import DiskManager
+from gpu_launch import GPULaunchManager
 
 class ConfigManager:
-    """
-    Handles saving and loading of application configuration settings.
-    """
     
     @staticmethod
     def get_config_path(profile_name="Default"):
         """
-        Get the configuration file path, creating directories if needed.
+        Get the configuration file path for a given profile.
         """
         config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
         config_dir.mkdir(parents=True, exist_ok=True)
@@ -24,7 +22,7 @@ class ConfigManager:
     @staticmethod
     def get_available_profiles():
         """
-        Get list of available profile names.
+        Get a list of all available configuration profiles.
         """
         config_dir = Path(os.path.expanduser("~/.config/volt-gui"))
         profiles = ["Default"]
@@ -39,57 +37,48 @@ class ConfigManager:
     @staticmethod
     def save_config(cpu_widgets, gpu_widgets, kernel_widgets, disk_widgets, profile_name="Default"):
         """
-        Save all widget settings to the configuration file.
+        Save configuration settings to a profile file.
         """
         config = configparser.ConfigParser()
         
-        config['CPU'] = {
-            'governor': cpu_widgets['gov_combo'].currentText(),
-            'max_freq': cpu_widgets['max_freq_combo'].currentText(),
-            'min_freq': cpu_widgets['min_freq_combo'].currentText(),
-            'scheduler': cpu_widgets['sched_combo'].currentText()
-        }
+        cpu_config = {}
+        for setting_key in CPUManager.CPU_SETTINGS.keys():
+            if setting_key in cpu_widgets and hasattr(cpu_widgets[setting_key], 'currentText'):
+                cpu_config[setting_key] = cpu_widgets[setting_key].currentText()
+        if cpu_config:
+            config['CPU'] = cpu_config
         
-        config['Mesa'] = {}
-        for widget_key, widget in gpu_widgets['mesa'].items():
-            if hasattr(widget, 'currentText') and widget_key != 'mesa_apply_button':
-                config['Mesa'][widget_key] = widget.currentText()
+        gpu_config = {}
+        for setting_key in GPULaunchManager.GPU_SETTINGS.keys():
+            for category_name, category_widgets in gpu_widgets.items():
+                if category_name != 'LaunchOptions' and setting_key in category_widgets:
+                    if hasattr(category_widgets[setting_key], 'currentText'):
+                        gpu_config[setting_key] = category_widgets[setting_key].currentText()
+                    break
+        if gpu_config:
+            config['GPU'] = gpu_config
         
-        config['NVIDIA'] = {}
-        for widget_key, widget in gpu_widgets['nvidia'].items():
-            if hasattr(widget, 'currentText') and widget_key != 'nvidia_apply_button':
-                config['NVIDIA'][widget_key] = widget.currentText()
-        
-        config['RenderSelector'] = {}
-        for widget_key, widget in gpu_widgets['render_selector'].items():
-            if hasattr(widget, 'currentText') and widget_key != 'render_selector_apply_button':
-                config['RenderSelector'][widget_key] = widget.currentText()
-        
-        config['RenderPipeline'] = {}
-        for widget_key, widget in gpu_widgets['render_pipeline'].items():
-            if hasattr(widget, 'currentText') and widget_key != 'render_pipeline_apply_button':
-                config['RenderPipeline'][widget_key] = widget.currentText()
-            
-        if 'launch_options_input' in gpu_widgets['launch_options']:
-            launch_options = gpu_widgets['launch_options']['launch_options_input'].text().replace('%', '%%')
+        if 'LaunchOptions' in gpu_widgets and 'launch_options_input' in gpu_widgets['LaunchOptions']:
+            launch_options = gpu_widgets['LaunchOptions']['launch_options_input'].text().replace('%', '%%')
             config['LaunchOptions'] = {'launch_options': launch_options}
             
-        if kernel_widgets:
-            kernel_config = {}
-            for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
-                for setting_name in category.keys():
-                    value = kernel_widgets[f'{setting_name}_input'].text().strip()
-                    if value:
-                        kernel_config[setting_name] = value
-            if kernel_config:
-                config['Kernel'] = kernel_config
+        kernel_config = {}
+        for setting_key in KernelManager.KERNEL_SETTINGS.keys():
+            widget_key = f'{setting_key}_input'
+            if widget_key in kernel_widgets:
+                value = kernel_widgets[widget_key].text().strip()
+                if value:
+                    kernel_config[setting_key] = value
+        if kernel_config:
+            config['Kernel'] = kernel_config
         
-        if disk_widgets and 'disk_combos' in disk_widgets:
-            disk_config = {}
-            for disk_name, scheduler_combo in disk_widgets['disk_combos'].items():
-                disk_config[disk_name] = scheduler_combo.currentText()
-            if disk_config:
-                config['Disk'] = disk_config
+        disk_config = {}
+        for disk_name, disk_widgets_dict in disk_widgets['disk_settings'].items():
+            for setting_key in DiskManager.DISK_SETTINGS.keys():
+                if setting_key in disk_widgets_dict:
+                    disk_config[f"{disk_name}_{setting_key}"] = disk_widgets_dict[setting_key].currentText()
+        if disk_config:
+            config['Disk'] = disk_config
         
         with open(ConfigManager.get_config_path(profile_name), 'w') as configfile:
             config.write(configfile)
@@ -97,7 +86,7 @@ class ConfigManager:
     @staticmethod
     def load_config(cpu_widgets, gpu_widgets, kernel_widgets, disk_widgets, profile_name="Default"):
         """
-        Load settings from configuration file and apply to widgets.
+        Load configuration settings from a profile file.
         """
         config = configparser.ConfigParser()
         config_path = ConfigManager.get_config_path(profile_name)
@@ -108,54 +97,42 @@ class ConfigManager:
         config.read(config_path)
         
         if 'CPU' in config:
-            cpu_widgets['gov_combo'].setCurrentText(config['CPU'].get('governor', 'unset'))
-            cpu_widgets['max_freq_combo'].setCurrentText(config['CPU'].get('max_freq', 'unset'))
-            cpu_widgets['min_freq_combo'].setCurrentText(config['CPU'].get('min_freq', 'unset'))
-            cpu_widgets['sched_combo'].setCurrentText(config['CPU'].get('scheduler', 'unset'))
+            for setting_key in CPUManager.CPU_SETTINGS.keys():
+                if setting_key in config['CPU'] and setting_key in cpu_widgets:
+                    cpu_widgets[setting_key].setCurrentText(config['CPU'][setting_key])
         
-        if 'Mesa' in config and 'mesa' in gpu_widgets:
-            for widget_key, value in config['Mesa'].items():
-                if widget_key in gpu_widgets['mesa'] and hasattr(gpu_widgets['mesa'][widget_key], 'setCurrentText'):
-                    gpu_widgets['mesa'][widget_key].setCurrentText(value)
-        
-        if 'NVIDIA' in config and 'nvidia' in gpu_widgets:
-            for widget_key, value in config['NVIDIA'].items():
-                if widget_key in gpu_widgets['nvidia'] and hasattr(gpu_widgets['nvidia'][widget_key], 'setCurrentText'):
-                    gpu_widgets['nvidia'][widget_key].setCurrentText(value)
-        
-        if 'RenderSelector' in config and 'render_selector' in gpu_widgets:
-            for widget_key, value in config['RenderSelector'].items():
-                if widget_key in gpu_widgets['render_selector'] and hasattr(gpu_widgets['render_selector'][widget_key], 'setCurrentText'):
-                    gpu_widgets['render_selector'][widget_key].setCurrentText(value)
-    
-        if 'RenderPipeline' in config and 'render_pipeline' in gpu_widgets:
-            for widget_key, value in config['RenderPipeline'].items():
-                if widget_key in gpu_widgets['render_pipeline'] and hasattr(gpu_widgets['render_pipeline'][widget_key], 'setCurrentText'):
-                    gpu_widgets['render_pipeline'][widget_key].setCurrentText(value)
+        if 'GPU' in config:
+            for setting_key in GPULaunchManager.GPU_SETTINGS.keys():
+                if setting_key in config['GPU']:
+                    for category_name, category_widgets in gpu_widgets.items():
+                        if category_name != 'LaunchOptions' and setting_key in category_widgets:
+                            category_widgets[setting_key].setCurrentText(config['GPU'][setting_key])
+                            break
                 
-        if 'LaunchOptions' in config and 'launch_options' in gpu_widgets and 'launch_options_input' in gpu_widgets['launch_options']:
+        if 'LaunchOptions' in config and 'LaunchOptions' in gpu_widgets and 'launch_options_input' in gpu_widgets['LaunchOptions']:
             launch_options = config['LaunchOptions'].get('launch_options', '').replace('%%', '%')
-            gpu_widgets['launch_options']['launch_options_input'].setText(launch_options)
+            gpu_widgets['LaunchOptions']['launch_options_input'].setText(launch_options)
                 
         if kernel_widgets and 'Kernel' in config:
-            for setting_name, value in config['Kernel'].items():
-                for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
-                    if setting_name in category:
-                        input_widget = kernel_widgets[f'{setting_name}_input']
-                        input_widget.setText(value)
-                        break
+            for setting_key in KernelManager.KERNEL_SETTINGS.keys():
+                if setting_key in config['Kernel']:
+                    widget_key = f'{setting_key}_input'
+                    if widget_key in kernel_widgets:
+                        kernel_widgets[widget_key].setText(config['Kernel'][setting_key])
         
-        if disk_widgets and 'disk_combos' in disk_widgets and 'Disk' in config:
-            for disk_name, scheduler in config['Disk'].items():
-                if disk_name in disk_widgets['disk_combos']:
-                    disk_widgets['disk_combos'][disk_name].setCurrentText(scheduler)
+        if disk_widgets and 'disk_settings' in disk_widgets and 'Disk' in config:
+            for config_key, value in config['Disk'].items():
+                if '_' in config_key:
+                    disk_name, setting_key = config_key.rsplit('_', 1)
+                    if disk_name in disk_widgets['disk_settings'] and setting_key in disk_widgets['disk_settings'][disk_name]:
+                        disk_widgets['disk_settings'][disk_name][setting_key].setCurrentText(value)
         
         return True
     
     @staticmethod
     def delete_profile(profile_name):
         """
-        Delete a profile configuration file.
+        Delete a configuration profile. Cannot delete the Default profile.
         """
         if profile_name == "Default":
             return False

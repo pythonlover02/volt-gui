@@ -1,8 +1,4 @@
-import sys
-import os
-import signal
-import socket
-import threading
+import sys, os, signal, socket, threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
 from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
@@ -31,10 +27,12 @@ def check_sudo_execution():
 
 
 class SingletonSignals(QObject):
+
     show_window = Signal()
 
 
 class SingleInstanceChecker:
+
     def __init__(self, port=47832):
         """
         Initialize the single instance checker with a specific port.
@@ -103,9 +101,7 @@ class SingleInstanceChecker:
 
 
 class SignalHandler:
-    """
-    Handle UNIX signals for shutdown.
-    """
+
     def __init__(self, main_window):
         self.main_window = main_window
         self.setup_signal_handlers()
@@ -129,6 +125,7 @@ class SignalHandler:
 
 
 class MainWindow(QMainWindow):
+    
     def __init__(self, instance_checker):
         """
         Initialize the main window with all components.
@@ -154,7 +151,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(540, 380)
         self.setAttribute(Qt.WA_DontShowOnScreen, True)
 
-        self.apply_dark_theme()
+        self.apply_theme()
         self.setup_ui()
         
         self.update_quit_behavior()
@@ -271,10 +268,11 @@ class MainWindow(QMainWindow):
         """
         gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tab()
         
-        self.gpu_widgets['mesa']['mesa_apply_button'].clicked.connect(self.apply_all_settings)
-        self.gpu_widgets['nvidia']['nvidia_apply_button'].clicked.connect(self.apply_all_settings)
-        self.gpu_widgets['render_selector']['render_selector_apply_button'].clicked.connect(self.apply_all_settings)
-        self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].clicked.connect(self.apply_all_settings)
+        for category_name, category_widgets in self.gpu_widgets.items():
+            if category_name != 'LaunchOptions':
+                apply_button_name = f"{category_name.lower()}_apply_button"
+                if apply_button_name in category_widgets:
+                    category_widgets[apply_button_name].clicked.connect(self.apply_all_settings)
 
         self.tab_widget.addTab(gpu_tab, "GPU")
 
@@ -283,7 +281,7 @@ class MainWindow(QMainWindow):
         Set up the launch options tab.
         """
         launch_options_tab, self.launch_options_widgets = GPULaunchManager.create_launch_options_tab()
-        self.gpu_widgets['launch_options'] = self.launch_options_widgets
+        self.gpu_widgets['LaunchOptions'] = self.launch_options_widgets
         self.launch_options_widgets['launch_apply_button'].clicked.connect(self.apply_all_settings)
         self.tab_widget.addTab(launch_options_tab, "Launch Options")
 
@@ -581,7 +579,6 @@ class MainWindow(QMainWindow):
                 print(f"Warning: Failed to save current profile settings: {e}")
 
             self.current_profile = profile_name
-            ConfigManager.save_current_profile_preference(profile_name)
             self.profile_selector.setCurrentText(profile_name)
             ConfigManager.load_config(
                 self.cpu_widgets, 
@@ -597,7 +594,7 @@ class MainWindow(QMainWindow):
 
         self.apply_all_settings()
 
-    def apply_dark_theme(self):
+    def apply_theme(self):
         """
         Apply the default dark theme to the application.
         """
@@ -642,19 +639,19 @@ class MainWindow(QMainWindow):
             self.save_settings()
 
             cpu_args = []
-            cpu_governor = self.cpu_widgets['gov_combo'].currentText()
+            cpu_governor = self.cpu_widgets['gov'].currentText()
             
-            if self.cpu_widgets.get('max_freq_combo'):
-                cpu_max_freq = self.cpu_widgets['max_freq_combo'].currentText()
+            if 'max_freq' in self.cpu_widgets:
+                cpu_max_freq = self.cpu_widgets['max_freq'].currentText()
             else:
                 cpu_max_freq = "unset"
 
-            if self.cpu_widgets.get('min_freq_combo'):
-                cpu_min_freq = self.cpu_widgets['min_freq_combo'].currentText()
+            if 'min_freq' in self.cpu_widgets:
+                cpu_min_freq = self.cpu_widgets['min_freq'].currentText()
             else:
                 cpu_min_freq = "unset"
 
-            cpu_scheduler = self.cpu_widgets['sched_combo'].currentText()
+            cpu_scheduler = self.cpu_widgets['sched'].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
@@ -676,15 +673,14 @@ class MainWindow(QMainWindow):
                 cpu_args.extend(cpu_parts)
 
             disk_args = []
-            for disk_name, combo in self.disk_widgets['disk_combos'].items():
-                selected_scheduler = combo.currentText()
+            for disk_name, disk_widgets in self.disk_widgets['disk_settings'].items():
+                selected_scheduler = disk_widgets['sched'].currentText()
                 if selected_scheduler and selected_scheduler != "" and selected_scheduler != "unset":
                     if not disk_args:
                         disk_args.append("-d")
                     disk_args.append(f"{disk_name}:{selected_scheduler}")
 
             kernel_args = []
-            kernel_has_settings = False
             for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
                 for name, info in category.items():
                     value = self.kernel_widgets[f'{name}_input'].text().strip()
@@ -692,15 +688,14 @@ class MainWindow(QMainWindow):
                         if not kernel_args:
                             kernel_args.append("-k")
                         kernel_args.append(f"{info['path']}:{value}")
-                        kernel_has_settings = True
 
             gpu_args = []
             settings_file = GPULaunchManager.write_settings_file(
-                self.gpu_widgets['mesa'],
-                self.gpu_widgets['nvidia'],
-                self.gpu_widgets['render_selector'],
-                self.gpu_widgets['render_pipeline'],
-                self.gpu_widgets['launch_options'],
+                self.gpu_widgets['Mesa'],
+                self.gpu_widgets['NVIDIA'],
+                self.gpu_widgets['RenderSelector'],
+                self.gpu_widgets['RenderPipeline'],
+                self.gpu_widgets['LaunchOptions'],
             )
             if settings_file:
                 gpu_args.extend(["-g", settings_file])
@@ -708,7 +703,6 @@ class MainWindow(QMainWindow):
             all_args = ["pkexec", "/usr/local/bin/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
 
             process = QProcess()
-            # Apply clean environment to avoid PyInstaller interference
             WorkaroundManager.setup_clean_process(process)
             
             process.start(all_args[0], all_args[1:])
@@ -717,10 +711,13 @@ class MainWindow(QMainWindow):
             self.cpu_widgets['cpu_apply_button'].setEnabled(False)
             self.disk_widgets['disk_apply_button'].setEnabled(False)
             self.kernel_widgets['kernel_apply_button'].setEnabled(False)
-            self.gpu_widgets['mesa']['mesa_apply_button'].setEnabled(False)
-            self.gpu_widgets['nvidia']['nvidia_apply_button'].setEnabled(False)
-            self.gpu_widgets['render_selector']['render_selector_apply_button'].setEnabled(False)
-            self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].setEnabled(False)
+            
+            for category_name, category_widgets in self.gpu_widgets.items():
+                if category_name != 'LaunchOptions':
+                    apply_button_name = f"{category_name.lower()}_apply_button"
+                    if apply_button_name in category_widgets:
+                        category_widgets[apply_button_name].setEnabled(False)
+            
             self.launch_options_widgets['launch_apply_button'].setEnabled(False)
 
         except Exception as e:
@@ -737,10 +734,13 @@ class MainWindow(QMainWindow):
         self.cpu_widgets['cpu_apply_button'].setEnabled(True)
         self.disk_widgets['disk_apply_button'].setEnabled(True)
         self.kernel_widgets['kernel_apply_button'].setEnabled(True)
-        self.gpu_widgets['mesa']['mesa_apply_button'].setEnabled(True)
-        self.gpu_widgets['nvidia']['nvidia_apply_button'].setEnabled(True)
-        self.gpu_widgets['render_selector']['render_selector_apply_button'].setEnabled(True)
-        self.gpu_widgets['render_pipeline']['render_pipeline_apply_button'].setEnabled(True)
+        
+        for category_name, category_widgets in self.gpu_widgets.items():
+            if category_name != 'LaunchOptions':
+                apply_button_name = f"{category_name.lower()}_apply_button"
+                if apply_button_name in category_widgets:
+                    category_widgets[apply_button_name].setEnabled(True)
+        
         self.launch_options_widgets['launch_apply_button'].setEnabled(True)
 
         self.refresh_cpu_values()
