@@ -107,6 +107,14 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
+            'nvidia_gsync': {
+                'label': "OpenGL G-SYNC:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_VRR_ALLOWED',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
             'nvidia_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
                 'items': ["unset", "on", "off"],
@@ -155,14 +163,6 @@ class GPULaunchManager:
                 'env_mapping': {
                     'var_name': '__GL_LOG_MAX_ANISO',
                     'extract_prefix': True
-                }
-            },
-            'nvidia_gsync': {
-                'label': "OpenGL G-SYNC:",
-                'items': ["unset", "on", "off"],
-                'env_mapping': {
-                    'var_name': '__GL_VRR_ALLOWED',
-                    'values': {'on': '1', 'off': '0'}
                 }
             },
             'nvidia_shader_cache': {
