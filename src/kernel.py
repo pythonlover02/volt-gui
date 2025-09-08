@@ -184,7 +184,7 @@ class KernelManager:
                 'is_dynamic': True
             }
         },
-        "Disk I/O": {
+        "Disk": {
             'dirty_ratio': {
                 'path': '/proc/sys/vm/dirty_ratio',
                 'text': 'Maximum percentage of available memory for dirty pages before synchronous writes. Lower values reduce I/O latency spikes. Mutually exclusive with dirty_bytes.\nRecommended: 10',
