@@ -2,7 +2,6 @@ import webbrowser
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QScrollArea, QTabWidget, QSizePolicy, QLabel
 from PySide6.QtCore import Qt
 
-
 class ExtrasManager:
     
     @staticmethod

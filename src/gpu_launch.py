@@ -1,210 +1,278 @@
-import os
-import glob
-import tempfile
+import os, glob, tempfile
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
 from PySide6.QtCore import Qt, QProcess
 from workarounds import WorkaroundManager
 
-
 class GPULaunchManager:
-    """
-    Main class for managing GPU launch settings and configurations.
-    """
     
-    VOLT_SCRIPT_PATH = "/usr/local/bin/volt"
-    VOLT_HELPER_PATH = "/usr/local/bin/volt-helper"
     SEARCH_PATHS = ["/usr/bin/", "/usr/local/bin/"]
     
-    MESA_SETTINGS = [
-        ("Vulkan Vsync:", 'mesa_vsync_vk_combo', ["unset", "mailbox", "adaptive vsync", "on", "off"]),
-        ("OpenGL Vsync:", 'mesa_vsync_gl_combo', ["unset", "default interval 0", "default interval 1", "on", "off"]),
-        ("OpenGL Thread Optimizations:", 'mesa_thread_opt_combo', ["unset", "on", "off"]),
-        ("OpenGL MSAA:", 'mesa_msaa_combo', ["unset", "on", "off"]),
-        ("Texture Dithering:", 'mesa_dither_combo', ["unset", "on", "off"]),
-        ("Shader Cache:", 'mesa_shader_cache_combo', ["unset", "on", "off"]),
-        ("Shader Cache Size (GB):", 'mesa_cache_size_combo', ["unset"] + [str(i) for i in range(1, 11)]),
-        ("Error Checking:", 'mesa_error_check_combo', ["unset", "on", "off"]),
-        ("Vulkan Version Spoofing:", 'mesa_fake_vk_combo', ["unset", "1.1", "1.2", "1.3", "1.4"]),
-        ("OpenGL Version Spoofing:", 'mesa_fake_gl_combo', ["unset", "3.3", "3.3compat", "4.6", "4.6compat"]),
-        ("GLSL Version Spoofing:", 'mesa_fake_glsl_combo', ["unset", "330", "460"]),
-    ]
-    
-    NVIDIA_SETTINGS = [
-        ("OpenGL Vsync:", 'nvidia_vsync_gl_combo', ["unset", "on", "off"]),
-        ("OpenGL G-SYNC:", 'nvidia_gsync_combo', ["unset", "on", "off"]),
-        ("OpenGL Thread Optimizations:", 'nvidia_thread_opt_combo', ["unset", "on", "off"]),
-        ("OpenGL Full Scene Antialiasing:", 'nvidia_fsaa_combo', [
-            "unset", "0 - off", "1 - 2x (2xms)", "5 - 4x (4xms)", 
-            "7 - 8x (4xms, 4xcs)", "8 - 16x (4xms, 12xcs)", 
-            "9 - 8x (4xss, 2xms)", "10 - 8x (8xms)", 
-            "11 - 16x (4xss, 4xms)", "12 - 16x (8xms, 8xcs)", 
-            "14 - 32x (8xms, 24xcs)"
-        ]),
-        ("OpenGL FXAA:", 'nvidia_fxaa_combo', ["unset", "on", "off"]),
-        ("OpenGL Anisotropic Filtering:", 'nvidia_aniso_combo', [
-            "unset", "0 - no anisotropic filtering",
-            "1 - 2x anisotropic filtering", "2 - 4x anisotropic filtering",
-            "3 - 8x anisotropic filtering", "4 - 16x anisotropic filtering"
-        ]),
-        ("OpenGL Texture Quality:", 'nvidia_tex_quality_combo', ["unset", "quality", "mixed", "performance"]),
-        ("Shader Cache:", 'nvidia_shader_cache_combo', ["unset", "on", "off"]),
-        ("Shader Cache Size (GB):", 'nvidia_cache_size_combo', ["unset"] + [str(i) for i in range(1, 11)]),
-        ("Ignore GLSL Extensions Requirements:", 'nvidia_glsl_ext_combo', ["unset", "on", "off"]),
-        ("Use Unofficial GLX Protocol:", 'nvidia_glx_combo', ["unset", "on", "off"])
-    ]
-
-    RENDER_SETTINGS = [
-        ("OpenGL Renderer:", 'ogl_renderer_combo', [
-            "unset", 
-            "llvmpipe (software rendering)", 
-            "zink"
-        ]),
-        ("Select Vulkan Renderer:", 'vulkan_device_combo', ["unset"]),
-    ]
-
-    RENDER_PIPELINE_SETTINGS = [
-        ("Display Elements:", 'display_combo', ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"]),
-        ("Fps Limit:", 'fps_limit_combo', ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"]),
-        ("Fps Limit Method:", 'fps_method_combo', ["unset", "early - smoothest frametimes", "late - lowest latency"]),
-        ("Texture Filtering:", 'texture_filter_combo', ["unset", "bicubic", "retro", "trilinear"]),
-        ("Mipmap LOD Bias:", 'mipmap_lod_bias_combo', ["unset"] + [str(i) for i in range(-16, 17)]),
-        ("Anisotropic Filtering:", 'anisotropic_filter_combo', ["unset"] + [str(i) for i in range(0, 17)]),
-    ]
-    
-    MESA_ENV_MAPPINGS = {
-        'mesa_vsync_vk_combo': {
-            'var_name': 'MESA_VK_WSI_PRESENT_MODE',
-            'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
-        },
-        'mesa_vsync_gl_combo': {
-            'var_name': 'vblank_mode',
-            'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
-        },
-        'mesa_thread_opt_combo': {
-            'var_name': 'mesa_glthread',
-            'values': {'on': 'true', 'off': 'false'}
-        },
-        'mesa_msaa_combo': {
-            'var_name': 'DRI_NO_MSAA',
-            'values': {'on': '0', 'off': '1'}
-        },
-        'mesa_dither_combo': {
-            'var_name': 'MESA_NO_DITHER',
-            'values': {'on': '0', 'off': '1'}
-        },
-        'mesa_shader_cache_combo': {
-            'var_name': 'MESA_SHADER_CACHE_DISABLE',
-            'values': {'on': 'false', 'off': 'true'}
-        },
-        'mesa_cache_size_combo': {
-            'var_name': 'MESA_SHADER_CACHE_MAX_SIZE',
-            'direct_value': True
-        },
-        'mesa_error_check_combo': {
-            'var_name': 'MESA_NO_ERROR',
-            'values': {'on': 'false', 'off': 'true'}
-        },
-        'mesa_fake_gl_combo': {
-            'var_name': 'MESA_GL_VERSION_OVERRIDE',
-            'direct_value': True
-        },
-        'mesa_fake_glsl_combo': {
-            'var_name': 'MESA_GLSL_VERSION_OVERRIDE',
-            'direct_value': True
-        },
-        'mesa_fake_vk_combo': {
-            'var_name': 'MESA_VK_VERSION_OVERRIDE',
-            'direct_value': True
-        }
-    }
-    
-    NVIDIA_ENV_MAPPINGS = {
-        'nvidia_vsync_gl_combo': {
-            'var_name': '__GL_SYNC_TO_VBLANK',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_thread_opt_combo': {
-            'var_name': '__GL_THREADED_OPTIMIZATIONS',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_tex_quality_combo': {
-            'var_name': '__GL_OpenGLImageSettings',
-            'values': {'quality': '1', 'mixed': '2', 'performance': '3'}
-        },
-        'nvidia_fsaa_combo': {
-            'var_name': '__GL_FSAA_MODE',
-            'extract_prefix': True
-        },
-        'nvidia_fxaa_combo': {
-            'var_name': '__GL_ALLOW_FXAA_USAGE',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_aniso_combo': {
-            'var_name': '__GL_LOG_MAX_ANISO',
-            'extract_prefix': True
-        },
-        'nvidia_gsync_combo': {
-            'var_name': '__GL_VRR_ALLOWED',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_shader_cache_combo': {
-            'var_name': '__GL_SHADER_DISK_CACHE',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_cache_size_combo': {
-            'var_name': '__GL_SHADER_DISK_CACHE_SIZE',
-            'convert_to_bytes': True
-        },
-        'nvidia_glsl_ext_combo': {
-            'var_name': '__GL_IGNORE_GLSL_EXT_REQ',
-            'values': {'on': '1', 'off': '0'}
-        },
-        'nvidia_glx_combo': {
-            'var_name': '__GL_ALLOW_UNOFFICIAL_PROTOCOL',
-            'values': {'on': '1', 'off': '0'}
-        }
-    }
-    
-    RENDER_PIPELINE_ENV_MAPPINGS = {
-        'display_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4',}
-        },
-        'fps_limit_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'unlimited': '0'},
-            'direct_value': True,
-            'prefix': 'fps_limit='
-        },
-        'fps_method_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
-            'prefix': 'fps_limit_method='
-        },
-        'texture_filter_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'values': {
-                'bicubic': 'bicubic',
-                'retro': 'retro',
-                'trilinear': 'trilinear'
+    GPU_SETTINGS_CATEGORIES = {
+        "Mesa": {
+            'mesa_vsync_vk': {
+                'label': "Vulkan Vsync:",
+                'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'MESA_VK_WSI_PRESENT_MODE',
+                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
+                }
+            },
+            'mesa_vsync_gl': {
+                'label': "OpenGL Vsync:",
+                'items': ["unset", "default interval 0", "default interval 1", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'vblank_mode',
+                    'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
+                }
+            },
+            'mesa_thread_opt': {
+                'label': "OpenGL Thread Optimizations:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'mesa_glthread',
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'mesa_msaa': {
+                'label': "OpenGL MSAA:",
+                'items': ["unset", "on", 'off'],
+                'env_mapping': {
+                    'var_name': 'DRI_NO_MSAA',
+                    'values': {'on': '0', 'off': '1'}
+                }
+            },
+            'mesa_dither': {
+                'label': "Texture Dithering:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'MESA_NO_DITHER',
+                    'values': {'on': '0', 'off': '1'}
+                }
+            },
+            'mesa_shader_cache': {
+                'label': "Shader Cache:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'MESA_SHADER_CACHE_DISABLE',
+                    'values': {'on': 'false', 'off': 'true'}
+                }
+            },
+            'mesa_cache_size': {
+                'label': "Shader Cache Size (GB):",
+                'items': ["unset"] + [str(i) for i in range(1, 11)],
+                'env_mapping': {
+                    'var_name': 'MESA_SHADER_CACHE_MAX_SIZE',
+                    'direct_value': True
+                }
+            },
+            'mesa_error_check': {
+                'label': "Error Checking:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': 'MESA_NO_ERROR',
+                    'values': {'on': 'false', 'off': 'true'}
+                }
+            },
+            'mesa_fake_vk': {
+                'label': "Vulkan Version Spoofing:",
+                'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
+                'env_mapping': {
+                    'var_name': 'MESA_VK_VERSION_OVERRIDE',
+                    'direct_value': True
+                }
+            },
+            'mesa_fake_gl': {
+                'label': "OpenGL Version Spoofing:",
+                'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
+                'env_mapping': {
+                    'var_name': 'MESA_GL_VERSION_OVERRIDE',
+                    'direct_value': True
+                }
+            },
+            'mesa_fake_glsl': {
+                'label': "GLSL Version Spoofing:",
+                'items': ["unset", "330", "460"],
+                'env_mapping': {
+                    'var_name': 'MESA_GLSL_VERSION_OVERRIDE',
+                    'direct_value': True
+                }
             }
         },
-        'mipmap_lod_bias_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'direct_value': True,
-            'prefix': 'picmip='
+        "NVIDIA": {
+            'nvidia_vsync_gl': {
+                'label': "OpenGL Vsync:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_SYNC_TO_VBLANK',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_gsync': {
+                'label': "OpenGL G-SYNC:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_VRR_ALLOWED',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_thread_opt': {
+                'label': "OpenGL Thread Optimizations:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_THREADED_OPTIMIZATIONS',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_tex_quality': {
+                'label': "OpenGL Texture Quality:",
+                'items': ["unset", "quality", "mixed", "performance"],
+                'env_mapping': {
+                    'var_name': '__GL_OpenGLImageSettings',
+                    'values': {'quality': '1', 'mixed': '2', 'performance': '3'}
+                }
+            },
+            'nvidia_fsaa': {
+                'label': "OpenGL Full Scene Antialiasing:",
+                'items': [
+                    "unset", "0 - off", "1 - 2x (2xms)", "5 - 4x (4xms)", 
+                    "7 - 8x (4xms, 4xcs)", "8 - 16x (4xms, 12xcs)", 
+                    "9 - 8x (4xss, 2xms)", "10 - 8x (8xms)", 
+                    "11 - 16x (4xss, 4xms)", "12 - 16x (8xms, 8xcs)", 
+                    "14 - 32x (8xms, 24xcs)"
+                ],
+                'env_mapping': {
+                    'var_name': '__GL_FSAA_MODE',
+                    'extract_prefix': True
+                }
+            },
+            'nvidia_fxaa': {
+                'label': "OpenGL FXAA:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_ALLOW_FXAA_USAGE',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_aniso': {
+                'label': "OpenGL Anisotropic Filtering:",
+                'items': [
+                    "unset", "0 - no anisotropic filtering",
+                    "1 - 2x anisotropic filtering", "2 - 4x anisotropic filtering",
+                    "3 - 8x anisotropic filtering", "4 - 16x anisotropic filtering"
+                ],
+                'env_mapping': {
+                    'var_name': '__GL_LOG_MAX_ANISO',
+                    'extract_prefix': True
+                }
+            },
+            'nvidia_shader_cache': {
+                'label': "Shader Cache:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_SHADER_DISK_CACHE',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_cache_size': {
+                'label': "Shader Cache Size (GB):",
+                'items': ["unset"] + [str(i) for i in range(1, 11)],
+                'env_mapping': {
+                    'var_name': '__GL_SHADER_DISK_CACHE_SIZE',
+                    'convert_to_bytes': True
+                }
+            },
+            'nvidia_glsl_ext': {
+                'label': "Ignore GLSL Extensions Requirements:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_IGNORE_GLSL_EXT_REQ',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_glx': {
+                'label': "Use Unofficial GLX Protocol:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_name': '__GL_ALLOW_UNOFFICIAL_PROTOCOL',
+                    'values': {'on': '1', 'off': '0'}
+                }
+            }
         },
-        'anisotropic_filter_combo': {
-            'var_name': 'MANGOHUD_CONFIG',
-            'direct_value': True,
-            'prefix': 'af='
+        "RenderSelector": {
+            'ogl_renderer': {
+                'label': "OpenGL Renderer:",
+                'items': ["unset", "llvmpipe (software rendering)", "zink"]
+            },
+            'vulkan_device': {
+                'label': "Select Vulkan Renderer:",
+                'items': ["unset"]
+            }
+        },
+        "RenderPipeline": {
+            'display': {
+                'label': "Display Elements:",
+                'items': ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4'}
+                }
+            },
+            'fps_limit': {
+                'label': "Fps Limit:",
+                'items': ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'values': {'unlimited': '0'},
+                    'direct_value': True,
+                    'prefix': 'fps_limit='
+                }
+            },
+            'fps_method': {
+                'label': "Fps Limit Method:",
+                'items': ["unset", "early - smoothest frametimes", "late - lowest latency"],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
+                    'prefix': 'fps_limit_method='
+                }
+            },
+            'texture_filter': {
+                'label': "Texture Filtering:",
+                'items': ["unset", "bicubic", "retro", "trilinear"],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'values': {'bicubic': 'bicubic', 'retro': 'retro', 'trilinear': 'trilinear'}
+                }
+            },
+            'mipmap_lod_bias': {
+                'label': "Mipmap LOD Bias:",
+                'items': ["unset"] + [str(i) for i in range(-16, 17)],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'direct_value': True,
+                    'prefix': 'picmip='
+                }
+            },
+            'anisotropic_filter': {
+                'label': "Anisotropic Filtering:",
+                'items': ["unset"] + [str(i) for i in range(0, 17)],
+                'env_mapping': {
+                    'var_name': 'MANGOHUD_CONFIG',
+                    'direct_value': True,
+                    'prefix': 'af='
+                }
+            }
         }
     }
+    
+    GPU_SETTINGS = {}
+    for category in GPU_SETTINGS_CATEGORIES.values():
+        GPU_SETTINGS.update(category)
 
     @staticmethod
     def truncate_name_at_slash(name):
         """
-        Truncates a name at the first occurrence of '/' or '('.
+        Truncate device name at slash or parenthesis.
         """
         if '/' in name:
             return name.split('/')[0].strip()
@@ -215,8 +283,7 @@ class GPULaunchManager:
     @staticmethod
     def get_available(program_name, search_flatpak=True):
         """
-        Generic function to find if a program is available in system paths or Flatpak.
-        Uses clean environment for process calls.
+        Check if a program is available in system paths or flatpak.
         """
         for search_path in GPULaunchManager.SEARCH_PATHS:
             try:
@@ -230,11 +297,10 @@ class GPULaunchManager:
         if search_flatpak:
             try:
                 process = QProcess()
-                # Use clean environment for flatpak list
                 WorkaroundManager.setup_clean_process(process)
                 process.start("flatpak", ["list"])
                 
-                if process.waitForFinished(10000):  # 10 second timeout
+                if process.waitForFinished(10000):
                     output = process.readAllStandardOutput().data().decode()
                     if program_name.lower() in output.lower():
                         return True
@@ -246,28 +312,28 @@ class GPULaunchManager:
     @staticmethod
     def get_available_vulkaninfo():
         """
-        Checks if vulkaninfo is available in the system PATH.
+        Check if vulkaninfo is available.
         """
         return GPULaunchManager.get_available("vulkaninfo", search_flatpak=False)
 
     @staticmethod
     def get_available_glxinfo():
         """
-        Checks if glxinfo is available in the system PATH.
+        Check if glxinfo is available.
         """
         return GPULaunchManager.get_available("glxinfo", search_flatpak=False)
 
     @staticmethod
     def get_available_mangohud():
         """
-        Checks if MangoHUD is available in system paths or Flatpak.
+        Check if MangoHUD is available.
         """
         return GPULaunchManager.get_available("mangohud", search_flatpak=True)
 
     @staticmethod
     def get_vulkan_device_options():
         """
-        Gets available Vulkan GPU devices using vulkaninfo with clean environment.
+        Get available Vulkan device options from vulkaninfo.
         """
         devices = []
         device_map = {}
@@ -277,11 +343,10 @@ class GPULaunchManager:
         
         try:
             process = QProcess()
-            # Use clean environment for vulkaninfo
             WorkaroundManager.setup_clean_process(process)
             process.start("vulkaninfo")
             
-            if process.waitForFinished(10000):  # 10 second timeout
+            if process.waitForFinished(10000):
                 output = process.readAllStandardOutput().data().decode()
                 lines = output.split('\n')
                 
@@ -299,7 +364,6 @@ class GPULaunchManager:
                         current_device['deviceName'] = device_name
                         
                         if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
-                            # Truncate device name at the first slash
                             truncated_name = GPULaunchManager.truncate_name_at_slash(current_device['deviceName'])
                             display_name = truncated_name.lower()
                             
@@ -322,13 +386,12 @@ class GPULaunchManager:
     @staticmethod
     def get_opengl_gpu_options():
         """
-        Gets available OpenGL GPU devices using glxinfo with clean environment and different env vars.
+        Get available OpenGL GPU options from glxinfo.
         """
         gpu_list = []
         gpu_env_map = {}
         
         if not GPULaunchManager.get_available_glxinfo():
-            # Return only fixed options if glxinfo is not available
             fixed_options = {
                 "llvmpipe (software rendering)": {
                     "__GLX_VENDOR_LIBRARY_NAME": "mesa",
@@ -347,22 +410,18 @@ class GPULaunchManager:
             options = ["unset"] + list(fixed_options.keys())
             return options, gpu_env_map
         
-        # NVIDIA GPU
         try:
             process = QProcess()
-            # Start with clean environment
             clean_env = WorkaroundManager.get_clean_env()
-            # Add NVIDIA-specific environment variable
             clean_env.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
             process.setEnvironment(clean_env)
             process.start("glxinfo")
             
-            if process.waitForFinished(10000):  # 10 second timeout
+            if process.waitForFinished(10000):
                 output = process.readAllStandardOutput().data().decode()
                 for line in output.split('\n'):
                     if "OpenGL renderer string:" in line:
                         gpu_name = line.split(':', 1)[1].strip()
-                        # Truncate GPU name at the first slash
                         gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
                         gpu_name = gpu_name.lower()
                         
@@ -373,31 +432,26 @@ class GPULaunchManager:
         except Exception:
             pass
         
-        # Mesa GPUs with DRI_PRIME
         index = 0
-        while index < 5:  # Limit to 5 devices
+        while index < 5:
             try:
                 process = QProcess()
-                # Start with clean environment
                 clean_env = WorkaroundManager.get_clean_env()
-                # Add Mesa-specific environment variables
                 clean_env.append("__GLX_VENDOR_LIBRARY_NAME=mesa")
                 clean_env.append(f"DRI_PRIME={index}")
                 process.setEnvironment(clean_env)
                 process.start("glxinfo")
                 
-                if process.waitForFinished(10000):  # 10 second timeout
+                if process.waitForFinished(10000):
                     output = process.readAllStandardOutput().data().decode()
                     
                     renderer_found = False
                     for line in output.split('\n'):
                         if "OpenGL renderer string:" in line:
                             gpu_name = line.split(':', 1)[1].strip()
-                            # Truncate GPU name at the first slash
                             gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
                             gpu_name = gpu_name.lower()
                             
-                            # Check for software renderer or duplicate
                             if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
                                 break
                                 
@@ -409,7 +463,6 @@ class GPULaunchManager:
                             renderer_found = True
                             break
                     
-                    # If no renderer found or llvmpipe detected, break the loop
                     if not renderer_found:
                         break
                         
@@ -417,7 +470,6 @@ class GPULaunchManager:
             except Exception:
                 break
         
-        # Fixed Mesa options
         fixed_options = {
             "llvmpipe (software rendering)": {
                 "__GLX_VENDOR_LIBRARY_NAME": "mesa",
@@ -430,11 +482,9 @@ class GPULaunchManager:
             }
         }
         
-        # Add fixed options to the map
         for name, env_vars in fixed_options.items():
             gpu_env_map[name] = env_vars
         
-        # Create full option list
         options = ["unset"] + gpu_list + list(fixed_options.keys())
         
         return options, gpu_env_map
@@ -442,17 +492,17 @@ class GPULaunchManager:
     @staticmethod
     def create_gpu_settings_tab():
         """
-        Creates the GPU settings tab with Mesa, NVIDIA, render selector, and render pipeline subtabs.
+        Create the main GPU settings tab with subtabs.
         """
         gpu_tab = QWidget()
         gpu_layout = QVBoxLayout(gpu_tab)
         gpu_layout.setSpacing(10)
         
         gpu_subtabs = QTabWidget()
-        mesa_tab, mesa_widgets = GPULaunchManager.create_mesa_tab()
-        nvidia_tab, nvidia_widgets = GPULaunchManager.create_nvidia_tab()
-        render_selector_tab, render_selector_widgets = GPULaunchManager.create_render_selector_tab()
-        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_render_pipeline_tab()
+        mesa_tab, mesa_widgets = GPULaunchManager.create_category_tab("Mesa")
+        nvidia_tab, nvidia_widgets = GPULaunchManager.create_category_tab("NVIDIA")
+        render_selector_tab, render_selector_widgets = GPULaunchManager.create_category_tab("RenderSelector")
+        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_category_tab("RenderPipeline")
         
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
@@ -461,32 +511,18 @@ class GPULaunchManager:
         gpu_layout.addWidget(gpu_subtabs)
         
         widgets = {
-            'mesa': mesa_widgets,
-            'nvidia': nvidia_widgets,
-            'render_selector': render_selector_widgets,
-            'render_pipeline': render_pipeline_widgets
+            'Mesa': mesa_widgets,
+            'NVIDIA': nvidia_widgets,
+            'RenderSelector': render_selector_widgets,
+            'RenderPipeline': render_pipeline_widgets
         }
         
         return gpu_tab, widgets
 
     @staticmethod
-    def create_mesa_tab():
+    def create_category_tab(category_name):
         """
-        Creates the Mesa settings tab.
-        """
-        return GPULaunchManager.create_settings_tab(GPULaunchManager.MESA_SETTINGS, "mesa_apply_button")
-
-    @staticmethod
-    def create_nvidia_tab():
-        """
-        Creates the NVIDIA settings tab.
-        """
-        return GPULaunchManager.create_settings_tab(GPULaunchManager.NVIDIA_SETTINGS, "nvidia_apply_button")
-    
-    @staticmethod
-    def create_settings_tab(settings_layouts, apply_button_name):
-        """
-        Helper method to create a settings tab with the specified configuration.
+        Create a settings tab for a specific category.
         """
         tab = QWidget()
         main_layout = QVBoxLayout(tab)
@@ -504,65 +540,85 @@ class GPULaunchManager:
         
         widgets = {}
         
-        for label_text, combo_name, items in settings_layouts:
+        for setting_key, setting_info in GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name].items():
             layout = QHBoxLayout()
-            label = QLabel(label_text)
+            label = QLabel(setting_info['label'])
             label.setWordWrap(True)
             label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             
-            widgets[combo_name] = QComboBox()
-            widgets[combo_name].addItems(items)
-            widgets[combo_name].setCurrentText("unset")
-            widgets[combo_name].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            widgets[setting_key] = QComboBox()
+            widgets[setting_key].addItems(setting_info['items'])
+            widgets[setting_key].setCurrentText("unset")
+            widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             
             layout.addWidget(label)
-            layout.addWidget(widgets[combo_name])
+            layout.addWidget(widgets[setting_key])
             scroll_layout.addLayout(layout)
+        
+        if category_name == "RenderSelector":
+            if GPULaunchManager.get_available_glxinfo():
+                opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
+                widgets['ogl_renderer'].clear()
+                widgets['ogl_renderer'].addItems(opengl_options)
+                widgets['ogl_renderer'].env_map = gpu_env_map
+            else:
+                widgets['ogl_renderer'].setEnabled(False)
+                widgets['ogl_renderer'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
+            
+            if GPULaunchManager.get_available_vulkaninfo():
+                vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
+                vulkan_options = ["unset"] + vulkan_devices
+                widgets['vulkan_device'].clear()
+                widgets['vulkan_device'].addItems(vulkan_options)
+                widgets['vulkan_device'].device_map = device_map
+            else:
+                widgets['vulkan_device'].setEnabled(False)
+                widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
         
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
         
-        GPULaunchManager.create_gpu_apply_button(main_layout, widgets, apply_button_name)
+        GPULaunchManager.create_gpu_apply_button(main_layout, widgets, f"{category_name.lower()}_apply_button")
         
         return tab, widgets
 
     @staticmethod
     def create_render_selector_tab():
         """
-        Creates the render selector tab for choosing OpenGL/Vulkan rendering devices.
+        Create the render selector tab with OpenGL and Vulkan options.
         """
-        render_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_SETTINGS, "render_selector_apply_button")
+        render_tab, widgets = GPULaunchManager.create_category_tab("RenderSelector")
         
         if GPULaunchManager.get_available_glxinfo():
             opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
-            widgets['ogl_renderer_combo'].clear()
-            widgets['ogl_renderer_combo'].addItems(opengl_options)
-            widgets['ogl_renderer_combo'].env_map = gpu_env_map
+            widgets['ogl_renderer'].clear()
+            widgets['ogl_renderer'].addItems(opengl_options)
+            widgets['ogl_renderer'].env_map = gpu_env_map
         else:
-            widgets['ogl_renderer_combo'].setEnabled(False)
-            widgets['ogl_renderer_combo'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
+            widgets['ogl_renderer'].setEnabled(False)
+            widgets['ogl_renderer'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
         
         if GPULaunchManager.get_available_vulkaninfo():
             vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
             vulkan_options = ["unset"] + vulkan_devices
-            widgets['vulkan_device_combo'].clear()
-            widgets['vulkan_device_combo'].addItems(vulkan_options)
-            widgets['vulkan_device_combo'].device_map = device_map
+            widgets['vulkan_device'].clear()
+            widgets['vulkan_device'].addItems(vulkan_options)
+            widgets['vulkan_device'].device_map = device_map
         else:
-            widgets['vulkan_device_combo'].setEnabled(False)
-            widgets['vulkan_device_combo'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
+            widgets['vulkan_device'].setEnabled(False)
+            widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
 
         return render_tab, widgets
 
     @staticmethod
     def create_render_pipeline_tab():
         """
-        Creates the render pipeline tab for managing FPS, filters and display settings.
+        Create the render pipeline tab with MangoHUD options.
         """
         mangohud_available = GPULaunchManager.get_available_mangohud()
         
-        render_pipeline_tab, widgets = GPULaunchManager.create_settings_tab(GPULaunchManager.RENDER_PIPELINE_SETTINGS, "render_pipeline_apply_button")
+        render_pipeline_tab, widgets = GPULaunchManager.create_category_tab("RenderPipeline")
         
         if not mangohud_available:
             for widget in widgets.values():
@@ -575,7 +631,7 @@ class GPULaunchManager:
     @staticmethod
     def create_launch_options_tab():
         """
-        Creates the launch options tab for specifying additional launch commands.
+        Create the launch options tab with additional launch parameters.
         """
         launch_tab = QWidget()
         main_layout = QVBoxLayout(launch_tab)
@@ -625,7 +681,7 @@ class GPULaunchManager:
     @staticmethod
     def create_gpu_apply_button(layout, widgets, button_name):
         """
-        Creates and adds an apply button to the specified layout.
+        Create an apply button for GPU settings.
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -645,7 +701,7 @@ class GPULaunchManager:
     @staticmethod
     def create_launch_apply_button(layout, widgets):
         """
-        Creates and adds an apply button specifically for the launch options tab.
+        Create an apply button for launch options.
         """
         button_container = QWidget()
         button_container.setProperty("buttonContainer", True)
@@ -663,82 +719,98 @@ class GPULaunchManager:
         layout.addSpacing(9)
 
     @staticmethod
-    def generate_mesa_env_vars(mesa_widgets):
+    def generate_env_vars(widgets, category_name):
         """
-        Generates script content for Mesa environment variables.
-        """
-        env_vars = []
-        
-        for widget_key, mapping in GPULaunchManager.MESA_ENV_MAPPINGS.items():
-            if widget_key not in mesa_widgets:
-                continue
-                
-            value = mesa_widgets[widget_key].currentText()
-            if value == "unset":
-                continue
-                
-            var_name = mapping['var_name']
-            
-            if mapping.get('direct_value', False):
-                env_vars.append(f'{var_name}={value}')
-            else:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    env_vars.append(f'{var_name}={mapped_value}')
-        
-        return env_vars
-
-    @staticmethod
-    def generate_nvidia_env_vars(nvidia_widgets):
-        """
-        Generates script content for NVIDIA environment variables.
+        Generate environment variables for a settings category.
         """
         env_vars = []
         
-        for widget_key, mapping in GPULaunchManager.NVIDIA_ENV_MAPPINGS.items():
-            if widget_key not in nvidia_widgets:
-                continue
-                
-            value = nvidia_widgets[widget_key].currentText()
-            if value == "unset":
-                continue
-                
-            var_name = mapping['var_name']
+        if category_name == "RenderPipeline":
+            mangohud_parts = []
             
-            if mapping.get('extract_prefix', False):
-                extracted_value = value.split(' - ')[0]
-                env_vars.append(f'{var_name}={extracted_value}')
-            elif mapping.get('convert_to_bytes', False):
-                bytes_value = int(value) * 1073741824
-                env_vars.append(f'{var_name}={bytes_value}')
-            elif mapping.get('direct_value', False):
-                env_vars.append(f'{var_name}={value}')
-            else:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    env_vars.append(f'{var_name}={mapped_value}')
+            for setting_key, widget in widgets.items():
+                if setting_key.endswith('_apply_button'):
+                    continue
+                    
+                value = widget.currentText()
+                if value == "unset":
+                    continue
+                    
+                setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
+                
+                if 'env_mapping' not in setting_info:
+                    continue
+                    
+                mapping = setting_info['env_mapping']
+                
+                if mapping.get('direct_value', False):
+                    prefix = mapping.get('prefix', '')
+                    if value == 'unlimited':
+                        mapped_value = mapping['values'].get(value, '0')
+                        mangohud_parts.append(f'{prefix}{mapped_value}')
+                    else:
+                        mangohud_parts.append(f'{prefix}{value}')
+                elif 'values' in mapping:
+                    mapped_value = mapping['values'].get(value)
+                    if mapped_value:
+                        prefix = mapping.get('prefix', '')
+                        mangohud_parts.append(f'{prefix}{mapped_value}')
+            
+            if mangohud_parts:
+                config_value = ','.join(mangohud_parts)
+                env_vars.append(f'MANGOHUD_CONFIG={config_value}')
+        else:
+            for setting_key, widget in widgets.items():
+                if setting_key.endswith('_apply_button'):
+                    continue
+                    
+                value = widget.currentText()
+                if value == "unset":
+                    continue
+                    
+                setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
+                
+                if 'env_mapping' not in setting_info:
+                    continue
+                    
+                mapping = setting_info['env_mapping']
+                var_name = mapping['var_name']
+                
+                if mapping.get('direct_value', False):
+                    env_vars.append(f'{var_name}={value}')
+                elif mapping.get('extract_prefix', False):
+                    extracted_value = value.split(' - ')[0]
+                    env_vars.append(f'{var_name}={extracted_value}')
+                elif mapping.get('convert_to_bytes', False):
+                    bytes_value = int(value) * 1073741824
+                    env_vars.append(f'{var_name}={bytes_value}')
+                elif 'values' in mapping:
+                    mapped_value = mapping['values'].get(value)
+                    if mapped_value:
+                        prefix = mapping.get('prefix', '')
+                        env_vars.append(f'{var_name}={prefix}{mapped_value}')
         
         return env_vars
 
     @staticmethod
     def generate_render_selector_env_vars(render_widgets):
         """
-        Generates environment variables for render selector settings in key=value format.
+        Generate environment variables for render selector settings.
         """
         env_vars = []
         
-        if 'ogl_renderer_combo' in render_widgets:
-            selected = render_widgets['ogl_renderer_combo'].currentText()
+        if 'ogl_renderer' in render_widgets:
+            selected = render_widgets['ogl_renderer'].currentText()
             if selected != "unset":
-                env_map = getattr(render_widgets['ogl_renderer_combo'], 'env_map', {})
+                env_map = getattr(render_widgets['ogl_renderer'], 'env_map', {})
                 env_dict = env_map.get(selected, {})
                 for var, value in env_dict.items():
                     env_vars.append(f"{var}={value}")
         
-        if 'vulkan_device_combo' in render_widgets:
-            vulkan_selection = render_widgets['vulkan_device_combo'].currentText()
+        if 'vulkan_device' in render_widgets:
+            vulkan_selection = render_widgets['vulkan_device'].currentText()
             if vulkan_selection != "unset":
-                device_map = getattr(render_widgets['vulkan_device_combo'], 'device_map', {})
+                device_map = getattr(render_widgets['vulkan_device'], 'device_map', {})
                 device_key = device_map.get(vulkan_selection)
                 if device_key:
                     env_vars.append(f"MESA_VK_DEVICE_SELECT={device_key}!")
@@ -746,64 +818,21 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def generate_render_pipeline_env_vars(render_pipeline_widgets):
-        """
-        Generates environment variables for render pipeline settings.
-        """
-        env_vars = []
-        mangohud_config_parts = []
-        use_mangohud = False
-        
-        for widget_key, mapping in GPULaunchManager.RENDER_PIPELINE_ENV_MAPPINGS.items():
-            if widget_key not in render_pipeline_widgets:
-                continue
-                
-            widget = render_pipeline_widgets[widget_key]
-            value = widget.currentText()
-            if value == "unset":
-                continue
-                
-            use_mangohud = True
-            
-            if mapping.get('direct_value', False):
-                prefix = mapping.get('prefix', '')
-                if value == 'unlimited':
-                    mapped_value = mapping['values'].get(value, '0')
-                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
-                else:
-                    mangohud_config_parts.append(f'{prefix}{value}')
-            
-            elif 'values' in mapping:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    prefix = mapping.get('prefix', '')
-                    mangohud_config_parts.append(f'{prefix}{mapped_value}')
-            
-            else:
-                mapped_value = mapping['values'].get(value)
-                if mapped_value:
-                    mangohud_config_parts.append(mapped_value)
-        
-        if mangohud_config_parts:
-            config_value = ','.join(mangohud_config_parts)
-            env_vars.append(f'MANGOHUD_CONFIG={config_value}')
-        
-        return env_vars, use_mangohud
-
-    @staticmethod
     def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, launch_options_widgets):
         """
-        Writes GPU settings to a temporary file for volt-helper to process.
+        Write all settings to a temporary configuration file.
         """
-        mesa_env_vars = GPULaunchManager.generate_mesa_env_vars(mesa_widgets)
-        nvidia_env_vars = GPULaunchManager.generate_nvidia_env_vars(nvidia_widgets)
+        mesa_env_vars = GPULaunchManager.generate_env_vars(mesa_widgets, "Mesa")
+        nvidia_env_vars = GPULaunchManager.generate_env_vars(nvidia_widgets, "NVIDIA")
         render_env_vars = GPULaunchManager.generate_render_selector_env_vars(render_selector_widgets)
+        render_pipeline_env_vars = GPULaunchManager.generate_env_vars(render_pipeline_widgets, "RenderPipeline")
             
         launch_options = ""
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        render_pipeline_env_vars, use_mangohud = GPULaunchManager.generate_render_pipeline_env_vars(render_pipeline_widgets)
+        use_mangohud = any(widget.currentText() != "unset" for widget in render_pipeline_widgets.values() 
+                          if not isinstance(widget, QPushButton))
 
         if use_mangohud and launch_options:
             launch_options = f"mangohud {launch_options}"

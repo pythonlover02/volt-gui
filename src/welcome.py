@@ -1,70 +1,59 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel, QSizePolicy, QMainWindow, QApplication, QPushButton, QStackedWidget, QFrame, QTextEdit, QGraphicsOpacityEffect
-from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QCursor
 
-
 class WelcomeManager:
-    """
-    Main Welcome management class that handles welcome wizard and setup.
-    """
     
-    WELCOME_SECTIONS = [
-        {
-            "title": "Welcome to volt-gui:",
-            "description": "First of all, thanks for using my tool! If you have any feature requests or issues, please report them to the volt-gui GitHub repository.",
-            "copyable_blocks": []
-        },
-        {
-            "title": "Optional Dependencies:",
-            "description": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
-                        "\n\n• MangoHud if you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency." 
-                        "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
-            "copyable_blocks": [
-                "flatpak install mangohud"
-            ],
-            "additional_text": "• glxinfo is required to use the OpenGL Render Selector."
-                            "\n\n• vulkaninfo and the Vulkan Mesa layer are required to use the Vulkan Render Selector. One way to check if you have the Vulkan Mesa layer installed is to run this command:",
-            "copyable_blocks_after_additional": [
-                "MESA_VK_DEVICE_SELECT=list vulkaninfo"
-            ],
-            "example_output": """selectable devices:
+    @staticmethod
+    def get_welcome_info():
+        """
+        Returns a list of dictionaries containing welcome section information.
+        """
+        return [
+            {
+                "title": "Welcome to volt-gui:",
+                "description": "First of all, thanks for using my tool! If you have any feature requests or issues, please report them to the volt-gui GitHub repository.",
+                "copyable_blocks": []
+            },
+            {
+                "title": "Optional Dependencies:",
+                "description": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
+                            "\n\n• MangoHud if you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency." 
+                            "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
+                "copyable_blocks": ["flatpak install mangohud"],
+                "additional_text": "• glxinfo is required to use the OpenGL Render Selector."
+                                "\n\n• vulkaninfo and the Vulkan Mesa layer are required to use the Vulkan Render Selector. One way to check if you have the Vulkan Mesa layer installed is to run this command:",
+                "copyable_blocks_after_additional": ["MESA_VK_DEVICE_SELECT=list vulkaninfo"],
+                "example_output": """selectable devices:
     GPU 0: 10de:128b "NVIDIA GeForce GT 710" discrete GPU 0000:01:00.0
     GPU 1: 10005:0 "llvmpipe (LLVM 20.1.8, 256 bits)" CPU 0000:00:00.0""",
-            "closing_text": "If the output doesn't look like this text above, then you don't have the Vulkan Mesa layer installed on your PC."
-        },
-        {
-            "title": "Key Notes:", 
-            "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
-                        "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
-                        "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
-                        "\n\n• On the Kernel settings you can modify parameters related to RAM, CPU, Network, and more. I do my best to provide the most accurate recommended values and descriptions possible. If you find any errors or have a way to make them better, please feel free to report them on GitHub."
-                        "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
-                        "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
-                        "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
-                        "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
-                        "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file.",
-            "copyable_blocks": []
-        },
-        {
-            "title": "Apply the GPU Configuration:",
-            "description": "The GPU settings are applied through the 'volt' script. Always launch games with the 'volt' script prepended to use these options. Examples:",
-            "copyable_blocks": [
-                "volt",
-                "volt %command%",
-                "volt flatpak run net.pcsx2.PCSX2"
-            ],
-            "labels": [
-                "Lutris (Native):",
-                "Steam (Native):",
-                "Flatpak Program:"
-            ]
-        },
-        {
-            "title": "Setup Complete!",
-            "description": "You can disable or enable this welcome message in the Options Tab.\n\nThanks for reading the welcome guide!",
-            "copyable_blocks": []
-        },
-    ]
+                "closing_text": "If the output doesn't look like this text above, then you don't have the Vulkan Mesa layer installed on your PC."
+            },
+            {
+                "title": "Key Notes:", 
+                "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
+                            "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
+                            "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                            "\n\n• On the Kernel settings you can modify parameters related to RAM, CPU, Network, and more. I do my best to provide the most accurate recommended values and descriptions possible. If you find any errors or have a way to make them better, please feel free to report them on GitHub."
+                            "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
+                            "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
+                            "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
+                            "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
+                            "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file.",
+                "copyable_blocks": []
+            },
+            {
+                "title": "Apply the GPU Configuration:",
+                "description": "The GPU settings are applied through the 'volt' script. Always launch games with the 'volt' script prepended to use these options. Examples:",
+                "copyable_blocks": ["volt", "volt %command%", "volt flatpak run net.pcsx2.PCSX2"],
+                "labels": ["Lutris (Native):", "Steam (Native):", "Flatpak Program:"]
+            },
+            {
+                "title": "Setup Complete!",
+                "description": "You can disable or enable this welcome message in the Options Tab.\n\nThanks for reading the welcome guide!",
+                "copyable_blocks": []
+            }
+        ]
 
     @staticmethod
     def create_copyable_code_block(text):
@@ -73,16 +62,7 @@ class WelcomeManager:
         """
         frame = QFrame()
         frame.setFrameStyle(QFrame.Box)
-        frame.setStyleSheet("""
-            QFrame {
-                background-color: #2b2b2b;
-                border: 1px solid #555555;
-                border-radius: 3px;
-                padding: 0px;
-                margin: 4px 0px;
-            }
-        """)
-        
+        frame.setStyleSheet("QFrame { background-color: #2b2b2b; border: 1px solid #555555; border-radius: 3px; padding: 0px; margin: 4px 0px; }")
         frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         layout = QHBoxLayout(frame)
@@ -99,16 +79,7 @@ class WelcomeManager:
         font = QFont("Consolas", 10)
         font.setFamily("monospace")
         text_edit.setFont(font)
-        
-        text_edit.setStyleSheet("""
-            QTextEdit {
-                background-color: transparent;
-                border: none;
-                color: #e0e0e0;
-                selection-background-color: #4a4a4a;
-                padding: 2px;
-            }
-        """)
+        text_edit.setStyleSheet("QTextEdit { background-color: transparent; border: none; color: #e0e0e0; selection-background-color: #4a4a4a; padding: 2px; }")
         
         layout.addWidget(text_edit, 1)
         
@@ -170,7 +141,6 @@ class WelcomeManager:
             text_edit.setFixedHeight(int(total_height))
         
         QTimer.singleShot(0, adjust_height)
-        
         frame.resizeEvent = lambda event: adjust_height()
         
         return frame
@@ -205,13 +175,7 @@ class WelcomeManager:
         desc_label = QLabel(section_info["description"])
         desc_label.setAlignment(Qt.AlignLeft)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("""
-            color: #E0E0E0; 
-            font-size: 14px; 
-            line-height: 1.5;
-            padding: 0px;
-            margin: 0px;
-        """)
+        desc_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 0px;")
         desc_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         content_layout.addWidget(desc_label)
         
@@ -231,13 +195,7 @@ class WelcomeManager:
             additional_label = QLabel(section_info["additional_text"])
             additional_label.setAlignment(Qt.AlignLeft)
             additional_label.setWordWrap(True)
-            additional_label.setStyleSheet("""
-                color: #E0E0E0; 
-                font-size: 14px; 
-                line-height: 1.5;
-                padding: 0px;
-                margin: 6px 0px 0px 0px;
-            """)
+            additional_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 6px 0px 0px 0px;")
             content_layout.addWidget(additional_label)
             
             if "copyable_blocks_after_additional" in section_info:
@@ -253,17 +211,10 @@ class WelcomeManager:
             closing_label = QLabel(section_info["closing_text"])
             closing_label.setAlignment(Qt.AlignLeft)
             closing_label.setWordWrap(True)
-            closing_label.setStyleSheet("""
-                color: #E0E0E0; 
-                font-size: 14px; 
-                line-height: 1.5;
-                padding: 0px;
-                margin: 6px 0px 0px 0px;
-            """)
+            closing_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 6px 0px 0px 0px;")
             content_layout.addWidget(closing_label)
         
         content_layout.addStretch()
-        
         scroll_area.setWidget(content_widget)
         page_layout.addWidget(scroll_area)
         
@@ -280,11 +231,7 @@ class WelcomeManager:
         widgets['back_button'] = QPushButton("← Back")
         widgets['back_button'].setMinimumHeight(32)
         widgets['back_button'].setCursor(QCursor(Qt.PointingHandCursor))
-        widgets['back_button'].setStyleSheet("""
-            QPushButton:disabled {
-                color: #777777;
-            }
-        """)
+        widgets['back_button'].setStyleSheet("QPushButton:disabled { color: #777777; }")
         
         nav_layout.addWidget(widgets['back_button'])
         
@@ -313,10 +260,9 @@ class WelcomeManager:
         Updates the navigation buttons and progress indicator based on current step.
         """
         current_step = widgets['current_step']
-        total_steps = len(WelcomeManager.WELCOME_SECTIONS)
+        total_steps = len(WelcomeManager.get_welcome_info())
         
         widgets['progress_label'].setText(f"Step {current_step + 1} of {total_steps}")
-        
         widgets['back_button'].setEnabled(current_step > 0)
         
         if current_step == total_steps - 1:
@@ -341,7 +287,7 @@ class WelcomeManager:
         """
         Go to the next step.
         """
-        if widgets['current_step'] < len(WelcomeManager.WELCOME_SECTIONS) - 1:
+        if widgets['current_step'] < len(WelcomeManager.get_welcome_info()) - 1:
             widgets['current_step'] += 1
             widgets['stacked_widget'].setCurrentIndex(widgets['current_step'])
             WelcomeManager.update_navigation(widgets)
@@ -374,7 +320,7 @@ class WelcomeManager:
         widgets['welcome_window'] = welcome_window
         widgets['stacked_widget'] = QStackedWidget()
         
-        for i, section in enumerate(WelcomeManager.WELCOME_SECTIONS):
+        for i, section in enumerate(WelcomeManager.get_welcome_info()):
             page = WelcomeManager.create_step_page(section, i)
             widgets['stacked_widget'].addWidget(page)
         

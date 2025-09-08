@@ -1,19 +1,18 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel
 from PySide6.QtCore import Qt
 
-
 class AboutManager:
     
     @staticmethod
     def get_about_info():
         """
-        Returns a list of dictionaries containing about information.
+        Returns a list of dictionaries containing the about information.
         """
         return [
             {"label": "Description", "text": "Simple GUI program for modifying and creating the `volt` script and more. Providing an intuitive interface for configuration management, with the objective of getting the maximum performance posible of a PC"},
             {"label": "License", "text": "GPL-3.0 License"},
             {"label": "Author", "text": "pythonlover02"},
-            {"label": "Version", "text": "1.2.0"},
+            {"label": "Version", "text": "1.2.1"},
         ]
     
     @staticmethod
