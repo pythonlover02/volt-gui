@@ -75,7 +75,7 @@ class KernelManager:
             },
             'swappiness': {
                 'path': '/proc/sys/vm/swappiness',
-                'text': 'Kernel preference for swap vs RAM reclaim (0-200). Lower values prioritize keeping data in RAM for latency-sensitive workloads.\nRecommended: 10 (16GB+ RAM), 30-60 (8GB RAM)',
+                'text': 'Kernel preference for swap vs RAM reclaim (0-200). Lower values prioritize keeping data in RAM for latency-sensitive workloads.\nRecommended: 10 (16GB+ RAM), 30-60 (8GB RAM). If using zram or zswap, higher values (60-120) are recommended to take advantage of compressed swap benefits.',
                 'is_dynamic': False
             },
             'page-cluster': {
