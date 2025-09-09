@@ -70,7 +70,7 @@ class GPULaunchManager:
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_name': 'MESA_NO_ERROR',
-                    'values': {'on': 'false', 'off': 'true'}
+                    'values': {'on': '0', 'off': '1'}
                 }
             },
             'mesa_fake_vk': {
