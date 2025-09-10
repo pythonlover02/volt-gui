@@ -96,6 +96,41 @@ class GPULaunchManager:
                     'var_name': 'MESA_GLSL_VERSION_OVERRIDE',
                     'direct_value': True
                 }
+            },
+            'intel_precise_trig': {
+            'label': "Intel Driver Preference on Trigonometric Functions:",
+            'items': ["unset", "accuracy", "performance"],
+            'env_mapping': {
+                'var_name': 'INTEL_PRECISE_TRIG',
+                'values': {'accuracy': 'true', 'performance': 'false'}
+                }
+            },
+            'radv_profile_pstate': {
+            'label': "RADV Profile Pstate:",
+            'items': [
+                "unset",
+                "gpu clocks on arbitrary level",
+                "minimum shader clock",
+                "minimum memory clock",
+                "maximum gpu clocks"
+            ],
+            'env_mapping': {
+                'var_name': 'RADV_PROFILE_PSTATE',
+                'values': {
+                    'gpu clocks on arbitrary level': 'standard',
+                    'minimum shader clock': 'min_sclk',
+                    'minimum memory clock': 'min_mclk',
+                    'maximum gpu clocks': 'peak'
+                    }
+                }
+            },
+            'nvk_broken_driver': {
+            'label': "Enable NVK for Experimental/Untested GPUs:",
+            'items': ["unset", "on", "off"],
+            'env_mapping': {
+                'var_name': 'NVK_I_WANT_A_BROKEN_VULKAN_DRIVER',
+                'values': {'on': 'true', 'off': 'false'}
+                }
             }
         },
         "NVIDIA": {
