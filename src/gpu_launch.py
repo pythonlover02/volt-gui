@@ -305,7 +305,7 @@ class GPULaunchManager:
         GPU_SETTINGS.update(category)
 
     @staticmethod
-    def truncate_name_at_slash(name):
+    def truncate_name(name):
         """
         Truncate device name at slash or parenthesis.
         """
@@ -399,7 +399,7 @@ class GPULaunchManager:
                         current_device['deviceName'] = device_name
 
                         if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
-                            truncated_name = GPULaunchManager.truncate_name_at_slash(current_device['deviceName'])
+                            truncated_name = GPULaunchManager.truncate_name(current_device['deviceName'])
                             display_name = truncated_name.lower()
 
                             if 'llvmpipe' in display_name:
@@ -457,7 +457,7 @@ class GPULaunchManager:
                 for line in output.split('\n'):
                     if "OpenGL renderer string:" in line:
                         gpu_name = line.split(':', 1)[1].strip()
-                        gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
+                        gpu_name = GPULaunchManager.truncate_name(gpu_name)
                         gpu_name = gpu_name.lower()
 
                         if gpu_name not in gpu_env_map:
@@ -484,7 +484,7 @@ class GPULaunchManager:
                     for line in output.split('\n'):
                         if "OpenGL renderer string:" in line:
                             gpu_name = line.split(':', 1)[1].strip()
-                            gpu_name = GPULaunchManager.truncate_name_at_slash(gpu_name)
+                            gpu_name = GPULaunchManager.truncate_name(gpu_name)
                             gpu_name = gpu_name.lower()
 
                             if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
