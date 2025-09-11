@@ -13,7 +13,7 @@ class GPULaunchManager:
                 'label': "Vulkan Vsync:",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'MESA_VK_WSI_PRESENT_MODE',
+                    'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
                     'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
                 }
             },
@@ -21,7 +21,7 @@ class GPULaunchManager:
                 'label': "OpenGL Vsync:",
                 'items': ["unset", "default interval 0", "default interval 1", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'vblank_mode',
+                    'var_names': ['vblank_mode'],
                     'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
                 }
             },
@@ -29,7 +29,7 @@ class GPULaunchManager:
                 'label': "OpenGL Thread Optimizations:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'mesa_glthread',
+                    'var_names': ['mesa_glthread'],
                     'values': {'on': 'true', 'off': 'false'}
                 }
             },
@@ -37,7 +37,7 @@ class GPULaunchManager:
                 'label': "OpenGL MSAA:",
                 'items': ["unset", "on", 'off'],
                 'env_mapping': {
-                    'var_name': 'DRI_NO_MSAA',
+                    'var_names': ['DRI_NO_MSAA'],
                     'values': {'on': '0', 'off': '1'}
                 }
             },
@@ -45,7 +45,7 @@ class GPULaunchManager:
                 'label': "Texture Dithering:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'MESA_NO_DITHER',
+                    'var_names': ['MESA_NO_DITHER'],
                     'values': {'on': '0', 'off': '1'}
                 }
             },
@@ -53,7 +53,7 @@ class GPULaunchManager:
                 'label': "Shader Cache:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'MESA_SHADER_CACHE_DISABLE',
+                    'var_names': ['MESA_SHADER_CACHE_DISABLE', 'MESA_GLSL_CACHE_DISABLE'],
                     'values': {'on': 'false', 'off': 'true'}
                 }
             },
@@ -61,7 +61,7 @@ class GPULaunchManager:
                 'label': "Shader Cache Size (GB):",
                 'items': ["unset"] + [str(i) for i in range(1, 11)],
                 'env_mapping': {
-                    'var_name': 'MESA_SHADER_CACHE_MAX_SIZE',
+                    'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
                     'direct_value': True
                 }
             },
@@ -69,7 +69,7 @@ class GPULaunchManager:
                 'label': "Error Checking:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': 'MESA_NO_ERROR',
+                    'var_names': ['MESA_NO_ERROR'],
                     'values': {'on': '0', 'off': '1'}
                 }
             },
@@ -77,7 +77,7 @@ class GPULaunchManager:
                 'label': "Vulkan Version Spoofing:",
                 'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
-                    'var_name': 'MESA_VK_VERSION_OVERRIDE',
+                    'var_names': ['MESA_VK_VERSION_OVERRIDE'],
                     'direct_value': True
                 }
             },
@@ -85,7 +85,7 @@ class GPULaunchManager:
                 'label': "OpenGL Version Spoofing:",
                 'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
                 'env_mapping': {
-                    'var_name': 'MESA_GL_VERSION_OVERRIDE',
+                    'var_names': ['MESA_GL_VERSION_OVERRIDE'],
                     'direct_value': True
                 }
             },
@@ -93,7 +93,7 @@ class GPULaunchManager:
                 'label': "GLSL Version Spoofing:",
                 'items': ["unset", "330", "460"],
                 'env_mapping': {
-                    'var_name': 'MESA_GLSL_VERSION_OVERRIDE',
+                    'var_names': ['MESA_GLSL_VERSION_OVERRIDE'],
                     'direct_value': True
                 }
             },
@@ -101,7 +101,7 @@ class GPULaunchManager:
             'label': "Intel Driver Preference on Trigonometric Functions:",
             'items': ["unset", "accuracy", "performance"],
             'env_mapping': {
-                'var_name': 'INTEL_PRECISE_TRIG',
+                'var_names': ['INTEL_PRECISE_TRIG'],
                 'values': {'accuracy': 'true', 'performance': 'false'}
                 }
             },
@@ -115,7 +115,7 @@ class GPULaunchManager:
                 "maximum gpu clocks"
             ],
             'env_mapping': {
-                'var_name': 'RADV_PROFILE_PSTATE',
+                'var_names': ['RADV_PROFILE_PSTATE'],
                 'values': {
                     'gpu clocks on arbitrary level': 'standard',
                     'minimum shader clock': 'min_sclk',
@@ -128,7 +128,7 @@ class GPULaunchManager:
             'label': "Enable NVK for Experimental/Untested GPUs:",
             'items': ["unset", "on", "off"],
             'env_mapping': {
-                'var_name': 'NVK_I_WANT_A_BROKEN_VULKAN_DRIVER',
+                'var_names': ['NVK_I_WANT_A_BROKEN_VULKAN_DRIVER'],
                 'values': {'on': 'true', 'off': 'false'}
                 }
             }
@@ -138,7 +138,7 @@ class GPULaunchManager:
                 'label': "OpenGL Vsync:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_SYNC_TO_VBLANK',
+                    'var_names': ['__GL_SYNC_TO_VBLANK'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -146,7 +146,7 @@ class GPULaunchManager:
                 'label': "OpenGL G-SYNC:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_VRR_ALLOWED',
+                    'var_names': ['__GL_VRR_ALLOWED'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -154,7 +154,7 @@ class GPULaunchManager:
                 'label': "OpenGL Thread Optimizations:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_THREADED_OPTIMIZATIONS',
+                    'var_names': ['__GL_THREADED_OPTIMIZATIONS'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -162,7 +162,7 @@ class GPULaunchManager:
                 'label': "OpenGL Texture Quality:",
                 'items': ["unset", "quality", "mixed", "performance"],
                 'env_mapping': {
-                    'var_name': '__GL_OpenGLImageSettings',
+                    'var_names': ['__GL_OpenGLImageSettings'],
                     'values': {'quality': '1', 'mixed': '2', 'performance': '3'}
                 }
             },
@@ -176,7 +176,7 @@ class GPULaunchManager:
                     "14 - 32x (8xms, 24xcs)"
                 ],
                 'env_mapping': {
-                    'var_name': '__GL_FSAA_MODE',
+                    'var_names': ['__GL_FSAA_MODE'],
                     'extract_prefix': True
                 }
             },
@@ -184,7 +184,7 @@ class GPULaunchManager:
                 'label': "OpenGL FXAA:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_ALLOW_FXAA_USAGE',
+                    'var_names': ['__GL_ALLOW_FXAA_USAGE'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -196,7 +196,7 @@ class GPULaunchManager:
                     "3 - 8x anisotropic filtering", "4 - 16x anisotropic filtering"
                 ],
                 'env_mapping': {
-                    'var_name': '__GL_LOG_MAX_ANISO',
+                    'var_names': ['__GL_LOG_MAX_ANISO'],
                     'extract_prefix': True
                 }
             },
@@ -204,7 +204,7 @@ class GPULaunchManager:
                 'label': "Shader Cache:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_SHADER_DISK_CACHE',
+                    'var_names': ['__GL_SHADER_DISK_CACHE'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -212,7 +212,7 @@ class GPULaunchManager:
                 'label': "Shader Cache Size (GB):",
                 'items': ["unset"] + [str(i) for i in range(1, 11)],
                 'env_mapping': {
-                    'var_name': '__GL_SHADER_DISK_CACHE_SIZE',
+                    'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
                     'convert_to_bytes': True
                 }
             },
@@ -220,7 +220,7 @@ class GPULaunchManager:
                 'label': "Ignore GLSL Extensions Requirements:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_IGNORE_GLSL_EXT_REQ',
+                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQ'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -228,7 +228,7 @@ class GPULaunchManager:
                 'label': "Use Unofficial GLX Protocol:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_name': '__GL_ALLOW_UNOFFICIAL_PROTOCOL',
+                    'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
                     'values': {'on': '1', 'off': '0'}
                 }
             }
@@ -248,7 +248,7 @@ class GPULaunchManager:
                 'label': "Display Elements:",
                 'items': ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4'}
                 }
             },
@@ -256,7 +256,7 @@ class GPULaunchManager:
                 'label': "Fps Limit:",
                 'items': ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'unlimited': '0'},
                     'direct_value': True,
                     'prefix': 'fps_limit='
@@ -266,7 +266,7 @@ class GPULaunchManager:
                 'label': "Fps Limit Method:",
                 'items': ["unset", "early - smoothest frametimes", "late - lowest latency"],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
                     'prefix': 'fps_limit_method='
                 }
@@ -275,7 +275,7 @@ class GPULaunchManager:
                 'label': "Texture Filtering:",
                 'items': ["unset", "bicubic", "retro", "trilinear"],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'bicubic': 'bicubic', 'retro': 'retro', 'trilinear': 'trilinear'}
                 }
             },
@@ -283,7 +283,7 @@ class GPULaunchManager:
                 'label': "Mipmap LOD Bias:",
                 'items': ["unset"] + [str(i) for i in range(-16, 17)],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'direct_value': True,
                     'prefix': 'picmip='
                 }
@@ -292,7 +292,7 @@ class GPULaunchManager:
                 'label': "Anisotropic Filtering:",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
-                    'var_name': 'MANGOHUD_CONFIG',
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'direct_value': True,
                     'prefix': 'af='
                 }
@@ -809,21 +809,24 @@ class GPULaunchManager:
                     continue
 
                 mapping = setting_info['env_mapping']
-                var_name = mapping['var_name']
+                var_names = mapping['var_names']
 
                 if mapping.get('direct_value', False):
-                    env_vars.append(f'{var_name}={value}')
+                    final_value = value
                 elif mapping.get('extract_prefix', False):
-                    extracted_value = value.split(' - ')[0]
-                    env_vars.append(f'{var_name}={extracted_value}')
+                    final_value = value.split(' - ')[0]
                 elif mapping.get('convert_to_bytes', False):
-                    bytes_value = int(value) * 1073741824
-                    env_vars.append(f'{var_name}={bytes_value}')
+                    final_value = str(int(value) * 1073741824)
                 elif 'values' in mapping:
                     mapped_value = mapping['values'].get(value)
-                    if mapped_value:
-                        prefix = mapping.get('prefix', '')
-                        env_vars.append(f'{var_name}={prefix}{mapped_value}')
+                    prefix = mapping.get('prefix', '')
+                    final_value = f"{prefix}{mapped_value}" if mapped_value else None
+                else:
+                    final_value = None
+
+                if final_value is not None:
+                    for var_name in var_names:
+                        env_vars.append(f'{var_name}={final_value}')
 
         return env_vars
 
