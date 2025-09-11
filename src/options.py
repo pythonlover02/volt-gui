@@ -6,7 +6,7 @@ from theme import ThemeManager
 
 
 class OptionsManager:
-    
+
     OPTIONS_SETTINGS = {
         'theme': {
             'label': 'Selected Theme:',
@@ -67,46 +67,46 @@ class OptionsManager:
         options_tab = QWidget()
         main_layout = QVBoxLayout(options_tab)
         main_layout.setContentsMargins(9, 0, 9, 0)
-        
+
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
+
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 0)
-        
+
         widgets = {}
-        
+
         for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
             option_layout = QHBoxLayout()
             option_label = QLabel(option_info['label'])
             option_label.setWordWrap(True)
             option_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-            
+
             widgets[option_key] = QComboBox()
             widgets[option_key].addItems(option_info['choices'])
             widgets[option_key].setCurrentText(option_info['default'])
             widgets[option_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-            
+
             option_layout.addWidget(option_label)
             option_layout.addWidget(widgets[option_key])
             scroll_layout.addLayout(option_layout)
-        
+
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
-        
+
         OptionsManager.create_option_apply_button(main_layout, widgets, main_window)
-        
+
         widgets['main_window'] = main_window
         widgets['options_path'] = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         widgets['options_path'].parent.mkdir(parents=True, exist_ok=True)
-        
+
         OptionsManager.set_default_values(widgets)
-        
+
         return options_tab, widgets
 
     @staticmethod
@@ -126,7 +126,7 @@ class OptionsManager:
         button_layout.addStretch(1)
         button_layout.addWidget(widgets['options_apply_button'])
         button_layout.addStretch(1)
-        
+
         parent_layout.addWidget(button_container)
         parent_layout.addSpacing(9)
 
@@ -146,16 +146,16 @@ class OptionsManager:
         """
         config_path = Path(os.path.expanduser("~/.config/volt-gui/volt-options.ini"))
         scaling_factor = OptionsManager.OPTIONS_SETTINGS['scaling']['default']
-        
+
         if config_path.exists():
             options = configparser.ConfigParser()
             options.read(config_path)
             scaling_factor = options.get(
-                OptionsManager.OPTIONS_SETTINGS['scaling']['section'], 
-                OptionsManager.OPTIONS_SETTINGS['scaling']['config_key'], 
+                OptionsManager.OPTIONS_SETTINGS['scaling']['section'],
+                OptionsManager.OPTIONS_SETTINGS['scaling']['config_key'],
                 fallback=OptionsManager.OPTIONS_SETTINGS['scaling']['default']
             )
-        
+
         os.environ['QT_SCALE_FACTOR'] = scaling_factor
         return scaling_factor
 
@@ -165,14 +165,14 @@ class OptionsManager:
         Load options from the configuration file.
         """
         OptionsManager.set_default_values(widgets)
-        
+
         if not widgets['options_path'].exists():
             OptionsManager.save_options(widgets)
             return
-            
+
         options = configparser.ConfigParser()
         options.read(widgets['options_path'])
-        
+
         OptionsManager.apply_options_values(options, widgets)
         OptionsManager.apply_all_options(widgets)
 
@@ -183,19 +183,19 @@ class OptionsManager:
         """
         options = configparser.ConfigParser()
         main_window = widgets['main_window']
-        
+
         for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
             if option_info['section'] not in options:
                 options[option_info['section']] = {}
             options[option_info['section']][option_info['config_key']] = widgets[option_key].currentText()
-        
+
         options['Profile'] = {'LastActiveProfile': getattr(main_window, 'current_profile', 'Default')}
-        
+
         os.makedirs(os.path.dirname(widgets['options_path']), exist_ok=True)
-        
+
         with open(widgets['options_path'], 'w') as optionsfile:
             options.write(optionsfile)
-            
+
         OptionsManager.apply_all_options(widgets)
 
     @staticmethod
@@ -204,11 +204,11 @@ class OptionsManager:
         Apply values from options file to widgets.
         """
         main_window = widgets['main_window']
-        
+
         for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
             value = options.get(option_info['section'], option_info['config_key'], fallback=option_info['default'])
             widgets[option_key].setCurrentText(value)
-        
+
         last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
         index = main_window.profile_selector.findText(last_profile)
         if index >= 0:
@@ -246,7 +246,7 @@ class OptionsManager:
         run_in_tray = widgets['tray'].currentText() == OptionsManager.OPTIONS_SETTINGS['tray']['choices'][0]
         old_option = main_window.use_system_tray
         main_window.use_system_tray = run_in_tray
-        
+
         if old_option != run_in_tray:
             if run_in_tray:
                 if not hasattr(main_window, 'tray_icon'):
@@ -258,9 +258,9 @@ class OptionsManager:
                     delattr(main_window, 'tray_icon')
                     if not main_window.isVisible():
                         main_window.show_and_activate()
-            
+
             main_window.update_quit_behavior()
-            
+
     @staticmethod
     def apply_transparency_options(widgets):
         """
@@ -300,7 +300,7 @@ class OptionsManager:
         show_welcome = widgets['welcome_message'].currentText() == OptionsManager.OPTIONS_SETTINGS['welcome_message']['choices'][0]
         main_window.show_welcome = show_welcome
 
-    @staticmethod  
+    @staticmethod
     def apply_scaling_options(widgets):
         """
         Apply interface scaling options to the application.
@@ -323,17 +323,17 @@ class OptionsManager:
         Save current options and apply them to the application.
         """
         main_window = widgets['main_window']
-        
+
         old_scaling = getattr(main_window, 'scaling_factor', 1.0)
         new_scaling = float(widgets['scaling'].currentText())
         scaling_changed = old_scaling != new_scaling
-        
+
         OptionsManager.save_options(widgets)
-        
+
         message = "Options saved successfully"
         if scaling_changed:
             message += ".\nInterface scaling will take full effect after restarting the application."
-        
+
         if hasattr(main_window, 'tray_icon'):
             main_window.tray_icon.showMessage("volt-gui", message, main_window.tray_icon.MessageIcon.Information, 3000)
         else:
