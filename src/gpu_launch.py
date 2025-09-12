@@ -216,6 +216,38 @@ class GPULaunchManager:
                     'convert_to_bytes': True
                 }
             },
+            'nvidia_max_frames': {
+                'label': "Maximum Pre-rendered Frames:",
+                'items': ["unset"] + [str(i) for i in range(1, 5)],
+                'env_mapping': {
+                    'var_names': ['__GL_MaxFramesAllowed'],
+                    'direct_value': True
+                }
+            },
+            'nvidia_sharpen': {
+                'label': "Image Sharpening:",
+                'items': ["unset"] + [str(i) for i in range(0, 101)],
+                'env_mapping': {
+                    'var_names': ['__GL_SHARPEN_VALUE'],
+                    'direct_value': True
+                }
+            },
+            'nvidia_denoising': {
+                'label': "Image Denoising",
+                'items': ["unset"] + [str(i) for i in range(0, 101)],
+                'env_mapping': {
+                    'var_names': ['__GL_SHARPEN_IGNORE_FILM_GRAIN'],
+                    'direct_value': True
+                }
+            },
+            'nvidia_smooth_motion': {
+                'label': "Smooth Motion (RTX 40 Series+):",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
             'nvidia_glsl_ext': {
                 'label': "Ignore GLSL Extensions Requirements:",
                 'items': ["unset", "on", "off"],
@@ -224,8 +256,16 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_glx': {
-                'label': "Use Unofficial GLX Protocol:",
+            'nvidia_perf_exp': {
+                'label': "Experimental Performance Strategy:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['__GL_ExperimentalPerfStrategy'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'nvidia_glx_unofficial': {
+                'label': "Unofficial GLX Protocol:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
@@ -795,6 +835,8 @@ class GPULaunchManager:
                 config_value = ','.join(mangohud_parts)
                 env_vars.append(f'MANGOHUD_CONFIG={config_value}')
         else:
+            sharpen_enabled = False
+
             for setting_key, widget in widgets.items():
                 if setting_key.endswith('_apply_button'):
                     continue
@@ -827,6 +869,12 @@ class GPULaunchManager:
                 if final_value is not None:
                     for var_name in var_names:
                         env_vars.append(f'{var_name}={final_value}')
+
+                if category_name == "NVIDIA" and setting_key in ['nvidia_sharpen', 'nvidia_denoising']:
+                    sharpen_enabled = True
+
+            if category_name == "NVIDIA" and sharpen_enabled:
+                env_vars.append('__GL_SHARPEN_ENABLE=1')
 
         return env_vars
 
