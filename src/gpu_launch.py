@@ -158,6 +158,14 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
+            'nvidia_yield': {
+                'label': "OpenGL Preference when yield:",
+                'items': ["unset", "call sched_yield() to yield", "never yield", "call usleep(0) to yield"],
+                'env_mapping': {
+                    'var_names': ['__GL_YIELD'],
+                    'values': {'call sched_yield() to yield': '0', 'never yield': 'NOTHING', 'call usleep(0) to yield': 'USLEEP'}
+                }
+            },
             'nvidia_tex_quality': {
                 'label': "OpenGL Texture Quality:",
                 'items': ["unset", "quality", "mixed", "performance"],
