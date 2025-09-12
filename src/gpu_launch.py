@@ -102,7 +102,7 @@ class GPULaunchManager:
             'items': ["unset", "on", "off"],
             'env_mapping': {
                 'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
-                'values': {'on': 'true', 'off': 'false'}
+                'values': {'on': '1', 'off': '0'}
                 }
             },
             'intel_precise_trig': {
