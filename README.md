@@ -133,12 +133,12 @@ If this software is not provided, its options will be locked.
 
 ### Quick Install:
 1. Run one of the builds scripts avaliable to create the application:
-   
+
    Using Pyinstaller:
    ```bash
    ./make-pyinstaller.sh
    ```
-   
+
    Using Nuitka:
    ```bash
    ./make-nuitka.sh
@@ -179,8 +179,8 @@ After this unless you make changes to the `volt-helper`, or the script have been
 ./test.sh
 ```
 
-> [!NOTE]  
-> You can use the `remove.sh` script to remove the `volt-helper`. The `py_env` folder should be deleted in the case you created it with your system python, and you want to use a python version that its inside a `distrobox` box, or vice versa. 
+> [!NOTE]
+> You can use the `remove.sh` script to remove the `volt-helper`. The `py_env` folder should be deleted in the case you created it with your system python, and you want to use a python version that its inside a `distrobox` box, or vice versa.
 
 ## How to use `volt-gui`:
 
@@ -234,9 +234,10 @@ Documentation used:
 - [MangoHud Github - Readme](https://github.com/flightlessmango/MangoHud/blob/master/README.md)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
 - [FreeDesktop - Dri Configuration Options](https://dri.freedesktop.org/wiki/ConfigurationOptions/)
-- [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/openglenvvariables.html)
-- [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/openglenvvariables.html)
-- [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/openglenvvariables.html)
+- [NVIDIA 580 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/580.82.09/README/)
+- [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/)
+- [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/)
+- [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/)
 - [Linux Kernel - Subsystem Documentation](https://docs.kernel.org/subsystem-apis.html)
 - Additionally, sometimes i had to read code from Open Source projects to check how some options work.
 
