@@ -372,7 +372,7 @@ class GPULaunchManager:
         return name
 
     @staticmethod
-    def get_available(program_name, search_flatpak=True):
+    def get_available(program_name, search_flatpak):
         """
         Check if a program is available in system paths or flatpak.
         """
@@ -405,21 +405,21 @@ class GPULaunchManager:
         """
         Check if vulkaninfo is available.
         """
-        return GPULaunchManager.get_available("vulkaninfo", search_flatpak=False)
+        return GPULaunchManager.get_available("vulkaninfo", False)
 
     @staticmethod
     def get_available_glxinfo():
         """
         Check if glxinfo is available.
         """
-        return GPULaunchManager.get_available("glxinfo", search_flatpak=False)
+        return GPULaunchManager.get_available("glxinfo", False)
 
     @staticmethod
     def get_available_mangohud():
         """
         Check if MangoHUD is available.
         """
-        return GPULaunchManager.get_available("mangohud", search_flatpak=True)
+        return GPULaunchManager.get_available("mangohud", True)
 
     @staticmethod
     def get_vulkan_device_options():
