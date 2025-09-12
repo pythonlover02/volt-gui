@@ -2,7 +2,7 @@ import sys, os
 from PySide6.QtCore import QProcess
 
 class WorkaroundManager:
-    
+
     @staticmethod
     def setup_qt_platform():
         """
@@ -11,7 +11,7 @@ class WorkaroundManager:
         """
         if 'QT_QPA_PLATFORM' not in os.environ:
             os.environ['QT_QPA_PLATFORM'] = 'xcb'
-    
+
     @staticmethod
     def get_clean_env():
         """
@@ -27,7 +27,7 @@ class WorkaroundManager:
             clean_paths = [p for p in paths if sys._MEIPASS not in p]
             env['PATH'] = os.pathsep.join(clean_paths)
         return [f"{key}={value}" for key, value in env.items()]
-    
+
     @staticmethod
     def setup_clean_process(process):
         """
