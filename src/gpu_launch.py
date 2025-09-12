@@ -159,7 +159,7 @@ class GPULaunchManager:
                 }
             },
             'nvidia_yield': {
-                'label': "OpenGL Preference when yield:",
+                'label': "OpenGL Yield Behavior:",
                 'items': ["unset", "call sched_yield() to yield", "never yield", "call usleep(0) to yield"],
                 'env_mapping': {
                     'var_names': ['__GL_YIELD'],
