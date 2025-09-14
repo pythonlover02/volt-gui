@@ -670,7 +670,6 @@ class GPULaunchManager:
 
         return gpu_tab, widgets
 
-
     @staticmethod
     def create_path_widget(setting_info):
         """
@@ -775,6 +774,13 @@ class GPULaunchManager:
                 widgets['vulkan_device'].setEnabled(False)
                 widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
 
+        if category_name == "RenderPipeline":
+            if not GPULaunchManager.get_available_mangohud():
+                for widget_key, widget in widgets.items():
+                    if hasattr(widget, 'setEnabled'):
+                        widget.setEnabled(False)
+                        widget.setToolTip("MangoHUD not found - Render pipeline options disabled")
+
         if category_name == "LSFrameGen":
             if not GPULaunchManager.get_available_lsfg():
                 for widget_key, widget in widgets.items():
@@ -800,51 +806,6 @@ class GPULaunchManager:
         GPULaunchManager.create_gpu_apply_button(main_layout, widgets, f"{category_name.lower()}_apply_button")
 
         return tab, widgets
-
-    @staticmethod
-    def create_render_selector_tab():
-        """
-        Create the render selector tab with OpenGL and Vulkan options.
-        """
-        render_tab, widgets = GPULaunchManager.create_category_tab("RenderSelector")
-
-        if GPULaunchManager.get_available_glxinfo():
-            opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
-            widgets['ogl_renderer'].clear()
-            widgets['ogl_renderer'].addItems(opengl_options)
-            widgets['ogl_renderer'].env_map = gpu_env_map
-        else:
-            widgets['ogl_renderer'].setEnabled(False)
-            widgets['ogl_renderer'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
-
-        if GPULaunchManager.get_available_vulkaninfo():
-            vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
-            vulkan_options = ["unset"] + vulkan_devices
-            widgets['vulkan_device'].clear()
-            widgets['vulkan_device'].addItems(vulkan_options)
-            widgets['vulkan_device'].device_map = device_map
-        else:
-            widgets['vulkan_device'].setEnabled(False)
-            widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
-
-        return render_tab, widgets
-
-    @staticmethod
-    def create_render_pipeline_tab():
-        """
-        Create the render pipeline tab with MangoHUD options.
-        """
-        mangohud_available = GPULaunchManager.get_available_mangohud()
-
-        render_pipeline_tab, widgets = GPULaunchManager.create_category_tab("RenderPipeline")
-
-        if not mangohud_available:
-            for widget in widgets.values():
-                if hasattr(widget, 'setEnabled'):
-                    widget.setEnabled(False)
-                    widget.setToolTip("MangoHUD not found - Render pipeline options disabled")
-
-        return render_pipeline_tab, widgets
 
     @staticmethod
     def create_launch_options_tab():
@@ -947,7 +908,7 @@ class GPULaunchManager:
             mangohud_parts = []
 
             for setting_key, widget in widgets.items():
-                if setting_key.endswith('_apply_button'):
+                if setting_key.endswith('_apply_button') or setting_key.endswith('_browse') or setting_key.endswith('_clear'):
                     continue
 
                 setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
@@ -987,7 +948,7 @@ class GPULaunchManager:
             lsfg_legacy_needed = False
 
             for setting_key, widget in widgets.items():
-                if setting_key.endswith('_apply_button'):
+                if setting_key.endswith('_apply_button') or setting_key.endswith('_browse') or setting_key.endswith('_clear'):
                     continue
 
                 setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
