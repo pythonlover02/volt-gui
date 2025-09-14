@@ -762,7 +762,7 @@ class GPULaunchManager:
                 widgets['render_gl_device'].env_map = gpu_env_map
             else:
                 widgets['render_gl_device'].setEnabled(False)
-                widgets['render_gl_device'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
+                widgets['render_gl_device'].setToolTip("glxinfo not found - OpenGL device selection disabled")
 
             if GPULaunchManager.get_available_vulkaninfo():
                 vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
