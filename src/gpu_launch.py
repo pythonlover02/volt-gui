@@ -305,7 +305,8 @@ class GPULaunchManager:
                 'items': ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
-                    'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4'}
+                    'values': {'no hud': '0', 'fps only': '1', 'horizontal': '2', 'extended': '3', 'detailed': '4'},
+                    'prefix': 'preset='
                 }
             },
             'mangohud_fps_limit': {
