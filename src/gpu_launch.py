@@ -98,7 +98,7 @@ class GPULaunchManager:
                 }
             },
             'mesa_vk_submit_thread': {
-                'label': "Force Vulkan Submit Thread:",
+                'label': "Vulkan Submit Thread:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
@@ -111,6 +111,46 @@ class GPULaunchManager:
                 'env_mapping': {
                     'var_names': ['INTEL_PRECISE_TRIG'],
                     'values': {'accuracy': 'true', 'performance': 'false'}
+                }
+            },
+            'anv_sparse': {
+                'label': "ANV Sparse Resources (Tiger Lake+):",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['ANV_SPARSE'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'anv_sparse_implementation': {
+                'label': "ANV Sparse Implementation (Lunar Lake+):",
+                'items': ["unset", "TRTT", "Xe"],
+                'env_mapping': {
+                    'var_names': ['ANV_SPARSE_USE_TRTT'],
+                    'values': {'TRTT': 'true', 'Xe': 'false'}
+                }
+            },
+            'hasvk_always_bindless': {
+                'label': "HASVK Bindless Descriptors:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['HASVK_ALWAYS_BINDLESS'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'hasvk_userspace_relocs': {
+                'label': "HASVK Userspace Relocations:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['HASVK_USERSPACE_RELOCS'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'radv_anisotropic_filtering': {
+                'label': "RADV Anisotropic Filtering:",
+                'items': ["unset"] + [str(i) for i in range(0, 17)],
+                'env_mapping': {
+                    'var_names': ['RADV_TEX_ANISO'],
+                    'direct_value': True
                 }
             },
             'radv_profile_pstate': {
@@ -130,6 +170,30 @@ class GPULaunchManager:
                         'minimum memory clock': 'min_mclk',
                         'maximum gpu clocks': 'peak'
                     }
+                }
+            },
+            'radv_vrs': {
+                'label': "RADV Variable Rate Shading (GFX10.3+):",
+                'items': ["unset", "2x2", "1x2", "2x1", "1x1"],
+                'env_mapping': {
+                    'var_names': ['RADV_FORCE_VRS'],
+                    'direct_value': True
+                }
+            },
+            'radeonsi_no_infinite_interp': {
+                'label': "RadeonSI Disable Infinite Interpolation :",
+                'items': ["unset", "on (might fix errors)", "off"],
+                'env_mapping': {
+                    'var_names': ['radeonsi_no_infinite_interp'],
+                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
+                }
+            },
+            'radeonsi_clamp_div_by_zero': {
+                'label': "RadeonSI Clamp Division by Zero:",
+                'items': ["unset", "on (might fix errors)", "off"],
+                'env_mapping': {
+                    'var_names': ['radeonsi_clamp_div_by_zero'],
+                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
                 }
             },
             'nvk_broken_driver': {
@@ -345,7 +409,7 @@ class GPULaunchManager:
                     'prefix': 'picmip='
                 }
             },
-            'mangohud_anisotropic_filter': {
+            'mangohud_anisotropic_filtering': {
                 'label': "Anisotropic Filtering:",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
