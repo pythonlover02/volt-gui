@@ -122,29 +122,34 @@ A graphical user interface for configuring GPU related environment variables and
 - ccache (optional, for optimizing compiling times)
 
 ## Additional requirements for some Options:
+
 If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
 - [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency.
+- [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) in the case you want to make use of the LS Frame Gen Settings. Both the native or the Flatpak version satisfy the dependency.
 - `glxinfo` its required to use the OpenGL Render Selector.
 - `vulkaninfo` and the `vulkan mesa layer` are required to use the Vulkan Render Selector.
 
 ## Installation:
 
 ### Quick Install:
+
 1. Run one of the builds scripts avaliable to create the application:
 
    Using Pyinstaller:
+
    ```bash
    ./make-pyinstaller.sh
    ```
 
    Using Nuitka:
+
    ```bash
    ./make-nuitka.sh
    ```
 
-   *Note: Both use a Python virtual environment to avoid system wide package installation using pip*
+   _Note: Both use a Python virtual environment to avoid system wide package installation using pip_
 
 2. Install the application system wide:
    ```bash
@@ -156,6 +161,7 @@ If this software is not provided, its options will be locked.
    - Create a desktop entry at `/usr/share/applications/volt-gui.desktop`
 
 ### Removal:
+
 1. To uninstall volt-gui:
    ```bash
    sudo ./remove.sh
@@ -167,14 +173,17 @@ If this software is not provided, its options will be locked.
    - Remove the desktop entry `/usr/share/applications/volt-gui.desktop`
 
 ## Testing volt-gui:
+
 In the case you want to contribute to the project you can use the provided `test.sh` script to test the changes you made. This script will create a Python virtual environment if one does not already exist. This way, you don't have to install the program dependencies systemwide.
 
 The first time you run it, use the -c flag that will also copy the `volt-helper` to `/usr/local/bin/`, as the program requires it for appliying the settings:
+
 ```
 ./test.sh -c
 ```
 
 After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag to avoid unnecessary overwrites of the script:
+
 ```
 ./test.sh
 ```
@@ -201,11 +210,13 @@ volt glxgears
 When using a Launcher to play your game, you can just add it to the game launch options, like this:
 
 Steam (Native):
+
 ```
 volt %command%
 ```
 
 Lutris (Native):
+
 ```
 volt
 ```
@@ -232,6 +243,8 @@ Documentation used:
 - [sched-ext tutorial - CachyOs Wiki](https://wiki.cachyos.org/configuration/sched-ext/)
 - [sched-ext scx Github - Readme](https://github.com/sched-ext/scx/blob/main/README.md)
 - [MangoHud Github - Readme](https://github.com/flightlessmango/MangoHud/blob/master/README.md)
+- [lsfg-vk Github - Readme](https://github.com/PancakeTAS/lsfg-vk)
+- [lsfg-vk Github - Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
 - [FreeDesktop - Dri Configuration Options](https://dri.freedesktop.org/wiki/ConfigurationOptions/)
 - [NVIDIA 580 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/580.82.09/README/)
