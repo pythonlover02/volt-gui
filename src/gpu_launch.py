@@ -1,5 +1,5 @@
 import os, glob, tempfile
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QTabWidget, QScrollArea, QSizePolicy, QLineEdit, QFileDialog
 from PySide6.QtCore import Qt, QProcess
 from workarounds import WorkaroundManager
 
@@ -353,6 +353,56 @@ class GPULaunchManager:
                     'prefix': 'af='
                 }
             }
+        },
+        "LSFrameGen": {
+            'lsfg_dll_path': {
+                'label': "Lossless.dll Path:",
+                'path': True,
+                'env_mapping': {
+                    'var_names': ['LSFG_DLL_PATH'],
+                    'direct_value': True
+                }
+            },
+            'lsfg_multiplier': {
+                'label': "FPS Multiplier:",
+                'items': ["unset", "2", "3", "4"],
+                'env_mapping': {
+                    'var_names': ['LSFG_MULTIPLIER'],
+                    'direct_value': True
+                }
+            },
+            'lsfg_flow_scale': {
+                'label': "Motion Estimation Quality:",
+                'items': ["unset", "0.25", "0.50", "0.75", "1.0"],
+                'env_mapping': {
+                    'var_names': ['LSFG_FLOW_SCALE'],
+                    'direct_value': True
+                }
+            },
+            'lsfg_performance_mode': {
+                'label': "Performance Mode:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_PERFORMANCE_MODE'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'lsfg_hdr_mode': {
+                'label': "HDR Mode:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_HDR_MODE'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
+            'lsfg_present_mode': {
+                'label': "Overwrite Vsync To:",
+                'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
+                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
+                }
+            }
         }
     }
 
@@ -420,6 +470,13 @@ class GPULaunchManager:
         Check if MangoHUD is available.
         """
         return GPULaunchManager.get_available("mangohud", True)
+
+    @staticmethod
+    def get_available_lsfg():
+        """
+        Check if lsfg-vk is available.
+        """
+        return GPULaunchManager.get_available("lsfg", True)
 
     @staticmethod
     def get_vulkan_device_options():
@@ -594,21 +651,65 @@ class GPULaunchManager:
         nvidia_tab, nvidia_widgets = GPULaunchManager.create_category_tab("NVIDIA")
         render_selector_tab, render_selector_widgets = GPULaunchManager.create_category_tab("RenderSelector")
         render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_category_tab("RenderPipeline")
+        ls_frame_gen_tab, ls_frame_gen_widgets = GPULaunchManager.create_category_tab("LSFrameGen")
 
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
         gpu_subtabs.addTab(render_pipeline_tab, "Render Pipeline")
+        gpu_subtabs.addTab(ls_frame_gen_tab, "LS Frame Gen")
         gpu_layout.addWidget(gpu_subtabs)
 
         widgets = {
             'Mesa': mesa_widgets,
             'NVIDIA': nvidia_widgets,
             'RenderSelector': render_selector_widgets,
-            'RenderPipeline': render_pipeline_widgets
+            'RenderPipeline': render_pipeline_widgets,
+            'LSFrameGen': ls_frame_gen_widgets
         }
 
         return gpu_tab, widgets
+
+
+    @staticmethod
+    def create_path_widget(setting_info):
+        """
+        Create a path selection widget with browse and clear buttons.
+        """
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        path_input = QLineEdit()
+        path_input.setPlaceholderText("No file selected")
+        path_input.setReadOnly(True)
+        layout.addWidget(path_input)
+
+        browse_button = QPushButton("...")
+        browse_button.setFixedWidth(30)
+        browse_button.clicked.connect(lambda: GPULaunchManager.browse_file(path_input))
+        layout.addWidget(browse_button)
+
+        clear_button = QPushButton("Clear")
+        clear_button.setFixedWidth(60)
+        clear_button.clicked.connect(lambda: path_input.clear())
+        layout.addWidget(clear_button)
+
+        return container, path_input, browse_button, clear_button
+
+    @staticmethod
+    def browse_file(path_input):
+        """
+        Open a file dialog to select a file and set the path to the input field.
+        """
+        file_path, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select File",
+            "",
+            "All Files (*)"
+        )
+        if file_path:
+            path_input.setText(file_path)
 
     @staticmethod
     def create_category_tab(category_name):
@@ -637,13 +738,21 @@ class GPULaunchManager:
             label.setWordWrap(True)
             label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-            widgets[setting_key] = QComboBox()
-            widgets[setting_key].addItems(setting_info['items'])
-            widgets[setting_key].setCurrentText("unset")
-            widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            if setting_info.get('path', False):
+                path_widget, path_input, browse_button, clear_button = GPULaunchManager.create_path_widget(setting_info)
+                widgets[setting_key] = path_input
+                widgets[f"{setting_key}_browse"] = browse_button
+                widgets[f"{setting_key}_clear"] = clear_button
+                layout.addWidget(label)
+                layout.addWidget(path_widget)
+            else:
+                widgets[setting_key] = QComboBox()
+                widgets[setting_key].addItems(setting_info['items'])
+                widgets[setting_key].setCurrentText("unset")
+                widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                layout.addWidget(label)
+                layout.addWidget(widgets[setting_key])
 
-            layout.addWidget(label)
-            layout.addWidget(widgets[setting_key])
             scroll_layout.addLayout(layout)
 
         if category_name == "RenderSelector":
@@ -665,6 +774,24 @@ class GPULaunchManager:
             else:
                 widgets['vulkan_device'].setEnabled(False)
                 widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
+
+        if category_name == "LSFrameGen":
+            if not GPULaunchManager.get_available_lsfg():
+                for widget_key, widget in widgets.items():
+                    if hasattr(widget, 'setEnabled'):
+                        widget.setEnabled(False)
+                        widget.setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                    elif isinstance(widget, QLineEdit):
+                        widget.setEnabled(False)
+                        widget.setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                        browse_key = f"{widget_key}_browse"
+                        clear_key = f"{widget_key}_clear"
+                        if browse_key in widgets:
+                            widgets[browse_key].setEnabled(False)
+                            widgets[browse_key].setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                        if clear_key in widgets:
+                            widgets[clear_key].setEnabled(False)
+                            widgets[clear_key].setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -823,11 +950,16 @@ class GPULaunchManager:
                 if setting_key.endswith('_apply_button'):
                     continue
 
-                value = widget.currentText()
-                if value == "unset":
-                    continue
-
                 setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
+
+                if setting_info.get('path', False):
+                    value = widget.text().strip()
+                    if not value:
+                        continue
+                else:
+                    value = widget.currentText()
+                    if value == "unset":
+                        continue
 
                 if 'env_mapping' not in setting_info:
                     continue
@@ -852,16 +984,22 @@ class GPULaunchManager:
                 env_vars.append(f'MANGOHUD_CONFIG={config_value}')
         else:
             sharpen_enabled = False
+            lsfg_legacy_needed = False
 
             for setting_key, widget in widgets.items():
                 if setting_key.endswith('_apply_button'):
                     continue
 
-                value = widget.currentText()
-                if value == "unset":
-                    continue
-
                 setting_info = GPULaunchManager.GPU_SETTINGS_CATEGORIES[category_name][setting_key]
+
+                if setting_info.get('path', False):
+                    value = widget.text().strip()
+                    if not value:
+                        continue
+                else:
+                    value = widget.currentText()
+                    if value == "unset":
+                        continue
 
                 if 'env_mapping' not in setting_info:
                     continue
@@ -889,8 +1027,14 @@ class GPULaunchManager:
                 if category_name == "NVIDIA" and setting_key in ['nvidia_sharpen', 'nvidia_denoising']:
                     sharpen_enabled = True
 
+                if category_name == "LSFrameGen" and setting_key in ['lsfg_dll_path', 'lsfg_multiplier', 'lsfg_flow_scale', 'lsfg_performance_mode', 'lsfg_hdr_mode', 'lsfg_present_mode']:
+                    lsfg_legacy_needed = True
+
             if category_name == "NVIDIA" and sharpen_enabled:
                 env_vars.append('__GL_SHARPEN_ENABLE=1')
+
+            if category_name == "LSFrameGen" and lsfg_legacy_needed:
+                env_vars.append('LSFG_LEGACY=1')
 
         return env_vars
 
@@ -920,7 +1064,7 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, launch_options_widgets):
+    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, ls_frame_gen_widgets, launch_options_widgets):
         """
         Write all settings to a temporary configuration file.
         """
@@ -928,6 +1072,7 @@ class GPULaunchManager:
         nvidia_env_vars = GPULaunchManager.generate_env_vars(nvidia_widgets, "NVIDIA")
         render_env_vars = GPULaunchManager.generate_render_selector_env_vars(render_selector_widgets)
         render_pipeline_env_vars = GPULaunchManager.generate_env_vars(render_pipeline_widgets, "RenderPipeline")
+        ls_frame_gen_env_vars = GPULaunchManager.generate_env_vars(ls_frame_gen_widgets, "LSFrameGen")
 
         launch_options = ""
         if 'launch_options_input' in launch_options_widgets:
@@ -941,7 +1086,7 @@ class GPULaunchManager:
         elif use_mangohud and not launch_options:
             launch_options = "mangohud"
 
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + render_pipeline_env_vars
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + render_pipeline_env_vars + ls_frame_gen_env_vars
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.conf') as temp_file:
             for env_var in all_env_vars:

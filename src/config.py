@@ -1,4 +1,5 @@
 import os, configparser
+from PySide6.QtWidgets import QComboBox, QLineEdit
 from pathlib import Path
 from kernel import KernelManager
 from cpu import CPUManager
@@ -52,8 +53,11 @@ class ConfigManager:
         for setting_key in GPULaunchManager.GPU_SETTINGS.keys():
             for category_name, category_widgets in gpu_widgets.items():
                 if category_name != 'LaunchOptions' and setting_key in category_widgets:
-                    if hasattr(category_widgets[setting_key], 'currentText'):
-                        gpu_config[setting_key] = category_widgets[setting_key].currentText()
+                    widget = category_widgets[setting_key]
+                    if isinstance(widget, QComboBox):
+                        gpu_config[setting_key] = widget.currentText()
+                    elif isinstance(widget, QLineEdit):
+                        gpu_config[setting_key] = widget.text()
                     break
         if gpu_config:
             config['GPU'] = gpu_config
@@ -106,7 +110,12 @@ class ConfigManager:
                 if setting_key in config['GPU']:
                     for category_name, category_widgets in gpu_widgets.items():
                         if category_name != 'LaunchOptions' and setting_key in category_widgets:
-                            category_widgets[setting_key].setCurrentText(config['GPU'][setting_key])
+                            widget = category_widgets[setting_key]
+                            value = config['GPU'][setting_key]
+                            if isinstance(widget, QComboBox):
+                                widget.setCurrentText(value)
+                            elif isinstance(widget, QLineEdit):
+                                widget.setText(value)
                             break
 
         if 'LaunchOptions' in config and 'LaunchOptions' in gpu_widgets and 'launch_options_input' in gpu_widgets['LaunchOptions']:

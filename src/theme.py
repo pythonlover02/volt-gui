@@ -268,6 +268,13 @@ class ThemeManager:
             font-weight: 500;
         }}
 
+        QPushButton:disabled {{
+            background-color: {c['darker_bg']};
+            color: {c['disabled_text']};
+            border: 1px solid {c['darker_bg']};
+            border-radius: 3px;
+        }}
+
         QPushButton:default {{
             background-color: {c['accent_color']};
             color: white;

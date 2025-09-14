@@ -695,7 +695,8 @@ class MainWindow(QMainWindow):
                 self.gpu_widgets['NVIDIA'],
                 self.gpu_widgets['RenderSelector'],
                 self.gpu_widgets['RenderPipeline'],
-                self.gpu_widgets['LaunchOptions'],
+                self.gpu_widgets['LSFrameGen'],
+                self.gpu_widgets['LaunchOptions']
             )
             if settings_file:
                 gpu_args.extend(["-g", settings_file])
