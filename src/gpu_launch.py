@@ -786,10 +786,10 @@ class GPULaunchManager:
                 for widget_key, widget in widgets.items():
                     if hasattr(widget, 'setEnabled'):
                         widget.setEnabled(False)
-                        widget.setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                        widget.setToolTip("lsfg-vk not found - lsfg-vk options disabled")
                     elif isinstance(widget, QLineEdit):
                         widget.setEnabled(False)
-                        widget.setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                        widget.setToolTip("lsfg-vk not found - lsfg-vk options disabled")
                         browse_key = f"{widget_key}_browse"
                         clear_key = f"{widget_key}_clear"
                         if browse_key in widgets:
