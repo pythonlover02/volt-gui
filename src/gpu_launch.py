@@ -9,7 +9,7 @@ class GPULaunchManager:
 
     GPU_SETTINGS_CATEGORIES = {
         "Mesa": {
-            'mesa_vsync_vk': {
+            'mesa_vk_vsync': {
                 'label': "Vulkan Vsync:",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
@@ -17,7 +17,7 @@ class GPULaunchManager:
                     'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
                 }
             },
-            'mesa_vsync_gl': {
+            'mesa_gl_vsync': {
                 'label': "OpenGL Vsync:",
                 'items': ["unset", "default interval 0", "default interval 1", "on", "off"],
                 'env_mapping': {
@@ -25,7 +25,7 @@ class GPULaunchManager:
                     'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
                 }
             },
-            'mesa_thread_opt': {
+            'mesa_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -33,7 +33,7 @@ class GPULaunchManager:
                     'values': {'on': 'true', 'off': 'false'}
                 }
             },
-            'mesa_msaa': {
+            'mesa_gl_msaa': {
                 'label': "OpenGL MSAA:",
                 'items': ["unset", "on", 'off'],
                 'env_mapping': {
@@ -73,7 +73,7 @@ class GPULaunchManager:
                     'values': {'on': '0', 'off': '1'}
                 }
             },
-            'mesa_fake_vk': {
+            'mesa_vk_fake': {
                 'label': "Vulkan Version Spoofing:",
                 'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
@@ -81,7 +81,7 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'mesa_fake_gl': {
+            'mesa_gl_fake': {
                 'label': "OpenGL Version Spoofing:",
                 'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
                 'env_mapping': {
@@ -89,7 +89,7 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'mesa_fake_glsl': {
+            'mesa_glsl_fake': {
                 'label': "GLSL Version Spoofing:",
                 'items': ["unset", "330", "460"],
                 'env_mapping': {
@@ -97,52 +97,52 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'mesa_submit_thread': {
-            'label': "Force Vulkan Submit Thread:",
-            'items': ["unset", "on", "off"],
-            'env_mapping': {
-                'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
-                'values': {'on': '1', 'off': '0'}
+            'mesa_vk_submit_thread': {
+                'label': "Force Vulkan Submit Thread:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
+                    'values': {'on': '1', 'off': '0'}
                 }
             },
             'intel_precise_trig': {
-            'label': "Intel Driver Preference on Trigonometric Functions:",
-            'items': ["unset", "accuracy", "performance"],
-            'env_mapping': {
-                'var_names': ['INTEL_PRECISE_TRIG'],
-                'values': {'accuracy': 'true', 'performance': 'false'}
+                'label': "Intel Driver Preference on Trigonometric Functions:",
+                'items': ["unset", "accuracy", "performance"],
+                'env_mapping': {
+                    'var_names': ['INTEL_PRECISE_TRIG'],
+                    'values': {'accuracy': 'true', 'performance': 'false'}
                 }
             },
             'radv_profile_pstate': {
-            'label': "RADV Profile Pstate:",
-            'items': [
-                "unset",
-                "gpu clocks on arbitrary level",
-                "minimum shader clock",
-                "minimum memory clock",
-                "maximum gpu clocks"
-            ],
-            'env_mapping': {
-                'var_names': ['RADV_PROFILE_PSTATE'],
-                'values': {
-                    'gpu clocks on arbitrary level': 'standard',
-                    'minimum shader clock': 'min_sclk',
-                    'minimum memory clock': 'min_mclk',
-                    'maximum gpu clocks': 'peak'
+                'label': "RADV Profile Pstate:",
+                'items': [
+                    "unset",
+                    "gpu clocks on arbitrary level",
+                    "minimum shader clock",
+                    "minimum memory clock",
+                    "maximum gpu clocks"
+                ],
+                'env_mapping': {
+                    'var_names': ['RADV_PROFILE_PSTATE'],
+                    'values': {
+                        'gpu clocks on arbitrary level': 'standard',
+                        'minimum shader clock': 'min_sclk',
+                        'minimum memory clock': 'min_mclk',
+                        'maximum gpu clocks': 'peak'
                     }
                 }
             },
             'nvk_broken_driver': {
-            'label': "Enable NVK for Experimental/Untested GPUs:",
-            'items': ["unset", "on", "off"],
-            'env_mapping': {
-                'var_names': ['NVK_I_WANT_A_BROKEN_VULKAN_DRIVER'],
-                'values': {'on': 'true', 'off': 'false'}
+                'label': "Enable NVK for Experimental/Untested GPUs:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['NVK_I_WANT_A_BROKEN_VULKAN_DRIVER'],
+                    'values': {'on': 'true', 'off': 'false'}
                 }
             }
         },
         "NVIDIA": {
-            'nvidia_vsync_gl': {
+            'nvidia_gl_vsync': {
                 'label': "OpenGL Vsync:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -150,7 +150,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_gsync': {
+            'nvidia_gl_gsync': {
                 'label': "OpenGL G-SYNC:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -158,7 +158,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_thread_opt': {
+            'nvidia_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -166,7 +166,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_yield': {
+            'nvidia_gl_yield': {
                 'label': "OpenGL Yield Behavior:",
                 'items': ["unset", "call sched_yield() to yield", "never yield", "call usleep(0) to yield"],
                 'env_mapping': {
@@ -174,7 +174,7 @@ class GPULaunchManager:
                     'values': {'call sched_yield() to yield': '0', 'never yield': 'NOTHING', 'call usleep(0) to yield': 'USLEEP'}
                 }
             },
-            'nvidia_tex_quality': {
+            'nvidia_gl_texture_quality': {
                 'label': "OpenGL Texture Quality:",
                 'items': ["unset", "quality", "mixed", "performance"],
                 'env_mapping': {
@@ -182,7 +182,7 @@ class GPULaunchManager:
                     'values': {'quality': '1', 'mixed': '2', 'performance': '3'}
                 }
             },
-            'nvidia_fsaa': {
+            'nvidia_gl_fsaa': {
                 'label': "OpenGL Full Scene Antialiasing:",
                 'items': [
                     "unset", "0 - off", "1 - 2x (2xms)", "5 - 4x (4xms)",
@@ -196,7 +196,7 @@ class GPULaunchManager:
                     'extract_prefix': True
                 }
             },
-            'nvidia_fxaa': {
+            'nvidia_gl_fxaa': {
                 'label': "OpenGL FXAA:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -204,7 +204,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_aniso': {
+            'nvidia_gl_aniso': {
                 'label': "OpenGL Anisotropic Filtering:",
                 'items': [
                     "unset", "0 - no anisotropic filtering",
@@ -224,7 +224,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_cache_size': {
+            'nvidia_shader_cache_size': {
                 'label': "Shader Cache Size (GB):",
                 'items': ["unset"] + [str(i) for i in range(1, 11)],
                 'env_mapping': {
@@ -232,7 +232,7 @@ class GPULaunchManager:
                     'convert_to_bytes': True
                 }
             },
-            'nvidia_max_frames': {
+            'nvidia_max_prerendered_frames': {
                 'label': "Maximum Pre-rendered Frames:",
                 'items': ["unset"] + [str(i) for i in range(1, 5)],
                 'env_mapping': {
@@ -240,7 +240,7 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'nvidia_sharpen': {
+            'nvidia_image_sharpening': {
                 'label': "Image Sharpening:",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
@@ -248,7 +248,7 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'nvidia_denoising': {
+            'nvidia_image_denoising': {
                 'label': "Image Denoising",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
@@ -264,7 +264,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_glsl_ext': {
+            'nvidia_glsl_ext_requirements': {
                 'label': "Ignore GLSL Extensions Requirements:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -272,7 +272,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_perf_exp': {
+            'nvidia_experimental_perf': {
                 'label': "Experimental Performance Strategy:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -280,7 +280,7 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_glx_unofficial': {
+            'nvidia_glx_unofficial_protocol': {
                 'label': "Unofficial GLX Protocol:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
@@ -290,17 +290,17 @@ class GPULaunchManager:
             }
         },
         "RenderSelector": {
-            'ogl_renderer': {
+            'render_gl_device': {
                 'label': "OpenGL Renderer:",
                 'items': ["unset", "llvmpipe (software rendering)", "zink"]
             },
-            'vulkan_device': {
+            'render_vk_device': {
                 'label': "Select Vulkan Renderer:",
                 'items': ["unset"]
             }
         },
         "RenderPipeline": {
-            'display': {
+            'mangohud_display': {
                 'label': "Display Elements:",
                 'items': ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"],
                 'env_mapping': {
@@ -308,7 +308,7 @@ class GPULaunchManager:
                     'values': {'no hud': 'preset=0', 'fps only': 'preset=1', 'horizontal': 'preset=2', 'extended': 'preset=3', 'detailed': 'preset=4'}
                 }
             },
-            'fps_limit': {
+            'mangohud_fps_limit': {
                 'label': "Fps Limit:",
                 'items': ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
                 'env_mapping': {
@@ -318,7 +318,7 @@ class GPULaunchManager:
                     'prefix': 'fps_limit='
                 }
             },
-            'fps_method': {
+            'mangohud_fps_method': {
                 'label': "Fps Limit Method:",
                 'items': ["unset", "early - smoothest frametimes", "late - lowest latency"],
                 'env_mapping': {
@@ -327,7 +327,7 @@ class GPULaunchManager:
                     'prefix': 'fps_limit_method='
                 }
             },
-            'texture_filter': {
+            'mangohud_texture_filter': {
                 'label': "Texture Filtering:",
                 'items': ["unset", "bicubic", "retro", "trilinear"],
                 'env_mapping': {
@@ -335,7 +335,7 @@ class GPULaunchManager:
                     'values': {'bicubic': 'bicubic', 'retro': 'retro', 'trilinear': 'trilinear'}
                 }
             },
-            'mipmap_lod_bias': {
+            'mangohud_mipmap_lod_bias': {
                 'label': "Mipmap LOD Bias:",
                 'items': ["unset"] + [str(i) for i in range(-16, 17)],
                 'env_mapping': {
@@ -344,7 +344,7 @@ class GPULaunchManager:
                     'prefix': 'picmip='
                 }
             },
-            'anisotropic_filter': {
+            'mangohud_anisotropic_filter': {
                 'label': "Anisotropic Filtering:",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
@@ -395,8 +395,8 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'lsfg_present_mode': {
-                'label': "Overwrite Vsync To:",
+            'lsfg_vk_present_mode': {
+                'label': "Overwrite Vulkan Vsync To:",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
@@ -757,22 +757,22 @@ class GPULaunchManager:
         if category_name == "RenderSelector":
             if GPULaunchManager.get_available_glxinfo():
                 opengl_options, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
-                widgets['ogl_renderer'].clear()
-                widgets['ogl_renderer'].addItems(opengl_options)
-                widgets['ogl_renderer'].env_map = gpu_env_map
+                widgets['render_gl_device'].clear()
+                widgets['render_gl_device'].addItems(opengl_options)
+                widgets['render_gl_device'].env_map = gpu_env_map
             else:
-                widgets['ogl_renderer'].setEnabled(False)
-                widgets['ogl_renderer'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
+                widgets['render_gl_device'].setEnabled(False)
+                widgets['render_gl_device'].setToolTip("glxinfo not found - OpenGL renderer selection disabled")
 
             if GPULaunchManager.get_available_vulkaninfo():
                 vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
                 vulkan_options = ["unset"] + vulkan_devices
-                widgets['vulkan_device'].clear()
-                widgets['vulkan_device'].addItems(vulkan_options)
-                widgets['vulkan_device'].device_map = device_map
+                widgets['render_vk_device'].clear()
+                widgets['render_vk_device'].addItems(vulkan_options)
+                widgets['render_vk_device'].device_map = device_map
             else:
-                widgets['vulkan_device'].setEnabled(False)
-                widgets['vulkan_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
+                widgets['render_vk_device'].setEnabled(False)
+                widgets['render_vk_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
 
         if category_name == "RenderPipeline":
             if not GPULaunchManager.get_available_mangohud():
@@ -1006,18 +1006,18 @@ class GPULaunchManager:
         """
         env_vars = []
 
-        if 'ogl_renderer' in render_widgets:
-            selected = render_widgets['ogl_renderer'].currentText()
+        if 'render_gl_device' in render_widgets:
+            selected = render_widgets['render_gl_device'].currentText()
             if selected != "unset":
-                env_map = getattr(render_widgets['ogl_renderer'], 'env_map', {})
+                env_map = getattr(render_widgets['render_gl_device'], 'env_map', {})
                 env_dict = env_map.get(selected, {})
                 for var, value in env_dict.items():
                     env_vars.append(f"{var}={value}")
 
-        if 'vulkan_device' in render_widgets:
-            vulkan_selection = render_widgets['vulkan_device'].currentText()
+        if 'render_vk_device' in render_widgets:
+            vulkan_selection = render_widgets['render_vk_device'].currentText()
             if vulkan_selection != "unset":
-                device_map = getattr(render_widgets['vulkan_device'], 'device_map', {})
+                device_map = getattr(render_widgets['render_vk_device'], 'device_map', {})
                 device_key = device_map.get(vulkan_selection)
                 if device_key:
                     env_vars.append(f"MESA_VK_DEVICE_SELECT={device_key}!")
