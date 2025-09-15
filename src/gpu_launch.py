@@ -9,20 +9,20 @@ class GPULaunchManager:
 
     GPU_SETTINGS_CATEGORIES = {
         "Mesa": {
-            'mesa_vk_vsync': {
-                'label': "Vulkan Vsync:",
-                'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
-                'env_mapping': {
-                    'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
-                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
-                }
-            },
             'mesa_gl_vsync': {
                 'label': "OpenGL Vsync:",
                 'items': ["unset", "default interval 0", "default interval 1", "on", "off"],
                 'env_mapping': {
                     'var_names': ['vblank_mode'],
                     'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
+                }
+            },
+            'mesa_vk_vsync': {
+                'label': "Vulkan Vsync:",
+                'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
+                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
                 }
             },
             'mesa_gl_thread_opt': {
@@ -33,12 +33,12 @@ class GPULaunchManager:
                     'values': {'on': 'true', 'off': 'false'}
                 }
             },
-            'mesa_gl_msaa': {
-                'label': "OpenGL MSAA:",
-                'items': ["unset", "on", 'off'],
+            'mesa_vk_submit_thread': {
+                'label': "Vulkan Submit Thread:",
+                'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['DRI_NO_MSAA'],
-                    'values': {'on': '0', 'off': '1'}
+                    'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
+                    'values': {'on': '1', 'off': '0'}
                 }
             },
             'mesa_dither': {
@@ -46,6 +46,14 @@ class GPULaunchManager:
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_NO_DITHER'],
+                    'values': {'on': '0', 'off': '1'}
+                }
+            },
+            'mesa_gl_msaa': {
+                'label': "OpenGL MSAA:",
+                'items': ["unset", "on", 'off'],
+                'env_mapping': {
+                    'var_names': ['DRI_NO_MSAA'],
                     'values': {'on': '0', 'off': '1'}
                 }
             },
@@ -73,14 +81,6 @@ class GPULaunchManager:
                     'values': {'on': '0', 'off': '1'}
                 }
             },
-            'mesa_vk_fake': {
-                'label': "Vulkan Version Spoofing:",
-                'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
-                'env_mapping': {
-                    'var_names': ['MESA_VK_VERSION_OVERRIDE'],
-                    'direct_value': True
-                }
-            },
             'mesa_gl_fake': {
                 'label': "OpenGL Version Spoofing:",
                 'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
@@ -97,52 +97,28 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'mesa_vk_submit_thread': {
-                'label': "Vulkan Submit Thread:",
-                'items': ["unset", "on", "off"],
+            'mesa_vk_fake': {
+                'label': "Vulkan Version Spoofing:",
+                'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
-                    'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
-                    'values': {'on': '1', 'off': '0'}
+                    'var_names': ['MESA_VK_VERSION_OVERRIDE'],
+                    'direct_value': True
                 }
             },
-            'intel_precise_trig': {
-                'label': "Intel Driver Preference on Trigonometric Functions:",
-                'items': ["unset", "accuracy", "performance"],
+            'radeonsi_no_infinite_interp': {
+                'label': "RadeonSI Disable Infinite Interpolation :",
+                'items': ["unset", "on (might fix errors)", "off"],
                 'env_mapping': {
-                    'var_names': ['INTEL_PRECISE_TRIG'],
-                    'values': {'accuracy': 'true', 'performance': 'false'}
+                    'var_names': ['radeonsi_no_infinite_interp'],
+                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
                 }
             },
-            'anv_sparse': {
-                'label': "ANV Sparse Resources (Tiger Lake+):",
-                'items': ["unset", "on", "off"],
+            'radeonsi_clamp_div_by_zero': {
+                'label': "RadeonSI Clamp Division by Zero:",
+                'items': ["unset", "on (might fix errors)", "off"],
                 'env_mapping': {
-                    'var_names': ['ANV_SPARSE'],
-                    'values': {'on': 'true', 'off': 'false'}
-                }
-            },
-            'anv_sparse_implementation': {
-                'label': "ANV Sparse Implementation (Lunar Lake+):",
-                'items': ["unset", "TRTT", "Xe"],
-                'env_mapping': {
-                    'var_names': ['ANV_SPARSE_USE_TRTT'],
-                    'values': {'TRTT': 'true', 'Xe': 'false'}
-                }
-            },
-            'hasvk_always_bindless': {
-                'label': "HASVK Bindless Descriptors:",
-                'items': ["unset", "on", "off"],
-                'env_mapping': {
-                    'var_names': ['HASVK_ALWAYS_BINDLESS'],
-                    'values': {'on': 'true', 'off': 'false'}
-                }
-            },
-            'hasvk_userspace_relocs': {
-                'label': "HASVK Userspace Relocations:",
-                'items': ["unset", "on", "off"],
-                'env_mapping': {
-                    'var_names': ['HASVK_USERSPACE_RELOCS'],
-                    'values': {'on': 'true', 'off': 'false'}
+                    'var_names': ['radeonsi_clamp_div_by_zero'],
+                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
                 }
             },
             'radv_anisotropic_filtering': {
@@ -180,20 +156,44 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'radeonsi_no_infinite_interp': {
-                'label': "RadeonSI Disable Infinite Interpolation :",
-                'items': ["unset", "on (might fix errors)", "off"],
+            'intel_precise_trig': {
+                'label': "Intel Driver Preference on Trigonometric Functions:",
+                'items': ["unset", "accuracy", "performance"],
                 'env_mapping': {
-                    'var_names': ['radeonsi_no_infinite_interp'],
-                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
+                    'var_names': ['INTEL_PRECISE_TRIG'],
+                    'values': {'accuracy': 'true', 'performance': 'false'}
                 }
             },
-            'radeonsi_clamp_div_by_zero': {
-                'label': "RadeonSI Clamp Division by Zero:",
-                'items': ["unset", "on (might fix errors)", "off"],
+            'hasvk_always_bindless': {
+                'label': "HASVK Bindless Descriptors:",
+                'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['radeonsi_clamp_div_by_zero'],
-                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
+                    'var_names': ['HASVK_ALWAYS_BINDLESS'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'hasvk_userspace_relocs': {
+                'label': "HASVK Userspace Relocations:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['HASVK_USERSPACE_RELOCS'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'anv_sparse': {
+                'label': "ANV Sparse Resources (Tiger Lake+):",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['ANV_SPARSE'],
+                    'values': {'on': 'true', 'off': 'false'}
+                }
+            },
+            'anv_sparse_implementation': {
+                'label': "ANV Sparse Implementation (Lunar Lake+):",
+                'items': ["unset", "TRTT", "Xe"],
+                'env_mapping': {
+                    'var_names': ['ANV_SPARSE_USE_TRTT'],
+                    'values': {'TRTT': 'true', 'Xe': 'false'}
                 }
             },
             'nvk_broken_driver': {
@@ -218,7 +218,7 @@ class GPULaunchManager:
                 'label': "OpenGL G-SYNC:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['__GL_VRR_ALLOWED'],
+                    'var_names': ['__GL_VRR_ALLOWED', '__GL_GSYNC_ALLOWED'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -296,6 +296,14 @@ class GPULaunchManager:
                     'convert_to_bytes': True
                 }
             },
+            'nvidia_glsl_ext_requirements': {
+                'label': "Ignore GLSL Extensions Requirements:",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQ'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
             'nvidia_max_prerendered_frames': {
                 'label': "Maximum Pre-rendered Frames:",
                 'items': ["unset"] + [str(i) for i in range(1, 5)],
@@ -328,11 +336,11 @@ class GPULaunchManager:
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'nvidia_glsl_ext_requirements': {
-                'label': "Ignore GLSL Extensions Requirements:",
+            'nvidia_glx_unofficial_protocol': {
+                'label': "Unofficial GLX Protocol:",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQ'],
+                    'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
@@ -343,23 +351,15 @@ class GPULaunchManager:
                     'var_names': ['__GL_ExperimentalPerfStrategy'],
                     'values': {'on': '1', 'off': '0'}
                 }
-            },
-            'nvidia_glx_unofficial_protocol': {
-                'label': "Unofficial GLX Protocol:",
-                'items': ["unset", "on", "off"],
-                'env_mapping': {
-                    'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
-                    'values': {'on': '1', 'off': '0'}
-                }
             }
         },
         "RenderSelector": {
             'render_gl_device': {
-                'label': "OpenGL Renderer:",
+                'label': "Select OpenGL Device:",
                 'items': ["unset", "llvmpipe (software rendering)", "zink"]
             },
             'render_vk_device': {
-                'label': "Select Vulkan Renderer:",
+                'label': "Select Vulkan Device:",
                 'items': ["unset"]
             }
         },
