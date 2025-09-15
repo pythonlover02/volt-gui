@@ -741,23 +741,28 @@ class GPULaunchManager:
         Create a path selection widget with browse and clear buttons.
         """
         container = QWidget()
-        layout = QHBoxLayout(container)
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
 
         path_input = QLineEdit()
         path_input.setPlaceholderText("No file selected")
         path_input.setReadOnly(True)
         layout.addWidget(path_input)
 
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addStretch(1)
+
         browse_button = QPushButton("...")
-        browse_button.setFixedWidth(30)
         browse_button.clicked.connect(lambda: GPULaunchManager.browse_file(path_input))
-        layout.addWidget(browse_button)
+        button_layout.addWidget(browse_button)
 
         clear_button = QPushButton("Clear")
-        clear_button.setFixedWidth(60)
         clear_button.clicked.connect(lambda: path_input.clear())
-        layout.addWidget(clear_button)
+        button_layout.addWidget(clear_button)
+
+        layout.addLayout(button_layout)
 
         return container, path_input, browse_button, clear_button
 
