@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QS
 from PySide6.QtCore import Qt
 
 class ExtrasManager:
-    
+
     @staticmethod
     def get_useful_links():
         """
@@ -16,7 +16,7 @@ class ExtrasManager:
             {"label": "ProtonDB", "description": "Community driven compatibility database for Steam games on Linux.", "url": "https://www.protondb.com/"},
             {"label": "Wine Application Database", "description": "Here you can get information on application compatibility with Wine.", "url": "https://appdb.winehq.org/"},
         ]
-    
+
     @staticmethod
     def get_useful_programs():
         """
@@ -35,7 +35,7 @@ class ExtrasManager:
             {"label": "DXVK-Sarek Github", "description": "DXVK version for older PCs.", "url": "https://github.com/doitsujin/dxvk/tree/sarek"},
             {"label": "VKD3D Proton Github", "description": "Vulkan translation layer for Direct3D 12, used on Proton.", "url": "https://github.com/HansKristian-Work/vkd3d-proton"},
         ]
-    
+
     @staticmethod
     def create_extras_tab():
         """
@@ -44,15 +44,15 @@ class ExtrasManager:
         extras_tab = QWidget()
         extras_layout = QVBoxLayout(extras_tab)
         extras_layout.setSpacing(10)
-        
+
         extras_subtabs = QTabWidget()
         useful_links_tab = ExtrasManager.create_scrollable_tab(ExtrasManager.get_useful_links())
         useful_programs_tab = ExtrasManager.create_scrollable_tab(ExtrasManager.get_useful_programs())
-        
+
         extras_subtabs.addTab(useful_links_tab, "Useful Links")
         extras_subtabs.addTab(useful_programs_tab, "Useful Programs")
         extras_layout.addWidget(extras_subtabs)
-        
+
         return extras_tab, {}
 
     @staticmethod
@@ -63,27 +63,27 @@ class ExtrasManager:
         tab = QWidget()
         main_layout = QVBoxLayout(tab)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
+
         scroll_widget = QWidget()
         scroll_widget.setProperty("scrollContainer", True)
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(10, 10, 10, 0)
-        
+
         for item in items:
             container = ExtrasManager.create_item_container(item)
             scroll_layout.addWidget(container)
-        
+
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
         main_layout.addWidget(scroll_area)
-        
+
         return tab
-    
+
     @staticmethod
     def create_item_container(item_info):
         """
@@ -93,30 +93,30 @@ class ExtrasManager:
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(10, 0, 0, 0)
         container_layout.setSpacing(5)
-        
+
         title_label = QLabel(item_info["label"])
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
         container_layout.addWidget(title_label)
-        
+
         desc_label = QLabel(item_info["description"])
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("color: #E0E0E0; font-size: 13px; line-height: 1.4;")
         container_layout.addWidget(desc_label)
-        
+
         button = QPushButton("Open")
         button.setMinimumHeight(30)
         button.setMinimumWidth(100)
         button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button.clicked.connect(lambda checked, url=item_info["url"]: webbrowser.open(url))
-        
+
         button_container = QWidget()
         button_container_layout = QHBoxLayout(button_container)
         button_container_layout.setContentsMargins(0, 0, 0, 0)
         button_container_layout.addStretch()
         button_container_layout.addWidget(button)
         button_container_layout.addStretch()
-        
+
         container_layout.addWidget(button_container)
         return container
