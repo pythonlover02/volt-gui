@@ -10,7 +10,7 @@ class OptionsManager:
     OPTIONS_SETTINGS = {
         'theme': {
             'label': 'Selected Theme:',
-            'text': 'Choose the visual theme for the application interface. AMD (red), Intel (blue), or NVIDIA (green) color schemes.',
+            'text': 'Visual theme for the application interface.',
             'section': 'Theme',
             'config_key': 'ActiveTheme',
             'items': ["amd", "intel", "nvidia"],
@@ -18,7 +18,7 @@ class OptionsManager:
         },
         'transparency': {
             'label': 'Transparency:',
-            'text': 'Enable window transparency to make the application semi-transparent.',
+            'text': 'Window transparency.',
             'section': 'Transparency',
             'config_key': 'Enable',
             'items': ["enable", "disable"],
@@ -58,7 +58,7 @@ class OptionsManager:
         },
         'welcome_message': {
             'label': 'Welcome Message:',
-            'text': 'Show the welcome message dialog when starting the application for the first time or after updates.',
+            'text': 'Show the welcome message dialog when starting the application.',
             'section': 'WelcomeMessage',
             'config_key': 'Show',
             'items': ["enable", "disable"],
