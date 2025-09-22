@@ -375,18 +375,6 @@ class KernelManager:
             return None
 
     @staticmethod
-    def get_dynamic_text_with_values(base_text, setting_path):
-        """
-        Append possible values to setting description text
-        """
-        possible_values = KernelManager.get_dynamic_possible_values(setting_path)
-        if possible_values:
-            values_text = " ".join(possible_values)
-            return f"{base_text}\nPossible values: {values_text}"
-        else:
-            return f"{base_text}\nPossible values: Unable to read from system"
-
-    @staticmethod
     def get_available_setting(setting_path):
         """
         Check if setting file is accessible
@@ -452,38 +440,36 @@ class KernelManager:
         setting_layout = QVBoxLayout(setting_container)
         setting_layout.setContentsMargins(0, 10, 0, 0)
 
-        path_label = QLabel(f"{setting_info['path']}:")
-        path_label.setWordWrap(True)
-        setting_layout.addWidget(path_label)
+        label = QLabel(f"{setting_info['path']}:")
+        label.setWordWrap(True)
+        setting_layout.addWidget(label)
 
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
+
         is_accessible = KernelManager.get_available_setting(setting_info['path'])
-
-        if setting_info['is_dynamic']:
-            if is_accessible:
-                display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
-            else:
-                display_text = f"{setting_info['text']}\nPossible values: not available"
-        else:
-            display_text = setting_info['text']
-
-        text_label = QLabel(display_text)
-        text_label.setWordWrap(True)
-        text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
-        setting_layout.addWidget(text_label)
-
         input_widget = QLineEdit()
         input_widget.setPlaceholderText("enter value")
-        setting_layout.addWidget(input_widget)
 
-        if not is_accessible:
+        if is_accessible:
+            tooltip_text = setting_info['text']
+            if setting_info['is_dynamic']:
+                possible_values = KernelManager.get_dynamic_possible_values(setting_info['path'])
+                if possible_values:
+                    values_text = " ".join(possible_values)
+                    tooltip_text += f"\nPossible values: {values_text}"
+                else:
+                    tooltip_text += "\nPossible values: Unable to read from system"
+
+            input_widget.setToolTip(tooltip_text)
+        else:
             input_widget.setEnabled(False)
-            input_widget.setToolTip(f"Setting file its not available - {setting_name} disabled")
+            input_widget.setToolTip(f"Setting file is not available - {setting_info['path']} disabled")
+
+        setting_layout.addWidget(input_widget)
 
         widgets[f'{setting_name}_input'] = input_widget
         widgets[f'{setting_name}_current_value'] = current_value_label
-        widgets[f'{setting_name}_text_label'] = text_label
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
@@ -510,7 +496,7 @@ class KernelManager:
     @staticmethod
     def refresh_kernel_values(widgets):
         """
-        Update all kernel setting current values in the GUI
+        Update all kernel setting current values in the GUI and refresh tooltips
         """
         for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
             for name, info in category.items():
@@ -520,12 +506,16 @@ class KernelManager:
 
                 if info['is_dynamic']:
                     current = KernelManager.get_dynamic_current_value(info['path'])
+                    tooltip_text = info['text']
+                    possible_values = KernelManager.get_dynamic_possible_values(info['path'])
+                    if possible_values:
+                        values_text = " ".join(possible_values)
+                        tooltip_text += f"\nPossible values: {values_text}"
+                    else:
+                        tooltip_text += "\nPossible values: Unable to read from system"
+                    widgets[f'{name}_input'].setToolTip(tooltip_text)
                 else:
                     current = KernelManager.get_current_value(info['path'])
 
                 if current is not None:
                     widgets[f'{name}_current_value'].setText(f"current value: {current}")
-
-                if info['is_dynamic'] and f'{name}_text_label' in widgets:
-                    updated_text = KernelManager.get_dynamic_text_with_values(info['text'], info['path'])
-                    widgets[f'{name}_text_label'].setText(updated_text)

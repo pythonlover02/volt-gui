@@ -8,9 +8,10 @@ class DiskManager:
 
     DISK_SETTINGS_CATEGORIES = {
         "Scheduler": {
-            'sched': {
+            'scheduler': {
                 'label': "Scheduler:",
-                'items': ["unset"]
+                'items': ["unset"],
+                'text': "How disk read/write requests are ordered."
             }
         }
     }
@@ -55,7 +56,7 @@ class DiskManager:
             if not tokens:
                 return None
 
-            available = DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"]['sched']['items'].copy()
+            available = DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"]['scheduler']['items'].copy()
             current = None
             bracket_pattern = re.compile(r'\[([^\]]+)\]')
 
@@ -134,6 +135,7 @@ class DiskManager:
                 disk_widgets[setting_key].addItems(sorted_schedulers)
                 disk_widgets[setting_key].setCurrentText(setting_info['items'][0])
                 disk_widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                disk_widgets[setting_key].setToolTip(setting_info['text'])
 
                 layout.addWidget(label)
                 layout.addWidget(disk_widgets[setting_key])
@@ -191,4 +193,4 @@ class DiskManager:
             if disk_name in widgets['disk_settings']:
                 disk_widgets = widgets['disk_settings'][disk_name]
                 current_scheduler = scheduler_info['current']
-                disk_widgets['current_sched_value'].setText(f"current: {current_scheduler}")
+                disk_widgets['current_scheduler_value'].setText(f"current: {current_scheduler}")

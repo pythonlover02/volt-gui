@@ -11,6 +11,7 @@ class GPULaunchManager:
         "Mesa": {
             'mesa_gl_vsync': {
                 'label': "OpenGL Vsync:",
+                'text': "OpenGL vertical synchronization.",
                 'items': ["unset", "default interval 0", "default interval 1", "on", "off"],
                 'env_mapping': {
                     'var_names': ['vblank_mode'],
@@ -19,6 +20,7 @@ class GPULaunchManager:
             },
             'mesa_vk_vsync': {
                 'label': "Vulkan Vsync:",
+                'text': "Vulkan vertical synchronization.",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
@@ -27,6 +29,7 @@ class GPULaunchManager:
             },
             'mesa_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
+                'text': "Multi-threaded OpenGL command processing.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['mesa_glthread'],
@@ -35,14 +38,16 @@ class GPULaunchManager:
             },
             'mesa_vk_submit_thread': {
                 'label': "Vulkan Submit Thread:",
+                'text': "Dedicated thread for Vulkan command submission.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
-            'mesa_dither': {
-                'label': "Texture Dithering:",
+            'mesa_gl_dither': {
+                'label': "OpenGL Texture Dithering:",
+                'text': "OpenGL color dithering on low-depth framebuffers.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_NO_DITHER'],
@@ -51,6 +56,7 @@ class GPULaunchManager:
             },
             'mesa_gl_msaa': {
                 'label': "OpenGL MSAA:",
+                'text': "Multisample anti-aliasing in OpenGL.",
                 'items': ["unset", "on", 'off'],
                 'env_mapping': {
                     'var_names': ['DRI_NO_MSAA'],
@@ -59,6 +65,7 @@ class GPULaunchManager:
             },
             'mesa_shader_cache': {
                 'label': "Shader Cache:",
+                'text': "Disk-based shader caching.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_SHADER_CACHE_DISABLE', 'MESA_GLSL_CACHE_DISABLE'],
@@ -67,14 +74,16 @@ class GPULaunchManager:
             },
             'mesa_cache_size': {
                 'label': "Shader Cache Size (GB):",
+                'text': "Maximum size for the shader cache.",
                 'items': ["unset"] + [str(i) for i in range(1, 11)],
                 'env_mapping': {
                     'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
                     'direct_value': True
                 }
             },
-            'mesa_error_check': {
-                'label': "Error Checking:",
+            'mesa_gl_error_check': {
+                'label': "OpenGL Error Checking:",
+                'text': "OpenGL error checking.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_NO_ERROR'],
@@ -83,6 +92,7 @@ class GPULaunchManager:
             },
             'mesa_gl_fake': {
                 'label': "OpenGL Version Spoofing:",
+                'text': "Report a different OpenGL version to applications.",
                 'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
                 'env_mapping': {
                     'var_names': ['MESA_GL_VERSION_OVERRIDE'],
@@ -91,6 +101,7 @@ class GPULaunchManager:
             },
             'mesa_glsl_fake': {
                 'label': "GLSL Version Spoofing:",
+                'text': "Report a different GLSL version to applications.",
                 'items': ["unset", "330", "460"],
                 'env_mapping': {
                     'var_names': ['MESA_GLSL_VERSION_OVERRIDE'],
@@ -99,6 +110,7 @@ class GPULaunchManager:
             },
             'mesa_vk_fake': {
                 'label': "Vulkan Version Spoofing:",
+                'text': "Report a different Vulkan version to applications.",
                 'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_VERSION_OVERRIDE'],
@@ -106,23 +118,26 @@ class GPULaunchManager:
                 }
             },
             'radeonsi_no_infinite_interp': {
-                'label': "RadeonSI Disable Infinite Interpolation :",
-                'items': ["unset", "on (might fix errors)", "off"],
+                'label': "RadeonSI Disable Infinite Interpolation:",
+                'text': "Disable infinite interpolation in RadeonSI.",
+                'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['radeonsi_no_infinite_interp'],
-                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
+                    'values': {'on': 'true', 'off': 'false'}
                 }
             },
             'radeonsi_clamp_div_by_zero': {
                 'label': "RadeonSI Clamp Division by Zero:",
-                'items': ["unset", "on (might fix errors)", "off"],
+                'text': "Clamp division by zero results in RadeonSI.",
+                'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['radeonsi_clamp_div_by_zero'],
-                    'values': {'on (might fix errors)': 'true', 'off': 'false'}
+                    'values': {'on': 'true', 'off': 'false'}
                 }
             },
             'radv_anisotropic_filtering': {
                 'label': "RADV Anisotropic Filtering:",
+                'text': "Anisotropic filtering level for RADV.",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
                     'var_names': ['RADV_TEX_ANISO'],
@@ -131,6 +146,7 @@ class GPULaunchManager:
             },
             'radv_profile_pstate': {
                 'label': "RADV Profile Pstate:",
+                'text': "Performance state profiling in RADV.",
                 'items': [
                     "unset",
                     "gpu clocks on arbitrary level",
@@ -150,6 +166,7 @@ class GPULaunchManager:
             },
             'radv_vrs': {
                 'label': "RADV Variable Rate Shading (GFX10.3+):",
+                'text': "Variable rate shading in RADV (GFX10.3+).",
                 'items': ["unset", "2x2", "1x2", "2x1", "1x1"],
                 'env_mapping': {
                     'var_names': ['RADV_FORCE_VRS'],
@@ -158,6 +175,7 @@ class GPULaunchManager:
             },
             'intel_precise_trig': {
                 'label': "Intel Driver Preference on Trigonometric Functions:",
+                'text': "Precision vs performance tradeoff for trigonometric functions on Intel GPUs.",
                 'items': ["unset", "accuracy", "performance"],
                 'env_mapping': {
                     'var_names': ['INTEL_PRECISE_TRIG'],
@@ -166,6 +184,7 @@ class GPULaunchManager:
             },
             'hasvk_always_bindless': {
                 'label': "HASVK Bindless Descriptors:",
+                'text': "Bindless descriptors in HASVK.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['HASVK_ALWAYS_BINDLESS'],
@@ -174,6 +193,7 @@ class GPULaunchManager:
             },
             'hasvk_userspace_relocs': {
                 'label': "HASVK Userspace Relocations:",
+                'text': "Userspace relocations in HASVK.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['HASVK_USERSPACE_RELOCS'],
@@ -182,6 +202,7 @@ class GPULaunchManager:
             },
             'anv_sparse': {
                 'label': "ANV Sparse Resources (Tiger Lake+):",
+                'text': "Sparse resources in ANV.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['ANV_SPARSE'],
@@ -190,6 +211,7 @@ class GPULaunchManager:
             },
             'anv_sparse_implementation': {
                 'label': "ANV Sparse Implementation (Lunar Lake+):",
+                'text': "Sparse resource implementation in ANV.",
                 'items': ["unset", "TRTT", "Xe"],
                 'env_mapping': {
                     'var_names': ['ANV_SPARSE_USE_TRTT'],
@@ -197,7 +219,8 @@ class GPULaunchManager:
                 }
             },
             'nvk_broken_driver': {
-                'label': "Enable NVK for Experimental/Untested GPUs:",
+                'label': "NVK for Experimental/Untested GPUs:",
+                'text': "Experimental NVK driver support for untested GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['NVK_I_WANT_A_BROKEN_VULKAN_DRIVER'],
@@ -208,6 +231,7 @@ class GPULaunchManager:
         "NVIDIA": {
             'nvidia_gl_vsync': {
                 'label': "OpenGL Vsync:",
+                'text': "OpenGL vertical synchronization.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_SYNC_TO_VBLANK'],
@@ -216,6 +240,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_gsync': {
                 'label': "OpenGL G-SYNC:",
+                'text': "OpenGL G-SYNC/Variable Refresh Rate (VRR).",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_VRR_ALLOWED', '__GL_GSYNC_ALLOWED'],
@@ -224,6 +249,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
+                'text': "Multi-threaded OpenGL command processing.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_THREADED_OPTIMIZATIONS'],
@@ -232,6 +258,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_yield': {
                 'label': "OpenGL Yield Behavior:",
+                'text': "NVIDIA driver yields CPU time during OpenGL operations.",
                 'items': ["unset", "call sched_yield() to yield", "never yield", "call usleep(0) to yield"],
                 'env_mapping': {
                     'var_names': ['__GL_YIELD'],
@@ -240,6 +267,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_texture_quality': {
                 'label': "OpenGL Texture Quality:",
+                'text': "Texture quality vs performance tradeoff in OpenGL.",
                 'items': ["unset", "quality", "mixed", "performance"],
                 'env_mapping': {
                     'var_names': ['__GL_OpenGLImageSettings'],
@@ -248,6 +276,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_fsaa': {
                 'label': "OpenGL Full Scene Antialiasing:",
+                'text': "Full scene anti-aliasing level in OpenGL.",
                 'items': [
                     "unset", "0 - off", "1 - 2x (2xms)", "5 - 4x (4xms)",
                     "7 - 8x (4xms, 4xcs)", "8 - 16x (4xms, 12xcs)",
@@ -262,6 +291,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_fxaa': {
                 'label': "OpenGL FXAA:",
+                'text': "Fast approximate anti-aliasing in OpenGL.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ALLOW_FXAA_USAGE'],
@@ -270,6 +300,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_aniso': {
                 'label': "OpenGL Anisotropic Filtering:",
+                'text': "Anisotropic filtering level in OpenGL.",
                 'items': [
                     "unset", "0 - no anisotropic filtering",
                     "1 - 2x anisotropic filtering", "2 - 4x anisotropic filtering",
@@ -282,6 +313,7 @@ class GPULaunchManager:
             },
             'nvidia_shader_cache': {
                 'label': "Shader Cache:",
+                'text': "Disk-based shader caching.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_SHADER_DISK_CACHE'],
@@ -290,6 +322,7 @@ class GPULaunchManager:
             },
             'nvidia_shader_cache_size': {
                 'label': "Shader Cache Size (GB):",
+                'text': "Maximum size for the shader cache.",
                 'items': ["unset"] + [str(i) for i in range(1, 11)],
                 'env_mapping': {
                     'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
@@ -298,6 +331,7 @@ class GPULaunchManager:
             },
             'nvidia_glsl_ext_requirements': {
                 'label': "Ignore GLSL Extensions Requirements:",
+                'text': "Ignore GLSL extension requirements.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_IGNORE_GLSL_EXT_REQ'],
@@ -306,6 +340,7 @@ class GPULaunchManager:
             },
             'nvidia_max_prerendered_frames': {
                 'label': "Maximum Pre-rendered Frames:",
+                'text': "Maximum number of pre-rendered frames.",
                 'items': ["unset"] + [str(i) for i in range(1, 5)],
                 'env_mapping': {
                     'var_names': ['__GL_MaxFramesAllowed'],
@@ -314,6 +349,7 @@ class GPULaunchManager:
             },
             'nvidia_image_sharpening': {
                 'label': "Image Sharpening:",
+                'text': "Image sharpening.",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
                     'var_names': ['__GL_SHARPEN_VALUE'],
@@ -322,6 +358,7 @@ class GPULaunchManager:
             },
             'nvidia_image_denoising': {
                 'label': "Image Denoising",
+                'text': "Image denoising.",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
                     'var_names': ['__GL_SHARPEN_IGNORE_FILM_GRAIN'],
@@ -330,6 +367,7 @@ class GPULaunchManager:
             },
             'nvidia_smooth_motion': {
                 'label': "Smooth Motion (RTX 40 Series+):",
+                'text': "Smooth motion feature on RTX 40 Series and newer GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
@@ -338,6 +376,7 @@ class GPULaunchManager:
             },
             'nvidia_glx_unofficial_protocol': {
                 'label': "Unofficial GLX Protocol:",
+                'text': "Unofficial GLX protocol.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
@@ -346,6 +385,7 @@ class GPULaunchManager:
             },
             'nvidia_experimental_perf': {
                 'label': "Experimental Performance Strategy:",
+                'text': "Experimental performance strategy.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ExperimentalPerfStrategy'],
@@ -356,16 +396,19 @@ class GPULaunchManager:
         "RenderSelector": {
             'render_gl_device': {
                 'label': "Select OpenGL Device:",
+                'text': "OpenGL device to use.",
                 'items': ["unset", "llvmpipe (software rendering)", "zink"]
             },
             'render_vk_device': {
                 'label': "Select Vulkan Device:",
+                'text': "Vulkan device to use.",
                 'items': ["unset"]
             }
         },
-        "RenderPipeline": {
+        "MangoHud": {
             'mangohud_display': {
                 'label': "Display Elements:",
+                'text': "Elements displayed in MangoHud overlay.",
                 'items': ["unset", "no hud", "fps only", "horizontal", "extended", "detailed"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -375,6 +418,7 @@ class GPULaunchManager:
             },
             'mangohud_fps_limit': {
                 'label': "Fps Limit:",
+                'text': "FPS limit when using MangoHud.",
                 'items': ["unset", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -385,6 +429,7 @@ class GPULaunchManager:
             },
             'mangohud_fps_method': {
                 'label': "Fps Limit Method:",
+                'text': "MangoHud FPS limiting implementation.",
                 'items': ["unset", "early - smoothest frametimes", "late - lowest latency"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -394,6 +439,7 @@ class GPULaunchManager:
             },
             'mangohud_texture_filter': {
                 'label': "Texture Filtering:",
+                'text': "Texture filtering method when using MangoHud.",
                 'items': ["unset", "bicubic", "retro", "trilinear"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -402,6 +448,7 @@ class GPULaunchManager:
             },
             'mangohud_mipmap_lod_bias': {
                 'label': "Mipmap LOD Bias:",
+                'text': "Mipmap level-of-detail bias when using MangoHud.",
                 'items': ["unset"] + [str(i) for i in range(-16, 17)],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -411,6 +458,7 @@ class GPULaunchManager:
             },
             'mangohud_anisotropic_filtering': {
                 'label': "Anisotropic Filtering:",
+                'text': "Anisotropic filtering level when using MangoHud.",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -422,6 +470,7 @@ class GPULaunchManager:
         "LSFrameGen": {
             'lsfg_dll_path': {
                 'label': "Lossless.dll Path:",
+                'text': "Path to the Lossless Scaling frame generation DLL file (Lossless.dll).",
                 'path': True,
                 'env_mapping': {
                     'var_names': ['LSFG_DLL_PATH'],
@@ -430,6 +479,7 @@ class GPULaunchManager:
             },
             'lsfg_multiplier': {
                 'label': "FPS Multiplier:",
+                'text': "Frame generation multiplier.",
                 'items': ["unset", "2", "3", "4"],
                 'env_mapping': {
                     'var_names': ['LSFG_MULTIPLIER'],
@@ -438,6 +488,7 @@ class GPULaunchManager:
             },
             'lsfg_flow_scale': {
                 'label': "Motion Estimation Quality:",
+                'text': "Motion estimation quality.",
                 'items': ["unset", "0.25", "0.50", "0.75", "1.0"],
                 'env_mapping': {
                     'var_names': ['LSFG_FLOW_SCALE'],
@@ -446,6 +497,7 @@ class GPULaunchManager:
             },
             'lsfg_performance_mode': {
                 'label': "Performance Mode:",
+                'text': "Performance mode which reduces quality for higher frame rates.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_PERFORMANCE_MODE'],
@@ -454,6 +506,7 @@ class GPULaunchManager:
             },
             'lsfg_hdr_mode': {
                 'label': "HDR Mode:",
+                'text': "HDR support in frame generation.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_HDR_MODE'],
@@ -461,7 +514,8 @@ class GPULaunchManager:
                 }
             },
             'lsfg_vk_present_mode': {
-                'label': "Overwrite Vulkan Vsync To:",
+                'label': "Vulkan Vsync:",
+                'text': "Vulkan vertical synchronization mode when using lsfg-vk.",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
@@ -625,9 +679,10 @@ class GPULaunchManager:
 
         try:
             process = QProcess()
-            clean_env = WorkaroundManager.get_clean_env()
-            clean_env.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
-            process.setEnvironment(clean_env)
+            WorkaroundManager.setup_clean_process(process)
+            env = process.environment()
+            env.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
+            process.setEnvironment(env)
             process.start("glxinfo")
 
             if process.waitForFinished(10000):
@@ -649,10 +704,11 @@ class GPULaunchManager:
         while index < 5:
             try:
                 process = QProcess()
-                clean_env = WorkaroundManager.get_clean_env()
-                clean_env.append("__GLX_VENDOR_LIBRARY_NAME=mesa")
-                clean_env.append(f"DRI_PRIME={index}")
-                process.setEnvironment(clean_env)
+                WorkaroundManager.setup_clean_process(process)
+                env = process.environment()
+                env.append("__GLX_VENDOR_LIBRARY_NAME=mesa")
+                env.append(f"DRI_PRIME={index}")
+                process.setEnvironment(env)
                 process.start("glxinfo")
 
                 if process.waitForFinished(10000):
@@ -703,7 +759,7 @@ class GPULaunchManager:
         return options, gpu_env_map
 
     @staticmethod
-    def create_gpu_settings_tab():
+    def create_gpu_settings_tabs():
         """
         Create the main GPU settings tab with subtabs.
         """
@@ -715,13 +771,13 @@ class GPULaunchManager:
         mesa_tab, mesa_widgets = GPULaunchManager.create_category_tab("Mesa")
         nvidia_tab, nvidia_widgets = GPULaunchManager.create_category_tab("NVIDIA")
         render_selector_tab, render_selector_widgets = GPULaunchManager.create_category_tab("RenderSelector")
-        render_pipeline_tab, render_pipeline_widgets = GPULaunchManager.create_category_tab("RenderPipeline")
+        mangohud_tab, mangohud_widgets = GPULaunchManager.create_category_tab("MangoHud")
         ls_frame_gen_tab, ls_frame_gen_widgets = GPULaunchManager.create_category_tab("LSFrameGen")
 
         gpu_subtabs.addTab(mesa_tab, "Mesa")
         gpu_subtabs.addTab(nvidia_tab, "NVIDIA (Proprietary)")
         gpu_subtabs.addTab(render_selector_tab, "Render Selector")
-        gpu_subtabs.addTab(render_pipeline_tab, "Render Pipeline")
+        gpu_subtabs.addTab(mangohud_tab, "MangoHud")
         gpu_subtabs.addTab(ls_frame_gen_tab, "LS Frame Gen")
         gpu_layout.addWidget(gpu_subtabs)
 
@@ -729,7 +785,7 @@ class GPULaunchManager:
             'Mesa': mesa_widgets,
             'NVIDIA': nvidia_widgets,
             'RenderSelector': render_selector_widgets,
-            'RenderPipeline': render_pipeline_widgets,
+            'MangoHud': mangohud_widgets,
             'LSFrameGen': ls_frame_gen_widgets
         }
 
@@ -748,6 +804,7 @@ class GPULaunchManager:
         path_input = QLineEdit()
         path_input.setPlaceholderText("No file selected")
         path_input.setReadOnly(True)
+        path_input.setToolTip(setting_info['text'])
         layout.addWidget(path_input)
 
         button_layout = QHBoxLayout()
@@ -819,6 +876,7 @@ class GPULaunchManager:
                 widgets[setting_key].addItems(setting_info['items'])
                 widgets[setting_key].setCurrentText("unset")
                 widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                widgets[setting_key].setToolTip(setting_info['text'])
                 layout.addWidget(label)
                 layout.addWidget(widgets[setting_key])
 
@@ -832,7 +890,7 @@ class GPULaunchManager:
                 widgets['render_gl_device'].env_map = gpu_env_map
             else:
                 widgets['render_gl_device'].setEnabled(False)
-                widgets['render_gl_device'].setToolTip("glxinfo not found - OpenGL device selection disabled")
+                widgets['render_gl_device'].setToolTip("glxinfo not available - OpenGL device selection disabled")
 
             if GPULaunchManager.get_available_vulkaninfo():
                 vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
@@ -842,32 +900,32 @@ class GPULaunchManager:
                 widgets['render_vk_device'].device_map = device_map
             else:
                 widgets['render_vk_device'].setEnabled(False)
-                widgets['render_vk_device'].setToolTip("vulkaninfo not found - Vulkan device selection disabled")
+                widgets['render_vk_device'].setToolTip("vulkaninfo not available - Vulkan device selection disabled")
 
-        if category_name == "RenderPipeline":
+        if category_name == "MangoHud":
             if not GPULaunchManager.get_available_mangohud():
                 for widget_key, widget in widgets.items():
                     if hasattr(widget, 'setEnabled'):
                         widget.setEnabled(False)
-                        widget.setToolTip("MangoHUD not found - Render pipeline options disabled")
+                        widget.setToolTip("MangoHUD not available - MangoHUD options disabled")
 
         if category_name == "LSFrameGen":
             if not GPULaunchManager.get_available_lsfg():
                 for widget_key, widget in widgets.items():
                     if hasattr(widget, 'setEnabled'):
                         widget.setEnabled(False)
-                        widget.setToolTip("lsfg-vk not found - lsfg-vk options disabled")
+                        widget.setToolTip("lsfg-vk not available - lsfg-vk options disabled")
                     elif isinstance(widget, QLineEdit):
                         widget.setEnabled(False)
-                        widget.setToolTip("lsfg-vk not found - lsfg-vk options disabled")
+                        widget.setToolTip("lsfg-vk not available - lsfg-vk options disabled")
                         browse_key = f"{widget_key}_browse"
                         clear_key = f"{widget_key}_clear"
                         if browse_key in widgets:
                             widgets[browse_key].setEnabled(False)
-                            widgets[browse_key].setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                            widgets[browse_key].setToolTip("lsfg-vk not available - All lsfg-vk options disabled")
                         if clear_key in widgets:
                             widgets[clear_key].setEnabled(False)
-                            widgets[clear_key].setToolTip("lsfg-vk not found - All lsfg-vk options disabled")
+                            widgets[clear_key].setToolTip("lsfg-vk not available - All lsfg-vk options disabled")
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -905,15 +963,9 @@ class GPULaunchManager:
         path_label.setWordWrap(True)
         setting_layout.addWidget(path_label)
 
-        example_text = "Additional programs and environment variables to launch with the game, arguments are not supported.\nExample: gamemoderun PROTON_USE_WINED3D=1"
-
-        text_label = QLabel(example_text)
-        text_label.setWordWrap(True)
-        text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
-        setting_layout.addWidget(text_label)
-
         launch_options_input = QLineEdit()
         launch_options_input.setPlaceholderText("enter launch options")
+        launch_options_input.setToolTip("Additional programs and environment variables to launch with the game.\nExample: gamemoderun PROTON_USE_WINED3D=1")
         setting_layout.addWidget(launch_options_input)
 
         scroll_layout.addWidget(setting_container)
@@ -974,7 +1026,7 @@ class GPULaunchManager:
         """
         env_vars = []
 
-        if category_name == "RenderPipeline":
+        if category_name == "MangoHud":
             mangohud_parts = []
 
             for setting_key, widget in widgets.items():
@@ -1095,21 +1147,21 @@ class GPULaunchManager:
         return env_vars
 
     @staticmethod
-    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, render_pipeline_widgets, ls_frame_gen_widgets, launch_options_widgets):
+    def write_settings_file(mesa_widgets, nvidia_widgets, render_selector_widgets, mangohud_widgets, ls_frame_gen_widgets, launch_options_widgets):
         """
         Write all settings to a temporary configuration file.
         """
         mesa_env_vars = GPULaunchManager.generate_env_vars(mesa_widgets, "Mesa")
         nvidia_env_vars = GPULaunchManager.generate_env_vars(nvidia_widgets, "NVIDIA")
         render_env_vars = GPULaunchManager.generate_render_selector_env_vars(render_selector_widgets)
-        render_pipeline_env_vars = GPULaunchManager.generate_env_vars(render_pipeline_widgets, "RenderPipeline")
+        mangohud_env_vars = GPULaunchManager.generate_env_vars(mangohud_widgets, "MangoHud")
         ls_frame_gen_env_vars = GPULaunchManager.generate_env_vars(ls_frame_gen_widgets, "LSFrameGen")
 
         launch_options = ""
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        use_mangohud = any(widget.currentText() != "unset" for widget in render_pipeline_widgets.values()
+        use_mangohud = any(widget.currentText() != "unset" for widget in mangohud_widgets.values()
                           if not isinstance(widget, QPushButton))
 
         if use_mangohud and launch_options:
@@ -1117,7 +1169,7 @@ class GPULaunchManager:
         elif use_mangohud and not launch_options:
             launch_options = "mangohud"
 
-        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + render_pipeline_env_vars + ls_frame_gen_env_vars
+        all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + mangohud_env_vars + ls_frame_gen_env_vars
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.conf') as temp_file:
             for env_var in all_env_vars:

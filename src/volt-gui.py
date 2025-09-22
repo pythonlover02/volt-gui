@@ -14,7 +14,6 @@ from config import ConfigManager
 from welcome import WelcomeManager
 from workarounds import WorkaroundManager
 
-
 def check_sudo_execution():
     """
     Check if the application is run with sudo and exit if it is.
@@ -25,11 +24,9 @@ def check_sudo_execution():
         print("elevated privileges when needed through pkexec.")
         sys.exit(1)
 
-
 class SingletonSignals(QObject):
 
     show_window = Signal()
-
 
 class SingleInstanceChecker:
 
@@ -99,7 +96,6 @@ class SingleInstanceChecker:
         except:
             pass
 
-
 class SignalHandler:
 
     def __init__(self, main_window):
@@ -122,7 +118,6 @@ class SignalHandler:
         self.main_window.cleanup_resources()
         QApplication.quit()
         sys.exit(0)
-
 
 class MainWindow(QMainWindow):
 
@@ -183,7 +178,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setDocumentMode(True)
 
         self.setup_cpu_tab()
-        self.setup_gpu_tab()
+        self.setup_gpu_tabs()
         self.setup_disk_tab()
         self.setup_kernel_tab()
         self.setup_launch_options_tab()
@@ -228,11 +223,11 @@ class MainWindow(QMainWindow):
         self.profile_selector.currentTextChanged.connect(self.on_profile_changed)
 
         self.save_profile_btn = QPushButton("New Profile")
-        self.save_profile_btn.setMaximumWidth(120)
+        self.save_profile_btn.setMinimumSize(100, 30)
         self.save_profile_btn.clicked.connect(self.save_new_profile)
 
         self.delete_profile_btn = QPushButton("Delete Profile")
-        self.delete_profile_btn.setMaximumWidth(100)
+        self.delete_profile_btn.setMinimumSize(100, 30)
         self.delete_profile_btn.clicked.connect(self.delete_current_profile)
 
         profile_layout.addWidget(profile_label)
@@ -262,11 +257,11 @@ class MainWindow(QMainWindow):
         DiskManager.refresh_disk_values(self.disk_widgets)
         self.tab_widget.addTab(disk_tab, "Disk")
 
-    def setup_gpu_tab(self):
+    def setup_gpu_tabs(self):
         """
         Set up the GPU management tab.
         """
-        gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tab()
+        gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tabs()
 
         for category_name, category_widgets in self.gpu_widgets.items():
             if category_name != 'LaunchOptions':
@@ -639,19 +634,19 @@ class MainWindow(QMainWindow):
             self.save_settings()
 
             cpu_args = []
-            cpu_governor = self.cpu_widgets['gov'].currentText()
+            cpu_governor = self.cpu_widgets['scaling_governor'].currentText()
 
             if 'max_freq' in self.cpu_widgets:
-                cpu_max_freq = self.cpu_widgets['max_freq'].currentText()
+                cpu_max_freq = self.cpu_widgets['scaling_max_freq'].currentText()
             else:
                 cpu_max_freq = "unset"
 
             if 'min_freq' in self.cpu_widgets:
-                cpu_min_freq = self.cpu_widgets['min_freq'].currentText()
+                cpu_min_freq = self.cpu_widgets['scaling_min_freq'].currentText()
             else:
                 cpu_min_freq = "unset"
 
-            cpu_scheduler = self.cpu_widgets['sched'].currentText()
+            cpu_scheduler = self.cpu_widgets['scheduler'].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
@@ -674,7 +669,7 @@ class MainWindow(QMainWindow):
 
             disk_args = []
             for disk_name, disk_widgets in self.disk_widgets['disk_settings'].items():
-                selected_scheduler = disk_widgets['sched'].currentText()
+                selected_scheduler = disk_widgets['scheduler'].currentText()
                 if selected_scheduler and selected_scheduler != "" and selected_scheduler != "unset":
                     if not disk_args:
                         disk_args.append("-d")
@@ -694,7 +689,7 @@ class MainWindow(QMainWindow):
                 self.gpu_widgets['Mesa'],
                 self.gpu_widgets['NVIDIA'],
                 self.gpu_widgets['RenderSelector'],
-                self.gpu_widgets['RenderPipeline'],
+                self.gpu_widgets['MangoHud'],
                 self.gpu_widgets['LSFrameGen'],
                 self.gpu_widgets['LaunchOptions']
             )
@@ -779,14 +774,11 @@ class MainWindow(QMainWindow):
         """
         if self.use_system_tray and hasattr(self, 'tray_icon'):
             self.hide()
-            if self.welcome_window:
-                self.welcome_window.hide()
             event.ignore()
         else:
             self.cleanup_resources()
             QApplication.quit()
             event.accept()
-
 
 def main():
     """
@@ -810,7 +802,6 @@ def main():
     signal_handler = SignalHandler(main_window)
 
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()

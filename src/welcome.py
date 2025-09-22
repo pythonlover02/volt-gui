@@ -18,7 +18,7 @@ class WelcomeManager:
             {
                 "title": "Optional Dependencies:",
                 "description": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
-                            "\n\n• MangoHud if you want to make use of the Render Pipeline Settings. Both the native or the Flatpak version satisfy the dependency."
+                            "\n\n• MangoHud if you want to make use of the MangoHud Settings. Both the native or the Flatpak version satisfy the dependency."
                             "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
                 "copyable_blocks": ["flatpak install mangohud"],
                 "additional_text": "• glxinfo is required to use the OpenGL Render Selector."
@@ -36,7 +36,7 @@ class WelcomeManager:
                             "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
                             "\n\n• On the Kernel settings you can modify parameters related to RAM, CPU, Network, and more. I do my best to provide the most accurate recommended values and descriptions possible. If you find any errors or have a way to make them better, please feel free to report them on GitHub."
                             "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
-                            "\n\n• Note: If you use any of the Render Pipeline Settings, you might have some issues running some games, hopefully mangohud fixes those issues on the future."
+                            "\n\n• Note: If you use any of the MangoHud Settings, you might have some issues running some games, hopefully MangoHud fixes those issues on the future."
                             "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
                             "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
                             "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file.",
@@ -308,7 +308,6 @@ class WelcomeManager:
         welcome_window = QMainWindow()
         welcome_window.setWindowTitle("volt-gui - Welcome Setup")
         welcome_window.setMinimumSize(540, 380)
-        welcome_window.setAttribute(Qt.WA_DeleteOnClose, False)
 
         central_widget = QWidget()
         main_layout = QVBoxLayout(central_widget)

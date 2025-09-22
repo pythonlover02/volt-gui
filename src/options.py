@@ -1,7 +1,7 @@
 import os, configparser
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QPushButton, QSizePolicy, QMessageBox, QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from theme import ThemeManager
 
 
@@ -10,51 +10,58 @@ class OptionsManager:
     OPTIONS_SETTINGS = {
         'theme': {
             'label': 'Selected Theme:',
+            'text': 'Choose the visual theme for the application interface. AMD (red), Intel (blue), or NVIDIA (green) color schemes.',
             'section': 'Theme',
             'config_key': 'ActiveTheme',
-            'choices': ["amd", "intel", "nvidia"],
+            'items': ["amd", "intel", "nvidia"],
             'default': 'amd'
         },
         'transparency': {
             'label': 'Transparency:',
+            'text': 'Enable window transparency to make the application semi-transparent.',
             'section': 'Transparency',
             'config_key': 'Enable',
-            'choices': ["enable", "disable"],
+            'items': ["enable", "disable"],
             'default': 'disable'
         },
         'tray': {
             'label': 'Run in System Tray:',
+            'text': 'Run the application in system tray. When enabled, closing the window minimizes to tray instead of exiting.',
             'section': 'SystemTray',
             'config_key': 'Enable',
-            'choices': ["enable", "disable"],
+            'items': ["enable", "disable"],
             'default': 'disable'
         },
         'start_minimized': {
             'label': 'Open Minimized:',
+            'text': 'Start the application minimized to taskbar or system tray when launched.',
             'section': 'StartupMinimized',
             'config_key': 'Enable',
-            'choices': ["enable", "disable"],
+            'items': ["enable", "disable"],
             'default': 'disable'
         },
         'start_maximized': {
             'label': 'Open Maximized:',
+            'text': 'Start the application in maximized window mode when launched.',
             'section': 'StartupMaximized',
             'config_key': 'Enable',
-            'choices': ["enable", "disable"],
+            'items': ["enable", "disable"],
             'default': 'disable'
         },
         'scaling': {
             'label': 'Interface Scaling:',
+            'text': 'Scale the interface size for high-DPI displays or better readability.',
             'section': 'Scaling',
             'config_key': 'Factor',
-            'choices': ["1.0", "1.25", "1.5", "1.75", "2.0"],
+            'items': ["1.0", "1.25", "1.5", "1.75", "2.0"],
             'default': '1.0'
         },
         'welcome_message': {
             'label': 'Welcome Message:',
+            'text': 'Show the welcome message dialog when starting the application for the first time or after updates.',
             'section': 'WelcomeMessage',
             'config_key': 'Show',
-            'choices': ["enable", "disable"],
+            'items': ["enable", "disable"],
             'default': 'enable'
         }
     }
@@ -87,9 +94,12 @@ class OptionsManager:
             option_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
             widgets[option_key] = QComboBox()
-            widgets[option_key].addItems(option_info['choices'])
+            widgets[option_key].addItems(option_info['items'])
             widgets[option_key].setCurrentText(option_info['default'])
             widgets[option_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+            if 'text' in option_info:
+                widgets[option_key].setToolTip(option_info['text'])
 
             option_layout.addWidget(option_label)
             option_layout.addWidget(widgets[option_key])
@@ -243,7 +253,7 @@ class OptionsManager:
         Apply system tray options to the main window.
         """
         main_window = widgets['main_window']
-        run_in_tray = widgets['tray'].currentText() == OptionsManager.OPTIONS_SETTINGS['tray']['choices'][0]
+        run_in_tray = widgets['tray'].currentText() == OptionsManager.OPTIONS_SETTINGS['tray']['items'][0]
         old_option = main_window.use_system_tray
         main_window.use_system_tray = run_in_tray
 
@@ -267,7 +277,7 @@ class OptionsManager:
         Apply window transparency options to the main window.
         """
         main_window = widgets['main_window']
-        transparency_enabled = widgets['transparency'].currentText() == OptionsManager.OPTIONS_SETTINGS['transparency']['choices'][0]
+        transparency_enabled = widgets['transparency'].currentText() == OptionsManager.OPTIONS_SETTINGS['transparency']['items'][0]
         if transparency_enabled:
             main_window.setWindowOpacity(0.9)
         else:
@@ -279,7 +289,7 @@ class OptionsManager:
         Apply the start minimized option to the application.
         """
         main_window = widgets['main_window']
-        start_minimized = widgets['start_minimized'].currentText() == OptionsManager.OPTIONS_SETTINGS['start_minimized']['choices'][0]
+        start_minimized = widgets['start_minimized'].currentText() == OptionsManager.OPTIONS_SETTINGS['start_minimized']['items'][0]
         main_window.start_minimized = start_minimized
 
     @staticmethod
@@ -288,7 +298,7 @@ class OptionsManager:
         Apply the start maximized option to the application.
         """
         main_window = widgets['main_window']
-        start_maximized = widgets['start_maximized'].currentText() == OptionsManager.OPTIONS_SETTINGS['start_maximized']['choices'][0]
+        start_maximized = widgets['start_maximized'].currentText() == OptionsManager.OPTIONS_SETTINGS['start_maximized']['items'][0]
         main_window.start_maximized = start_maximized
 
     @staticmethod
@@ -297,7 +307,7 @@ class OptionsManager:
         Apply the welcome message option to the application.
         """
         main_window = widgets['main_window']
-        show_welcome = widgets['welcome_message'].currentText() == OptionsManager.OPTIONS_SETTINGS['welcome_message']['choices'][0]
+        show_welcome = widgets['welcome_message'].currentText() == OptionsManager.OPTIONS_SETTINGS['welcome_message']['items'][0]
         main_window.show_welcome = show_welcome
 
     @staticmethod
@@ -315,7 +325,7 @@ class OptionsManager:
         """
         Get the current welcome message setting.
         """
-        return widgets['welcome_message'].currentText() == OptionsManager.OPTIONS_SETTINGS['welcome_message']['choices'][0]
+        return widgets['welcome_message'].currentText() == OptionsManager.OPTIONS_SETTINGS['welcome_message']['items'][0]
 
     @staticmethod
     def save_and_apply_options(widgets):
@@ -328,13 +338,27 @@ class OptionsManager:
         new_scaling = float(widgets['scaling'].currentText())
         scaling_changed = old_scaling != new_scaling
 
-        OptionsManager.save_options(widgets)
+        widgets['options_apply_button'].setEnabled(False)
 
-        message = "Options saved successfully"
-        if scaling_changed:
-            message += ".\nInterface scaling will take full effect after restarting the application."
+        try:
+            OptionsManager.save_options(widgets)
 
-        if hasattr(main_window, 'tray_icon'):
-            main_window.tray_icon.showMessage("volt-gui", message, main_window.tray_icon.MessageIcon.Information, 3000)
-        else:
-            QMessageBox.information(main_window, "volt-gui", message)
+            message = "Options saved successfully"
+            if scaling_changed:
+                message += ".\nInterface scaling will take full effect after restarting the application."
+
+            if hasattr(main_window, 'tray_icon'):
+                main_window.tray_icon.showMessage("volt-gui", message, main_window.tray_icon.MessageIcon.Information, 3000)
+            else:
+                QMessageBox.information(main_window, "volt-gui", message)
+
+            QTimer.singleShot(1000, lambda: widgets['options_apply_button'].setEnabled(True))
+
+        except Exception as e:
+            error_message = f"Failed to save options: {str(e)}"
+            if hasattr(main_window, 'tray_icon'):
+                main_window.tray_icon.showMessage("volt-gui", error_message, main_window.tray_icon.MessageIcon.Critical, 3000)
+            else:
+                QMessageBox.warning(main_window, "volt-gui", error_message)
+
+            widgets['options_apply_button'].setEnabled(True)
