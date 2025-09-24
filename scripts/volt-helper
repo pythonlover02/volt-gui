@@ -4,7 +4,7 @@ SCRIPT_NAME="$0"
 
 apply_governor() {
     local governor="$1"
-    
+
     for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
         echo "$governor" > "$CPU_PATH"
     done
@@ -26,7 +26,7 @@ apply_min_freq() {
 
 terminate_existing_schedulers() {
     local scheduler_pid=$(pgrep -f '^scx_' 2>/dev/null | head -n1)
-    
+
     if [ -z "$scheduler_pid" ]; then
         return
     fi
@@ -47,7 +47,7 @@ terminate_existing_schedulers() {
 
 start_new_scheduler() {
     local scheduler="$1"
-    
+
     "$scheduler" &
     local scheduler_pid=$!
     sleep 1
@@ -55,7 +55,7 @@ start_new_scheduler() {
 
 handle_scheduler() {
     terminate_existing_schedulers
-    
+
     if [ -n "$scheduler" ] && [ "$scheduler" != "none" ]; then
         start_new_scheduler "$scheduler"
     fi
@@ -63,12 +63,12 @@ handle_scheduler() {
 
 manage_cpu() {
     local cpu_args=("$@")
-    
+
     local governor=""
     local scheduler=""
     local max_freq=""
     local min_freq=""
-    
+
     for arg in "${cpu_args[@]}"; do
         if [[ "$arg" == governor:* ]]; then
             governor="${arg#governor:}"
@@ -80,7 +80,7 @@ manage_cpu() {
             min_freq="${arg#min_freq:}"
         fi
     done
-    
+
     if [ -n "$governor" ]; then
         apply_governor "$governor"
     fi
@@ -88,7 +88,7 @@ manage_cpu() {
     if [ -n "$min_freq" ]; then
         apply_min_freq "$min_freq"
     fi
-    
+
     if [ -n "$max_freq" ]; then
         apply_max_freq "$max_freq"
     fi
@@ -102,18 +102,18 @@ apply_disk_scheduler() {
     local disk_name="$1"
     local scheduler="$2"
     local scheduler_path="/sys/block/$disk_name/queue/scheduler"
-    
+
     echo "$scheduler" > "$scheduler_path"
 }
 
 manage_disk() {
     local disk_args=("$@")
-    
+
     for arg in "${disk_args[@]}"; do
         if [[ "$arg" == *":"* ]]; then
             local disk_name="${arg%%:*}"
             local scheduler="${arg#*:}"
-            
+
             apply_disk_scheduler "$disk_name" "$scheduler"
         fi
     done
@@ -122,17 +122,17 @@ manage_disk() {
 apply_kernel_parameter() {
     local path="$1"
     local value="$2"
-    
+
     echo "$value" > "$path" 2>/dev/null
 }
 
 manage_kernel() {
     local kernel_args=("$@")
-    
+
     for setting in "${kernel_args[@]}"; do
         local path="${setting%%:*}"
         local value="${setting#*:}"
-        
+
         apply_kernel_parameter "$path" "$value"
     done
 }
@@ -140,22 +140,22 @@ manage_kernel() {
 read_gpu_settings() {
     local settings_file="$1"
     local script_content="#!/bin/bash\n\n"
-    
+
     while IFS='=' read -r key value || [ -n "$key" ]; do
         if [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]]; then
             continue
         fi
-        
+
         key=$(echo "$key" | tr -d ' ')
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        
+
         if [ "$key" = "launch_options" ]; then
             continue
         elif [ -n "$value" ]; then
             script_content="${script_content}export ${key}=\"${value}\"\n"
         fi
     done < "$settings_file"
-    
+
     echo -e "$script_content"
 }
 
@@ -163,7 +163,7 @@ add_launch_options() {
     local settings_file="$1"
     local script_content="$2"
     local launch_options=$(grep "^launch_options=" "$settings_file" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    
+
     script_content="${script_content}\n# Handle launch options if present\n"
     if [ -n "$launch_options" ]; then
         script_content="${script_content}# Execute the specified program with environment variables\n"
@@ -172,24 +172,24 @@ add_launch_options() {
         script_content="${script_content}# Launch the specified program with the environment variables\n"
         script_content="${script_content}\"\$@\"\n"
     fi
-    
+
     echo -e "$script_content"
 }
 
 create_gpu_script() {
     local script_content="$1"
     local volt_script="/usr/local/bin/volt"
-    
+
     echo -e "$script_content" > "$volt_script" 2>/dev/null
     chmod 755 "$volt_script" 2>/dev/null
 }
 
 manage_gpu() {
     local settings_file="$1"
-    
+
     local script_content=$(read_gpu_settings "$settings_file")
     script_content=$(add_launch_options "$settings_file" "$script_content")
-    
+
     create_gpu_script "$script_content"
 }
 
