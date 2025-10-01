@@ -14,7 +14,6 @@ from config import ConfigManager
 from welcome import WelcomeManager
 from workarounds import WorkaroundManager
 
-
 def check_sudo_execution():
     """
     Check if the application is run with sudo and exit if it is.
@@ -25,11 +24,9 @@ def check_sudo_execution():
         print("elevated privileges when needed through pkexec.")
         sys.exit(1)
 
-
 class SingletonSignals(QObject):
 
     show_window = Signal()
-
 
 class SingleInstanceChecker:
 
@@ -99,7 +96,6 @@ class SingleInstanceChecker:
         except:
             pass
 
-
 class SignalHandler:
 
     def __init__(self, main_window):
@@ -118,14 +114,13 @@ class SignalHandler:
         Handle received signals by closing the application.
         """
         print(f"\nReceived signal {signum}, closing...")
-        
+
         self.main_window.cleanup_resources()
         QApplication.quit()
         sys.exit(0)
 
-
 class MainWindow(QMainWindow):
-    
+
     def __init__(self, instance_checker):
         """
         Initialize the main window with all components.
@@ -143,7 +138,7 @@ class MainWindow(QMainWindow):
         self.extras_widgets = {}
         self.about_widgets = {}
         self.options_widgets = {}
-        
+
         self.welcome_window = None
 
         self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
@@ -153,17 +148,17 @@ class MainWindow(QMainWindow):
 
         self.apply_theme()
         self.setup_ui()
-        
+
         self.update_quit_behavior()
         self.setup_refresh_timer()
         self.load_saved_settings()
         self._initial_setup_complete = True
 
         self.setAttribute(Qt.WA_DontShowOnScreen, False)
-        
+
         if OptionsManager.get_welcome_message_setting(self.options_widgets):
             QTimer.singleShot(100, self.show_welcome_window)
-        
+
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
 
@@ -183,7 +178,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setDocumentMode(True)
 
         self.setup_cpu_tab()
-        self.setup_gpu_tab()
+        self.setup_gpu_tabs()
         self.setup_disk_tab()
         self.setup_kernel_tab()
         self.setup_launch_options_tab()
@@ -200,7 +195,7 @@ class MainWindow(QMainWindow):
         """
         if self.welcome_window is None:
             self.welcome_window = WelcomeManager.create_welcome_window(self)
-        
+
         self.welcome_window.show()
         self.welcome_window.activateWindow()
         self.welcome_window.raise_()
@@ -228,11 +223,11 @@ class MainWindow(QMainWindow):
         self.profile_selector.currentTextChanged.connect(self.on_profile_changed)
 
         self.save_profile_btn = QPushButton("New Profile")
-        self.save_profile_btn.setMaximumWidth(120)
+        self.save_profile_btn.setMinimumSize(100, 30)
         self.save_profile_btn.clicked.connect(self.save_new_profile)
 
         self.delete_profile_btn = QPushButton("Delete Profile")
-        self.delete_profile_btn.setMaximumWidth(100)
+        self.delete_profile_btn.setMinimumSize(100, 30)
         self.delete_profile_btn.clicked.connect(self.delete_current_profile)
 
         profile_layout.addWidget(profile_label)
@@ -262,12 +257,12 @@ class MainWindow(QMainWindow):
         DiskManager.refresh_disk_values(self.disk_widgets)
         self.tab_widget.addTab(disk_tab, "Disk")
 
-    def setup_gpu_tab(self):
+    def setup_gpu_tabs(self):
         """
         Set up the GPU management tab.
         """
-        gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tab()
-        
+        gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tabs()
+
         for category_name, category_widgets in self.gpu_widgets.items():
             if category_name != 'LaunchOptions':
                 apply_button_name = f"{category_name.lower()}_apply_button"
@@ -420,10 +415,10 @@ class MainWindow(QMainWindow):
         """
         try:
             ConfigManager.save_config(
-                self.cpu_widgets, 
-                self.gpu_widgets, 
-                self.kernel_widgets, 
-                self.disk_widgets, 
+                self.cpu_widgets,
+                self.gpu_widgets,
+                self.kernel_widgets,
+                self.disk_widgets,
                 self.current_profile
             )
         except Exception as e:
@@ -436,10 +431,10 @@ class MainWindow(QMainWindow):
         try:
             OptionsManager.load_options(self.options_widgets)
             ConfigManager.load_config(
-                self.cpu_widgets, 
-                self.gpu_widgets, 
-                self.kernel_widgets, 
-                self.disk_widgets, 
+                self.cpu_widgets,
+                self.gpu_widgets,
+                self.kernel_widgets,
+                self.disk_widgets,
                 self.current_profile
             )
         except Exception as e:
@@ -455,10 +450,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, '_initial_setup_complete') and self._initial_setup_complete:
             try:
                 ConfigManager.save_config(
-                    self.cpu_widgets, 
-                    self.gpu_widgets, 
-                    self.kernel_widgets, 
-                    self.disk_widgets, 
+                    self.cpu_widgets,
+                    self.gpu_widgets,
+                    self.kernel_widgets,
+                    self.disk_widgets,
                     self.current_profile
                 )
             except Exception as e:
@@ -466,10 +461,10 @@ class MainWindow(QMainWindow):
 
         self.current_profile = profile_name
         ConfigManager.load_config(
-            self.cpu_widgets, 
-            self.gpu_widgets, 
-            self.kernel_widgets, 
-            self.disk_widgets, 
+            self.cpu_widgets,
+            self.gpu_widgets,
+            self.kernel_widgets,
+            self.disk_widgets,
             profile_name
         )
 
@@ -493,17 +488,17 @@ class MainWindow(QMainWindow):
 
             try:
                 ConfigManager.save_config(
-                    self.cpu_widgets, 
-                    self.gpu_widgets, 
-                    self.kernel_widgets, 
-                    self.disk_widgets, 
+                    self.cpu_widgets,
+                    self.gpu_widgets,
+                    self.kernel_widgets,
+                    self.disk_widgets,
                     self.current_profile
                 )
                 ConfigManager.save_config(
-                    self.cpu_widgets, 
-                    self.gpu_widgets, 
-                    self.kernel_widgets, 
-                    self.disk_widgets, 
+                    self.cpu_widgets,
+                    self.gpu_widgets,
+                    self.kernel_widgets,
+                    self.disk_widgets,
                     profile_name
                 )
 
@@ -544,10 +539,10 @@ class MainWindow(QMainWindow):
                 self.profile_selector.setCurrentText("Default")
 
                 ConfigManager.load_config(
-                    self.cpu_widgets, 
-                    self.gpu_widgets, 
-                    self.kernel_widgets, 
-                    self.disk_widgets, 
+                    self.cpu_widgets,
+                    self.gpu_widgets,
+                    self.kernel_widgets,
+                    self.disk_widgets,
                     "Default"
                 )
 
@@ -569,10 +564,10 @@ class MainWindow(QMainWindow):
         if profile_name != self.current_profile:
             try:
                 ConfigManager.save_config(
-                    self.cpu_widgets, 
-                    self.gpu_widgets, 
-                    self.kernel_widgets, 
-                    self.disk_widgets, 
+                    self.cpu_widgets,
+                    self.gpu_widgets,
+                    self.kernel_widgets,
+                    self.disk_widgets,
                     self.current_profile
                 )
             except Exception as e:
@@ -581,10 +576,10 @@ class MainWindow(QMainWindow):
             self.current_profile = profile_name
             self.profile_selector.setCurrentText(profile_name)
             ConfigManager.load_config(
-                self.cpu_widgets, 
-                self.gpu_widgets, 
-                self.kernel_widgets, 
-                self.disk_widgets, 
+                self.cpu_widgets,
+                self.gpu_widgets,
+                self.kernel_widgets,
+                self.disk_widgets,
                 profile_name
             )
 
@@ -630,8 +625,8 @@ class MainWindow(QMainWindow):
         Collects all settings (CPU, Disk, GPU, Kernel) and applies them in one go using volt-helper.
         Uses clean environment to avoid PyInstaller interference.
         """
-        if (self.cpu_widgets.get('is_process_running', False) or 
-            self.disk_widgets.get('is_process_running', False) or 
+        if (self.cpu_widgets.get('is_process_running', False) or
+            self.disk_widgets.get('is_process_running', False) or
             self.kernel_widgets.get('is_process_running', False)):
             return
 
@@ -639,19 +634,19 @@ class MainWindow(QMainWindow):
             self.save_settings()
 
             cpu_args = []
-            cpu_governor = self.cpu_widgets['gov'].currentText()
-            
+            cpu_governor = self.cpu_widgets['scaling_governor'].currentText()
+
             if 'max_freq' in self.cpu_widgets:
-                cpu_max_freq = self.cpu_widgets['max_freq'].currentText()
+                cpu_max_freq = self.cpu_widgets['scaling_max_freq'].currentText()
             else:
                 cpu_max_freq = "unset"
 
             if 'min_freq' in self.cpu_widgets:
-                cpu_min_freq = self.cpu_widgets['min_freq'].currentText()
+                cpu_min_freq = self.cpu_widgets['scaling_min_freq'].currentText()
             else:
                 cpu_min_freq = "unset"
 
-            cpu_scheduler = self.cpu_widgets['sched'].currentText()
+            cpu_scheduler = self.cpu_widgets['scheduler'].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
@@ -660,7 +655,7 @@ class MainWindow(QMainWindow):
             if cpu_max_freq != "unset":
                 max_freq_khz = int(cpu_max_freq) * 1000
                 cpu_parts.append(f"max_freq:{max_freq_khz}")
-            
+
             if cpu_min_freq != "unset":
                 min_freq_khz = int(cpu_min_freq) * 1000
                 cpu_parts.append(f"min_freq:{min_freq_khz}")
@@ -674,7 +669,7 @@ class MainWindow(QMainWindow):
 
             disk_args = []
             for disk_name, disk_widgets in self.disk_widgets['disk_settings'].items():
-                selected_scheduler = disk_widgets['sched'].currentText()
+                selected_scheduler = disk_widgets['scheduler'].currentText()
                 if selected_scheduler and selected_scheduler != "" and selected_scheduler != "unset":
                     if not disk_args:
                         disk_args.append("-d")
@@ -694,8 +689,9 @@ class MainWindow(QMainWindow):
                 self.gpu_widgets['Mesa'],
                 self.gpu_widgets['NVIDIA'],
                 self.gpu_widgets['RenderSelector'],
-                self.gpu_widgets['RenderPipeline'],
-                self.gpu_widgets['LaunchOptions'],
+                self.gpu_widgets['MangoHud'],
+                self.gpu_widgets['LSFrameGen'],
+                self.gpu_widgets['LaunchOptions']
             )
             if settings_file:
                 gpu_args.extend(["-g", settings_file])
@@ -704,20 +700,20 @@ class MainWindow(QMainWindow):
 
             process = QProcess()
             WorkaroundManager.setup_clean_process(process)
-            
+
             process.start(all_args[0], all_args[1:])
             process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
 
             self.cpu_widgets['cpu_apply_button'].setEnabled(False)
             self.disk_widgets['disk_apply_button'].setEnabled(False)
             self.kernel_widgets['kernel_apply_button'].setEnabled(False)
-            
+
             for category_name, category_widgets in self.gpu_widgets.items():
                 if category_name != 'LaunchOptions':
                     apply_button_name = f"{category_name.lower()}_apply_button"
                     if apply_button_name in category_widgets:
                         category_widgets[apply_button_name].setEnabled(False)
-            
+
             self.launch_options_widgets['launch_apply_button'].setEnabled(False)
 
         except Exception as e:
@@ -734,13 +730,13 @@ class MainWindow(QMainWindow):
         self.cpu_widgets['cpu_apply_button'].setEnabled(True)
         self.disk_widgets['disk_apply_button'].setEnabled(True)
         self.kernel_widgets['kernel_apply_button'].setEnabled(True)
-        
+
         for category_name, category_widgets in self.gpu_widgets.items():
             if category_name != 'LaunchOptions':
                 apply_button_name = f"{category_name.lower()}_apply_button"
                 if apply_button_name in category_widgets:
                     category_widgets[apply_button_name].setEnabled(True)
-        
+
         self.launch_options_widgets['launch_apply_button'].setEnabled(True)
 
         self.refresh_cpu_values()
@@ -759,7 +755,7 @@ class MainWindow(QMainWindow):
         self.save_settings()
         OptionsManager.save_options(self.options_widgets)
         self.instance_checker.cleanup()
-        
+
         if self.welcome_window:
             self.welcome_window.close()
             self.welcome_window = None
@@ -778,14 +774,11 @@ class MainWindow(QMainWindow):
         """
         if self.use_system_tray and hasattr(self, 'tray_icon'):
             self.hide()
-            if self.welcome_window:
-                self.welcome_window.hide()
             event.ignore()
         else:
             self.cleanup_resources()
             QApplication.quit()
             event.accept()
-
 
 def main():
     """
@@ -809,7 +802,6 @@ def main():
     signal_handler = SignalHandler(main_window)
 
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()
