@@ -30,9 +30,9 @@ class ExtrasManager:
             {"label": "ProtonUp-Qt Github", "description": "Install and manage GE-Proton, Luxtorpeda for Steam and Lutris.", "url": "https://github.com/DavidoTek/ProtonUp-Qt"},
             {"label": "Proton Github", "description": "Valve's compatibility layer for running Windows games on Linux.", "url": "https://github.com/ValveSoftware/Proton"},
             {"label": "Proton-GE Github", "description": "Community fork of Proton with additional patches.", "url": "https://github.com/GloriousEggroll/proton-ge-custom"},
-            {"label": "Proton-Sarek Github", "description": "Proton fork with improvements for older PCs.", "url": "https://github.com/ValveSoftware/Proton/tree/experimental_sarek"},
+            {"label": "Proton-Sarek Github", "description": "Proton fork with improvements for older PCs.", "url": "https://github.com/pythonlover02/Proton-Sarek"},
             {"label": "DXVK Github", "description": "Vulkan-based translation layer for Direct3D 8/9/10/11.", "url": "https://github.com/doitsujin/dxvk"},
-            {"label": "DXVK-Sarek Github", "description": "DXVK version for older PCs.", "url": "https://github.com/doitsujin/dxvk/tree/sarek"},
+            {"label": "DXVK-Sarek Github", "description": "DXVK version for older PCs.", "url": "https://github.com/pythonlover02/DXVK-Sarek"},
             {"label": "VKD3D Proton Github", "description": "Vulkan translation layer for Direct3D 12, used on Proton.", "url": "https://github.com/HansKristian-Work/vkd3d-proton"},
         ]
 
