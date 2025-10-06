@@ -1169,12 +1169,11 @@ class GPULaunchManager:
         if 'launch_options_input' in launch_options_widgets:
             launch_options = launch_options_widgets['launch_options_input'].text().strip()
 
-        use_mangohud = any(widget.currentText() != "unset" for widget in mangohud_widgets.values()
-                          if not isinstance(widget, QPushButton))
+        mangohud_enabled = ('mangohud_enable' in mangohud_widgets and mangohud_widgets['mangohud_enable'].currentText() == "on")
 
-        if use_mangohud and launch_options:
+        if mangohud_enabled and launch_options:
             launch_options = f"mangohud {launch_options}"
-        elif use_mangohud and not launch_options:
+        elif mangohud_enabled and not launch_options:
             launch_options = "mangohud"
 
         all_env_vars = mesa_env_vars + nvidia_env_vars + render_env_vars + mangohud_env_vars + ls_frame_gen_env_vars
