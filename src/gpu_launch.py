@@ -488,7 +488,7 @@ class GPULaunchManager:
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_LEGACY'],
-                    'values': {'on': '1', 'off': '0'}
+                    'values': {'on': '1'}
                 }
             },
             'lsfg_dll_path': {
