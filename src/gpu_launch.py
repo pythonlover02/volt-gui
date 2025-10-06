@@ -347,6 +347,15 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
+            'nvidia_sharpen_denoising_enable': {
+                'label': "Enable NVIDIA Image Sharpening and Denoising:",
+                'text': "Enable NVIDIA Image Sharpening and Denoising.",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['__GL_SHARPEN_ENABLE'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
             'nvidia_image_sharpening': {
                 'label': "Image Sharpening:",
                 'text': "Image sharpening.",
@@ -406,6 +415,11 @@ class GPULaunchManager:
             }
         },
         "MangoHud": {
+            'mangohud_enable': {
+                'label': "Enable MangoHud:",
+                'text': "Enable MangoHud.",
+                'items': ["unset", "on", "off"]
+            },
             'mangohud_display': {
                 'label': "Display Elements:",
                 'text': "Elements displayed in MangoHud overlay.",
@@ -468,6 +482,15 @@ class GPULaunchManager:
             }
         },
         "LSFrameGen": {
+            'lsfg_enable': {
+                'label': "Enable LSFG-VK:",
+                'text': "Enable MangoHud.",
+                'items': ["unset", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_LEGACY'],
+                    'values': {'on': '1', 'off': '0'}
+                }
+            },
             'lsfg_dll_path': {
                 'label': "Lossless.dll Path:",
                 'text': "Path to the Lossless Scaling frame generation DLL file (Lossless.dll).",
@@ -1066,9 +1089,6 @@ class GPULaunchManager:
                 config_value = ','.join(mangohud_parts)
                 env_vars.append(f'MANGOHUD_CONFIG={config_value}')
         else:
-            sharpen_enabled = False
-            lsfg_legacy_needed = False
-
             for setting_key, widget in widgets.items():
                 if setting_key.endswith('_apply_button') or setting_key.endswith('_browse') or setting_key.endswith('_clear'):
                     continue
@@ -1106,18 +1126,6 @@ class GPULaunchManager:
                 if final_value is not None:
                     for var_name in var_names:
                         env_vars.append(f'{var_name}={final_value}')
-
-                if category_name == "NVIDIA" and setting_key in ['nvidia_sharpen', 'nvidia_denoising']:
-                    sharpen_enabled = True
-
-                if category_name == "LSFrameGen" and setting_key in ['lsfg_dll_path', 'lsfg_multiplier', 'lsfg_flow_scale', 'lsfg_performance_mode', 'lsfg_hdr_mode', 'lsfg_present_mode']:
-                    lsfg_legacy_needed = True
-
-            if category_name == "NVIDIA" and sharpen_enabled:
-                env_vars.append('__GL_SHARPEN_ENABLE=1')
-
-            if category_name == "LSFrameGen" and lsfg_legacy_needed:
-                env_vars.append('LSFG_LEGACY=1')
 
         return env_vars
 
