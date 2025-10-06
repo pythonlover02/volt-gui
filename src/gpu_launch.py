@@ -484,7 +484,7 @@ class GPULaunchManager:
         "LSFrameGen": {
             'lsfg_enable': {
                 'label': "Enable LSFG-VK:",
-                'text': "Enable MangoHud.",
+                'text': "Enable LSFG-VK.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_LEGACY'],
