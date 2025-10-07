@@ -11,7 +11,7 @@ class DiskManager:
             'scheduler': {
                 'label': "Scheduler:",
                 'items': ["unset"],
-                'text': "How disk read/write requests are ordered."
+                'text': "Determines how disk I/O requests are scheduled and merged to balance throughput and latency."
             }
         }
     }
