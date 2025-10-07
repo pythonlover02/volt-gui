@@ -436,7 +436,7 @@ class GPULaunchManager:
                 'items': ["unset", "adaptive vsync", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
-                    'values': {'adaptive vsync': '-1', 'on': '1', 'off': '0'}
+                    'values': {'adaptive vsync': '-1', 'on': '1', 'off': '0'},
                     'prefix': 'gl_vsync='
                 }
             },
@@ -446,7 +446,7 @@ class GPULaunchManager:
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
-                    'values': {'mailbox': '2', 'adaptive vsync': '0', 'on': '3', 'off': '1'}
+                    'values': {'mailbox': '2', 'adaptive vsync': '0', 'on': '3', 'off': '1'},
                     'prefix': 'vsync='
                 }
             },
