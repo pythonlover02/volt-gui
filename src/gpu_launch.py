@@ -430,6 +430,24 @@ class GPULaunchManager:
                     'prefix': 'preset='
                 }
             },
+            'mangohud_gl_vsync': {
+                'label': "OpenGL Vsync:",
+                'text': "OpenGL vertical synchronization mode when using MangoHud.",
+                'items': ["unset", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
+                    'values': {'adaptive vsync': '-1', 'on': '1', 'off': '0'}
+                }
+            },
+            'mangohud_vk_vsync': {
+                'label': "Vulkan Vsync:",
+                'text': "Vulkan vertical synchronization mode when using MangoHud.",
+                'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
+                    'values': {'mailbox': '2', 'adaptive vsync': '0', 'on': '3', 'off': '1'}
+                }
+            },
             'mangohud_fps_limit': {
                 'label': "Fps Limit:",
                 'text': "FPS limit when using MangoHud.",
