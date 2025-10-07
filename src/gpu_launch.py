@@ -29,7 +29,7 @@ class GPULaunchManager:
             },
             'mesa_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
-                'text': "Multi-threaded OpenGL command processing.",
+                'text': "Multi-threaded OpenGL command processing. Might improve or worsen OpenGL performance depending on the program being run.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['mesa_glthread'],
@@ -38,7 +38,7 @@ class GPULaunchManager:
             },
             'mesa_vk_submit_thread': {
                 'label': "Vulkan Submit Thread:",
-                'text': "Dedicated thread for Vulkan command submission.",
+                'text': "Dedicated thread for Vulkan command submission. Separates command submission from command recording, might reduce CPU overhead.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
@@ -47,7 +47,7 @@ class GPULaunchManager:
             },
             'mesa_gl_dither': {
                 'label': "OpenGL Texture Dithering:",
-                'text': "OpenGL color dithering on low-depth framebuffers.",
+                'text': "OpenGL color dithering on low-depth framebuffers. Reduces color banding on displays with limited color depth at minimal performance cost.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_NO_DITHER'],
@@ -56,7 +56,7 @@ class GPULaunchManager:
             },
             'mesa_gl_msaa': {
                 'label': "OpenGL MSAA:",
-                'text': "Multisample anti-aliasing in OpenGL.",
+                'text': "Multisample anti-aliasing in OpenGL. Smooths jagged edges by sampling multiple points per pixel, improving image quality with performance impact.",
                 'items': ["unset", "on", 'off'],
                 'env_mapping': {
                     'var_names': ['DRI_NO_MSAA'],
@@ -65,7 +65,7 @@ class GPULaunchManager:
             },
             'mesa_shader_cache': {
                 'label': "Shader Cache:",
-                'text': "Disk-based shader caching.",
+                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_SHADER_CACHE_DISABLE', 'MESA_GLSL_CACHE_DISABLE'],
@@ -74,7 +74,7 @@ class GPULaunchManager:
             },
             'mesa_cache_size': {
                 'label': "Shader Cache Size (GB):",
-                'text': "Maximum size for the shader cache.",
+                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
                 'items': ["unset"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
                 'env_mapping': {
                     'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
@@ -83,7 +83,7 @@ class GPULaunchManager:
             },
             'mesa_gl_error_check': {
                 'label': "OpenGL Error Checking:",
-                'text': "OpenGL error checking.",
+                'text': "OpenGL error checking. Validates API calls for correctness; disable for performance in stable applications.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['MESA_NO_ERROR'],
@@ -92,7 +92,7 @@ class GPULaunchManager:
             },
             'mesa_gl_fake': {
                 'label': "OpenGL Version Spoofing:",
-                'text': "Report a different OpenGL version to applications.",
+                'text': "Report a different OpenGL version to applications. Useful for running games that check version numbers but don't need newer features.",
                 'items': ["unset", "3.3", "3.3compat", "4.6", "4.6compat"],
                 'env_mapping': {
                     'var_names': ['MESA_GL_VERSION_OVERRIDE'],
@@ -101,7 +101,7 @@ class GPULaunchManager:
             },
             'mesa_glsl_fake': {
                 'label': "GLSL Version Spoofing:",
-                'text': "Report a different GLSL version to applications.",
+                'text': "Report a different GLSL version to applications. Works with OpenGL version spoofing for compatibility workarounds.",
                 'items': ["unset", "330", "460"],
                 'env_mapping': {
                     'var_names': ['MESA_GLSL_VERSION_OVERRIDE'],
@@ -110,7 +110,7 @@ class GPULaunchManager:
             },
             'mesa_vk_fake': {
                 'label': "Vulkan Version Spoofing:",
-                'text': "Report a different Vulkan version to applications.",
+                'text': "Report a different Vulkan version to applications. Bypasses version checks for games that artificially restrict compatibility.",
                 'items': ["unset", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_VERSION_OVERRIDE'],
@@ -119,7 +119,7 @@ class GPULaunchManager:
             },
             'radeonsi_no_infinite_interp': {
                 'label': "RadeonSI Disable Infinite Interpolation:",
-                'text': "Disable infinite interpolation in RadeonSI.",
+                'text': "Disable infinite interpolation in RadeonSI. Workaround for rendering bugs in some games on AMD GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['radeonsi_no_infinite_interp'],
@@ -128,7 +128,7 @@ class GPULaunchManager:
             },
             'radeonsi_clamp_div_by_zero': {
                 'label': "RadeonSI Clamp Division by Zero:",
-                'text': "Clamp division by zero results in RadeonSI.",
+                'text': "Clamp division by zero results in RadeonSI. Prevents crashes or visual glitches from shader math errors on AMD GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['radeonsi_clamp_div_by_zero'],
@@ -137,7 +137,7 @@ class GPULaunchManager:
             },
             'radv_anisotropic_filtering': {
                 'label': "RADV Anisotropic Filtering:",
-                'text': "Anisotropic filtering level for RADV.",
+                'text': "Anisotropic filtering level for RADV. Improves texture quality at oblique angles with minimal performance impact on modern AMD GPUs.",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
                     'var_names': ['RADV_TEX_ANISO'],
@@ -146,7 +146,7 @@ class GPULaunchManager:
             },
             'radv_profile_pstate': {
                 'label': "RADV Profile Pstate:",
-                'text': "Performance state profiling in RADV.",
+                'text': "Performance state profiling in RADV. Forces specific GPU clock levels for consistent performance or power testing on AMD GPUs.",
                 'items': [
                     "unset",
                     "gpu clocks on arbitrary level",
@@ -166,7 +166,7 @@ class GPULaunchManager:
             },
             'radv_vrs': {
                 'label': "RADV Variable Rate Shading (GFX10.3+):",
-                'text': "Variable rate shading in RADV (GFX10.3+).",
+                'text': "Variable rate shading in RADV (GFX10.3+). Renders different screen areas at different resolutions to improve performance with minimal quality loss.",
                 'items': ["unset", "2x2", "1x2", "2x1", "1x1"],
                 'env_mapping': {
                     'var_names': ['RADV_FORCE_VRS'],
@@ -175,7 +175,7 @@ class GPULaunchManager:
             },
             'intel_precise_trig': {
                 'label': "Intel Driver Preference on Trigonometric Functions:",
-                'text': "Precision vs performance tradeoff for trigonometric functions on Intel GPUs.",
+                'text': "Precision vs performance tradeoff for trigonometric functions on Intel GPUs. Accuracy mode ensures correct results; performance mode may have minor errors but runs faster.",
                 'items': ["unset", "accuracy", "performance"],
                 'env_mapping': {
                     'var_names': ['INTEL_PRECISE_TRIG'],
@@ -184,7 +184,7 @@ class GPULaunchManager:
             },
             'hasvk_always_bindless': {
                 'label': "HASVK Bindless Descriptors:",
-                'text': "Bindless descriptors in HASVK.",
+                'text': "Bindless descriptors in HASVK. Modern descriptor management technique that can improve performance on Intel GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['HASVK_ALWAYS_BINDLESS'],
@@ -193,7 +193,7 @@ class GPULaunchManager:
             },
             'hasvk_userspace_relocs': {
                 'label': "HASVK Userspace Relocations:",
-                'text': "Userspace relocations in HASVK.",
+                'text': "Userspace relocations in HASVK. Handles GPU memory address patching in userspace instead of kernel for reduced overhead on older Intel GPUs.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['HASVK_USERSPACE_RELOCS'],
@@ -202,7 +202,7 @@ class GPULaunchManager:
             },
             'anv_sparse': {
                 'label': "ANV Sparse Resources (Tiger Lake+):",
-                'text': "Sparse resources in ANV.",
+                'text': "Sparse resources in ANV (Tiger Lake+). Allows partial allocation of large textures to save memory.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['ANV_SPARSE'],
@@ -211,7 +211,7 @@ class GPULaunchManager:
             },
             'anv_sparse_implementation': {
                 'label': "ANV Sparse Implementation (Lunar Lake+):",
-                'text': "Sparse resource implementation in ANV.",
+                'text': "Sparse resource implementation in ANV (Lunar Lake+). TRTT is the older method, Xe is the newer hardware-accelerated approach.",
                 'items': ["unset", "TRTT", "Xe"],
                 'env_mapping': {
                     'var_names': ['ANV_SPARSE_USE_TRTT'],
@@ -220,7 +220,7 @@ class GPULaunchManager:
             },
             'nvk_broken_driver': {
                 'label': "NVK for Experimental/Untested GPUs:",
-                'text': "Experimental NVK driver support for untested GPUs.",
+                'text': "Experimental NVK driver support for untested GPUs. Enables the open-source Vulkan driver on NVIDIA GPUs that lack official support; may be unstable.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['NVK_I_WANT_A_BROKEN_VULKAN_DRIVER'],
@@ -240,7 +240,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_gsync': {
                 'label': "OpenGL G-SYNC:",
-                'text': "OpenGL G-SYNC/Variable Refresh Rate (VRR).",
+                'text': "OpenGL G-SYNC/Variable Refresh Rate (VRR). Adaptive sync, that eliminates tearing without the latency penalty of fixed vsync.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_VRR_ALLOWED', '__GL_GSYNC_ALLOWED'],
@@ -249,7 +249,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
-                'text': "Multi-threaded OpenGL command processing.",
+                'text': "Multi-threaded OpenGL command processing. Might improve or worsen OpenGL performance depending on the program being run.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_THREADED_OPTIMIZATIONS'],
@@ -258,7 +258,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_yield': {
                 'label': "OpenGL Yield Behavior:",
-                'text': "NVIDIA driver yields CPU time during OpenGL operations.",
+                'text': "NVIDIA driver yields CPU time during OpenGL operations. Controls how the driver waits for GPU, affecting CPU usage and responsiveness.",
                 'items': ["unset", "call sched_yield() to yield", "never yield", "call usleep(0) to yield"],
                 'env_mapping': {
                     'var_names': ['__GL_YIELD'],
@@ -267,7 +267,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_texture_quality': {
                 'label': "OpenGL Texture Quality:",
-                'text': "Texture quality vs performance tradeoff in OpenGL.",
+                'text': "Texture quality vs performance tradeoff in OpenGL. Quality uses better filtering, performance uses faster methods with potential visual degradation.",
                 'items': ["unset", "quality", "mixed", "performance"],
                 'env_mapping': {
                     'var_names': ['__GL_OpenGLImageSettings'],
@@ -276,7 +276,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_fsaa': {
                 'label': "OpenGL Full Scene Antialiasing:",
-                'text': "Full scene anti-aliasing level in OpenGL.",
+                'text': "Full scene anti-aliasing level in OpenGL. Reduces jagged edges using multisampling (ms) and coverage sampling (cs/ss) with significant performance cost at higher levels.",
                 'items': [
                     "unset", "0 - off", "1 - 2x (2xms)", "5 - 4x (4xms)",
                     "7 - 8x (4xms, 4xcs)", "8 - 16x (4xms, 12xcs)",
@@ -291,7 +291,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_fxaa': {
                 'label': "OpenGL FXAA:",
-                'text': "Fast approximate anti-aliasing in OpenGL.",
+                'text': "Fast approximate anti-aliasing in OpenGL. Post-process AA that smooths edges with minimal performance cost but may blur textures. FXAA must first be enabled in NVIDIA Control Panel.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ALLOW_FXAA_USAGE'],
@@ -300,7 +300,7 @@ class GPULaunchManager:
             },
             'nvidia_gl_aniso': {
                 'label': "OpenGL Anisotropic Filtering:",
-                'text': "Anisotropic filtering level in OpenGL.",
+                'text': "Anisotropic filtering level in OpenGL. Improves texture sharpness at oblique viewing angles; higher levels look better but impact performance.",
                 'items': [
                     "unset", "0 - no anisotropic filtering",
                     "1 - 2x anisotropic filtering", "2 - 4x anisotropic filtering",
@@ -313,7 +313,7 @@ class GPULaunchManager:
             },
             'nvidia_shader_cache': {
                 'label': "Shader Cache:",
-                'text': "Disk-based shader caching.",
+                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_SHADER_DISK_CACHE'],
@@ -322,7 +322,7 @@ class GPULaunchManager:
             },
             'nvidia_shader_cache_size': {
                 'label': "Shader Cache Size (GB):",
-                'text': "Maximum size for the shader cache.",
+                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
                 'items': ["unset"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
                 'env_mapping': {
                     'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
@@ -331,16 +331,16 @@ class GPULaunchManager:
             },
             'nvidia_glsl_ext_requirements': {
                 'label': "Ignore GLSL Extensions Requirements:",
-                'text': "Ignore GLSL extension requirements.",
+                'text': "Ignore GLSL extension requirements. Allows GLSL shaders to compile without proper #extension directives or compatibility profile declarations. Fixes shader compilation errors in some games.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQ'],
+                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQS'],
                     'values': {'on': '1', 'off': '0'}
                 }
             },
             'nvidia_max_prerendered_frames': {
                 'label': "Maximum Pre-rendered Frames:",
-                'text': "Maximum number of pre-rendered frames.",
+                'text': "Maximum number of pre-rendered frames. Lower values reduce input lag but may hurt frame rate consistency; higher values do the opposite.",
                 'items': ["unset"] + [str(i) for i in range(1, 5)],
                 'env_mapping': {
                     'var_names': ['__GL_MaxFramesAllowed'],
@@ -349,7 +349,7 @@ class GPULaunchManager:
             },
             'nvidia_sharpen_denoising_enable': {
                 'label': "Enable NVIDIA Image Sharpening and Denoising:",
-                'text': "Enable NVIDIA Image Sharpening and Denoising.",
+                'text': "Enable NVIDIA Image Sharpening and Denoising. Post-processing filters that enhance image clarity and reduce noise artifacts.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_SHARPEN_ENABLE'],
@@ -358,7 +358,7 @@ class GPULaunchManager:
             },
             'nvidia_image_sharpening': {
                 'label': "Image Sharpening:",
-                'text': "Image sharpening.",
+                'text': "Image sharpening. Enhances texture and edge definition; higher values increase sharpness but may introduce artifacts.",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
                     'var_names': ['__GL_SHARPEN_VALUE'],
@@ -367,7 +367,7 @@ class GPULaunchManager:
             },
             'nvidia_image_denoising': {
                 'label': "Image Denoising",
-                'text': "Image denoising.",
+                'text': "Image denoising. Reduces film grain and noise; higher values preserve more texture detail but may keep more noise.",
                 'items': ["unset"] + [str(i) for i in range(0, 101)],
                 'env_mapping': {
                     'var_names': ['__GL_SHARPEN_IGNORE_FILM_GRAIN'],
@@ -376,7 +376,7 @@ class GPULaunchManager:
             },
             'nvidia_smooth_motion': {
                 'label': "Smooth Motion (RTX 40 Series+):",
-                'text': "Smooth motion feature on RTX 40 Series and newer GPUs.",
+                'text': "Smooth motion feature (RTX 40 Series+). Optical flow frame interpolation that generates intermediate frames for smoother motion. Vulkan only.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
@@ -385,7 +385,7 @@ class GPULaunchManager:
             },
             'nvidia_glx_unofficial_protocol': {
                 'label': "Unofficial GLX Protocol:",
-                'text': "Unofficial GLX protocol.",
+                'text': "Unofficial GLX protocol. Enables extensions that aren't part of the official GLX specification.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ALLOW_UNOFFICIAL_PROTOCOL'],
@@ -394,7 +394,7 @@ class GPULaunchManager:
             },
             'nvidia_experimental_perf': {
                 'label': "Experimental Performance Strategy:",
-                'text': "Experimental performance strategy.",
+                'text': "Experimental GPU clock boost management. Allows the driver to more aggressively reduce GPU clocks after boost periods, potentially reducing power consumption.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['__GL_ExperimentalPerfStrategy'],
@@ -435,8 +435,9 @@ class GPULaunchManager:
                 'text': "OpenGL vertical synchronization mode when using MangoHud.",
                 'items': ["unset", "adaptive vsync", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'adaptive vsync': '-1', 'on': '1', 'off': '0'}
+                    'prefix': 'gl_vsync='
                 }
             },
             'mangohud_vk_vsync': {
@@ -444,8 +445,9 @@ class GPULaunchManager:
                 'text': "Vulkan vertical synchronization mode when using MangoHud.",
                 'items': ["unset", "mailbox", "adaptive vsync", "on", "off"],
                 'env_mapping': {
-                    'var_names': ['LSFG_EXPERIMENTAL_PRESENT_MODE'],
+                    'var_names': ['MANGOHUD_CONFIG'],
                     'values': {'mailbox': '2', 'adaptive vsync': '0', 'on': '3', 'off': '1'}
+                    'prefix': 'vsync='
                 }
             },
             'mangohud_fps_limit': {
@@ -480,7 +482,7 @@ class GPULaunchManager:
             },
             'mangohud_mipmap_lod_bias': {
                 'label': "Mipmap LOD Bias:",
-                'text': "Mipmap level-of-detail bias when using MangoHud.",
+                'text': "Mipmap level-of-detail bias when using MangoHud. Negative values sharpen textures, positive values blur them; affects performance and visual quality. Vulkan Only.",
                 'items': ["unset"] + [str(i) for i in range(-16, 17)],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -490,7 +492,7 @@ class GPULaunchManager:
             },
             'mangohud_anisotropic_filtering': {
                 'label': "Anisotropic Filtering:",
-                'text': "Anisotropic filtering level when using MangoHud.",
+                'text': "Anisotropic filtering level when using MangoHud. Improves texture quality at angles; 16x is maximum quality with minimal modern GPU impact. Vulkan Only.",
                 'items': ["unset"] + [str(i) for i in range(0, 17)],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
@@ -502,7 +504,7 @@ class GPULaunchManager:
         "LSFrameGen": {
             'lsfg_enable': {
                 'label': "Enable LSFG-VK:",
-                'text': "Enable LSFG-VK.",
+                'text': "Enable LSFG-VK. Vulkan Only.",
                 'items': ["unset", "on", "off"],
                 'env_mapping': {
                     'var_names': ['LSFG_LEGACY'],
@@ -520,7 +522,7 @@ class GPULaunchManager:
             },
             'lsfg_multiplier': {
                 'label': "FPS Multiplier:",
-                'text': "Frame generation multiplier.",
+                'text': "Frame generation multiplier. Generates additional frames between real frames.",
                 'items': ["unset", "2", "3", "4"],
                 'env_mapping': {
                     'var_names': ['LSFG_MULTIPLIER'],
@@ -529,7 +531,7 @@ class GPULaunchManager:
             },
             'lsfg_flow_scale': {
                 'label': "Motion Estimation Quality:",
-                'text': "Motion estimation quality.",
+                'text': "Motion estimation quality. Lower values improve performance at the cost of quality.",
                 'items': ["unset", "0.25", "0.50", "0.75", "1.0"],
                 'env_mapping': {
                     'var_names': ['LSFG_FLOW_SCALE'],
