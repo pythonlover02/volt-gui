@@ -9,7 +9,7 @@ class CPUManager:
         "Frequency": {
             'scaling_governor': {
                 'label': "Governor:",
-                'text': "CPU frequency scaling behavior.",
+                'text': "Controls CPU frequency scaling policy to balance performance and power consumption.",
                 'items': ["unset"],
                 'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
                 'available_path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors",
@@ -17,7 +17,7 @@ class CPUManager:
             },
             'scaling_max_freq': {
                 'label': "Max Frequency (MHz):",
-                'text': "Maximum allowed CPU frequency.",
+                'text': "Upper limit for CPU frequency. Higher values increase performance but consume more power.",
                 'items': ["unset"],
                 'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
                 'min_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
@@ -27,7 +27,7 @@ class CPUManager:
             },
             'scaling_min_freq': {
                 'label': "Min Frequency (MHz):",
-                'text': "Minimum allowed CPU frequency.",
+                'text': "Lower limit for CPU frequency. Higher values reduce latency but prevent deep power saving.",
                 'items': ["unset"],
                 'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq",
                 'min_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
@@ -39,7 +39,7 @@ class CPUManager:
         "Scheduler": {
             'scheduler': {
                 'label': "Pluggable Scheduler:",
-                'text': "Alternative CPU schedulers optimized for specific workloads.",
+                'text': "BPF-based schedulers (sched_ext) for workload-specific optimizations like latency, throughput, or power efficiency.",
                 'items': ["unset", "none"],
                 'search_paths': ["/usr/bin/", "/usr/local/bin/"],
                 'is_dynamic': True
