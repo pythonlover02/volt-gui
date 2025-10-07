@@ -75,7 +75,7 @@ class GPULaunchManager:
             'mesa_cache_size': {
                 'label': "Shader Cache Size (GB):",
                 'text': "Maximum size for the shader cache.",
-                'items': ["unset"] + [str(i) for i in range(1, 11)],
+                'items': ["unset"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
                 'env_mapping': {
                     'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
                     'direct_value': True
@@ -323,7 +323,7 @@ class GPULaunchManager:
             'nvidia_shader_cache_size': {
                 'label': "Shader Cache Size (GB):",
                 'text': "Maximum size for the shader cache.",
-                'items': ["unset"] + [str(i) for i in range(1, 11)],
+                'items': ["unset"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
                 'env_mapping': {
                     'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
                     'convert_to_bytes': True
