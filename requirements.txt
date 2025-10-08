@@ -1,4 +1,4 @@
-Nuitka==2.7.11
-pyinstaller==6.14.1
-PySide6==6.9.1
+Nuitka==2.7.16
+pyinstaller==6.16.0
+PySide6==6.10.0
 requests==2.32.5
