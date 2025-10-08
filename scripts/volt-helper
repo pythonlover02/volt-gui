@@ -152,8 +152,7 @@ read_gpu_settings() {
         if [ "$key" = "launch_options" ]; then
             continue
         elif [[ "$key" == unset:* ]]; then
-            local var_name="${key#unset:}"
-            script_content="${script_content}unset ${var_name}\n"
+            script_content="${script_content}unset ${key#unset:}\n"
         elif [ -n "$value" ]; then
             script_content="${script_content}export ${key}=\"${value}\"\n"
         fi
