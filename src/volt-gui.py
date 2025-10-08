@@ -2,17 +2,17 @@ import sys, os, signal, socket, threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
 from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QAction
-from theme import ThemeManager
-from gpu_launch import GPULaunchManager
 from cpu import CPUManager
+from gpu_launch import GPULaunchManager
 from disk import DiskManager
+from kernel import KernelManager
 from extras import ExtrasManager
 from options import OptionsManager
 from about import AboutManager
-from kernel import KernelManager
 from config import ConfigManager
-from welcome import WelcomeManager
+from theme import ThemeManager
 from workarounds import WorkaroundManager
+from welcome import WelcomeManager
 from update_checker import UpdateChecker
 
 def check_sudo_execution():
