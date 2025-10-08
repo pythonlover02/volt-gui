@@ -13,6 +13,7 @@ from kernel import KernelManager
 from config import ConfigManager
 from welcome import WelcomeManager
 from workarounds import WorkaroundManager
+from update_checker import UpdateChecker
 
 def check_sudo_execution():
     """
@@ -158,6 +159,9 @@ class MainWindow(QMainWindow):
 
         if OptionsManager.get_welcome_message_setting(self.options_widgets):
             QTimer.singleShot(100, self.show_welcome_window)
+
+        if OptionsManager.get_check_updates_setting(self.options_widgets):
+            QTimer.singleShot(200, lambda: UpdateChecker.check_for_updates(self))
 
         if not self.start_minimized:
             QTimer.singleShot(0, self.show_and_activate)
