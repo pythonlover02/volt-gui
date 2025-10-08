@@ -1186,7 +1186,7 @@ class GPULaunchManager:
         if 'render_vk_device' in render_widgets:
             vulkan_selection = render_widgets['render_vk_device'].currentText()
             if "(default)" in vulkan_selection:
-                unset_vars.append("MESA_VK_DEVICE_SELECT", "VK_DRIVER_FILES", "VK_ICD_FILENAMES")
+                unset_vars.extend("MESA_VK_DEVICE_SELECT", "VK_DRIVER_FILES", "VK_ICD_FILENAMES")
             elif vulkan_selection != "unset":
                 device_map = getattr(render_widgets['render_vk_device'], 'device_map', {})
                 device_key = device_map.get(vulkan_selection)
