@@ -378,10 +378,10 @@ class GPULaunchManager:
             'nvidia_smooth_motion': {
                 'label': "Smooth Motion (RTX 40 Series+):",
                 'text': "Smooth motion feature (RTX 40 Series+). Optical flow frame interpolation that generates intermediate frames for smoother motion. Vulkan only.",
-                'items': ["unset", "program decides (default)", "on", "off"],
+                'items': ["unset", "on", "off (default)"],
                 'env_mapping': {
                     'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
-                    'values': {'on': '1', 'off': '0'}
+                    'values': {'on': '1'}
                 }
             },
             'nvidia_glx_unofficial_protocol': {
