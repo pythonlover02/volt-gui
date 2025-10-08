@@ -6,72 +6,66 @@ from theme import ThemeManager
 
 class OptionsManager:
 
-    OPTIONS_SETTINGS = {
-        'theme': {
-            'label': 'Selected Theme:',
-            'text': 'Visual theme for the application interface.',
-            'section': 'Theme',
-            'config_key': 'ActiveTheme',
-            'items': ["amd", "intel", "nvidia"],
-            'default': 'amd'
+    OPTIONS_SETTINGS_CATEGORIES = {
+        "Appearance": {
+            'theme': {
+                'label': 'Selected Theme:',
+                'text': 'Visual theme for the application interface.',
+                'items': ["amd", "intel", "nvidia"],
+                'default': 'amd'
+            },
+            'transparency': {
+                'label': 'Transparency:',
+                'text': 'Window transparency.',
+                'items': ["enable", "disable"],
+                'default': 'disable'
+            }
         },
-        'transparency': {
-            'label': 'Transparency:',
-            'text': 'Window transparency.',
-            'section': 'Transparency',
-            'config_key': 'Enable',
-            'items': ["enable", "disable"],
-            'default': 'disable'
+        "Window Behavior": {
+            'systray': {
+                'label': 'Run in System Tray:',
+                'text': 'Run the application in system tray. When enabled, closing the window minimizes to tray instead of exiting.',
+                'items': ["enable", "disable"],
+                'default': 'disable'
+            },
+            'start_maximized': {
+                'label': 'Open Maximized:',
+                'text': 'Start the application in maximized window mode when launched.',
+                'items': ["enable", "disable"],
+                'default': 'disable'
+            },
+            'start_minimized': {
+                'label': 'Open Minimized:',
+                'text': 'Start the application minimized to taskbar or system tray when launched.',
+                'items': ["enable", "disable"],
+                'default': 'disable'
+            },
+            'scaling': {
+                'label': 'Interface Scaling:',
+                'text': 'Scale the interface size for high-DPI displays or better readability.',
+                'items': ["1.0", "1.25", "1.5", "1.75", "2.0"],
+                'default': '1.0'
+            }
         },
-        'tray': {
-            'label': 'Run in System Tray:',
-            'text': 'Run the application in system tray. When enabled, closing the window minimizes to tray instead of exiting.',
-            'section': 'SystemTray',
-            'config_key': 'Enable',
-            'items': ["enable", "disable"],
-            'default': 'disable'
-        },
-        'start_minimized': {
-            'label': 'Open Minimized:',
-            'text': 'Start the application minimized to taskbar or system tray when launched.',
-            'section': 'StartupMinimized',
-            'config_key': 'Enable',
-            'items': ["enable", "disable"],
-            'default': 'disable'
-        },
-        'start_maximized': {
-            'label': 'Open Maximized:',
-            'text': 'Start the application in maximized window mode when launched.',
-            'section': 'StartupMaximized',
-            'config_key': 'Enable',
-            'items': ["enable", "disable"],
-            'default': 'disable'
-        },
-        'scaling': {
-            'label': 'Interface Scaling:',
-            'text': 'Scale the interface size for high-DPI displays or better readability.',
-            'section': 'Scaling',
-            'config_key': 'Factor',
-            'items': ["1.0", "1.25", "1.5", "1.75", "2.0"],
-            'default': '1.0'
-        },
-        'welcome_message': {
-            'label': 'Welcome Message:',
-            'text': 'Show the welcome message dialog when starting the application.',
-            'section': 'WelcomeMessage',
-            'config_key': 'Show',
-            'items': ["enable", "disable"],
-            'default': 'enable'
-        },
-        'check_updates': {
-            'label': 'Check for Updates:',
-            'text': 'Check for new versions on startup (checks once per session).',
-            'section': 'CheckUpdates',
-            'config_key': 'Enable',
-            'items': ["enable", "disable"],
-            'default': 'disable'
+        "Application": {
+            'welcome_message': {
+                'label': 'Welcome Message:',
+                'text': 'Show the welcome message dialog when starting the application.',
+                'items': ["enable", "disable"],
+                'default': 'enable'
+            },
+            'check_updates': {
+                'label': 'Check for Updates:',
+                'text': 'Check for new versions on startup (checks once per session).',
+                'items': ["enable", "disable"],
+                'default': 'disable'
+            }
         }
     }
+
+    OPTIONS_SETTINGS = {}
+    for category in OPTIONS_SETTINGS_CATEGORIES.values():
+        OPTIONS_SETTINGS.update(category)
 
     @staticmethod
     def create_options_tab(main_window):
@@ -168,8 +162,8 @@ class OptionsManager:
             options = configparser.ConfigParser()
             options.read(config_path)
             scaling_factor = options.get(
-                OptionsManager.OPTIONS_SETTINGS['scaling']['section'],
-                OptionsManager.OPTIONS_SETTINGS['scaling']['config_key'],
+                'Options',
+                'scaling',
                 fallback=OptionsManager.OPTIONS_SETTINGS['scaling']['default']
             )
 
@@ -201,12 +195,11 @@ class OptionsManager:
         options = configparser.ConfigParser()
         main_window = widgets['main_window']
 
-        for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
-            if option_info['section'] not in options:
-                options[option_info['section']] = {}
-            options[option_info['section']][option_info['config_key']] = widgets[option_key].currentText()
+        options['Options'] = {}
+        for option_key in OptionsManager.OPTIONS_SETTINGS.keys():
+            options['Options'][option_key] = widgets[option_key].currentText()
 
-        options['Profile'] = {'LastActiveProfile': getattr(main_window, 'current_profile', 'Default')}
+        options['Profile'] = {'last_active_profile': getattr(main_window, 'current_profile', 'Default')}
 
         os.makedirs(os.path.dirname(widgets['options_path']), exist_ok=True)
 
@@ -223,10 +216,10 @@ class OptionsManager:
         main_window = widgets['main_window']
 
         for option_key, option_info in OptionsManager.OPTIONS_SETTINGS.items():
-            value = options.get(option_info['section'], option_info['config_key'], fallback=option_info['default'])
+            value = options.get('Options', option_key, fallback=option_info['default'])
             widgets[option_key].setCurrentText(value)
 
-        last_profile = options.get('Profile', 'LastActiveProfile', fallback='Default')
+        last_profile = options.get('Profile', 'last_active_profile', fallback='Default')
         index = main_window.profile_selector.findText(last_profile)
         if index >= 0:
             main_window.profile_selector.setCurrentText(last_profile)
@@ -237,11 +230,11 @@ class OptionsManager:
         """
         Apply all options to the application.
         """
-        OptionsManager.apply_system_tray_options(widgets)
-        OptionsManager.apply_transparency_options(widgets)
         OptionsManager.apply_theme_options(widgets)
-        OptionsManager.apply_start_minimized_options(widgets)
+        OptionsManager.apply_transparency_options(widgets)
+        OptionsManager.apply_system_tray_options(widgets)
         OptionsManager.apply_start_maximized_options(widgets)
+        OptionsManager.apply_start_minimized_options(widgets)
         OptionsManager.apply_scaling_options(widgets)
         OptionsManager.apply_welcome_message_options(widgets)
         OptionsManager.apply_check_updates_options(widgets)
@@ -261,7 +254,7 @@ class OptionsManager:
         Apply system tray options to the main window.
         """
         main_window = widgets['main_window']
-        run_in_tray = widgets['tray'].currentText() == OptionsManager.OPTIONS_SETTINGS['tray']['items'][0]
+        run_in_tray = widgets['systray'].currentText() == OptionsManager.OPTIONS_SETTINGS['systray']['items'][0]
         old_option = main_window.use_system_tray
         main_window.use_system_tray = run_in_tray
 
