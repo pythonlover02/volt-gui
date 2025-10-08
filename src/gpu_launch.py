@@ -93,7 +93,7 @@ class GPULaunchManager:
             'mesa_gl_fake': {
                 'label': "OpenGL Version Spoofing:",
                 'text': "Report a different OpenGL version to applications. Useful for running games that check version numbers but don't need newer features.",
-                'items': ["unset", "program decides (default)", "3.3", "3.3compat", "4.6", "4.6compat"],
+                'items': ["unset", "off (default)", "3.3", "3.3compat", "4.6", "4.6compat"],
                 'env_mapping': {
                     'var_names': ['MESA_GL_VERSION_OVERRIDE'],
                     'direct_value': True
@@ -102,7 +102,7 @@ class GPULaunchManager:
             'mesa_glsl_fake': {
                 'label': "GLSL Version Spoofing:",
                 'text': "Report a different GLSL version to applications. Works with OpenGL version spoofing for compatibility workarounds.",
-                'items': ["unset", "program decides (default)", "330", "460"],
+                'items': ["unset", "off (default)", "330", "460"],
                 'env_mapping': {
                     'var_names': ['MESA_GLSL_VERSION_OVERRIDE'],
                     'direct_value': True
@@ -111,7 +111,7 @@ class GPULaunchManager:
             'mesa_vk_fake': {
                 'label': "Vulkan Version Spoofing:",
                 'text': "Report a different Vulkan version to applications. Bypasses version checks for games that artificially restrict compatibility.",
-                'items': ["unset", "program decides (default)", "1.1", "1.2", "1.3", "1.4"],
+                'items': ["unset", "off (default)", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_VERSION_OVERRIDE'],
                     'direct_value': True
