@@ -77,7 +77,7 @@ If this software is not provided, its options will be locked.
 
 - [scx](https://github.com/sched-ext/scx) in the case you want to make use of the CPU Pluggable Schedulers
 - [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the MangoHud Settings. Both the native or the Flatpak version satisfy the dependency.
-- [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) in the case you want to make use of the LS Frame Gen Settings. Both the native or the Flatpak version satisfy the dependency.
+- [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) in the case you want to make use of the LS Frame Gen Settings. Both the native or the Flatpak version satisfy the dependency, as long as its **not** the `noui` version.
 - `glxinfo` its required to use the OpenGL Render Selector.
 - `vulkaninfo` and the `vulkan mesa layer` are required to use the Vulkan Render Selector.
 
