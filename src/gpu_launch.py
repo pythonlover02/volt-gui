@@ -135,6 +135,15 @@ class GPULaunchManager:
                     'values': {'on': 'true'}
                 }
             },
+            'radeonsi_zerovram': {
+                'label': "RadeonSI Clear VRAM to Zero:",
+                'text': "Clear all allocated VRAM to zero before usage in RadeonSI. Might fix rendering corruptions on AMD GPUs.",
+                'items': ["unset", "on", "off (default)"],
+                'env_mapping': {
+                    'var_names': ['radeonsi_zerovram'],
+                    'values': {'on': 'true'}
+                }
+            },
             'radv_anisotropic_filtering': {
                 'label': "RADV Anisotropic Filtering:",
                 'text': "Anisotropic filtering level for RADV. Improves texture quality at oblique angles with minimal performance impact on modern AMD GPUs.",
@@ -454,9 +463,10 @@ class GPULaunchManager:
             'mangohud_fps_limit': {
                 'label': "Fps Limit:",
                 'text': "FPS limit when using MangoHud.",
-                'items': ["unset", "unlimited (default)", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
+                'items': ["unset", "program decides (default)", "unlimited", "10", "15", "20", "24", "25", "30", "35", "40", "45", "48", "50", "55", "60", "70", "72", "75", "85", "90", "100", "110", "120", "144", "165", "180", "200", "240", "280", "300", "360", "480"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
+                    'values': {'unlimited': '0'},
                     'direct_value': True,
                     'prefix': 'fps_limit='
                 }
@@ -464,10 +474,10 @@ class GPULaunchManager:
             'mangohud_fps_method': {
                 'label': "Fps Limit Method:",
                 'text': "MangoHud FPS limiting implementation.",
-                'items': ["unset", "early - smoothest frametimes", "late - lowest latency (default)"],
+                'items': ["unset", "program decides (default)", "early - smoothest frametimes", "late - lowest latency"],
                 'env_mapping': {
                     'var_names': ['MANGOHUD_CONFIG'],
-                    'values': {'early - smoothest frametimes': 'early'},
+                    'values': {'early - smoothest frametimes': 'early', 'late - lowest latency': 'late'},
                     'prefix': 'fps_limit_method='
                 }
             },
