@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBu
 from PySide6.QtCore import Qt
 
 class KernelManager:
-    
+
     KERNEL_SETTINGS_CATEGORIES = {
         "CPU": {
             'sched_cfs_bandwidth_slice_us': {
@@ -318,7 +318,7 @@ class KernelManager:
             }
         }
     }
-    
+
     KERNEL_SETTINGS = {}
     for category in KERNEL_SETTINGS_CATEGORIES.values():
         KERNEL_SETTINGS.update(category)
@@ -342,7 +342,7 @@ class KernelManager:
         try:
             with open(setting_path, 'r') as f:
                 content = f.read().strip()
-            
+
             match = re.search(r'\[([^\]]+)\]', content)
             if match:
                 return match.group(1)
@@ -363,28 +363,16 @@ class KernelManager:
         try:
             with open(setting_path, 'r') as f:
                 content = f.read().strip()
-            
+
             clean_content = re.sub(r'[\[\]]', '', content)
             possible_values = clean_content.split()
-            
+
             if possible_values:
                 return possible_values
             else:
                 return None
         except Exception:
             return None
-
-    @staticmethod
-    def get_dynamic_text_with_values(base_text, setting_path):
-        """
-        Append possible values to setting description text
-        """
-        possible_values = KernelManager.get_dynamic_possible_values(setting_path)
-        if possible_values:
-            values_text = " ".join(possible_values)
-            return f"{base_text}\nPossible values: {values_text}"
-        else:
-            return f"{base_text}\nPossible values: Unable to read from system"
 
     @staticmethod
     def get_available_setting(setting_path):
@@ -408,38 +396,38 @@ class KernelManager:
         kernel_layout.setSpacing(10)
         kernel_layout.setContentsMargins(9, 9, 9, 0)
         widgets = {}
-        
+
         kernel_subtabs = QTabWidget()
         for category_name, category_settings in KernelManager.KERNEL_SETTINGS_CATEGORIES.items():
             category_tab = QWidget()
             category_layout = QVBoxLayout(category_tab)
             category_layout.setContentsMargins(0, 0, 0, 0)
-            
+
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            
+
             scroll_widget = QWidget()
             scroll_widget.setProperty("scrollContainer", True)
             scroll_layout = QVBoxLayout(scroll_widget)
             scroll_layout.setSpacing(10)
             scroll_layout.setContentsMargins(10, 10, 10, 0)
-            
+
             for setting_name, setting_info in category_settings.items():
                 KernelManager.create_setting_section(scroll_layout, widgets, setting_name, setting_info)
-            
+
             scroll_layout.addStretch(1)
             scroll_area.setWidget(scroll_widget)
             category_layout.addWidget(scroll_area)
             kernel_subtabs.addTab(category_tab, category_name)
-        
+
         kernel_layout.addWidget(kernel_subtabs)
         KernelManager.create_kernel_apply_button(kernel_layout, widgets, main_window)
 
         widgets['kernel_settings_applied'] = False
         widgets['is_process_running'] = False
         widgets['process'] = None
-        
+
         return kernel_tab, widgets
 
     @staticmethod
@@ -451,39 +439,37 @@ class KernelManager:
         setting_container.setProperty("settingContainer", True)
         setting_layout = QVBoxLayout(setting_container)
         setting_layout.setContentsMargins(0, 10, 0, 0)
-        
-        path_label = QLabel(f"{setting_info['path']}:")
-        path_label.setWordWrap(True)
-        setting_layout.addWidget(path_label)
-        
+
+        label = QLabel(f"{setting_info['path']}:")
+        label.setWordWrap(True)
+        setting_layout.addWidget(label)
+
         current_value_label = QLabel("Updating...")
         setting_layout.addWidget(current_value_label)
-        is_accessible = KernelManager.get_available_setting(setting_info['path'])
-        
-        if setting_info['is_dynamic']:
-            if is_accessible:
-                display_text = KernelManager.get_dynamic_text_with_values(setting_info['text'], setting_info['path'])
-            else:
-                display_text = f"{setting_info['text']}\nPossible values: not available"
-        else:
-            display_text = setting_info['text']
 
-        text_label = QLabel(display_text)
-        text_label.setWordWrap(True)
-        text_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 5px;")
-        setting_layout.addWidget(text_label)
-        
+        is_accessible = KernelManager.get_available_setting(setting_info['path'])
         input_widget = QLineEdit()
         input_widget.setPlaceholderText("enter value")
-        setting_layout.addWidget(input_widget)
-        
-        if not is_accessible:
+
+        if is_accessible:
+            tooltip_text = setting_info['text']
+            if setting_info['is_dynamic']:
+                possible_values = KernelManager.get_dynamic_possible_values(setting_info['path'])
+                if possible_values:
+                    values_text = " ".join(possible_values)
+                    tooltip_text += f"\nPossible values: {values_text}"
+                else:
+                    tooltip_text += "\nPossible values: Unable to read from system"
+
+            input_widget.setToolTip(tooltip_text)
+        else:
             input_widget.setEnabled(False)
-            input_widget.setToolTip(f"Setting file its not available - {setting_name} disabled")
-        
+            input_widget.setToolTip(f"Setting file is not available - {setting_info['path']} disabled")
+
+        setting_layout.addWidget(input_widget)
+
         widgets[f'{setting_name}_input'] = input_widget
         widgets[f'{setting_name}_current_value'] = current_value_label
-        widgets[f'{setting_name}_text_label'] = text_label
         kernel_layout.addWidget(setting_container)
 
     @staticmethod
@@ -495,37 +481,41 @@ class KernelManager:
         button_container.setProperty("buttonContainer", True)
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(10, 10, 10, 0)
-        
+
         widgets['kernel_apply_button'] = QPushButton("Apply")
         widgets['kernel_apply_button'].setMinimumSize(100, 30)
         widgets['kernel_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        
+
         button_layout.addStretch(1)
         button_layout.addWidget(widgets['kernel_apply_button'])
         button_layout.addStretch(1)
-        
+
         kernel_layout.addWidget(button_container)
         kernel_layout.addSpacing(9)
 
     @staticmethod
     def refresh_kernel_values(widgets):
         """
-        Update all kernel setting current values in the GUI
+        Update all kernel setting current values in the GUI and refresh tooltips
         """
         for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
             for name, info in category.items():
                 if not KernelManager.get_available_setting(info['path']):
                     widgets[f'{name}_current_value'].setText("current value: not available")
                     continue
-                    
+
                 if info['is_dynamic']:
                     current = KernelManager.get_dynamic_current_value(info['path'])
+                    tooltip_text = info['text']
+                    possible_values = KernelManager.get_dynamic_possible_values(info['path'])
+                    if possible_values:
+                        values_text = " ".join(possible_values)
+                        tooltip_text += f"\nPossible values: {values_text}"
+                    else:
+                        tooltip_text += "\nPossible values: Unable to read from system"
+                    widgets[f'{name}_input'].setToolTip(tooltip_text)
                 else:
                     current = KernelManager.get_current_value(info['path'])
-                
+
                 if current is not None:
                     widgets[f'{name}_current_value'].setText(f"current value: {current}")
-                
-                if info['is_dynamic'] and f'{name}_text_label' in widgets:
-                    updated_text = KernelManager.get_dynamic_text_with_values(info['text'], info['path'])
-                    widgets[f'{name}_text_label'].setText(updated_text)

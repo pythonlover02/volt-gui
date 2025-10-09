@@ -1,7 +1,7 @@
 from PySide6.QtGui import QPalette, QColor
 
 class ThemeManager:
-    
+
     AMD_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -15,7 +15,7 @@ class ThemeManager:
         'disabled_text': "#666666",
         'selection_bg': "#FF0000",
     }
-    
+
     INTEL_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -29,7 +29,7 @@ class ThemeManager:
         'disabled_text': "#666666",
         'selection_bg': "#0071C5",
     }
-    
+
     NVIDIA_COLORS = {
         'bg_color': "#1A1A1A",
         'darker_bg': "#0F0F0F",
@@ -43,13 +43,13 @@ class ThemeManager:
         'disabled_text': "#666666",
         'selection_bg': "#76B900",
     }
-    
+
     THEMES = {
         "amd": AMD_COLORS,
         "intel": INTEL_COLORS,
         "nvidia": NVIDIA_COLORS
     }
-    
+
     @classmethod
     def set_theme(cls, theme_name):
         """
@@ -57,7 +57,7 @@ class ThemeManager:
         """
         cls.COLORS = cls.THEMES[theme_name]
         cls.CURRENT_THEME = theme_name
-    
+
     @classmethod
     def get_theme_style_sheet(cls):
         """
@@ -72,7 +72,7 @@ class ThemeManager:
             font-family: "Segoe UI", sans-serif;
             border-radius: 3px;
         }}
-        
+
         QLabel {{
             color: {c['text_color']};
             background-color: transparent;
@@ -80,51 +80,51 @@ class ThemeManager:
             border-radius: 3px;
             qproperty-wordWrap: true;
         }}
-        
+
         QScrollArea {{
             background-color: transparent;
             border: none;
             border-radius: 3px;
         }}
-        
+
         QScrollArea > QWidget > QWidget {{
             background-color: transparent;
             border-radius: 3px;
         }}
-        
-        QWidget[scrollContainer="true"], 
+
+        QWidget[scrollContainer="true"],
         QWidget[buttonContainer="true"] {{
             background-color: transparent;
             border: none;
             border-radius: 3px;
         }}
-        
+
         QWidget[buttonContainer="true"] {{
             min-height: 50px;
             background-color: {c['bg_color']};
             border-radius: 3px;
         }}
-        
+
         QMainWindow {{
             background-color: {c['bg_color']};
             border: none;
             border-radius: 3px;
         }}
-        
+
         QTabBar::tab:hover:!selected {{
             background-color: {c['lighter_bg']};
             color: {c['text_color']};
             border: 1px solid {c['accent_color']};
             border-radius: 3px;
         }}
-        
+
         QTabBar::scroller {{
             width: 30px;
             background-color: {c['surface_bg']};
             border: none;
             border-radius: 3px;
         }}
-        
+
         QTabBar QToolButton {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -132,44 +132,44 @@ class ThemeManager:
             border-radius: 3px;
             padding: 4px;
         }}
-        
+
         QTabBar QToolButton:hover {{
             background-color: {c['lighter_bg']};
             border-radius: 3px;
             border: 1px solid {c['accent_color']};
         }}
-        
+
         QTabBar QToolButton:pressed {{
             background-color: {c['accent_pressed']};
             border-radius: 3px;
         }}
-        
+
         QTabBar::tear {{
             width: 0px;
             height: 0px;
             background: transparent;
             border: none;
         }}
-        
+
         QTabWidget {{
             background-color: {c['bg_color']};
             border: none;
             border-radius: 3px;
         }}
-        
+
         QTabWidget::pane {{
             background-color: {c['bg_color']};
             border: none;
             border-radius: 3px;
         }}
-        
+
         QTabBar {{
             background-color: {c['bg_color']};
             qproperty-drawBase: 0;
             border: none;
             border-radius: 3px;
         }}
-        
+
         QTabBar::tab {{
             background-color: {c['bg_color']};
             color: {c['text_secondary']};
@@ -179,7 +179,7 @@ class ThemeManager:
             margin: 0px;
             font-weight: 500;
         }}
-        
+
         QTabBar::tab:selected {{
             background-color: {c['bg_color']};
             color: {c['text_color']};
@@ -187,14 +187,14 @@ class ThemeManager:
             border-radius: 0px 3px 3px 0px;
             padding-left: 21px;
         }}
-        
+
         QTabBar::tab:hover:!selected {{
             background-color: {c['lighter_bg']};
             color: {c['text_color']};
             border-radius: 3px;
             border: 1px solid {c['accent_color']};
         }}
-        
+
         QScrollBar:vertical {{
             background: transparent;
             width: 12px;
@@ -221,11 +221,11 @@ class ThemeManager:
             height: 0px;
             border: none;
         }}
-        
+
         QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
             background: none;
         }}
-        
+
         QScrollBar:horizontal {{
             background: transparent;
             height: 12px;
@@ -252,11 +252,11 @@ class ThemeManager:
             width: 0px;
             border: none;
         }}
-        
+
         QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
             background: none;
         }}
-        
+
         QPushButton {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -267,7 +267,14 @@ class ThemeManager:
             min-width: 80px;
             font-weight: 500;
         }}
-        
+
+        QPushButton:disabled {{
+            background-color: {c['darker_bg']};
+            color: {c['disabled_text']};
+            border: 1px solid {c['darker_bg']};
+            border-radius: 3px;
+        }}
+
         QPushButton:default {{
             background-color: {c['accent_color']};
             color: white;
@@ -275,28 +282,28 @@ class ThemeManager:
             border-radius: 3px;
             outline: none;
         }}
-        
+
         QPushButton:hover {{
             background-color: {c['lighter_bg']};
             border: 1px solid {c['accent_color']};
             border-radius: 3px;
             outline: none;
         }}
-        
+
         QPushButton:default:hover {{
             background-color: {c['accent_hover']};
             border: 1px solid {c['accent_hover']};
             border-radius: 3px;
             outline: none;
         }}
-        
+
         QPushButton:pressed {{
             background-color: {c['accent_pressed']};
             border: 1px solid {c['accent_pressed']};
             border-radius: 3px;
             outline: none;
         }}
-        
+
         QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -306,31 +313,31 @@ class ThemeManager:
             selection-background-color: {c['selection_bg']};
             selection-color: white;
         }}
-        
+
         QComboBox {{
             min-width: 100px;
             border-radius: 3px;
         }}
-        
+
         QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover, QLineEdit:hover {{
             background-color: {c['lighter_bg']};
             border: 1px solid {c['accent_color']};
             border-radius: 3px;
         }}
-        
+
         QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {{
             background-color: {c['lighter_bg']};
             border: 1px solid {c['accent_color']};
             border-radius: 3px;
         }}
-        
+
         QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QLineEdit:disabled {{
             background-color: {c['darker_bg']};
             color: {c['disabled_text']};
             border: 1px solid {c['darker_bg']};
             border-radius: 3px;
         }}
-        
+
         QComboBox::drop-down {{
             subcontrol-origin: padding;
             subcontrol-position: top right;
@@ -339,7 +346,7 @@ class ThemeManager:
             border-radius: 0px 3px 3px 0px;
             background-color: transparent;
         }}
-        
+
         QComboBox QAbstractItemView {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -349,7 +356,7 @@ class ThemeManager:
             selection-color: white;
             outline: none;
         }}
-        
+
         QSpinBox::up-button, QDoubleSpinBox::up-button,
         QSpinBox::down-button, QDoubleSpinBox::down-button {{
             background-color: transparent;
@@ -357,14 +364,14 @@ class ThemeManager:
             border: none;
             border-radius: 3px;
         }}
-        
+
         QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
         QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {{
             background-color: {c['accent_color']};
             border: 1px solid {c['accent_hover']};
             border-radius: 3px;
         }}
-        
+
         QLabel[isHeader="true"] {{
             font-weight: 600;
             color: {c['accent_color']};
@@ -374,14 +381,14 @@ class ThemeManager:
             border: none;
             border-radius: 3px;
         }}
-        
+
         QCheckBox {{
             color: {c['text_color']};
             spacing: 10px;
             border: none;
             border-radius: 3px;
         }}
-        
+
         QCheckBox::indicator {{
             width: 20px;
             height: 20px;
@@ -389,19 +396,19 @@ class ThemeManager:
             border: 1px solid {c['darker_bg']};
             border-radius: 3px;
         }}
-        
+
         QCheckBox::indicator:unchecked:hover {{
             background-color: {c['lighter_bg']};
             border: 1px solid {c['accent_color']};
             border-radius: 3px;
         }}
-        
+
         QCheckBox::indicator:checked {{
             background-color: {c['accent_color']};
             border: 1px solid {c['accent_hover']};
             border-radius: 3px;
         }}
-        
+
         QCheckBox::indicator:checked:hover {{
             background-color: {c['accent_hover']};
             border: 1px solid {c['accent_hover']};
@@ -415,7 +422,7 @@ class ThemeManager:
             border-radius: 3px;
             padding: 8px;
         }}
-        
+
         QWidget[statusContainer="true"] QLabel {{
             background-color: transparent;
             color: {c['text_color']};
@@ -423,7 +430,7 @@ class ThemeManager:
             border: none;
             border-radius: 3px;
         }}
-        
+
         QGroupBox {{
             background-color: transparent;
             color: {c['text_color']};
@@ -447,7 +454,7 @@ class ThemeManager:
             background-color: {c['bg_color']};
             border-radius: 0px;
         }}
-        
+
         QMenu {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -455,27 +462,27 @@ class ThemeManager:
             border-radius: 3px;
             padding: 4px;
         }}
-        
+
         QMenu::item {{
             padding: 8px 16px;
             border: none;
             border-radius: 3px;
             margin: 2px;
         }}
-        
+
         QMenu::item:selected {{
             background-color: {c['accent_color']};
             color: white;
             border-radius: 3px;
         }}
-        
+
         QMenu::separator {{
             height: 1px;
             background-color: {c['lighter_bg']};
             margin: 4px 0px;
             border-radius: 3px;
         }}
-        
+
         QProgressBar {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -484,13 +491,13 @@ class ThemeManager:
             text-align: center;
             padding: 2px;
         }}
-        
+
         QProgressBar::chunk {{
             background-color: {c['accent_color']};
             border: none;
             border-radius: 3px;
         }}
-        
+
         QToolTip {{
             background-color: {c['surface_bg']};
             color: {c['text_color']};
@@ -511,7 +518,7 @@ class ThemeManager:
         """
         palette = QPalette()
         c = cls.COLORS
-        
+
         palette.setColor(QPalette.Window, QColor(c['bg_color']))
         palette.setColor(QPalette.WindowText, QColor(c['text_color']))
         palette.setColor(QPalette.Base, QColor(c['surface_bg']))
@@ -530,7 +537,7 @@ class ThemeManager:
         palette.setColor(QPalette.Disabled, QPalette.Button, QColor(c['darker_bg']))
         palette.setColor(QPalette.ToolTipBase, QColor(c['surface_bg']))
         palette.setColor(QPalette.ToolTipText, QColor(c['text_color']))
-        
+
         return palette
 
     @classmethod
@@ -540,7 +547,7 @@ class ThemeManager:
         """
         if theme_name:
             cls.set_theme(theme_name)
-            
+
         if app:
             app.setStyleSheet(cls.get_theme_style_sheet())
             app.setPalette(cls.get_theme_palette())
