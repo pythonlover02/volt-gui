@@ -50,7 +50,7 @@ A graphical interface for configuring GPU, CPU, Disk, and Kernel performance set
   gamemoderun PROTON_USE_WINED3D=1
   ```
 - Extras:
-  - Useful Links and Programs for the average Linux Gamer
+  - Useful Links and Programs for the average Linux Gamer.
 - Options:
   - Configure settings specific to the volt-gui program itself.
 - Create or Delete Profiles:
