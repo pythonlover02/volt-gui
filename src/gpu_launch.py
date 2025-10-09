@@ -308,7 +308,7 @@ class GPULaunchManager:
                     'values': {'off': '0'}
                 }
             },
-            'nvidia_gl_aniso': {
+            'nvidia_gl_anisotropic_filtering': {
                 'label': "OpenGL Anisotropic Filtering:",
                 'text': "Anisotropic filtering level in OpenGL. Improves texture sharpness at oblique viewing angles; higher levels look better but impact performance.",
                 'items': [
