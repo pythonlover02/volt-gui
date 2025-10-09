@@ -198,7 +198,7 @@ class MainWindow(QMainWindow):
         Show the separate welcome window.
         """
         if self.welcome_window is None:
-            self.welcome_window = WelcomeManager.create_welcome_window(self)
+            self.welcome_window = WelcomeManager.create_welcome_window()
 
         self.welcome_window.show()
         self.welcome_window.activateWindow()
