@@ -10,7 +10,7 @@ class AboutManager:
         Returns a list of dictionaries containing the about information.
         """
         return [
-            {"label": "Description", "text": "Simple GUI program for modifying and creating the `volt` script and more. Providing an intuitive interface for configuration management, with the objective of getting the maximum performance posible of a PC"},
+            {"label": "Description", "text": "My AMD Adrenaline / NVIDIA Settings Linux Alternative"},
             {"label": "License", "text": "GPL-3.0 License"},
             {"label": "Author", "text": "pythonlover02"},
             {"label": "Version", "text": VERSION},

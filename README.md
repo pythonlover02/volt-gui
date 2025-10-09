@@ -1,6 +1,8 @@
-# volt-gui:
+# volt-gui
 
-A graphical user interface for configuring GPU related environment variables and more for Linux gaming. Originally designed just for me and my friends, but seeing that it could be useful for other Linux users i have decided to Open Source it.
+> **My AMD Adrenaline / NVIDIA Settings Linux Alternative**
+
+A graphical interface for configuring GPU, CPU, Disk, and Kernel performance settings for Linux gaming. Initially made for personal use, now open-sourced so others can benefit from it too.
 
 ![Badge Language](https://img.shields.io/github/languages/top/pythonlover02/volt-gui)
 [![Stars](https://img.shields.io/github/stars/pythonlover02/volt-gui?style=social)](https://github.com/pythonlover02/volt-gui/stargazers)
@@ -23,90 +25,36 @@ A graphical user interface for configuring GPU related environment variables and
 
 ## What you can do?:
 
-- CPU Management
-  - Governor Selection: Choose from available CPU governors
+- CPU Management:
+  - Governor Selection: Choose from available CPU governors.
   - Adjust the maximum and minimum CPU frequencies within the permitted range.
-  - Scheduler Configuration: Select CPU pluggable schedulers (requires [scx](https://github.com/sched-ext/scx) and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`)
-- GPU Configuration
-  - Mesa Drivers: Configure Mesa Drivers specific environment variables
-  - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables
-  - Render Selection: Choose the renderers for both OpenGL and Vulkan applications
-  - Set a frame limit for both OpenGL and Vulkan applications, Texture Filters and MidMap LOD Bias for Vulkan only (requires [mangohud](https://github.com/flightlessmango/MangoHud))
-  - All those GPU settings will be added to the `volt` script
-- Disk Configuration
+  - Scheduler Configuration: Select, start and stop CPU pluggable schedulers (requires [scx](https://github.com/sched-ext/scx) and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`).
+- GPU Configuration:
+  - Mesa Drivers: Configure Mesa Drivers specific environment variables.
+  - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables.
+  - Dynamic Render Selection: Select renderers for both OpenGL and Vulkan applications. The program dynamically sets the required environment variables depending on your GPU.
+  - Configure various MangoHud options.
+  - Configure lsfg-vk settings
+  - All GPU settings are automatically added to the `volt` script.
+- Disk Configuration:
   - Change Disks Schedulers
-- Kernel Configuration
-  - Choose /proc/sys/vm/compaction_proactiveness value
-  - Choose /proc/sys/vm/watermark_boost_factor value
-  - Choose /proc/sys/vm/watermark_scale_factor value
-  - Choose /proc/sys/vm/extfrag_threshold value
-  - Choose /proc/sys/vm/compact_unevictable_allowed value
-  - Choose /proc/sys/vm/defrag_mode value
-  - Choose /proc/sys/vm/min_free_kbytes value
-  - Choose /proc/sys/vm/overcommit_memory value
-  - Choose /proc/sys/vm/overcommit_ratio value
-  - Choose /proc/sys/vm/admin_reserve_kbytes value
-  - Choose /proc/sys/vm/user_reserve_kbytes value
-  - Choose /proc/sys/vm/max_map_count value
-  - Choose /proc/sys/vm/mmap_min_addr value
-  - Choose /proc/sys/vm/page_lock_unfairness value
-  - Choose /proc/sys/vm/swappiness value
-  - Choose /proc/sys/vm/page-cluster value
-  - Choose /proc/sys/vm/vfs_cache_pressure value
-  - Choose /proc/sys/vm/percpu_pagelist_high_fraction value
-  - Choose /proc/sys/vm/zone_reclaim_mode value
-  - Choose /proc/sys/vm/min_unmapped_ratio value
-  - Choose /proc/sys/vm/min_slab_ratio value
-  - Choose /proc/sys/vm/numa_stat value
-  - Choose /proc/sys/vm/oom_kill_allocating_task value
-  - Choose /proc/sys/vm/oom_dump_tasks value
-  - Choose /proc/sys/vm/panic_on_oom value
-  - Choose /proc/sys/vm/dirty_ratio value
-  - Choose /proc/sys/vm/dirty_background_ratio value
-  - Choose /proc/sys/vm/dirty_bytes value
-  - Choose /proc/sys/vm/dirty_background_bytes value
-  - Choose /proc/sys/vm/dirty_expire_centisecs value
-  - Choose /proc/sys/vm/dirty_writeback_centisecs value
-  - Choose /proc/sys/vm/dirtytime_expire_seconds value
-  - Choose /proc/sys/vm/laptop_mode value
-  - Choose /proc/sys/vm/nr_hugepages value
-  - Choose /proc/sys/vm/nr_overcommit_hugepages value
-  - Choose /proc/sys/vm/hugetlb_optimize_vmemmap value
-  - Choose /proc/sys/vm/stat_interval value
-  - Choose /sys/kernel/mm/transparent_hugepage/enabled value
-  - Choose /sys/kernel/mm/transparent_hugepage/shmem_enabled value
-  - Choose /sys/kernel/mm/transparent_hugepage/defrag value
-  - Choose /sys/class/rtc/rtc0/max_user_freq value
-  - Choose /proc/sys/kernel/numa_balancing value
-  - Choose /proc/sys/kernel/randomize_va_space value
-  - Choose /proc/sys/kernel/perf_event_paranoid value
-  - Choose /proc/sys/kernel/sched_cfs_bandwidth_slice_us value
-  - Choose /proc/sys/kernel/sched_autogroup_enabled value
-  - Choose /proc/sys/kernel/sched_rt_runtime_us value
-  - Choose /proc/sys/kernel/sched_rt_period_us value
-  - Choose /proc/sys/kernel/sched_schedstats value
-  - Choose /proc/sys/kernel/timer_migration value
-  - Choose /proc/sys/kernel/watchdog value
-  - Choose /proc/sys/kernel/nmi_watchdog value
-  - Choose /proc/sys/kernel/hung_task_timeout_secs value
-  - Choose /proc/sys/kernel/pid_max value
-  - Choose /proc/sys/fs/file-max value
-  - Choose /proc/sys/net/core/rmem_max value
-  - Choose /proc/sys/net/core/wmem_max value
-  - Choose /proc/sys/net/ipv4/tcp_fastopen value
-  - Choose /proc/sys/net/ipv4/tcp_window_scaling value
-  - Choose /proc/sys/net/ipv4/tcp_timestamps value
-
-- Launch Options: add custom Launch Options to the `volt` that will be passed to the program executed, example:
+- Configure Kernel Parameters related to:
+  - CPU
+  - Memory
+  - Disk
+  - System
+  - Network
+  - Security
+- Add custom launch options to the `volt` script. These will be passed to the executed program. Example:
   ```
   gamemoderun PROTON_USE_WINED3D=1
   ```
-- Extras
-  - Useful Links for the average Linux Gamer
-  - Useful Programs for the average Linux Gamer
-- Options
-  - Options for the program itself
-- Create or Delete Profiles, all of them with its own settings, witch you can apply trough the program or systray.
+- Extras:
+  - Useful Links and Programs for the average Linux Gamer
+- Options:
+  - Configure settings specific to the volt-gui program itself.
+- Create or Delete Profiles:
+  - Each profile has its own set of configurations, which can be applied through the program or system tray.
 
 ## Build/Test Requirements:
 
@@ -231,12 +179,12 @@ volt flatpak run net.pcsx2.PCSX2
 
 ## Render Selector explained:
 
-- `Select OpenGL Renderer` Selects the GPU/Renderer that will be used to render OpenGL programs. Those GPUs are obtained trough `glxinfo`.
-- `Select Vulkan Renderer` Selects the GPU/Renderer that will be used to render Vulkan programs. Those GPUs are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux. More info its provided on the Welcome Window that opens once you open volt-gui.
+- `Select OpenGL Renderer` Selects the GPU/Renderer that will be used to render OpenGL programs. Those GPUs/Renderers are obtained trough `glxinfo`.
+- `Select Vulkan Renderer` Selects the GPU/Renderer that will be used to render Vulkan programs. Those GPUs/Renderers are obtained trough `vulkaninfo`, also for this to work on some distros you might need to install some additional dependencies like `vulkan-mesa-layers` on Arch Linux. More info its provided on the Welcome Window that opens once you open volt-gui.
 
 ## Technical References:
 
-Documentation used:
+Based on documentation and references from:
 
 - [Arch Linux Wiki - Improving performance](https://wiki.archlinux.org/title/Improving_performance)
 - [Arch Linux Wiki - Gaming](https://wiki.archlinux.org/title/Gaming#Improving_performance)
@@ -256,4 +204,5 @@ Documentation used:
 
 ## Contributing:
 
-Contributions are welcome. Please ensure any changes maintain compatibility with the supported Python versions and follow the existing code structure. You might want to read: [Build/Test Requirements](#buildtest-requirements), [Installation](#installation) and [Testing volt-gui](#testing-volt-gui).
+Contributions are welcome. Please ensure compatibility with supported Python versions and follow the existing code structure.
+Read: [Build/Test Requirements](#buildtest-requirements), [Installation](#installation), and [Testing volt-gui](#testing-volt-gui) before contributing.
