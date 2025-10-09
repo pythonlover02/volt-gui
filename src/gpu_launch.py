@@ -641,59 +641,6 @@ class GPULaunchManager:
         return GPULaunchManager.get_available("lsfg", True)
 
     @staticmethod
-    def get_vulkan_device_options():
-        """
-        Get available Vulkan device options from vulkaninfo.
-        """
-        devices = []
-        device_map = {}
-
-        if not GPULaunchManager.get_available_vulkaninfo():
-            return devices, device_map
-
-        try:
-            process = QProcess()
-            WorkaroundManager.setup_clean_process(process)
-            process.start("vulkaninfo")
-
-            if process.waitForFinished(10000):
-                output = process.readAllStandardOutput().data().decode()
-                lines = output.split('\n')
-
-                current_device = {}
-                for line in lines:
-                    line = line.strip()
-                    if 'vendorID' in line and '=' in line:
-                        vendor_id = line.split('=')[1].strip()
-                        current_device['vendorID'] = vendor_id
-                    elif 'deviceID' in line and '=' in line:
-                        device_id = line.split('=')[1].strip()
-                        current_device['deviceID'] = device_id
-                    elif 'deviceName' in line and '=' in line:
-                        device_name = line.split('=')[1].strip()
-                        current_device['deviceName'] = device_name
-
-                        if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
-                            truncated_name = GPULaunchManager.truncate_name(current_device['deviceName'])
-                            display_name = truncated_name.lower()
-
-                            if 'llvmpipe' in display_name:
-                                display_name = 'llvmpipe (software rendering)'
-                            else:
-                                display_name = truncated_name.lower()
-
-                            device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
-                            devices.append(display_name)
-                            device_map[display_name] = device_key
-
-                            current_device = {}
-
-        except Exception:
-            pass
-
-        return devices, device_map
-
-    @staticmethod
     def get_opengl_device_options():
         """
         Get available OpenGL device options from glxinfo.
@@ -800,6 +747,59 @@ class GPULaunchManager:
         options = devices + list(fixed_options.keys())
 
         return options, device_map
+
+    @staticmethod
+    def get_vulkan_device_options():
+        """
+        Get available Vulkan device options from vulkaninfo.
+        """
+        devices = []
+        device_map = {}
+
+        if not GPULaunchManager.get_available_vulkaninfo():
+            return devices, device_map
+
+        try:
+            process = QProcess()
+            WorkaroundManager.setup_clean_process(process)
+            process.start("vulkaninfo")
+
+            if process.waitForFinished(10000):
+                output = process.readAllStandardOutput().data().decode()
+                lines = output.split('\n')
+
+                current_device = {}
+                for line in lines:
+                    line = line.strip()
+                    if 'vendorID' in line and '=' in line:
+                        vendor_id = line.split('=')[1].strip()
+                        current_device['vendorID'] = vendor_id
+                    elif 'deviceID' in line and '=' in line:
+                        device_id = line.split('=')[1].strip()
+                        current_device['deviceID'] = device_id
+                    elif 'deviceName' in line and '=' in line:
+                        device_name = line.split('=')[1].strip()
+                        current_device['deviceName'] = device_name
+
+                        if all(key in current_device for key in ['vendorID', 'deviceID', 'deviceName']):
+                            truncated_name = GPULaunchManager.truncate_name(current_device['deviceName'])
+                            display_name = truncated_name.lower()
+
+                            if 'llvmpipe' in display_name:
+                                display_name = 'llvmpipe (software rendering)'
+                            else:
+                                display_name = truncated_name.lower()
+
+                            device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
+                            devices.append(display_name)
+                            device_map[display_name] = device_key
+
+                            current_device = {}
+
+        except Exception:
+            pass
+
+        return devices, device_map
 
     @staticmethod
     def create_gpu_settings_tabs():
