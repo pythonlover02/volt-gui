@@ -407,7 +407,7 @@ class GPULaunchManager:
             'render_gl_device': {
                 'label': "Select OpenGL Device:",
                 'text': "OpenGL device to use.",
-                'items': ["unset", "program decides (default)", "llvmpipe (software rendering)", "zink"]
+                'items': ["unset", "program decides (default)"]
             },
             'render_vk_device': {
                 'label': "Select Vulkan Device:",
@@ -928,7 +928,8 @@ class GPULaunchManager:
         if category_name == "RenderSelector":
             if GPULaunchManager.get_available_glxinfo():
                 opengl_devices, device_map = GPULaunchManager.get_opengl_device_options()
-                opengl_options = ["unset", "program decides (default)"] + opengl_devices
+                default_items = GPULaunchManager.GPU_SETTINGS_CATEGORIES["RenderSelector"]['render_gl_device']['items']
+                opengl_options = default_items + opengl_devices
                 widgets['render_gl_device'].clear()
                 widgets['render_gl_device'].addItems(opengl_options)
                 widgets['render_gl_device'].device_map = device_map
@@ -938,7 +939,8 @@ class GPULaunchManager:
 
             if GPULaunchManager.get_available_vulkaninfo():
                 vulkan_devices, device_map = GPULaunchManager.get_vulkan_device_options()
-                vulkan_options = ["unset", "program decides (default)"] + vulkan_devices
+                default_items = GPULaunchManager.GPU_SETTINGS_CATEGORIES["RenderSelector"]['render_vk_device']['items']
+                vulkan_options = default_items + vulkan_devices
                 widgets['render_vk_device'].clear()
                 widgets['render_vk_device'].addItems(vulkan_options)
                 widgets['render_vk_device'].device_map = device_map
