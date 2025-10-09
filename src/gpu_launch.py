@@ -18,15 +18,6 @@ class GPULaunchManager:
                     'values': {'default interval 0': '1', 'default interval 1': '2', 'on': '3', 'off': '0'}
                 }
             },
-            'mesa_vk_vsync': {
-                'label': "Vulkan Vsync:",
-                'text': "Vulkan vertical synchronization.",
-                'items': ["unset", "program decides (default)", "mailbox", "adaptive vsync", "on", "off"],
-                'env_mapping': {
-                    'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
-                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
-                }
-            },
             'mesa_gl_thread_opt': {
                 'label': "OpenGL Thread Optimizations:",
                 'text': "Multi-threaded OpenGL command processing. Might improve or worsen OpenGL performance depending on the program being run.",
@@ -34,15 +25,6 @@ class GPULaunchManager:
                 'env_mapping': {
                     'var_names': ['mesa_glthread'],
                     'values': {'on': 'true'}
-                }
-            },
-            'mesa_vk_submit_thread': {
-                'label': "Vulkan Submit Thread:",
-                'text': "Dedicated thread for Vulkan command submission. Separates command submission from command recording, might reduce CPU overhead.",
-                'items': ["unset", "on", "off (default)"],
-                'env_mapping': {
-                    'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
-                    'values': {'on': '1'}
                 }
             },
             'mesa_gl_dither': {
@@ -61,24 +43,6 @@ class GPULaunchManager:
                 'env_mapping': {
                     'var_names': ['DRI_NO_MSAA'],
                     'values': {'off': '1'}
-                }
-            },
-            'mesa_shader_cache': {
-                'label': "Shader Cache:",
-                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
-                'items': ["unset", "on (default)", "off"],
-                'env_mapping': {
-                    'var_names': ['MESA_SHADER_CACHE_DISABLE', 'MESA_GLSL_CACHE_DISABLE'],
-                    'values': {'off': 'true'}
-                }
-            },
-            'mesa_cache_size': {
-                'label': "Shader Cache Size (GB):",
-                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
-                'items': ["unset", "program decides (default)"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
-                'env_mapping': {
-                    'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
-                    'direct_value': True
                 }
             },
             'mesa_gl_error_check': {
@@ -108,12 +72,48 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
+            'mesa_vk_vsync': {
+                'label': "Vulkan Vsync:",
+                'text': "Vulkan vertical synchronization.",
+                'items': ["unset", "program decides (default)", "mailbox", "adaptive vsync", "on", "off"],
+                'env_mapping': {
+                    'var_names': ['MESA_VK_WSI_PRESENT_MODE'],
+                    'values': {'mailbox': 'mailbox', 'adaptive vsync': 'relaxed', 'on': 'fifo', 'off': 'immediate'}
+                }
+            },
+            'mesa_vk_submit_thread': {
+                'label': "Vulkan Submit Thread:",
+                'text': "Dedicated thread for Vulkan command submission. Separates command submission from command recording, might reduce CPU overhead.",
+                'items': ["unset", "on", "off (default)"],
+                'env_mapping': {
+                    'var_names': ['MESA_VK_ENABLE_SUBMIT_THREAD'],
+                    'values': {'on': '1'}
+                }
+            },
             'mesa_vk_fake': {
                 'label': "Vulkan Version Spoofing:",
                 'text': "Report a different Vulkan version to applications. Bypasses version checks for games that artificially restrict compatibility.",
                 'items': ["unset", "off (default)", "1.1", "1.2", "1.3", "1.4"],
                 'env_mapping': {
                     'var_names': ['MESA_VK_VERSION_OVERRIDE'],
+                    'direct_value': True
+                }
+            },
+            'mesa_shader_cache': {
+                'label': "Shader Cache:",
+                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
+                'items': ["unset", "on (default)", "off"],
+                'env_mapping': {
+                    'var_names': ['MESA_SHADER_CACHE_DISABLE', 'MESA_GLSL_CACHE_DISABLE'],
+                    'values': {'off': 'true'}
+                }
+            },
+            'mesa_cache_size': {
+                'label': "Shader Cache Size (GB):",
+                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
+                'items': ["unset", "program decides (default)"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
+                'env_mapping': {
+                    'var_names': ['MESA_SHADER_CACHE_MAX_SIZE', 'MESA_GLSL_CACHE_MAX_SIZE'],
                     'direct_value': True
                 }
             },
@@ -312,30 +312,12 @@ class GPULaunchManager:
                     'extract_prefix': True
                 }
             },
-            'nvidia_shader_cache': {
-                'label': "Shader Cache:",
-                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
-                'items': ["unset", "on (default)", "off"],
-                'env_mapping': {
-                    'var_names': ['__GL_SHADER_DISK_CACHE'],
-                    'values': {'off': '0'}
-                }
-            },
-            'nvidia_shader_cache_size': {
-                'label': "Shader Cache Size (GB):",
-                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
-                'items': ["unset", "program decides (default)"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
-                'env_mapping': {
-                    'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
-                    'convert_to_bytes': True
-                }
-            },
-            'nvidia_glsl_ext_requirements': {
-                'label': "Ignore GLSL Extensions Requirements:",
-                'text': "Ignore GLSL extension requirements. Allows GLSL shaders to compile without proper #extension directives or compatibility profile declarations. Fixes shader compilation errors in some games.",
+            'nvidia_smooth_motion': {
+                'label': "Smooth Motion (RTX 40 Series+):",
+                'text': "Smooth motion feature (RTX 40 Series+). Optical flow frame interpolation that generates intermediate frames for smoother motion. Vulkan only.",
                 'items': ["unset", "on", "off (default)"],
                 'env_mapping': {
-                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQS'],
+                    'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
                     'values': {'on': '1'}
                 }
             },
@@ -375,12 +357,30 @@ class GPULaunchManager:
                     'direct_value': True
                 }
             },
-            'nvidia_smooth_motion': {
-                'label': "Smooth Motion (RTX 40 Series+):",
-                'text': "Smooth motion feature (RTX 40 Series+). Optical flow frame interpolation that generates intermediate frames for smoother motion. Vulkan only.",
+            'nvidia_shader_cache': {
+                'label': "Shader Cache:",
+                'text': "Disk-based shader caching. Stores compiled shaders to disk to eliminate compilation stuttering on subsequent launches.",
+                'items': ["unset", "on (default)", "off"],
+                'env_mapping': {
+                    'var_names': ['__GL_SHADER_DISK_CACHE'],
+                    'values': {'off': '0'}
+                }
+            },
+            'nvidia_shader_cache_size': {
+                'label': "Shader Cache Size (GB):",
+                'text': "Maximum size for the shader cache. Larger caches store more compiled shaders but consume more disk space.",
+                'items': ["unset", "program decides (default)"] + [str(i) for i in range(1, 11)] + [str(i) for i in [25, 50, 75, 100]],
+                'env_mapping': {
+                    'var_names': ['__GL_SHADER_DISK_CACHE_SIZE'],
+                    'convert_to_bytes': True
+                }
+            },
+            'nvidia_glsl_ext_requirements': {
+                'label': "Ignore GLSL Extensions Requirements:",
+                'text': "Ignore GLSL extension requirements. Allows GLSL shaders to compile without proper #extension directives or compatibility profile declarations. Fixes shader compilation errors in some games.",
                 'items': ["unset", "on", "off (default)"],
                 'env_mapping': {
-                    'var_names': ['NVPRESENT_ENABLE_SMOOTH_MOTION'],
+                    'var_names': ['__GL_IGNORE_GLSL_EXT_REQS'],
                     'values': {'on': '1'}
                 }
             },
