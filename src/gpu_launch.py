@@ -694,12 +694,12 @@ class GPULaunchManager:
         return devices, device_map
 
     @staticmethod
-    def get_opengl_gpu_options():
+    def get_opengl_device_options():
         """
-        Get available OpenGL GPU options from glxinfo.
+        Get available OpenGL device options from glxinfo.
         """
-        gpu_list = []
-        gpu_env_map = {}
+        devices = []
+        device_map = {}
 
         if not GPULaunchManager.get_available_glxinfo():
             fixed_options = {
@@ -715,10 +715,10 @@ class GPULaunchManager:
             }
 
             for name, env_vars in fixed_options.items():
-                gpu_env_map[name] = env_vars
+                device_map[name] = env_vars
 
             options = ["unset"] + list(fixed_options.keys())
-            return options, gpu_env_map
+            return options, device_map
 
         try:
             process = QProcess()
@@ -732,13 +732,13 @@ class GPULaunchManager:
                 output = process.readAllStandardOutput().data().decode()
                 for line in output.split('\n'):
                     if "OpenGL renderer string:" in line:
-                        gpu_name = line.split(':', 1)[1].strip()
-                        gpu_name = GPULaunchManager.truncate_name(gpu_name)
-                        gpu_name = gpu_name.lower()
+                        device_name = line.split(':', 1)[1].strip()
+                        device_name = GPULaunchManager.truncate_name(device_name)
+                        device_name = device_name.lower()
 
-                        if gpu_name not in gpu_env_map:
-                            gpu_list.append(gpu_name)
-                            gpu_env_map[gpu_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
+                        if device_name not in device_map:
+                            devices.append(device_name)
+                            device_map[device_name] = {"__GLX_VENDOR_LIBRARY_NAME": "nvidia"}
                         break
         except Exception:
             pass
@@ -760,15 +760,15 @@ class GPULaunchManager:
                     renderer_found = False
                     for line in output.split('\n'):
                         if "OpenGL renderer string:" in line:
-                            gpu_name = line.split(':', 1)[1].strip()
-                            gpu_name = GPULaunchManager.truncate_name(gpu_name)
-                            gpu_name = gpu_name.lower()
+                            device_name = line.split(':', 1)[1].strip()
+                            device_name = GPULaunchManager.truncate_name(device_name)
+                            device_name = device_name.lower()
 
-                            if "llvmpipe" in gpu_name or gpu_name in gpu_env_map:
+                            if "llvmpipe" in device_name or device_name in device_map:
                                 break
 
-                            gpu_list.append(gpu_name)
-                            gpu_env_map[gpu_name] = {
+                            devices.append(device_name)
+                            device_map[device_name] = {
                                 "__GLX_VENDOR_LIBRARY_NAME": "mesa",
                                 "DRI_PRIME": str(index)
                             }
@@ -795,11 +795,11 @@ class GPULaunchManager:
         }
 
         for name, env_vars in fixed_options.items():
-            gpu_env_map[name] = env_vars
+            device_map[name] = env_vars
 
-        options = gpu_list + list(fixed_options.keys())
+        options = devices + list(fixed_options.keys())
 
-        return options, gpu_env_map
+        return options, device_map
 
     @staticmethod
     def create_gpu_settings_tabs():
@@ -927,11 +927,11 @@ class GPULaunchManager:
 
         if category_name == "RenderSelector":
             if GPULaunchManager.get_available_glxinfo():
-                opengl_devices, gpu_env_map = GPULaunchManager.get_opengl_gpu_options()
+                opengl_devices, device_map = GPULaunchManager.get_opengl_device_options()
                 opengl_options = ["unset", "program decides (default)"] + opengl_devices
                 widgets['render_gl_device'].clear()
                 widgets['render_gl_device'].addItems(opengl_options)
-                widgets['render_gl_device'].env_map = gpu_env_map
+                widgets['render_gl_device'].device_map = device_map
             else:
                 widgets['render_gl_device'].setEnabled(False)
                 widgets['render_gl_device'].setToolTip("glxinfo not available - OpenGL device selection disabled")
@@ -1178,8 +1178,8 @@ class GPULaunchManager:
             if "(default)" in selected:
                 unset_vars.extend(["__GLX_VENDOR_LIBRARY_NAME", "LIBGL_ALWAYS_SOFTWARE", "MESA_LOADER_DRIVER_OVERRIDE", "LIBGL_KOPPER_DRI2", "DRI_PRIME"])
             elif selected != "unset":
-                env_map = getattr(render_widgets['render_gl_device'], 'env_map', {})
-                env_dict = env_map.get(selected, {})
+                device_map = getattr(render_widgets['render_gl_device'], 'device_map', {})
+                env_dict = device_map.get(selected, {})
                 for var, value in env_dict.items():
                     env_vars.append(f"{var}={value}")
 
