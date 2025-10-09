@@ -8,51 +8,61 @@ class WelcomeManager:
     def get_welcome_info():
         """
         Returns a list of dictionaries containing welcome section information.
+        Each section can have: title, content blocks (text, code blocks with optional labels)
         """
         return [
             {
                 "title": "Welcome to volt-gui:",
-                "description": "First of all, thanks for using my tool! If you have any feature requests or issues, please report them to the volt-gui GitHub repository.",
-                "copyable_blocks": []
+                "content": [
+                    {"type": "text", "text": "First of all, thanks for using my tool! If you have any feature requests or issues, please report them to the volt-gui GitHub repository."}
+                ]
             },
             {
                 "title": "Optional Dependencies:",
-                "description": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
-                            "\n\n• MangoHud if you want to make use of the MangoHud Settings. Both the native or the Flatpak version satisfy the dependency."
-                            "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:",
-                "copyable_blocks": ["flatpak install mangohud"],
-                "additional_text": "• glxinfo is required to use the OpenGL Render Selector."
-                                "\n\n• vulkaninfo and the Vulkan Mesa layer are required to use the Vulkan Render Selector. One way to check if you have the Vulkan Mesa layer installed is to run this command:",
-                "copyable_blocks_after_additional": ["MESA_VK_DEVICE_SELECT=list vulkaninfo"],
-                "example_output": """selectable devices:
+                "content": [
+                    {"type": "text", "text": "• scx schedulers and Linux Kernel >= 6.12 if you want to make use of the CPU Pluggable Schedulers."
+                                "\n\n• MangoHud if you want to make use of the MangoHud Settings. Both the native or the Flatpak version satisfy the dependency."
+                                "\n\n• Note: You might need to install both versions, as the one installed with your distro package manager will be used for native programs, while the flatpak version will be used for flatpak programs. MangoHud is available on almost any distro and the flatpak version is quite easy to install with:"},
+                    {"type": "code", "code": "flatpak install mangohud"},
+                    {"type": "text", "text": "• glxinfo is required to use the OpenGL Render Selector."
+                                "\n\n• vulkaninfo and the Vulkan Mesa layer are required to use the Vulkan Render Selector. One way to check if you have the Vulkan Mesa layer installed is to run this command:"},
+                    {"type": "code", "code": "MESA_VK_DEVICE_SELECT=list vulkaninfo"},
+                    {"type": "text", "text": "If the output doesn't look like the text below, then you don't have the Vulkan Mesa layer installed on your PC."},
+                    {"type": "code", "code": """selectable devices:
     GPU 0: 10de:128b "NVIDIA GeForce GT 710" discrete GPU 0000:01:00.0
-    GPU 1: 10005:0 "llvmpipe (LLVM 20.1.8, 256 bits)" CPU 0000:00:00.0""",
-                "closing_text": "If the output doesn't look like this text above, then you don't have the Vulkan Mesa layer installed on your PC."
+    GPU 1: 10005:0 "llvmpipe (LLVM 20.1.8, 256 bits)" CPU 0000:00:00.0"""}
+                ]
             },
             {
                 "title": "Key Notes:",
-                "description": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
-                            "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
-                            "\n\n• GPU settings labeled with (default) mean that, instead of setting the related environment variable, it will be unset. This ensures that the program or game run through the `volt` script receives an environment without that variable, guaranteeing the setting is truly at its default value."
-                            "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
-                            "\n\n• All settings include tooltips with descriptions that appear when you hover your mouse over the input or switch widget. I do my best to provide accurate and helpful descriptions. If you notice any issues, please report them on the project GitHub."
-                            "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
-                            "\n\n• Note: If you use any of the MangoHud Settings, you might have some issues running some games, hopefully MangoHud fixes those issues on the future."
-                            "\n\n• You can use the Options Tab settings to configure the volt-gui behavior."
-                            "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
-                            "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file.",
-                "copyable_blocks": []
+                "content": [
+                    {"type": "text", "text": "• The apply buttons in the CPU/GPU/Disk/Kernel/Launch Options tabs are interconnected, meaning that pressing one of those apply buttons will apply all settings from these tabs. This helps avoid having to go tab by tab to apply all the settings."
+                                "\n\n• The settings that have the `unset` value, or in the case of the Kernel/Launch Options blank space on the text input, will be ignored when pressing apply."
+                                "\n\n• GPU settings labeled with (default) mean that, instead of setting the related environment variable, it will be unset. This ensures that the program or game run through the `volt` script receives an environment without that variable, guaranteeing the setting is truly at its default value."
+                                "\n\n• Kernel/Disk/CPU settings apply systemwide immediately, while the GPU settings are saved in the `volt` script when you press the apply button."
+                                "\n\n• All settings include tooltips with descriptions that appear when you hover your mouse over the input or switch widget. I do my best to provide accurate and helpful descriptions. If you notice any issues, please report them on the project GitHub."
+                                "\n\n• Note: If the OpenGL/Vulkan Render Selector its being used, it might broke some Linux Native games."
+                                "\n\n• Note: If you use any of the MangoHud Settings, you might have some issues running some games, hopefully MangoHud fixes those issues on the future."
+                                "\n\n• You can use the Options Tab settings to configure the volt-gui behavior, including enabling an update checker."
+                                "\n\n• You can create, use, and delete different profiles. When a profile is created, it will base its settings on the current profile being used."
+                                "\n\n• The settings applied by the program are lost when the system is shut down or rebooted. The only exception is the `volt` script, as it is a physical file."},
+                    {"type": "code", "code": "/usr/local/bin/volt", "label": "`volt` Script Path:"}
+                ]
             },
             {
                 "title": "Apply the GPU Configuration:",
-                "description": "The GPU settings are applied through the 'volt' script. Always launch games with the 'volt' script prepended to use these options. Examples:",
-                "copyable_blocks": ["volt", "volt %command%", "volt flatpak run net.pcsx2.PCSX2"],
-                "labels": ["Lutris (Native):", "Steam (Native):", "Flatpak Program:"]
+                "content": [
+                    {"type": "text", "text": "The GPU settings are applied through the 'volt' script. Always launch games with the 'volt' script prepended to use these options. Examples:"},
+                    {"type": "code", "code": "volt", "label": "Lutris (Native):"},
+                    {"type": "code", "code": "volt %command%", "label": "Steam (Native):"},
+                    {"type": "code", "code": "volt flatpak run net.pcsx2.PCSX2", "label": "Flatpak Program:"}
+                ]
             },
             {
-                "title": "Setup Complete!",
-                "description": "You can disable or enable this welcome message in the Options Tab.\n\nThanks for reading the welcome guide!",
-                "copyable_blocks": []
+                "title": "All Set!",
+                "content": [
+                    {"type": "text", "text": "You can disable or enable this welcome message in the Options Tab.\n\nThanks for reading the welcome guide!"}
+                ]
             }
         ]
 
@@ -147,7 +157,28 @@ class WelcomeManager:
         return frame
 
     @staticmethod
-    def create_step_page(section_info, step_number):
+    def create_text_label(text):
+        """
+        Creates a styled text label.
+        """
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignLeft)
+        label.setWordWrap(True)
+        label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 6px 0px 0px 0px;")
+        label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        return label
+
+    @staticmethod
+    def create_code_label(text):
+        """
+        Creates a label for code blocks.
+        """
+        label = QLabel(text)
+        label.setStyleSheet("color: #E0E0E0; font-size: 13px; margin-top: 8px; margin-bottom: 1px;")
+        return label
+
+    @staticmethod
+    def create_step_page(section_info):
         """
         Creates a page widget for a single welcome step.
         """
@@ -173,47 +204,22 @@ class WelcomeManager:
         title_label.setWordWrap(True)
         content_layout.addWidget(title_label)
 
-        desc_label = QLabel(section_info["description"])
-        desc_label.setAlignment(Qt.AlignLeft)
-        desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 0px;")
-        desc_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        content_layout.addWidget(desc_label)
+        for item in section_info.get("content", []):
+            item_type = item.get("type")
 
-        copyable_blocks = section_info.get("copyable_blocks", [])
-        labels = section_info.get("labels", [])
+            if item_type == "text":
+                text_label = WelcomeManager.create_text_label(item["text"])
+                if item == section_info["content"][0]:
+                    text_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 0px;")
+                content_layout.addWidget(text_label)
 
-        for i, block in enumerate(copyable_blocks):
-            if i < len(labels):
-                label = QLabel(labels[i])
-                label.setStyleSheet("color: #E0E0E0; font-size: 13px; margin-top: 8px; margin-bottom: 1px;")
-                content_layout.addWidget(label)
+            elif item_type == "code":
+                if "label" in item:
+                    label = WelcomeManager.create_code_label(item["label"])
+                    content_layout.addWidget(label)
 
-            code_block = WelcomeManager.create_copyable_code_block(block)
-            content_layout.addWidget(code_block)
-
-        if "additional_text" in section_info:
-            additional_label = QLabel(section_info["additional_text"])
-            additional_label.setAlignment(Qt.AlignLeft)
-            additional_label.setWordWrap(True)
-            additional_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 6px 0px 0px 0px;")
-            content_layout.addWidget(additional_label)
-
-            if "copyable_blocks_after_additional" in section_info:
-                for block in section_info["copyable_blocks_after_additional"]:
-                    code_block = WelcomeManager.create_copyable_code_block(block)
-                    content_layout.addWidget(code_block)
-
-        if "example_output" in section_info:
-            example_block = WelcomeManager.create_copyable_code_block(section_info["example_output"])
-            content_layout.addWidget(example_block)
-
-        if "closing_text" in section_info:
-            closing_label = QLabel(section_info["closing_text"])
-            closing_label.setAlignment(Qt.AlignLeft)
-            closing_label.setWordWrap(True)
-            closing_label.setStyleSheet("color: #E0E0E0; font-size: 14px; line-height: 1.5; padding: 0px; margin: 6px 0px 0px 0px;")
-            content_layout.addWidget(closing_label)
+                code_block = WelcomeManager.create_copyable_code_block(item["code"])
+                content_layout.addWidget(code_block)
 
         content_layout.addStretch()
         scroll_area.setWidget(content_widget)
@@ -266,12 +272,9 @@ class WelcomeManager:
         widgets['progress_label'].setText(f"Step {current_step + 1} of {total_steps}")
         widgets['back_button'].setEnabled(current_step > 0)
 
-        if current_step == total_steps - 1:
-            widgets['next_button'].hide()
-            widgets['finish_button'].show()
-        else:
-            widgets['next_button'].show()
-            widgets['finish_button'].hide()
+        is_last_step = current_step == total_steps - 1
+        widgets['next_button'].setVisible(not is_last_step)
+        widgets['finish_button'].setVisible(is_last_step)
 
     @staticmethod
     def go_back(widgets):
@@ -288,7 +291,8 @@ class WelcomeManager:
         """
         Go to the next step.
         """
-        if widgets['current_step'] < len(WelcomeManager.get_welcome_info()) - 1:
+        total_steps = len(WelcomeManager.get_welcome_info())
+        if widgets['current_step'] < total_steps - 1:
             widgets['current_step'] += 1
             widgets['stacked_widget'].setCurrentIndex(widgets['current_step'])
             WelcomeManager.update_navigation(widgets)
@@ -298,11 +302,12 @@ class WelcomeManager:
         """
         Finish the wizard and close the window.
         """
-        if 'welcome_window' in widgets and widgets['welcome_window']:
-            widgets['welcome_window'].close()
+        welcome_window = widgets.get('welcome_window')
+        if welcome_window:
+            welcome_window.close()
 
     @staticmethod
-    def create_welcome_window(main_window):
+    def create_welcome_window():
         """
         Creates a separate welcome window with the welcome wizard.
         """
@@ -315,13 +320,14 @@ class WelcomeManager:
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(16)
 
-        widgets = {}
-        widgets['current_step'] = 0
-        widgets['welcome_window'] = welcome_window
-        widgets['stacked_widget'] = QStackedWidget()
+        widgets = {
+            'current_step': 0,
+            'welcome_window': welcome_window,
+            'stacked_widget': QStackedWidget()
+        }
 
-        for i, section in enumerate(WelcomeManager.get_welcome_info()):
-            page = WelcomeManager.create_step_page(section, i)
+        for section in WelcomeManager.get_welcome_info():
+            page = WelcomeManager.create_step_page(section)
             widgets['stacked_widget'].addWidget(page)
 
         main_layout.addWidget(widgets['stacked_widget'], 1)
