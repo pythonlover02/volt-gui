@@ -25,35 +25,37 @@ A graphical interface for configuring GPU, CPU, Disk, and Kernel performance set
 
 ## What you can do?:
 
-- CPU Management:
+### CPU Management:
   - Governor Selection: Choose from available CPU governors.
   - Adjust the maximum and minimum CPU frequencies within the permitted range.
   - Scheduler Configuration: Select, start and stop CPU pluggable schedulers (requires [scx](https://github.com/sched-ext/scx) and `Linux Kernel >= 6.12` or a `Custom Patched Kernel`).
-- GPU Configuration:
+### GPU Configuration:
   - Mesa Drivers: Configure Mesa Drivers specific environment variables.
   - NVIDIA Drivers: Configure NVIDIA Proprietary Drivers specific environment variables.
   - Dynamic Render Selection: Select renderers for both OpenGL and Vulkan applications. The program dynamically sets the required environment variables depending on your GPU.
   - Configure various MangoHud options.
   - Configure lsfg-vk settings
   - All GPU settings are automatically added to the `volt` script.
-- Disk Configuration:
+### Disk Configuration:
   - Change Disks Schedulers
-- Configure Kernel Parameters related to:
+### Configure Kernel Parameters related to:
   - CPU
   - Memory
   - Disk
   - System
   - Network
   - Security
-- Add custom launch options to the `volt` script. These will be passed to the executed program. Example:
+### Add custom launch options to the `volt` script:
+
+These will be passed to the executed program. Example:
   ```
   gamemoderun PROTON_USE_WINED3D=1
   ```
-- Extras:
+### Extras:
   - Useful Links and Programs for the average Linux Gamer.
-- Options:
+### Options:
   - Configure settings specific to the volt-gui program itself.
-- Create or Delete Profiles:
+### Create or Delete Profiles:
   - Each profile has its own set of configurations, which can be applied through the program or system tray.
 
 ## Build/Test Requirements:
