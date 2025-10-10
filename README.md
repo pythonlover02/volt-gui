@@ -126,13 +126,13 @@ If this software is not provided, its options will be locked.
 
 In the case you want to contribute to the project you can use the provided `test.sh` script to test the changes you made. This script will create a Python virtual environment if one does not already exist. This way, you don't have to install the program dependencies systemwide.
 
-The first time you run it, use the -c flag that will also copy the `volt-helper` to `/usr/local/bin/`, as the program requires it for appliying the settings:
+The first time you run it, use the -c flag and sudo, that will copy the `volt-helper` to `/usr/local/bin/`, as the program requires it for appliying the settings:
 
 ```
-./test.sh -c
+sudo ./test.sh -c
 ```
 
-After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag to avoid unnecessary overwrites of the script:
+After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag and sudo, this will create the pyenv and run the program:
 
 ```
 ./test.sh

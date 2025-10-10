@@ -15,8 +15,6 @@ SRC_FILE="src/volt-gui.py"
 HELPER_SCRIPT="scripts/volt-helper"
 INSTALL_DIR="/usr/local/bin"
 
-COPY_HELPER=false
-
 check_commands() {
     local commands=("python3" "pip")
     for cmd in "${commands[@]}"; do
@@ -62,25 +60,15 @@ update_dependencies() {
 }
 
 install_helper() {
-    if [[ "$COPY_HELPER" == true ]]; then
-        if [[ -f "$HELPER_SCRIPT" ]]; then
-            echo -e "${CYAN}Installing helper script...${NC}"
-            mkdir -p "$INSTALL_DIR"
-
-            if [[ ! -w "$INSTALL_DIR" ]]; then
-                echo -e "${YELLOW}Installing to $INSTALL_DIR requires sudo privileges${NC}"
-                sudo cp "$HELPER_SCRIPT" "$INSTALL_DIR/"
-                sudo chmod +x "$INSTALL_DIR/$(basename "$HELPER_SCRIPT")"
-            else
-                cp "$HELPER_SCRIPT" "$INSTALL_DIR/"
-                chmod +x "$INSTALL_DIR/$(basename "$HELPER_SCRIPT")"
-            fi
-
-            echo -e "${GREEN}Helper script installed to: ${YELLOW}$INSTALL_DIR/$(basename "$HELPER_SCRIPT")${NC}"
-        else
-            echo -e "${YELLOW}Warning: Helper script $HELPER_SCRIPT not found, skipping installation${NC}"
-        fi
+    if [[ ! -f "$HELPER_SCRIPT" ]]; then
+        echo -e "${RED}Error: Helper script $HELPER_SCRIPT not found${NC}" >&2
+        exit 1
     fi
+
+    echo -e "${CYAN}Installing helper script...${NC}"
+    cp "$HELPER_SCRIPT" "$INSTALL_DIR/"
+    chmod +x "$INSTALL_DIR/$(basename "$HELPER_SCRIPT")"
+    echo -e "${GREEN}Helper script installed to: ${YELLOW}$INSTALL_DIR/$(basename "$HELPER_SCRIPT")${NC}"
 }
 
 run_application() {
@@ -95,27 +83,22 @@ run_application() {
     fi
 }
 
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -c)
-                COPY_HELPER=true
-                shift
-                ;;
-            *)
-                echo -e "${RED}Error: Unknown option '$1'${NC}" >&2
-                echo -e "${CYAN}Usage: $0 [-c]${NC}" >&2
-                echo -e "  -c    Copy volt-helper script to $INSTALL_DIR" >&2
-                exit 1
-                ;;
-        esac
-    done
-}
-
 main() {
-    trap EXIT
+    if [[ "${1:-}" == "-c" ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            echo -e "${RED}Error: Installing helper script requires sudo privileges${NC}" >&2
+            echo -e "${YELLOW}Please run: sudo $0 -c${NC}" >&2
+            exit 1
+        fi
+        install_helper
+        exit 0
+    fi
 
-    parse_args "$@"
+    if [[ $EUID -eq 0 ]]; then
+        echo -e "${RED}Error: Do not run the application with sudo${NC}" >&2
+        echo -e "${YELLOW}Please run without sudo: $0${NC}" >&2
+        exit 1
+    fi
 
     check_commands
     verify_files
@@ -125,7 +108,6 @@ main() {
     source "$VENV_DIR/bin/activate"
 
     update_dependencies
-    install_helper
 
     echo -e "\n${GREEN}Setup complete! Starting application...${NC}"
     echo -e "${CYAN}────────────────────────────────────────${NC}"
