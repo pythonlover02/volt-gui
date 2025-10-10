@@ -614,7 +614,9 @@ class GPULaunchManager:
                 process.start("flatpak", ["list"])
 
                 if process.waitForFinished(10000):
-                    output = process.readAllStandardOutput().data().decode()
+                    stdout = process.readAllStandardOutput().data().decode()
+                    stderr = process.readAllStandardError().data().decode()
+                    output = stdout + stderr
                     if program_name.lower() in output.lower():
                         return True
             except Exception:
@@ -686,7 +688,9 @@ class GPULaunchManager:
             process.start("glxinfo")
 
             if process.waitForFinished(10000):
-                output = process.readAllStandardOutput().data().decode()
+                stdout = process.readAllStandardOutput().data().decode()
+                stderr = process.readAllStandardError().data().decode()
+                output = stdout + stderr
                 for line in output.split('\n'):
                     if "OpenGL renderer string:" in line:
                         device_name = line.split(':', 1)[1].strip()
@@ -712,7 +716,9 @@ class GPULaunchManager:
                 process.start("glxinfo")
 
                 if process.waitForFinished(10000):
-                    output = process.readAllStandardOutput().data().decode()
+                    stdout = process.readAllStandardOutput().data().decode()
+                    stderr = process.readAllStandardError().data().decode()
+                    output = stdout + stderr
 
                     renderer_found = False
                     for line in output.split('\n'):
@@ -775,7 +781,9 @@ class GPULaunchManager:
             process.start("vulkaninfo")
 
             if process.waitForFinished(10000):
-                output = process.readAllStandardOutput().data().decode()
+                stdout = process.readAllStandardOutput().data().decode()
+                stderr = process.readAllStandardError().data().decode()
+                output = stdout + stderr
                 lines = output.split('\n')
 
                 current_device = {}

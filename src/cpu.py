@@ -143,7 +143,9 @@ class CPUManager:
             process.start("ps", ["-eo", "comm"])
 
             if process.waitForFinished(10000):
-                output = process.readAllStandardOutput().data().decode()
+                stdout = process.readAllStandardOutput().data().decode()
+                stderr = process.readAllStandardError().data().decode()
+                output = stdout + stderr
                 processes = output.strip().splitlines()
                 return next((p.strip() for p in processes if p.strip().startswith("scx_")), "none")
             return "none"
