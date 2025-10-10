@@ -182,6 +182,7 @@ create_gpu_script() {
     local script_content="$1"
     local volt_script="/usr/local/bin/volt"
 
+    mkdir -p "$(dirname "$volt_script")"
     echo -e "$script_content" > "$volt_script" 2>/dev/null
     chmod 755 "$volt_script" 2>/dev/null
 }

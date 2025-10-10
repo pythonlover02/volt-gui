@@ -28,19 +28,15 @@ if [[ ! -f "$HELPER_SCRIPT" ]]; then
   exit 1
 fi
 
-echo -e "\033[34mEnsuring installation directory exists...\033[0m"
-mkdir -p "$INSTALL_DIR"
-
 echo -e "\033[34mInstalling main executable...\033[0m"
+mkdir -p "$INSTALL_DIR"
 install -v -m 755 -T "$EXECUTABLE" "$INSTALL_DIR/volt-gui"
 
 echo -e "\n\033[34mInstalling helper script...\033[0m"
 install -v -m 755 -T "$HELPER_SCRIPT" "$INSTALL_DIR/volt-helper"
 
-echo -e "\n\033[34mEnsuring desktop applications directory exists...\033[0m"
+echo -e "\n\033[34mCreating desktop entry...\033[0m"
 mkdir -p "$(dirname "$DESKTOP_FILE")"
-
-echo -e "\033[34mCreating desktop entry...\033[0m"
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Name=volt-gui

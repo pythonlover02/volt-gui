@@ -65,6 +65,7 @@ install_helper() {
     if [[ "$COPY_HELPER" == true ]]; then
         if [[ -f "$HELPER_SCRIPT" ]]; then
             echo -e "${CYAN}Installing helper script...${NC}"
+            mkdir -p "$INSTALL_DIR"
 
             if [[ ! -w "$INSTALL_DIR" ]]; then
                 echo -e "${YELLOW}Installing to $INSTALL_DIR requires sudo privileges${NC}"
