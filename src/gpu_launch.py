@@ -1086,6 +1086,7 @@ class GPULaunchManager:
         if category_name == "MangoHud":
             mangohud_parts = []
             has_non_default_settings = False
+            has_default_settings = False
 
             for setting_key, widget in widgets.items():
                 if setting_key.endswith('_apply_button') or setting_key.endswith('_browse') or setting_key.endswith('_clear'):
@@ -1105,6 +1106,7 @@ class GPULaunchManager:
                     if value == "unset":
                         continue
                     elif "(default)" in value:
+                        has_default_settings = True
                         continue
                     else:
                         has_non_default_settings = True
@@ -1130,7 +1132,7 @@ class GPULaunchManager:
             if mangohud_parts and has_non_default_settings:
                 config_value = ','.join(mangohud_parts)
                 env_vars.append(f'MANGOHUD_CONFIG={config_value}')
-            elif not has_non_default_settings:
+            elif has_default_settings and not has_non_default_settings:
                 unset_vars.append('MANGOHUD_CONFIG')
         else:
             for setting_key, widget in widgets.items():
