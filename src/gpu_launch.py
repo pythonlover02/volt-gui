@@ -805,8 +805,6 @@ class GPULaunchManager:
 
                             if 'llvmpipe' in display_name:
                                 display_name = 'llvmpipe (software rendering)'
-                            else:
-                                display_name = truncated_name.lower()
 
                             device_key = f"{current_device['vendorID']}:{current_device['deviceID']}"
                             devices.append(display_name)
