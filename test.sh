@@ -15,6 +15,12 @@ SRC_FILE="src/volt-gui.py"
 HELPER_SCRIPT="scripts/volt-helper"
 INSTALL_DIR="/usr/local/bin"
 
+cleanup() {
+    if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+        deactivate 2>/dev/null || true
+    fi
+}
+
 check_commands() {
     local commands=("python3" "pip")
     for cmd in "${commands[@]}"; do
@@ -83,7 +89,24 @@ run_application() {
     fi
 }
 
+remove_venv() {
+    if [[ -d "$VENV_DIR" ]]; then
+        echo -e "${CYAN}Removing virtual environment: $VENV_DIR${NC}"
+        rm -rf "$VENV_DIR"
+        echo -e "${GREEN}Virtual environment removed successfully${NC}"
+    else
+        echo -e "${YELLOW}No virtual environment found at: $VENV_DIR${NC}"
+    fi
+}
+
 main() {
+    trap cleanup EXIT
+
+    if [[ "${1:-}" == "-r" ]]; then
+        remove_venv
+        exit 0
+    fi
+
     if [[ "${1:-}" == "-c" ]]; then
         if [[ $EUID -ne 0 ]]; then
             echo -e "${RED}Error: Installing helper script requires sudo privileges${NC}" >&2

@@ -132,14 +132,26 @@ The first time you run it, use the -c flag and sudo, that will copy the `volt-he
 sudo ./test.sh -c
 ```
 
-After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag and sudo, this will create the pyenv and run the program:
+After this unless you make changes to the `volt-helper`, or the script have been updated, just run it without the flag and sudo, this will create the `py_env` folder and run the program:
 
 ```
 ./test.sh
 ```
 
+To delete the `py_env` folder you can use:
+
+```
+./test.sh -r
+```
+
+or:
+
+```
+sudo ./test.sh -r
+```
+
 > [!NOTE]
-> You can use the `remove.sh` script to remove the `volt-helper`. The `py_env` folder should be deleted in the case you created it with your system python, and you want to use a python version that its inside a `distrobox` box, or vice versa.
+> You can use the `remove.sh` script to remove the `volt-helper`. The `py_env` folder should be deleted if it becomes corrupted, or if it was created with your system python, and you want to use a python version that its inside a `distrobox` box, or vice versa.
 
 ## How to use `volt-gui`:
 
