@@ -2,10 +2,9 @@
 
 set -euo pipefail
 
-if [[ $EUID -ne 0 ]]; then
-  echo -e "\033[31mError: Please run this script as root (use sudo)\033[0m" >&2
-  exit 1
-fi
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
 INSTALL_DIR="/usr/local/bin"
 BIN_DIR="bin"
@@ -13,29 +12,34 @@ EXECUTABLE="$BIN_DIR/volt-gui"
 HELPER_SCRIPT="scripts/volt-helper"
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
+if [[ $EUID -ne 0 ]]; then
+  echo -e "${RED}Error: Please run this script as root (use sudo)${NC}" >&2
+  exit 1
+fi
+
 if [[ ! -d "$BIN_DIR" ]]; then
-  echo -e "\033[31mError: bin directory not found. Run make-pyinstaller.sh or make-nuitka.sh first.\033[0m" >&2
+  echo -e "${RED}Error: bin directory not found. Run make-pyinstaller.sh or make-nuitka.sh first.${NC}" >&2
   exit 1
 fi
 
 if [[ ! -f "$EXECUTABLE" ]]; then
-  echo -e "\033[31mError: Executable 'volt-gui' not found in bin directory. Run make-pyinstaller.sh or make-nuitka.sh first.\033[0m" >&2
+  echo -e "${RED}Error: Executable 'volt-gui' not found in bin directory. Run make-pyinstaller.sh or make-nuitka.sh first.${NC}" >&2
   exit 1
 fi
 
 if [[ ! -f "$HELPER_SCRIPT" ]]; then
-  echo -e "\033[31mError: Helper script $HELPER_SCRIPT not found.\033[0m" >&2
+  echo -e "${RED}Error: Helper script $HELPER_SCRIPT not found.${NC}" >&2
   exit 1
 fi
 
-echo -e "\033[34mInstalling main executable...\033[0m"
+echo -e "${BLUE}Installing main executable...${NC}"
 mkdir -p "$INSTALL_DIR"
 install -v -m 755 -T "$EXECUTABLE" "$INSTALL_DIR/volt-gui"
 
-echo -e "\n\033[34mInstalling helper script...\033[0m"
+echo -e "\n${BLUE}Installing helper script...${NC}"
 install -v -m 755 -T "$HELPER_SCRIPT" "$INSTALL_DIR/volt-helper"
 
-echo -e "\n\033[34mCreating desktop entry...\033[0m"
+echo -e "\n${BLUE}Creating desktop entry...${NC}"
 mkdir -p "$(dirname "$DESKTOP_FILE")"
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
@@ -50,8 +54,8 @@ EOF
 
 echo "Desktop entry created at $DESKTOP_FILE"
 
-echo -e "\n\033[34mUpdating desktop database...\033[0m"
+echo -e "\n${BLUE}Updating desktop database...${NC}"
 update-desktop-database "$(dirname "$DESKTOP_FILE")"
 
-echo -e "\n\033[32mInstallation completed successfully!\033[0m"
+echo -e "\nInstallation completed successfully!"
 echo "You can now run 'volt-gui' from the terminal or application menu."

@@ -3,9 +3,7 @@
 set -euo pipefail
 
 RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 RELEASE_DIR="releases"
@@ -31,27 +29,27 @@ build_and_copy() {
     local build_script=$1
     local target_dir=$2
 
-    echo -e "${CYAN}Executing build script: $build_script${NC}"
+    echo -e "${BLUE}Executing build script: $build_script${NC}"
     if ! (cd .. && ./"$build_script"); then
         echo -e "${RED}Error: Build script $build_script failed${NC}" >&2
         exit 1
     fi
 
-    echo -e "${CYAN}Copying artifacts to $target_dir${NC}"
+    echo -e "${BLUE}Copying artifacts to $target_dir${NC}"
     mkdir -p "$target_dir"
 
     for item in bin install.sh remove.sh scripts; do
         if [[ -e "../$item" ]]; then
             cp -r "../$item" "$target_dir/"
         else
-            echo -e "${YELLOW}Warning: $item not found, skipping${NC}"
+            echo "Warning: $item not found, skipping"
         fi
     done
 }
 
 compress_release() {
     local dir_name=$1
-    echo -e "${CYAN}Compressing $dir_name to ${dir_name}.tar.gz${NC}"
+    echo -e "${BLUE}Compressing $dir_name to ${dir_name}.tar.gz${NC}"
     tar -czf "${dir_name}.tar.gz" "$dir_name"
 }
 
@@ -61,25 +59,25 @@ main() {
 
     ORIGINAL_DIR=$(pwd)
 
-    echo -e "${CYAN}Preparing release directory...${NC}"
+    echo -e "${BLUE}Preparing release directory...${NC}"
     rm -rf "$RELEASE_DIR"
     mkdir -p "$RELEASE_DIR"
     cd "$RELEASE_DIR"
 
-    echo -e "\n${YELLOW}=== Processing PyInstaller Build ===${NC}"
+    echo -e "\n=== Processing PyInstaller Build ==="
     build_and_copy "${BUILD_SCRIPTS[0]}" "$PYINSTALLER_BUILD"
     compress_release "$PYINSTALLER_BUILD"
 
-    echo -e "\n${YELLOW}=== Processing Nuitka Build ===${NC}"
+    echo -e "\n=== Processing Nuitka Build ==="
     build_and_copy "${BUILD_SCRIPTS[1]}" "$NUITKA_BUILD"
     compress_release "$NUITKA_BUILD"
 
     cd "$ORIGINAL_DIR"
 
-    echo -e "\n${GREEN}Release build completed successfully!${NC}"
-    echo -e "Created archives in ${YELLOW}$RELEASE_DIR${NC}:"
-    echo -e "  ${YELLOW}${PYINSTALLER_BUILD}.tar.gz${NC}"
-    echo -e "  ${YELLOW}${NUITKA_BUILD}.tar.gz${NC}"
+    echo -e "\nRelease build completed successfully!"
+    echo -e "Created archives in $RELEASE_DIR:"
+    echo -e "  ${PYINSTALLER_BUILD}.tar.gz"
+    echo -e "  ${NUITKA_BUILD}.tar.gz"
 
     if command -v du &> /dev/null; then
         echo -e "\nArchive sizes:"

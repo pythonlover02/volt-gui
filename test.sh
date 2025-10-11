@@ -3,9 +3,7 @@
 set -euo pipefail
 
 RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 VENV_DIR="py_env"
@@ -33,7 +31,7 @@ check_commands() {
 
 create_venv() {
     if [[ ! -d "$VENV_DIR" ]]; then
-        echo -e "${CYAN}Creating python3 virtual environment...${NC}"
+        echo -e "${BLUE}Creating python3 virtual environment...${NC}"
         python3 -m venv "$VENV_DIR"
     fi
 }
@@ -56,12 +54,12 @@ update_dependencies() {
     stored_hash=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
 
     if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$current_hash" != "$stored_hash" ]]; then
-        echo -e "${CYAN}Updating dependencies...${NC}"
+        echo -e "${BLUE}Updating dependencies...${NC}"
         pip install --upgrade pip
         pip install --no-cache-dir -r "$REQ_FILE"
         echo "$current_hash" > "$REQ_HASH_FILE"
     else
-        echo -e "${GREEN}Dependencies are up to date${NC}"
+        echo "Dependencies are up to date"
     fi
 }
 
@@ -71,16 +69,16 @@ install_helper() {
         exit 1
     fi
 
-    echo -e "${CYAN}Installing helper script...${NC}"
+    echo -e "${BLUE}Installing helper script...${NC}"
     cp "$HELPER_SCRIPT" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/$(basename "$HELPER_SCRIPT")"
-    echo -e "${GREEN}Helper script installed to: ${YELLOW}$INSTALL_DIR/$(basename "$HELPER_SCRIPT")${NC}"
+    echo "Helper script installed to: $INSTALL_DIR/$(basename "$HELPER_SCRIPT")"
 }
 
 run_application() {
-    echo -e "${CYAN}Running application in development mode...${NC}"
-    echo -e "${YELLOW}Source file: $SRC_FILE${NC}"
-    echo -e "${YELLOW}Virtual environment: $VENV_DIR${NC}"
+    echo -e "${BLUE}Running application in development mode...${NC}"
+    echo "Source file: $SRC_FILE"
+    echo "Virtual environment: $VENV_DIR"
     echo ""
 
     if ! python3 "$SRC_FILE"; then
@@ -91,11 +89,11 @@ run_application() {
 
 remove_venv() {
     if [[ -d "$VENV_DIR" ]]; then
-        echo -e "${CYAN}Removing virtual environment: $VENV_DIR${NC}"
+        echo -e "${BLUE}Removing virtual environment: $VENV_DIR${NC}"
         rm -rf "$VENV_DIR"
-        echo -e "${GREEN}Virtual environment removed successfully${NC}"
+        echo "Virtual environment removed successfully"
     else
-        echo -e "${YELLOW}No virtual environment found at: $VENV_DIR${NC}"
+        echo "No virtual environment found at: $VENV_DIR"
     fi
 }
 
@@ -110,7 +108,7 @@ main() {
     if [[ "${1:-}" == "-c" ]]; then
         if [[ $EUID -ne 0 ]]; then
             echo -e "${RED}Error: Installing helper script requires sudo privileges${NC}" >&2
-            echo -e "${YELLOW}Please run: sudo $0 -c${NC}" >&2
+            echo "Please run: sudo $0 -c" >&2
             exit 1
         fi
         install_helper
@@ -119,7 +117,7 @@ main() {
 
     if [[ $EUID -eq 0 ]]; then
         echo -e "${RED}Error: Do not run the application with sudo${NC}" >&2
-        echo -e "${YELLOW}Please run without sudo: $0${NC}" >&2
+        echo "Please run without sudo: $0" >&2
         exit 1
     fi
 
@@ -127,13 +125,13 @@ main() {
     verify_files
     create_venv
 
-    echo -e "${CYAN}Activating virtual environment...${NC}"
+    echo -e "${BLUE}Activating virtual environment...${NC}"
     source "$VENV_DIR/bin/activate"
 
     update_dependencies
 
-    echo -e "\n${GREEN}Setup complete! Starting application...${NC}"
-    echo -e "${CYAN}────────────────────────────────────────${NC}"
+    echo -e "\nSetup complete! Starting application..."
+    echo -e "${BLUE}────────────────────────────────────────${NC}"
 
     run_application
 }

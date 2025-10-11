@@ -2,8 +2,12 @@
 
 set -euo pipefail
 
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
 if [[ $EUID -ne 0 ]]; then
-  echo -e "\033[31mError: Please run this script as root (use sudo)\033[0m" >&2
+  echo -e "${RED}Error: Please run this script as root (use sudo)${NC}" >&2
   exit 1
 fi
 
@@ -11,23 +15,23 @@ INSTALL_DIR="/usr/local/bin"
 TARGETS=("volt" "volt-gui" "volt-helper")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
-echo -e "\033[34mRemoving installed files...\033[0m"
+echo -e "${BLUE}Removing installed files...${NC}"
 
 for target in "${TARGETS[@]}"; do
   file="$INSTALL_DIR/$target"
   if [[ -f "$file" ]]; then
     rm -v "$file"
   else
-    echo -e "\033[33mWarning: $file not found\033[0m"
+    echo "Warning: $file not found"
   fi
 done
 
 if [[ -f "$DESKTOP_FILE" ]]; then
   rm -v "$DESKTOP_FILE"
-  echo -e "\n\033[34mUpdating desktop database...\033[0m"
+  echo -e "\n${BLUE}Updating desktop database...${NC}"
   update-desktop-database "$(dirname "$DESKTOP_FILE")"
 else
-  echo -e "\033[33mWarning: Desktop entry $DESKTOP_FILE not found\033[0m"
+  echo "Warning: Desktop entry $DESKTOP_FILE not found"
 fi
 
-echo -e "\n\033[32mRemoval completed successfully!\033[0m"
+echo -e "\nRemoval completed successfully!"
