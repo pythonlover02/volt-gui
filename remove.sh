@@ -6,14 +6,14 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+INSTALL_DIR="/usr/local/bin"
+TARGETS=("volt" "volt-gui" "volt-helper")
+DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
+
 if [[ $EUID -ne 0 ]]; then
   echo -e "${RED}Error: Please run this script as root (use sudo)${NC}" >&2
   exit 1
 fi
-
-INSTALL_DIR="/usr/local/bin"
-TARGETS=("volt" "volt-gui" "volt-helper")
-DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
 echo -e "${BLUE}Removing installed files...${NC}"
 
