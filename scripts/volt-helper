@@ -151,10 +151,10 @@ read_gpu_settings() {
 
         if [ "$key" = "launch_options" ]; then
             continue
-        elif [[ "$key" == unset:* ]]; then
-            script_content="${script_content}unset ${key#unset:}\n"
         elif [ -n "$value" ]; then
             script_content="${script_content}export ${key}=\"${value}\"\n"
+        elif [[ "$key" == unset:* ]]; then
+            script_content="${script_content}unset ${key#unset:}\n"
         fi
     done < "$settings_file"
 
@@ -166,12 +166,10 @@ add_launch_options() {
     local script_content="$2"
     local launch_options=$(grep "^launch_options=" "$settings_file" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-    script_content="${script_content}\n# Handle launch options if present\n"
+    script_content="${script_content}\n\n"
     if [ -n "$launch_options" ]; then
-        script_content="${script_content}# Execute the specified program with environment variables\n"
         script_content="${script_content}${launch_options} \"\$@\"\n"
     else
-        script_content="${script_content}# Launch the specified program with the environment variables\n"
         script_content="${script_content}\"\$@\"\n"
     fi
 
