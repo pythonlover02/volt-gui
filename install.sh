@@ -5,7 +5,6 @@ set -euo pipefail
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
-INSTALL_DIR="/usr/local/bin"
 BIN_DIR="bin"
 EXECUTABLE="$BIN_DIR/volt-gui"
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
@@ -26,7 +25,6 @@ if [[ ! -f "$EXECUTABLE" ]]; then
 fi
 
 echo -e "${BLUE}Installing main executable...${NC}"
-mkdir -p "$INSTALL_DIR"
 install -v -m 755 -T "$EXECUTABLE" "$INSTALL_DIR/volt-gui"
 
 echo -e "\n${BLUE}Creating desktop entry...${NC}"
