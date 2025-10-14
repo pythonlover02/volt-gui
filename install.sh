@@ -9,10 +9,21 @@ BIN_DIR="bin"
 EXECUTABLE="$BIN_DIR/volt-gui"
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 
+check_commands() {
+    for cmd in install mkdir cat update-desktop-database dirname; do
+        if ! command -v "$cmd" &> /dev/null; then
+            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            exit 1
+        fi
+    done
+}
+
 if [[ $EUID -ne 0 ]]; then
   echo -e "${RED}Error: Please run this script as root (use sudo)${NC}" >&2
   exit 1
 fi
+
+check_commands
 
 if [[ ! -d "$BIN_DIR" ]]; then
   echo -e "${RED}Error: bin directory not found. Run make-pyinstaller.sh or make-nuitka.sh first.${NC}" >&2

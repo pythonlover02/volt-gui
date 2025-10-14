@@ -9,6 +9,15 @@ class HelperManager:
 
 SCRIPT_NAME="$0"
 
+check_commands() {
+    for cmd in pgrep kill sleep echo chmod grep cut sed tr; do
+        if ! command -v "$cmd" &> /dev/null; then
+            echo "Error: Required command '$cmd' not found" >&2
+            exit 1
+        fi
+    done
+}
+
 apply_governor() {
     local governor="$1"
 
@@ -241,6 +250,7 @@ parse_arguments() {
     done
 }
 
+check_commands
 parse_arguments "$@"
 """
 

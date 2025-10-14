@@ -23,7 +23,7 @@ cleanup() {
 }
 
 check_commands() {
-    for cmd in tar cp mkdir mv; do
+    for cmd in tar cp mkdir mv pwd cd du sed rm; do
         if ! command -v "$cmd" &> /dev/null; then
             echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
             exit 1

@@ -20,7 +20,7 @@ cleanup() {
 }
 
 check_commands() {
-    for cmd in wget chmod; do
+    for cmd in wget chmod mkdir cp cat dirname readlink du cut; do
         if ! command -v "$cmd" &> /dev/null; then
             echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
             exit 1

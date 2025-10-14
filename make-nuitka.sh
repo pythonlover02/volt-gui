@@ -26,7 +26,7 @@ cleanup() {
 }
 
 check_commands() {
-    for cmd in python3 pip; do
+    for cmd in python3 pip shasum cut cat basename mkdir mv du; do
         if ! command -v "$cmd" &> /dev/null; then
             echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
             exit 1

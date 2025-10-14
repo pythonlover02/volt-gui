@@ -10,10 +10,21 @@ TARGETS=("volt" "volt-gui" "volt-helper")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 FILE=""
 
+check_commands() {
+    for cmd in rm dirname update-desktop-database; do
+        if ! command -v "$cmd" &> /dev/null; then
+            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            exit 1
+        fi
+    done
+}
+
 if [[ $EUID -ne 0 ]]; then
     echo -e "${RED}Error: Please run this script as root (use sudo)${NC}" >&2
     exit 1
 fi
+
+check_commands
 
 echo -e "${BLUE}Removing installed files...${NC}"
 
