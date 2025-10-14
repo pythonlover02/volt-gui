@@ -14,6 +14,7 @@ from theme import ThemeManager
 from workarounds import WorkaroundManager
 from welcome import WelcomeManager
 from update_checker import UpdateChecker
+from script_helper import HelperManager
 
 def check_sudo_execution():
     """
@@ -700,7 +701,8 @@ class MainWindow(QMainWindow):
             if settings_file:
                 gpu_args.extend(["-g", settings_file])
 
-            all_args = ["pkexec", "/usr/local/bin/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
+            HelperManager.create_helper_script()
+            all_args = ["pkexec", "/tmp/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
 
             process = QProcess()
             WorkaroundManager.setup_clean_process(process)

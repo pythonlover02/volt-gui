@@ -59,17 +59,24 @@ These will be passed to the executed program. Example:
   - Each profile has its own set of configurations, which can be applied through the program or system tray.
 
 ## Build/Test Requirements:
-
+- Linux operating system
 - Python 3.9 or higher
 - Pip
-- The `python3-venv` package its required on Debian/Debian based distros.
-- Linux operating system
+- The `python3-venv` package is required on Debian/Debian based distros.
+- bash
+- tar
+- cp, mkdir, mv, du (standard coreutils)
+- shasum (for dependency hash checking)
 
-## Additional requirements in the case you build the program using Nuitka:
-
+## Additional Requirements for Building with Nuitka:
 - C/C++ Compiler
 - patchelf
 - ccache (optional, for optimizing compiling times)
+
+## Additional Requirements for Creating AppImage:
+- fuse
+- wget
+- chmod
 
 ## Additional requirements for some Options:
 

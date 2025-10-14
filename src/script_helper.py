@@ -1,4 +1,11 @@
-#!/bin/bash
+import os, stat
+
+class HelperManager:
+    """
+    Manages the creation of the volt-helper script.
+    """
+
+    BASH_SCRIPT_CONTENT = """#!/bin/bash
 
 SCRIPT_NAME="$0"
 
@@ -139,7 +146,7 @@ manage_kernel() {
 
 read_gpu_settings() {
     local settings_file="$1"
-    local script_content="#!/bin/bash\n\n"
+    local script_content="#!/bin/bash\\n\\n"
 
     while IFS='=' read -r key value || [ -n "$key" ]; do
         if [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]]; then
@@ -152,9 +159,9 @@ read_gpu_settings() {
         if [ "$key" = "launch_options" ]; then
             continue
         elif [ -n "$value" ]; then
-            script_content="${script_content}export ${key}=\"${value}\"\n"
+            script_content="${script_content}export ${key}=\\"${value}\\"\\n"
         elif [[ "$key" == unset:* ]]; then
-            script_content="${script_content}unset ${key#unset:}\n"
+            script_content="${script_content}unset ${key#unset:}\\n"
         fi
     done < "$settings_file"
 
@@ -166,11 +173,11 @@ add_launch_options() {
     local script_content="$2"
     local launch_options=$(grep "^launch_options=" "$settings_file" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-    script_content="${script_content}\n\n"
+    script_content="${script_content}\\n\\n"
     if [ -n "$launch_options" ]; then
-        script_content="${script_content}${launch_options} \"\$@\"\n"
+        script_content="${script_content}${launch_options} \\"\\$@\\"\\n"
     else
-        script_content="${script_content}\"\$@\"\n"
+        script_content="${script_content}\\"\\$@\\"\\n"
     fi
 
     echo -e "$script_content"
@@ -236,3 +243,16 @@ parse_arguments() {
 }
 
 parse_arguments "$@"
+"""
+
+    @staticmethod
+    def create_helper_script():
+        """
+        Creates the volt-helper bash script in /tmp with executable permissions.
+        """
+        script_path = "/tmp/volt-helper"
+
+        with open(script_path, 'w') as f:
+            f.write(HelperManager.BASH_SCRIPT_CONTENT)
+
+        os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
