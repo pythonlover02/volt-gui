@@ -44,7 +44,7 @@ mkdir -p "$(dirname "$DESKTOP_FILE")"
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Name=volt-gui
-Comment=A simple GUI program to modify and create the "volt" script and more
+Comment=My AMD Adrenaline / NVIDIA Settings Linux Alternative
 Exec=volt-gui
 Icon=preferences-system
 Terminal=false
