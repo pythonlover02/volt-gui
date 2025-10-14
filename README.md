@@ -65,7 +65,7 @@ These will be passed to the executed program. Example:
 - The `python3-venv` package is required on Debian/Debian based distros.
 - bash
 - tar
-- cp, mkdir, mv, du (standard coreutils)
+- coreutils
 - shasum (for dependency hash checking)
 
 ## Additional Requirements for Building with Nuitka:
@@ -74,7 +74,7 @@ These will be passed to the executed program. Example:
 - ccache (optional, for optimizing compiling times)
 
 ## Additional Requirements for Creating AppImage:
-- fuse
+- fuse or fuse3
 - wget
 - chmod
 
