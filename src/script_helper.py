@@ -10,7 +10,7 @@ class HelperManager:
 set -euo pipefail
 
 check_commands() {
-    for cmd in pgrep kill sleep echo chmod grep cut sed tr; do
+    for cmd in chmod grep cut sed tr; do
         if ! command -v "$cmd" &> /dev/null; then
             echo "Error: Required command '$cmd' not found" >&2
             exit 1
