@@ -194,19 +194,22 @@ add_launch_options() {
 
 create_gpu_script() {
     local script_content="$1"
-    local volt_script="/usr/local/bin/volt"
+    local volt_script="$2"
+    local script_dir=$(dirname "$volt_script")
 
+    mkdir -p "$script_dir" 2>/dev/null
     echo -e "$script_content" > "$volt_script" 2>/dev/null
     chmod 755 "$volt_script" 2>/dev/null
 }
 
 manage_gpu() {
     local settings_file="$1"
+    local volt_script="$2"
 
     local script_content=$(read_gpu_settings "$settings_file")
     script_content=$(add_launch_options "$settings_file" "$script_content")
 
-    create_gpu_script "$script_content"
+    create_gpu_script "$script_content" "$volt_script"
 }
 
 parse_arguments() {
@@ -239,8 +242,12 @@ parse_arguments() {
                 done
                 manage_kernel "${kernel_args[@]}"
                 ;;
+            -p|--path)
+                volt_path="$2"
+                shift 2
+                ;;
             -g|--gpu)
-                manage_gpu "$2"
+                manage_gpu "$2" "$volt_path"
                 shift 2
                 ;;
             *)

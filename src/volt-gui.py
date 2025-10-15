@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         self.use_system_tray = False
         self.start_minimized = False
         self.start_maximized = False
+        self.volt_path = "/usr/local/bin/volt"
         self.current_profile = "Default"
         self.cpu_widgets = {}
         self.kernel_widgets = {}
@@ -699,7 +700,7 @@ class MainWindow(QMainWindow):
                 self.gpu_widgets['LaunchOptions']
             )
             if settings_file:
-                gpu_args.extend(["-g", settings_file])
+                gpu_args.extend(["-p", self.volt_path, "-g", settings_file])
 
             HelperManager.create_helper_script()
             all_args = ["pkexec", "/tmp/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args

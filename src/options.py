@@ -59,6 +59,12 @@ class OptionsManager:
                 'text': 'Check for new versions on startup (checks once per session).',
                 'items': ["enable", "disable"],
                 'default': 'disable'
+            },
+            'volt_path': {
+                'label': 'volt Script Path:',
+                'text': 'Location for the volt script. /usr/local/bin/volt allows global "volt" command, while /tmp/volt requires the full path, but should work on inmutable/atomic distros.',
+                'items': ['/usr/local/bin/volt', '/tmp/volt'],
+                'default': '/usr/local/bin/volt'
             }
         }
     }
@@ -238,6 +244,7 @@ class OptionsManager:
         OptionsManager.apply_scaling_options(widgets)
         OptionsManager.apply_welcome_message_options(widgets)
         OptionsManager.apply_check_updates_options(widgets)
+        OptionsManager.apply_volt_path_options(widgets)
 
     @staticmethod
     def apply_theme_options(widgets):
@@ -321,6 +328,15 @@ class OptionsManager:
         main_window.check_updates = check_updates
 
     @staticmethod
+    def apply_volt_path_options(widgets):
+        """
+        Apply the volt path option to the application.
+        """
+        main_window = widgets['main_window']
+        volt_path = widgets['volt_path'].currentText()
+        main_window.volt_path = volt_path
+
+    @staticmethod
     def apply_scaling_options(widgets):
         """
         Apply interface scaling options to the application.
@@ -343,6 +359,13 @@ class OptionsManager:
         Get the current check updates setting.
         """
         return widgets['check_updates'].currentText() == OptionsManager.OPTIONS_SETTINGS['check_updates']['items'][0]
+
+    @staticmethod
+    def get_volt_path_setting(widgets):
+        """
+        Get the current volt path.
+        """
+        return widgets['volt_path'].currentText()
 
     @staticmethod
     def save_and_apply_options(widgets):
