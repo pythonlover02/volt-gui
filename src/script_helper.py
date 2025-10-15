@@ -7,7 +7,7 @@ class HelperManager:
 
     BASH_SCRIPT_CONTENT = """#!/bin/bash
 
-SCRIPT_NAME="$0"
+set -euo pipefail
 
 check_commands() {
     for cmd in pgrep kill sleep echo chmod grep cut sed tr; do
@@ -19,148 +19,90 @@ check_commands() {
 }
 
 apply_governor() {
-    local governor="$1"
-
     for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-        echo "$governor" > "$CPU_PATH"
+        echo "$1" > "$CPU_PATH"
     done
 }
 
 apply_max_freq() {
-    local max_freq="$1"
     for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
-        echo "$max_freq" > "$CPU_PATH"
+        echo "$1" > "$CPU_PATH"
     done
 }
 
 apply_min_freq() {
-    local min_freq="$1"
     for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq; do
-        echo "$min_freq" > "$CPU_PATH"
+        echo "$1" > "$CPU_PATH"
     done
 }
 
 terminate_existing_schedulers() {
-    local scheduler_pid=$(pgrep -f '^scx_' 2>/dev/null | head -n1)
-
-    if [ -z "$scheduler_pid" ]; then
-        return
-    fi
-
-    kill -INT "$scheduler_pid" 2>/dev/null
-    sleep 0.5
-
-    if kill -0 "$scheduler_pid" 2>/dev/null; then
-        kill -TERM "$scheduler_pid" 2>/dev/null
+    if pgrep -f '^scx_' &>/dev/null; then
+        pkill -INT -f '^scx_' 2>/dev/null
         sleep 0.5
-    fi
-
-    if kill -0 "$scheduler_pid" 2>/dev/null; then
-        kill -KILL "$scheduler_pid" 2>/dev/null
+        pkill -TERM -f '^scx_' 2>/dev/null
+        sleep 0.5
+        pkill -KILL -f '^scx_' 2>/dev/null
         sleep 0.2
     fi
 }
 
 start_new_scheduler() {
-    local scheduler="$1"
-
-    "$scheduler" &
-    local scheduler_pid=$!
+    "$1" &
     sleep 1
 }
 
 handle_scheduler() {
     terminate_existing_schedulers
-
-    if [ -n "$scheduler" ] && [ "$scheduler" != "none" ]; then
-        start_new_scheduler "$scheduler"
-    fi
+    [ -n "$scheduler" ] && [ "$scheduler" != "none" ] && start_new_scheduler "$scheduler"
 }
 
 manage_cpu() {
-    local cpu_args=("$@")
+    governor=""
+    scheduler=""
+    max_freq=""
+    min_freq=""
 
-    local governor=""
-    local scheduler=""
-    local max_freq=""
-    local min_freq=""
-
-    for arg in "${cpu_args[@]}"; do
-        if [[ "$arg" == governor:* ]]; then
-            governor="${arg#governor:}"
-        elif [[ "$arg" == scheduler:* ]]; then
-            scheduler="${arg#scheduler:}"
-        elif [[ "$arg" == max_freq:* ]]; then
-            max_freq="${arg#max_freq:}"
-        elif [[ "$arg" == min_freq:* ]]; then
-            min_freq="${arg#min_freq:}"
-        fi
+    for arg in "$@"; do
+        case "$arg" in
+            governor:*) governor="${arg#governor:}" ;;
+            scheduler:*) scheduler="${arg#scheduler:}" ;;
+            max_freq:*) max_freq="${arg#max_freq:}" ;;
+            min_freq:*) min_freq="${arg#min_freq:}" ;;
+        esac
     done
 
-    if [ -n "$governor" ]; then
-        apply_governor "$governor"
-    fi
-
-    if [ -n "$min_freq" ]; then
-        apply_min_freq "$min_freq"
-    fi
-
-    if [ -n "$max_freq" ]; then
-        apply_max_freq "$max_freq"
-    fi
-
-    if [ -n "$scheduler" ]; then
-        handle_scheduler "$scheduler"
-    fi
+    [ -n "$governor" ] && apply_governor "$governor"
+    [ -n "$min_freq" ] && apply_min_freq "$min_freq"
+    [ -n "$max_freq" ] && apply_max_freq "$max_freq"
+    [ -n "$scheduler" ] && handle_scheduler
 }
 
 apply_disk_scheduler() {
-    local disk_name="$1"
-    local scheduler="$2"
-    local scheduler_path="/sys/block/$disk_name/queue/scheduler"
-
-    echo "$scheduler" > "$scheduler_path"
+    echo "$2" > "/sys/block/$1/queue/scheduler"
 }
 
 manage_disk() {
-    local disk_args=("$@")
-
-    for arg in "${disk_args[@]}"; do
-        if [[ "$arg" == *":"* ]]; then
-            local disk_name="${arg%%:*}"
-            local scheduler="${arg#*:}"
-
-            apply_disk_scheduler "$disk_name" "$scheduler"
-        fi
+    for arg in "$@"; do
+        [[ "$arg" == *":"* ]] && apply_disk_scheduler "${arg%%:*}" "${arg#*:}"
     done
 }
 
 apply_kernel_parameter() {
-    local path="$1"
-    local value="$2"
-
-    echo "$value" > "$path" 2>/dev/null
+    echo "$2" > "$1" 2>/dev/null
 }
 
 manage_kernel() {
-    local kernel_args=("$@")
-
-    for setting in "${kernel_args[@]}"; do
-        local path="${setting%%:*}"
-        local value="${setting#*:}"
-
-        apply_kernel_parameter "$path" "$value"
+    for setting in "$@"; do
+        apply_kernel_parameter "${setting%%:*}" "${setting#*:}"
     done
 }
 
 read_gpu_settings() {
-    local settings_file="$1"
-    local script_content="#!/bin/bash\\n\\n"
+    script_content="#!/bin/bash\\n\\n"
 
     while IFS='=' read -r key value || [ -n "$key" ]; do
-        if [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]]; then
-            continue
-        fi
+        [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]] && continue
 
         key=$(echo "$key" | tr -d ' ')
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -172,17 +114,15 @@ read_gpu_settings() {
         elif [[ "$key" == unset:* ]]; then
             script_content="${script_content}unset ${key#unset:}\\n"
         fi
-    done < "$settings_file"
+    done < "$1"
 
     echo -e "$script_content"
 }
 
 add_launch_options() {
-    local settings_file="$1"
-    local script_content="$2"
-    local launch_options=$(grep "^launch_options=" "$settings_file" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    script_content="$2\\n\\n"
+    launch_options=$(grep "^launch_options=" "$1" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-    script_content="${script_content}\\n\\n"
     if [ -n "$launch_options" ]; then
         script_content="${script_content}${launch_options} \\"\\$@\\"\\n"
     else
@@ -193,23 +133,15 @@ add_launch_options() {
 }
 
 create_gpu_script() {
-    local script_content="$1"
-    local volt_script="$2"
-    local script_dir=$(dirname "$volt_script")
-
-    mkdir -p "$script_dir" 2>/dev/null
-    echo -e "$script_content" > "$volt_script" 2>/dev/null
-    chmod 755 "$volt_script" 2>/dev/null
+    mkdir -p "$(dirname "$2")" 2>/dev/null
+    echo -e "$1" > "$2" 2>/dev/null
+    chmod 755 "$2" 2>/dev/null
 }
 
 manage_gpu() {
-    local settings_file="$1"
-    local volt_script="$2"
-
-    local script_content=$(read_gpu_settings "$settings_file")
-    script_content=$(add_launch_options "$settings_file" "$script_content")
-
-    create_gpu_script "$script_content" "$volt_script"
+    script_content=$(read_gpu_settings "$1")
+    script_content=$(add_launch_options "$1" "$script_content")
+    create_gpu_script "$script_content" "$2"
 }
 
 parse_arguments() {
@@ -217,7 +149,7 @@ parse_arguments() {
         case "$1" in
             -c|--cpu)
                 shift
-                local cpu_args=()
+                cpu_args=()
                 while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
                     cpu_args+=("$1")
                     shift
@@ -226,7 +158,7 @@ parse_arguments() {
                 ;;
             -d|--disk)
                 shift
-                local disk_args=()
+                disk_args=()
                 while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
                     disk_args+=("$1")
                     shift
@@ -235,7 +167,7 @@ parse_arguments() {
                 ;;
             -k|--kernel)
                 shift
-                local kernel_args=()
+                kernel_args=()
                 while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
                     kernel_args+=("$1")
                     shift
