@@ -106,7 +106,7 @@ apply_gpu() {
     script_content+="\n"
 
     if grep -q "^launch_options=" "$settings_file" 2>/dev/null; then
-        local launch_opts
+        local launch_opts=""
         launch_opts="$(grep "^launch_options=" "$settings_file" | cut -d"=" -f2-)"
         launch_opts="${launch_opts#"${launch_opts%%[![:space:]]*}"}"
         launch_opts="${launch_opts%"${launch_opts##*[![:space:]]}"}"
