@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m"
 VENV_DIR="py_env"
 REQ_FILE="requirements.txt"
 REQ_HASH_FILE="$VENV_DIR/requirements.sha256"
@@ -27,7 +27,7 @@ cleanup() {
 check_commands() {
     for cmd in python3 pip shasum cut cat basename mkdir mv du; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            echo -e "${RED}Error: Required command "$cmd" not found${NC}" >&2
             exit 1
         fi
     done
@@ -48,7 +48,7 @@ verify_requirements() {
 }
 
 update_dependencies() {
-    CURRENT_HASH=$(shasum -a 256 "$REQ_FILE" | cut -d' ' -f1)
+    CURRENT_HASH=$(shasum -a 256 "$REQ_FILE" | cut -d" " -f1)
     STORED_HASH=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
 
     if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$CURRENT_HASH" != "$STORED_HASH" ]]; then

@@ -37,7 +37,7 @@ class UpdateChecker:
         """
         message = f"A new volt-gui version is available: {new_version}"
 
-        if hasattr(main_window, 'tray_icon') and main_window.use_system_tray:
+        if hasattr(main_window, "tray_icon") and main_window.use_system_tray:
             main_window.tray_icon.showMessage(
                 "volt-gui Update",
                 message,

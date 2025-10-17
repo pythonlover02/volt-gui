@@ -12,7 +12,7 @@ set -euo pipefail
 check_commands() {
     for cmd in chmod grep cut sed tr; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo "Error: Required command '$cmd' not found" >&2
+            echo "Error: Required command "$cmd" not found" >&2
             exit 1
         fi
     done
@@ -37,11 +37,11 @@ apply_min_freq() {
 }
 
 terminate_existing_schedulers() {
-    pkill -INT -f '^scx_' 2>/dev/null || true
+    pkill -INT -f "^scx_" 2>/dev/null || true
     sleep 0.5
-    pkill -TERM -f '^scx_' 2>/dev/null || true
+    pkill -TERM -f "^scx_" 2>/dev/null || true
     sleep 0.5
-    pkill -KILL -f '^scx_' 2>/dev/null || true
+    pkill -KILL -f "^scx_" 2>/dev/null || true
     sleep 0.2
 }
 
@@ -97,11 +97,11 @@ manage_kernel() {
 read_gpu_settings() {
     local script_content="#!/bin/bash\\n\\n"
 
-    while IFS='=' read -r key value || [ -n "$key" ]; do
+    while IFS="=" read -r key value || [ -n "$key" ]; do
         [ -z "$key" ] || [[ "$key" =~ ^[[:space:]]*# ]] && continue
 
-        key=$(echo "$key" | tr -d ' ')
-        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        key=$(echo "$key" | tr -d " ")
+        value=$(echo "$value" | sed "s/^[[:space:]]*//;s/[[:space:]]*$//")
 
         if [ "$key" = "launch_options" ]; then
             continue
@@ -117,7 +117,7 @@ read_gpu_settings() {
 
 add_launch_options() {
     local script_content="$2"
-    local launch_options=$(grep "^launch_options=" "$1" 2>/dev/null | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    local launch_options=$(grep "^launch_options=" "$1" 2>/dev/null | cut -d"=" -f2- | sed "s/^[[:space:]]*//;s/[[:space:]]*$//")
 
     if [ -n "$launch_options" ]; then
         script_content="${script_content}${launch_options} \\"\\$@\\"\\n"
@@ -195,7 +195,7 @@ parse_arguments "$@"
         """
         script_path = "/tmp/volt-helper"
 
-        with open(script_path, 'w') as f:
+        with open(script_path, "w") as f:
             f.write(HelperManager.BASH_SCRIPT_CONTENT)
 
         os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)

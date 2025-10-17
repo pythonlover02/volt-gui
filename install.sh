@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m"
 INSTALL_DIR="/usr/local/bin"
 BIN_DIR="bin"
 EXECUTABLE="$BIN_DIR/volt-gui"
@@ -13,7 +13,7 @@ DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
 check_commands() {
     for cmd in install mkdir cat update-desktop-database dirname; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            echo -e "${RED}Error: Required command "$cmd" not found${NC}" >&2
             exit 1
         fi
     done
@@ -32,7 +32,7 @@ if [[ ! -d "$BIN_DIR" ]]; then
 fi
 
 if [[ ! -f "$EXECUTABLE" ]]; then
-  echo -e "${RED}Error: Executable 'volt-gui' not found in bin directory. Run make-pyinstaller.sh or make-nuitka.sh first.${NC}" >&2
+  echo -e "${RED}Error: Executable "volt-gui" not found in bin directory. Run make-pyinstaller.sh or make-nuitka.sh first.${NC}" >&2
   exit 1
 fi
 
@@ -58,4 +58,4 @@ echo -e "\n${BLUE}Updating desktop database...${NC}"
 update-desktop-database "$(dirname "$DESKTOP_FILE")"
 
 echo -e "\nInstallation completed successfully!"
-echo "You can now run 'volt-gui' from the terminal or application menu."
+echo "You can now run "volt-gui" from the terminal or application menu."

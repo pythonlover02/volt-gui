@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m"
 INSTALL_DIR="/usr/local/bin"
 TARGETS=("volt" "volt-gui" "volt-helper")
 DESKTOP_FILE="/usr/share/applications/volt-gui.desktop"
@@ -13,7 +13,7 @@ FILE=""
 check_commands() {
     for cmd in rm dirname update-desktop-database; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            echo -e "${RED}Error: Required command "$cmd" not found${NC}" >&2
             exit 1
         fi
     done

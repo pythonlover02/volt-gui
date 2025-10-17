@@ -235,29 +235,29 @@ class WelcomeManager:
         nav_layout = QHBoxLayout()
         nav_layout.setContentsMargins(0, 16, 0, 0)
 
-        widgets['back_button'] = QPushButton("← Back")
-        widgets['back_button'].setMinimumHeight(32)
-        widgets['back_button'].setCursor(QCursor(Qt.PointingHandCursor))
-        widgets['back_button'].setStyleSheet("QPushButton:disabled { color: #777777; }")
+        widgets["back_button"] = QPushButton("← Back")
+        widgets["back_button"].setMinimumHeight(32)
+        widgets["back_button"].setCursor(QCursor(Qt.PointingHandCursor))
+        widgets["back_button"].setStyleSheet("QPushButton:disabled { color: #777777; }")
 
-        nav_layout.addWidget(widgets['back_button'])
+        nav_layout.addWidget(widgets["back_button"])
 
-        widgets['progress_label'] = QLabel()
-        widgets['progress_label'].setAlignment(Qt.AlignCenter)
-        widgets['progress_label'].setStyleSheet("font-size: 13px; color: #888888; margin: 0 10px;")
-        nav_layout.addWidget(widgets['progress_label'], 1, Qt.AlignCenter)
+        widgets["progress_label"] = QLabel()
+        widgets["progress_label"].setAlignment(Qt.AlignCenter)
+        widgets["progress_label"].setStyleSheet("font-size: 13px; color: #888888; margin: 0 10px;")
+        nav_layout.addWidget(widgets["progress_label"], 1, Qt.AlignCenter)
 
-        widgets['next_button'] = QPushButton("Next →")
-        widgets['next_button'].setMinimumHeight(32)
-        widgets['next_button'].setCursor(QCursor(Qt.PointingHandCursor))
+        widgets["next_button"] = QPushButton("Next →")
+        widgets["next_button"].setMinimumHeight(32)
+        widgets["next_button"].setCursor(QCursor(Qt.PointingHandCursor))
 
-        widgets['finish_button'] = QPushButton("Finish")
-        widgets['finish_button'].setMinimumHeight(32)
-        widgets['finish_button'].setCursor(QCursor(Qt.PointingHandCursor))
-        widgets['finish_button'].hide()
+        widgets["finish_button"] = QPushButton("Finish")
+        widgets["finish_button"].setMinimumHeight(32)
+        widgets["finish_button"].setCursor(QCursor(Qt.PointingHandCursor))
+        widgets["finish_button"].hide()
 
-        nav_layout.addWidget(widgets['next_button'])
-        nav_layout.addWidget(widgets['finish_button'])
+        nav_layout.addWidget(widgets["next_button"])
+        nav_layout.addWidget(widgets["finish_button"])
 
         parent_layout.addLayout(nav_layout)
 
@@ -266,24 +266,24 @@ class WelcomeManager:
         """
         Updates the navigation buttons and progress indicator based on current step.
         """
-        current_step = widgets['current_step']
+        current_step = widgets["current_step"]
         total_steps = len(WelcomeManager.get_welcome_info())
 
-        widgets['progress_label'].setText(f"Step {current_step + 1} of {total_steps}")
-        widgets['back_button'].setEnabled(current_step > 0)
+        widgets["progress_label"].setText(f"Step {current_step + 1} of {total_steps}")
+        widgets["back_button"].setEnabled(current_step > 0)
 
         is_last_step = current_step == total_steps - 1
-        widgets['next_button'].setVisible(not is_last_step)
-        widgets['finish_button'].setVisible(is_last_step)
+        widgets["next_button"].setVisible(not is_last_step)
+        widgets["finish_button"].setVisible(is_last_step)
 
     @staticmethod
     def go_back(widgets):
         """
         Go to the previous step.
         """
-        if widgets['current_step'] > 0:
-            widgets['current_step'] -= 1
-            widgets['stacked_widget'].setCurrentIndex(widgets['current_step'])
+        if widgets["current_step"] > 0:
+            widgets["current_step"] -= 1
+            widgets["stacked_widget"].setCurrentIndex(widgets["current_step"])
             WelcomeManager.update_navigation(widgets)
 
     @staticmethod
@@ -292,9 +292,9 @@ class WelcomeManager:
         Go to the next step.
         """
         total_steps = len(WelcomeManager.get_welcome_info())
-        if widgets['current_step'] < total_steps - 1:
-            widgets['current_step'] += 1
-            widgets['stacked_widget'].setCurrentIndex(widgets['current_step'])
+        if widgets["current_step"] < total_steps - 1:
+            widgets["current_step"] += 1
+            widgets["stacked_widget"].setCurrentIndex(widgets["current_step"])
             WelcomeManager.update_navigation(widgets)
 
     @staticmethod
@@ -302,7 +302,7 @@ class WelcomeManager:
         """
         Finish the wizard and close the window.
         """
-        welcome_window = widgets.get('welcome_window')
+        welcome_window = widgets.get("welcome_window")
         if welcome_window:
             welcome_window.close()
 
@@ -321,21 +321,21 @@ class WelcomeManager:
         main_layout.setSpacing(16)
 
         widgets = {
-            'current_step': 0,
-            'welcome_window': welcome_window,
-            'stacked_widget': QStackedWidget()
+            "current_step": 0,
+            "welcome_window": welcome_window,
+            "stacked_widget": QStackedWidget()
         }
 
         for section in WelcomeManager.get_welcome_info():
             page = WelcomeManager.create_step_page(section)
-            widgets['stacked_widget'].addWidget(page)
+            widgets["stacked_widget"].addWidget(page)
 
-        main_layout.addWidget(widgets['stacked_widget'], 1)
+        main_layout.addWidget(widgets["stacked_widget"], 1)
 
         WelcomeManager.create_navigation_buttons(main_layout, widgets)
-        widgets['back_button'].clicked.connect(lambda: WelcomeManager.go_back(widgets))
-        widgets['next_button'].clicked.connect(lambda: WelcomeManager.go_next(widgets))
-        widgets['finish_button'].clicked.connect(lambda: WelcomeManager.finish_wizard(widgets))
+        widgets["back_button"].clicked.connect(lambda: WelcomeManager.go_back(widgets))
+        widgets["next_button"].clicked.connect(lambda: WelcomeManager.go_next(widgets))
+        widgets["finish_button"].clicked.connect(lambda: WelcomeManager.finish_wizard(widgets))
 
         WelcomeManager.update_navigation(widgets)
         welcome_window.setCentralWidget(central_widget)

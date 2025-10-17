@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m"
 RELEASE_DIR="releases"
 PYINSTALLER_BUILD="volt-gui-pyinstaller"
 NUITKA_BUILD="volt-gui-nuitka"
@@ -25,7 +25,7 @@ cleanup() {
 check_commands() {
     for cmd in tar cp mkdir mv pwd cd du sed rm; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            echo -e "${RED}Error: Required command "$cmd" not found${NC}" >&2
             exit 1
         fi
     done
@@ -108,9 +108,9 @@ main() {
 
     if command -v du &> /dev/null; then
         echo -e "\nArchive sizes:"
-        du -h "$RELEASE_DIR"/*.tar.gz | sed 's/^/ /'
+        du -h "$RELEASE_DIR"/*.tar.gz | sed "s/^/ /"
         echo -e "\nAppImage sizes:"
-        du -h "$RELEASE_DIR"/*.AppImage | sed 's/^/ /'
+        du -h "$RELEASE_DIR"/*.AppImage | sed "s/^/ /"
     fi
 }
 

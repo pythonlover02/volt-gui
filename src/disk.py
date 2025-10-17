@@ -8,10 +8,10 @@ class DiskManager:
 
     DISK_SETTINGS_CATEGORIES = {
         "Scheduler": {
-            'scheduler': {
-                'label': "Scheduler:",
-                'items': ["unset"],
-                'text': "Determines how disk I/O requests are scheduled and merged to balance throughput and latency."
+            "scheduler": {
+                "label": "Scheduler:",
+                "items": ["unset"],
+                "text": "Determines how disk I/O requests are scheduled and merged to balance throughput and latency."
             }
         }
     }
@@ -29,13 +29,13 @@ class DiskManager:
         try:
             scheduler_files = glob.glob(DiskManager.DISK_SCHEDULER_PATH_PATTERN)
             for file_path in scheduler_files:
-                disk_name = file_path.split('/')[-3]
+                disk_name = file_path.split("/")[-3]
                 try:
-                    with open(file_path, 'r') as f:
+                    with open(file_path, "r") as f:
                         content = f.read().strip()
                         scheduler_info = DiskManager.parse_scheduler_content(content)
                         if scheduler_info:
-                            scheduler_info['path'] = file_path
+                            scheduler_info["path"] = file_path
                             disk_info[disk_name] = scheduler_info
                 except Exception:
                     continue
@@ -56,9 +56,9 @@ class DiskManager:
             if not tokens:
                 return None
 
-            available = DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"]['scheduler']['items'].copy()
+            available = DiskManager.DISK_SETTINGS_CATEGORIES["Scheduler"]["scheduler"]["items"].copy()
             current = None
-            bracket_pattern = re.compile(r'\[([^\]]+)\]')
+            bracket_pattern = re.compile(r"\[([^\]]+)\]")
 
             for token in tokens:
                 bracket_match = bracket_pattern.search(token)
@@ -83,7 +83,7 @@ class DiskManager:
                     seen.add(scheduler)
                     unique_available.append(scheduler)
 
-            return {'current': current, 'available': unique_available}
+            return {"current": current, "available": unique_available}
 
         except Exception:
             return None
@@ -108,7 +108,7 @@ class DiskManager:
         scroll_layout.setContentsMargins(10, 10, 10, 0)
 
         widgets = {}
-        widgets['disk_settings'] = {}
+        widgets["disk_settings"] = {}
 
         disk_info = DiskManager.get_schedulers()
         sorted_disk_names = sorted(disk_info.keys())
@@ -126,28 +126,28 @@ class DiskManager:
 
                 disk_widgets[setting_key] = QComboBox()
 
-                available_schedulers = scheduler_info['available']
-                if setting_info['items'][0] in available_schedulers:
-                    sorted_schedulers = [setting_info['items'][0]] + sorted([s for s in available_schedulers if s != setting_info['items'][0]])
+                available_schedulers = scheduler_info["available"]
+                if setting_info["items"][0] in available_schedulers:
+                    sorted_schedulers = [setting_info["items"][0]] + sorted([s for s in available_schedulers if s != setting_info["items"][0]])
                 else:
                     sorted_schedulers = sorted(available_schedulers)
 
                 disk_widgets[setting_key].addItems(sorted_schedulers)
-                disk_widgets[setting_key].setCurrentText(setting_info['items'][0])
+                disk_widgets[setting_key].setCurrentText(setting_info["items"][0])
                 disk_widgets[setting_key].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-                disk_widgets[setting_key].setToolTip(setting_info['text'])
+                disk_widgets[setting_key].setToolTip(setting_info["text"])
 
                 layout.addWidget(label)
                 layout.addWidget(disk_widgets[setting_key])
                 scroll_layout.addLayout(layout)
 
-                current_scheduler = scheduler_info['current']
+                current_scheduler = scheduler_info["current"]
                 current_value_label = QLabel(f"current: {current_scheduler}")
                 current_value_label.setContentsMargins(0, 0, 0, 10)
                 scroll_layout.addWidget(current_value_label)
-                disk_widgets[f'current_{setting_key}_value'] = current_value_label
+                disk_widgets[f"current_{setting_key}_value"] = current_value_label
 
-            widgets['disk_settings'][disk_name] = disk_widgets
+            widgets["disk_settings"][disk_name] = disk_widgets
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -155,9 +155,9 @@ class DiskManager:
 
         DiskManager.create_disk_apply_button(main_layout, widgets)
 
-        widgets['disk_settings_applied'] = False
-        widgets['is_process_running'] = False
-        widgets['process'] = None
+        widgets["disk_settings_applied"] = False
+        widgets["is_process_running"] = False
+        widgets["process"] = None
 
         return disk_tab, widgets
 
@@ -171,12 +171,12 @@ class DiskManager:
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(11, 10, 11, 0)
 
-        widgets['disk_apply_button'] = QPushButton("Apply")
-        widgets['disk_apply_button'].setMinimumSize(100, 30)
-        widgets['disk_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        widgets["disk_apply_button"] = QPushButton("Apply")
+        widgets["disk_apply_button"].setMinimumSize(100, 30)
+        widgets["disk_apply_button"].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         button_layout.addStretch(1)
-        button_layout.addWidget(widgets['disk_apply_button'])
+        button_layout.addWidget(widgets["disk_apply_button"])
         button_layout.addStretch(1)
 
         parent_layout.addWidget(button_container)
@@ -190,7 +190,7 @@ class DiskManager:
         disk_info = DiskManager.get_schedulers()
 
         for disk_name, scheduler_info in disk_info.items():
-            if disk_name in widgets['disk_settings']:
-                disk_widgets = widgets['disk_settings'][disk_name]
-                current_scheduler = scheduler_info['current']
-                disk_widgets['current_scheduler_value'].setText(f"current: {current_scheduler}")
+            if disk_name in widgets["disk_settings"]:
+                disk_widgets = widgets["disk_settings"][disk_name]
+                current_scheduler = scheduler_info["current"]
+                disk_widgets["current_scheduler_value"].setText(f"current: {current_scheduler}")

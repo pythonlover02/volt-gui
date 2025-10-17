@@ -44,15 +44,15 @@ class ConfigManager:
 
         cpu_config = {}
         for setting_key in CPUManager.CPU_SETTINGS.keys():
-            if setting_key in cpu_widgets and hasattr(cpu_widgets[setting_key], 'currentText'):
+            if setting_key in cpu_widgets and hasattr(cpu_widgets[setting_key], "currentText"):
                 cpu_config[setting_key] = cpu_widgets[setting_key].currentText()
         if cpu_config:
-            config['CPU'] = cpu_config
+            config["CPU"] = cpu_config
 
         gpu_config = {}
         for setting_key in GPULaunchManager.GPU_SETTINGS.keys():
             for category_name, category_widgets in gpu_widgets.items():
-                if category_name != 'LaunchOptions' and setting_key in category_widgets:
+                if category_name != "LaunchOptions" and setting_key in category_widgets:
                     widget = category_widgets[setting_key]
                     if isinstance(widget, QComboBox):
                         gpu_config[setting_key] = widget.currentText()
@@ -60,31 +60,31 @@ class ConfigManager:
                         gpu_config[setting_key] = widget.text()
                     break
         if gpu_config:
-            config['GPU'] = gpu_config
+            config["GPU"] = gpu_config
 
-        if 'LaunchOptions' in gpu_widgets and 'launch_options_input' in gpu_widgets['LaunchOptions']:
-            launch_options = gpu_widgets['LaunchOptions']['launch_options_input'].text().replace('%', '%%')
-            config['LaunchOptions'] = {'launch_options': launch_options}
+        if "LaunchOptions" in gpu_widgets and "launch_options_input" in gpu_widgets["LaunchOptions"]:
+            launch_options = gpu_widgets["LaunchOptions"]["launch_options_input"].text().replace("%", "%%")
+            config["LaunchOptions"] = {"launch_options": launch_options}
 
         kernel_config = {}
         for setting_key in KernelManager.KERNEL_SETTINGS.keys():
-            widget_key = f'{setting_key}_input'
+            widget_key = f"{setting_key}_input"
             if widget_key in kernel_widgets:
                 value = kernel_widgets[widget_key].text().strip()
                 if value:
                     kernel_config[setting_key] = value
         if kernel_config:
-            config['Kernel'] = kernel_config
+            config["Kernel"] = kernel_config
 
         disk_config = {}
-        for disk_name, disk_widgets_dict in disk_widgets['disk_settings'].items():
+        for disk_name, disk_widgets_dict in disk_widgets["disk_settings"].items():
             for setting_key in DiskManager.DISK_SETTINGS.keys():
                 if setting_key in disk_widgets_dict:
                     disk_config[f"{disk_name}_{setting_key}"] = disk_widgets_dict[setting_key].currentText()
         if disk_config:
-            config['Disk'] = disk_config
+            config["Disk"] = disk_config
 
-        with open(ConfigManager.get_config_path(profile_name), 'w') as configfile:
+        with open(ConfigManager.get_config_path(profile_name), "w") as configfile:
             config.write(configfile)
 
     @staticmethod
@@ -100,41 +100,41 @@ class ConfigManager:
 
         config.read(config_path)
 
-        if 'CPU' in config:
+        if "CPU" in config:
             for setting_key in CPUManager.CPU_SETTINGS.keys():
-                if setting_key in config['CPU'] and setting_key in cpu_widgets:
-                    cpu_widgets[setting_key].setCurrentText(config['CPU'][setting_key])
+                if setting_key in config["CPU"] and setting_key in cpu_widgets:
+                    cpu_widgets[setting_key].setCurrentText(config["CPU"][setting_key])
 
-        if 'GPU' in config:
+        if "GPU" in config:
             for setting_key in GPULaunchManager.GPU_SETTINGS.keys():
-                if setting_key in config['GPU']:
+                if setting_key in config["GPU"]:
                     for category_name, category_widgets in gpu_widgets.items():
-                        if category_name != 'LaunchOptions' and setting_key in category_widgets:
+                        if category_name != "LaunchOptions" and setting_key in category_widgets:
                             widget = category_widgets[setting_key]
-                            value = config['GPU'][setting_key]
+                            value = config["GPU"][setting_key]
                             if isinstance(widget, QComboBox):
                                 widget.setCurrentText(value)
                             elif isinstance(widget, QLineEdit):
                                 widget.setText(value)
                             break
 
-        if 'LaunchOptions' in config and 'LaunchOptions' in gpu_widgets and 'launch_options_input' in gpu_widgets['LaunchOptions']:
-            launch_options = config['LaunchOptions'].get('launch_options', '').replace('%%', '%')
-            gpu_widgets['LaunchOptions']['launch_options_input'].setText(launch_options)
+        if "LaunchOptions" in config and "LaunchOptions" in gpu_widgets and "launch_options_input" in gpu_widgets["LaunchOptions"]:
+            launch_options = config["LaunchOptions"].get("launch_options", "").replace("%%", "%")
+            gpu_widgets["LaunchOptions"]["launch_options_input"].setText(launch_options)
 
-        if kernel_widgets and 'Kernel' in config:
+        if kernel_widgets and "Kernel" in config:
             for setting_key in KernelManager.KERNEL_SETTINGS.keys():
-                if setting_key in config['Kernel']:
-                    widget_key = f'{setting_key}_input'
+                if setting_key in config["Kernel"]:
+                    widget_key = f"{setting_key}_input"
                     if widget_key in kernel_widgets:
-                        kernel_widgets[widget_key].setText(config['Kernel'][setting_key])
+                        kernel_widgets[widget_key].setText(config["Kernel"][setting_key])
 
-        if disk_widgets and 'disk_settings' in disk_widgets and 'Disk' in config:
-            for config_key, value in config['Disk'].items():
-                if '_' in config_key:
-                    disk_name, setting_key = config_key.rsplit('_', 1)
-                    if disk_name in disk_widgets['disk_settings'] and setting_key in disk_widgets['disk_settings'][disk_name]:
-                        disk_widgets['disk_settings'][disk_name][setting_key].setCurrentText(value)
+        if disk_widgets and "disk_settings" in disk_widgets and "Disk" in config:
+            for config_key, value in config["Disk"].items():
+                if "_" in config_key:
+                    disk_name, setting_key = config_key.rsplit("_", 1)
+                    if disk_name in disk_widgets["disk_settings"] and setting_key in disk_widgets["disk_settings"][disk_name]:
+                        disk_widgets["disk_settings"][disk_name][setting_key].setCurrentText(value)
 
         return True
 

@@ -20,7 +20,7 @@ def check_sudo_execution():
     """
     Check if the application is run with sudo and exit if it is.
     """
-    if os.environ.get('SUDO_USER'):
+    if os.environ.get("SUDO_USER"):
         print("Error: This application should not be run with sudo.")
         print("Please run as a regular user. The application will request")
         print("elevated privileges when needed through pkexec.")
@@ -38,7 +38,7 @@ class SingleInstanceChecker:
         """
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = ('localhost', self.port)
+        self.server_address = ("localhost", self.port)
         self.signals = SingletonSignals()
         self.listener_thread = None
         self.running = False
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
         Set up the CPU management tab.
         """
         cpu_tab, self.cpu_widgets = CPUManager.create_cpu_tab()
-        self.cpu_widgets['cpu_apply_button'].clicked.connect(self.apply_all_settings)
+        self.cpu_widgets["cpu_apply_button"].clicked.connect(self.apply_all_settings)
         CPUManager.refresh_cpu_values(self.cpu_widgets)
         self.tab_widget.addTab(cpu_tab, "CPU")
 
@@ -259,7 +259,7 @@ class MainWindow(QMainWindow):
         Set up the disk management tab.
         """
         disk_tab, self.disk_widgets = DiskManager.create_disk_tab()
-        self.disk_widgets['disk_apply_button'].clicked.connect(self.apply_all_settings)
+        self.disk_widgets["disk_apply_button"].clicked.connect(self.apply_all_settings)
         DiskManager.refresh_disk_values(self.disk_widgets)
         self.tab_widget.addTab(disk_tab, "Disk")
 
@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
         gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tabs()
 
         for category_name, category_widgets in self.gpu_widgets.items():
-            if category_name != 'LaunchOptions':
+            if category_name != "LaunchOptions":
                 apply_button_name = f"{category_name.lower()}_apply_button"
                 if apply_button_name in category_widgets:
                     category_widgets[apply_button_name].clicked.connect(self.apply_all_settings)
@@ -282,8 +282,8 @@ class MainWindow(QMainWindow):
         Set up the launch options tab.
         """
         launch_options_tab, self.launch_options_widgets = GPULaunchManager.create_launch_options_tab()
-        self.gpu_widgets['LaunchOptions'] = self.launch_options_widgets
-        self.launch_options_widgets['launch_apply_button'].clicked.connect(self.apply_all_settings)
+        self.gpu_widgets["LaunchOptions"] = self.launch_options_widgets
+        self.launch_options_widgets["launch_apply_button"].clicked.connect(self.apply_all_settings)
         self.tab_widget.addTab(launch_options_tab, "Launch Options")
 
     def setup_kernel_tab(self):
@@ -291,10 +291,10 @@ class MainWindow(QMainWindow):
         Set up the kernel management tab.
         """
         kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab(self)
-        self.kernel_widgets['kernel_apply_button'].clicked.connect(self.apply_all_settings)
+        self.kernel_widgets["kernel_apply_button"].clicked.connect(self.apply_all_settings)
 
         for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-            widget_key = f'{setting_name}_input'
+            widget_key = f"{setting_name}_input"
             self.kernel_widgets[widget_key].installEventFilter(self)
 
         KernelManager.refresh_kernel_values(self.kernel_widgets)
@@ -312,7 +312,7 @@ class MainWindow(QMainWindow):
         Set up the options tab.
         """
         options_tab, self.options_widgets = OptionsManager.create_options_tab(self)
-        self.options_widgets['options_apply_button'].clicked.connect(lambda: OptionsManager.save_and_apply_options(self.options_widgets))
+        self.options_widgets["options_apply_button"].clicked.connect(lambda: OptionsManager.save_and_apply_options(self.options_widgets))
         self.tab_widget.addTab(options_tab, "Options")
 
     def setup_about_tab(self):
@@ -378,7 +378,7 @@ class MainWindow(QMainWindow):
         """
         Update the tray profile menu with available profiles.
         """
-        if not hasattr(self, 'profile_submenu'):
+        if not hasattr(self, "profile_submenu"):
             return
 
         self.profile_submenu.clear()
@@ -453,7 +453,7 @@ class MainWindow(QMainWindow):
         if not profile_name or profile_name == self.current_profile or profile_name.isspace():
             return
 
-        if hasattr(self, '_initial_setup_complete') and self._initial_setup_complete:
+        if hasattr(self, "_initial_setup_complete") and self._initial_setup_complete:
             try:
                 ConfigManager.save_config(
                     self.cpu_widgets,
@@ -512,7 +512,7 @@ class MainWindow(QMainWindow):
                 self.update_profile_list()
                 self.profile_selector.setCurrentText(profile_name)
 
-                if hasattr(self, 'tray_icon') and self.use_system_tray:
+                if hasattr(self, "tray_icon") and self.use_system_tray:
                     self.update_tray_profile_menu()
 
                 QMessageBox.information(self, "Profile Saved", f"Profile '{profile_name}' has been saved.")
@@ -556,7 +556,7 @@ class MainWindow(QMainWindow):
                 self.refresh_disk_values()
                 self.refresh_kernel_values()
 
-                if hasattr(self, 'tray_icon') and self.use_system_tray:
+                if hasattr(self, "tray_icon") and self.use_system_tray:
                     self.update_tray_profile_menu()
 
                 QMessageBox.information(self, "Profile Deleted", f"Profile '{current_profile}' has been deleted.")
@@ -631,28 +631,28 @@ class MainWindow(QMainWindow):
         Collects all settings (CPU, Disk, GPU, Kernel) and applies them in one go using volt-helper.
         Uses clean environment to avoid PyInstaller interference.
         """
-        if (self.cpu_widgets.get('is_process_running', False) or
-            self.disk_widgets.get('is_process_running', False) or
-            self.kernel_widgets.get('is_process_running', False)):
+        if (self.cpu_widgets.get("is_process_running", False) or
+            self.disk_widgets.get("is_process_running", False) or
+            self.kernel_widgets.get("is_process_running", False)):
             return
 
         try:
             self.save_settings()
 
             cpu_args = []
-            cpu_governor = self.cpu_widgets['scaling_governor'].currentText()
+            cpu_governor = self.cpu_widgets["scaling_governor"].currentText()
 
-            if 'max_freq' in self.cpu_widgets:
-                cpu_max_freq = self.cpu_widgets['scaling_max_freq'].currentText()
+            if "max_freq" in self.cpu_widgets:
+                cpu_max_freq = self.cpu_widgets["scaling_max_freq"].currentText()
             else:
                 cpu_max_freq = "unset"
 
-            if 'min_freq' in self.cpu_widgets:
-                cpu_min_freq = self.cpu_widgets['scaling_min_freq'].currentText()
+            if "min_freq" in self.cpu_widgets:
+                cpu_min_freq = self.cpu_widgets["scaling_min_freq"].currentText()
             else:
                 cpu_min_freq = "unset"
 
-            cpu_scheduler = self.cpu_widgets['scheduler'].currentText()
+            cpu_scheduler = self.cpu_widgets["scheduler"].currentText()
             cpu_parts = []
 
             if cpu_governor != "unset":
@@ -674,8 +674,8 @@ class MainWindow(QMainWindow):
                 cpu_args.extend(cpu_parts)
 
             disk_args = []
-            for disk_name, disk_widgets in self.disk_widgets['disk_settings'].items():
-                selected_scheduler = disk_widgets['scheduler'].currentText()
+            for disk_name, disk_widgets in self.disk_widgets["disk_settings"].items():
+                selected_scheduler = disk_widgets["scheduler"].currentText()
                 if selected_scheduler and selected_scheduler != "" and selected_scheduler != "unset":
                     if not disk_args:
                         disk_args.append("-d")
@@ -684,7 +684,7 @@ class MainWindow(QMainWindow):
             kernel_args = []
             for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
                 for name, info in category.items():
-                    value = self.kernel_widgets[f'{name}_input'].text().strip()
+                    value = self.kernel_widgets[f"{name}_input"].text().strip()
                     if value:
                         if not kernel_args:
                             kernel_args.append("-k")
@@ -692,12 +692,12 @@ class MainWindow(QMainWindow):
 
             gpu_args = []
             settings_file = GPULaunchManager.write_settings_file(
-                self.gpu_widgets['Mesa'],
-                self.gpu_widgets['NVIDIA'],
-                self.gpu_widgets['RenderSelector'],
-                self.gpu_widgets['MangoHud'],
-                self.gpu_widgets['LSFrameGen'],
-                self.gpu_widgets['LaunchOptions']
+                self.gpu_widgets["Mesa"],
+                self.gpu_widgets["NVIDIA"],
+                self.gpu_widgets["RenderSelector"],
+                self.gpu_widgets["MangoHud"],
+                self.gpu_widgets["LSFrameGen"],
+                self.gpu_widgets["LaunchOptions"]
             )
             if settings_file:
                 gpu_args.extend(["-p", self.volt_path, "-g", settings_file])
@@ -711,21 +711,21 @@ class MainWindow(QMainWindow):
             process.start(all_args[0], all_args[1:])
             process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
 
-            self.cpu_widgets['cpu_apply_button'].setEnabled(False)
-            self.disk_widgets['disk_apply_button'].setEnabled(False)
-            self.kernel_widgets['kernel_apply_button'].setEnabled(False)
+            self.cpu_widgets["cpu_apply_button"].setEnabled(False)
+            self.disk_widgets["disk_apply_button"].setEnabled(False)
+            self.kernel_widgets["kernel_apply_button"].setEnabled(False)
 
             for category_name, category_widgets in self.gpu_widgets.items():
-                if category_name != 'LaunchOptions':
+                if category_name != "LaunchOptions":
                     apply_button_name = f"{category_name.lower()}_apply_button"
                     if apply_button_name in category_widgets:
                         category_widgets[apply_button_name].setEnabled(False)
 
-            self.launch_options_widgets['launch_apply_button'].setEnabled(False)
+            self.launch_options_widgets["launch_apply_button"].setEnabled(False)
 
         except Exception as e:
             print(f"Error applying settings: {e}")
-            if hasattr(self, 'tray_icon'):
+            if hasattr(self, "tray_icon"):
                 self.tray_icon.showMessage("volt-gui", f"Failed to apply settings: {e}", QSystemTrayIcon.MessageIcon.Critical, 2000)
             else:
                 QMessageBox.warning(self, "volt-gui", f"Failed to apply settings: {e}")
@@ -734,23 +734,23 @@ class MainWindow(QMainWindow):
         """
         Handle the completion of the settings application process.
         """
-        self.cpu_widgets['cpu_apply_button'].setEnabled(True)
-        self.disk_widgets['disk_apply_button'].setEnabled(True)
-        self.kernel_widgets['kernel_apply_button'].setEnabled(True)
+        self.cpu_widgets["cpu_apply_button"].setEnabled(True)
+        self.disk_widgets["disk_apply_button"].setEnabled(True)
+        self.kernel_widgets["kernel_apply_button"].setEnabled(True)
 
         for category_name, category_widgets in self.gpu_widgets.items():
-            if category_name != 'LaunchOptions':
+            if category_name != "LaunchOptions":
                 apply_button_name = f"{category_name.lower()}_apply_button"
                 if apply_button_name in category_widgets:
                     category_widgets[apply_button_name].setEnabled(True)
 
-        self.launch_options_widgets['launch_apply_button'].setEnabled(True)
+        self.launch_options_widgets["launch_apply_button"].setEnabled(True)
 
         self.refresh_cpu_values()
         self.refresh_disk_values()
         self.refresh_kernel_values()
 
-        if hasattr(self, 'tray_icon'):
+        if hasattr(self, "tray_icon"):
             self.tray_icon.showMessage("volt-gui", "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical, 2000)
         else:
             QMessageBox.information(self, "volt-gui", "Settings applied successfully")
@@ -779,7 +779,7 @@ class MainWindow(QMainWindow):
         Handle the main window close event. If system tray is enabled, hide to tray.
         If system tray is disabled, quit the application.
         """
-        if self.use_system_tray and hasattr(self, 'tray_icon'):
+        if self.use_system_tray and hasattr(self, "tray_icon"):
             self.hide()
             event.ignore()
         else:

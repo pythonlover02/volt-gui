@@ -7,42 +7,42 @@ class CPUManager:
 
     CPU_SETTINGS_CATEGORIES = {
         "Frequency": {
-            'scaling_governor': {
-                'label': "Governor:",
-                'text': "Controls CPU frequency scaling policy to balance performance and power consumption.",
-                'items': ["unset"],
-                'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
-                'available_path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors",
-                'is_dynamic': True
+            "scaling_governor": {
+                "label": "Governor:",
+                "text": "Controls CPU frequency scaling policy to balance performance and power consumption.",
+                "items": ["unset"],
+                "path": "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
+                "available_path": "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors",
+                "is_dynamic": True
             },
-            'scaling_max_freq': {
-                'label': "Max Frequency (MHz):",
-                'text': "Upper limit for CPU frequency. Higher values increase performance but consume more power.",
-                'items': ["unset"],
-                'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
-                'min_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
-                'max_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
-                'is_dynamic': False,
-                'convert_to_mhz': True
+            "scaling_max_freq": {
+                "label": "Max Frequency (MHz):",
+                "text": "Upper limit for CPU frequency. Higher values increase performance but consume more power.",
+                "items": ["unset"],
+                "path": "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
+                "min_path": "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
+                "max_path": "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
+                "is_dynamic": False,
+                "convert_to_mhz": True
             },
-            'scaling_min_freq': {
-                'label': "Min Frequency (MHz):",
-                'text': "Lower limit for CPU frequency. Higher values reduce latency but prevent deep power saving.",
-                'items': ["unset"],
-                'path': "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq",
-                'min_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
-                'max_path': "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
-                'is_dynamic': False,
-                'convert_to_mhz': True
+            "scaling_min_freq": {
+                "label": "Min Frequency (MHz):",
+                "text": "Lower limit for CPU frequency. Higher values reduce latency but prevent deep power saving.",
+                "items": ["unset"],
+                "path": "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq",
+                "min_path": "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
+                "max_path": "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
+                "is_dynamic": False,
+                "convert_to_mhz": True
             }
         },
         "Scheduler": {
-            'scheduler': {
-                'label': "Pluggable Scheduler:",
-                'text': "BPF-based schedulers (sched_ext) for workload-specific optimizations like latency, throughput, or power efficiency.",
-                'items': ["unset", "none"],
-                'search_paths': ["/usr/bin/", "/usr/local/bin/"],
-                'is_dynamic': True
+            "scheduler": {
+                "label": "Pluggable Scheduler:",
+                "text": "BPF-based schedulers (sched_ext) for workload-specific optimizations like latency, throughput, or power efficiency.",
+                "items": ["unset", "none"],
+                "search_paths": ["/usr/bin/", "/usr/local/bin/"],
+                "is_dynamic": True
             }
         }
     }
@@ -68,21 +68,21 @@ class CPUManager:
         """
         Get the current value for a CPU setting.
         """
-        if 'path' not in setting_info:
+        if "path" not in setting_info:
             return None
 
         try:
-            with open(setting_info['path'], "r") as f:
+            with open(setting_info["path"], "r") as f:
                 value = f.read().strip()
 
-                if setting_info.get('convert_to_mhz', False):
+                if setting_info.get("convert_to_mhz", False):
                     try:
                         value = str(int(value) // 1000)
                     except ValueError:
                         pass
 
-                if setting_info.get('is_dynamic', False):
-                    match = re.search(r'\[([^\]]+)\]', value)
+                if setting_info.get("is_dynamic", False):
+                    match = re.search(r"\[([^\]]+)\]", value)
                     if match:
                         return match.group(1)
                     else:
@@ -97,19 +97,19 @@ class CPUManager:
         """
         Get available values for a CPU setting.
         """
-        base_items = setting_info.get('items', ["unset"]).copy()
+        base_items = setting_info.get("items", ["unset"]).copy()
 
-        if setting_info.get('is_dynamic', False):
-            if 'available_path' in setting_info:
+        if setting_info.get("is_dynamic", False):
+            if "available_path" in setting_info:
                 try:
-                    with open(setting_info['available_path'], "r") as f:
+                    with open(setting_info["available_path"], "r") as f:
                         available_values = f.read().strip().split()
                         return base_items + [item for item in available_values if item not in base_items]
                 except Exception:
                     return base_items
-            elif 'search_paths' in setting_info:
+            elif "search_paths" in setting_info:
                 schedulers = base_items.copy()
-                for search_path in setting_info['search_paths']:
+                for search_path in setting_info["search_paths"]:
                     try:
                         scx_files = glob.glob(os.path.join(search_path, "scx_*"))
                         for file_path in scx_files:
@@ -121,9 +121,9 @@ class CPUManager:
                 return schedulers
         else:
             try:
-                with open(setting_info['min_path'], "r") as f:
+                with open(setting_info["min_path"], "r") as f:
                     min_freq = int(f.read().strip()) // 1000
-                with open(setting_info['max_path'], "r") as f:
+                with open(setting_info["max_path"], "r") as f:
                     max_freq = int(f.read().strip()) // 1000
                 freq_values = [str(f) for f in range(min_freq, max_freq + 100, 100)]
                 return base_items + freq_values
@@ -176,28 +176,28 @@ class CPUManager:
         for category_name, category_settings in CPUManager.CPU_SETTINGS_CATEGORIES.items():
             for setting_key, setting_info in category_settings.items():
                 layout = QHBoxLayout()
-                label = QLabel(setting_info['label'])
+                label = QLabel(setting_info["label"])
                 label.setWordWrap(True)
                 label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
                 widgets[setting_key] = QComboBox()
 
                 is_accessible = True
-                if 'path' in setting_info:
-                    is_accessible = CPUManager.get_available_setting(setting_info['path'])
+                if "path" in setting_info:
+                    is_accessible = CPUManager.get_available_setting(setting_info["path"])
 
                 available_values = CPUManager.get_available_values(setting_info)
 
-                if setting_key == 'scaling_max_freq' and not setting_info.get('is_dynamic', False):
+                if setting_key == "scaling_max_freq" and not setting_info.get("is_dynamic", False):
                     available_values = list(reversed(available_values))
 
                 widgets[setting_key].addItems(available_values)
 
                 if is_accessible:
-                    widgets[setting_key].setToolTip(setting_info['text'])
+                    widgets[setting_key].setToolTip(setting_info["text"])
                 else:
                     widgets[setting_key].setEnabled(False)
-                    if 'path' in setting_info:
+                    if "path" in setting_info:
                         widgets[setting_key].setToolTip(f"Setting file not available - {setting_info['label']} selection disabled")
                     else:
                         widgets[setting_key].setToolTip(f"SCX schedulers not available - {setting_info['label']} selection disabled")
@@ -212,7 +212,7 @@ class CPUManager:
                 current_value_label = QLabel("Updating...")
                 current_value_label.setContentsMargins(0, 0, 0, 10)
                 scroll_layout.addWidget(current_value_label)
-                widgets[f'current_{setting_key}_value'] = current_value_label
+                widgets[f"current_{setting_key}_value"] = current_value_label
 
         scroll_layout.addStretch(1)
         scroll_area.setWidget(scroll_widget)
@@ -220,9 +220,9 @@ class CPUManager:
 
         CPUManager.create_cpu_apply_button(main_layout, widgets)
 
-        widgets['cpu_settings_applied'] = False
-        widgets['is_process_running'] = False
-        widgets['process'] = None
+        widgets["cpu_settings_applied"] = False
+        widgets["is_process_running"] = False
+        widgets["process"] = None
 
         return cpu_tab, widgets
 
@@ -236,12 +236,12 @@ class CPUManager:
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(11, 10, 11, 0)
 
-        widgets['cpu_apply_button'] = QPushButton("Apply")
-        widgets['cpu_apply_button'].setMinimumSize(100, 30)
-        widgets['cpu_apply_button'].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        widgets["cpu_apply_button"] = QPushButton("Apply")
+        widgets["cpu_apply_button"].setMinimumSize(100, 30)
+        widgets["cpu_apply_button"].setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         button_layout.addStretch(1)
-        button_layout.addWidget(widgets['cpu_apply_button'])
+        button_layout.addWidget(widgets["cpu_apply_button"])
         button_layout.addStretch(1)
 
         parent_layout.addWidget(button_container)
@@ -253,11 +253,11 @@ class CPUManager:
         Refresh the current CPU values displayed in the interface.
         """
         for setting_key, setting_info in CPUManager.CPU_SETTINGS.items():
-            current_value_label = widgets.get(f'current_{setting_key}_value')
+            current_value_label = widgets.get(f"current_{setting_key}_value")
             if not current_value_label:
                 continue
 
-            if setting_key == 'scheduler':
+            if setting_key == "scheduler":
                 current_value_label.setText("Updating...")
                 try:
                     running_scheduler = CPUManager.get_current_scheduler()
@@ -271,7 +271,7 @@ class CPUManager:
                 except Exception:
                     current_value_label.setText("current: Error")
             else:
-                is_accessible = CPUManager.get_available_setting(setting_info['path'])
+                is_accessible = CPUManager.get_available_setting(setting_info["path"])
                 if not is_accessible:
                     current_value_label.setText("current: unset")
                 else:

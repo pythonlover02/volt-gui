@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m"
 APP_NAME="volt-gui"
 BIN_DIR="bin"
 EXECUTABLE="$BIN_DIR/volt-gui"
@@ -22,7 +22,7 @@ cleanup() {
 check_commands() {
     for cmd in wget chmod mkdir cp cat dirname readlink du cut; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo -e "${RED}Error: Required command '$cmd' not found${NC}" >&2
+            echo -e "${RED}Error: Required command "$cmd" not found${NC}" >&2
             exit 1
         fi
     done
@@ -52,7 +52,7 @@ copy_icon() {
 
 create_desktop_file() {
     echo -e "${BLUE}Creating desktop file...${NC}"
-    cat > "$APPDIR/$DESKTOP_FILE" << 'EOF'
+    cat > "$APPDIR/$DESKTOP_FILE" << "EOF"
 [Desktop Entry]
 Name=volt-gui
 Comment=My AMD Adrenaline / NVIDIA Settings Linux Alternative
@@ -66,7 +66,7 @@ EOF
 
 create_apprun() {
     echo -e "${BLUE}Creating AppRun script...${NC}"
-    cat > "$APPDIR/AppRun" << 'EOF'
+    cat > "$APPDIR/AppRun" << "EOF"
 #!/bin/bash
 HERE="$(dirname "$(readlink -f "${0}")")"
 export APPDIR="${HERE}"
