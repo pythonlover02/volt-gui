@@ -642,12 +642,12 @@ class MainWindow(QMainWindow):
             cpu_args = []
             cpu_governor = self.cpu_widgets["scaling_governor"].currentText()
 
-            if "max_freq" in self.cpu_widgets:
+            if "scaling_max_freq" in self.cpu_widgets:
                 cpu_max_freq = self.cpu_widgets["scaling_max_freq"].currentText()
             else:
                 cpu_max_freq = "unset"
 
-            if "min_freq" in self.cpu_widgets:
+            if "scaling_min_freq" in self.cpu_widgets:
                 cpu_min_freq = self.cpu_widgets["scaling_min_freq"].currentText()
             else:
                 cpu_min_freq = "unset"
