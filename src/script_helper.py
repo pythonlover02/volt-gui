@@ -71,7 +71,9 @@ manage_cpu() {
     [ -n "$governor" ] && apply_governor "$governor"
     [ -n "$min_freq" ] && apply_min_freq "$min_freq"
     [ -n "$max_freq" ] && apply_max_freq "$max_freq"
-    [ -n "$scheduler" ] && handle_scheduler "$scheduler"
+    if [ -n "$scheduler" ]; then
+        handle_scheduler "$scheduler"
+    fi
 }
 
 apply_disk_scheduler() {
