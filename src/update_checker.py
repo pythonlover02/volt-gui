@@ -39,10 +39,10 @@ class UpdateChecker:
 
         if hasattr(main_window, "tray_icon") and main_window.use_system_tray:
             main_window.tray_icon.showMessage(
-                "volt-gui Update",
+                "volt-gui",
                 message,
                 main_window.tray_icon.MessageIcon.Information,
                 5000
             )
         else:
-            QMessageBox.information(main_window, "volt-gui Update", message)
+            QMessageBox.information(main_window, "volt-gui", message)
