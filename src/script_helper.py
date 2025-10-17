@@ -116,7 +116,7 @@ read_gpu_settings() {
 }
 
 add_launch_options() {
-    local script_content="$2"
+    local script_content="$2\\n\\n"
     local launch_options=$(grep "^launch_options=" "$1" 2>/dev/null | cut -d"=" -f2- | sed "s/^[[:space:]]*//;s/[[:space:]]*$//")
 
     if [ -n "$launch_options" ]; then
