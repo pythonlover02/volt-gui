@@ -103,6 +103,8 @@ build_appimage() {
 }
 
 print_success() {
+    local size=""
+
     echo -e "\nBuild successful!"
     echo -e "AppImage: $OUTPUT_FILE"
     if command -v du &> /dev/null; then

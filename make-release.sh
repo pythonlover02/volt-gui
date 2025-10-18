@@ -11,12 +11,6 @@ NUITKA_BUILD="volt-gui-nuitka"
 BUILD_SCRIPTS=("make-pyinstaller.sh" "make-nuitka.sh")
 APPIMAGE_SCRIPT="make-appimage.sh"
 ORIGINAL_DIR=$(pwd)
-BUILD_SCRIPT=""
-TARGET_DIR=""
-DIR_NAME=""
-BUILD_TYPE=""
-APPIMAGE_FILE=""
-RENAMED_APPIMAGE=""
 
 cleanup() {
     true
@@ -32,51 +26,51 @@ check_commands() {
 }
 
 build_and_copy() {
-    BUILD_SCRIPT=$1
-    TARGET_DIR=$2
-    BUILD_TYPE=$3
+    local build_script="$1"
+    local target_dir="$2"
+    local build_type="$3"
+    local appimage_file="volt-gui-x86_64.AppImage"
+    local renamed_appimage="volt-gui-${build_type}-x86_64.AppImage"
 
-    echo -e "${BLUE}Executing build script: $BUILD_SCRIPT${NC}"
-    if ! (cd "$ORIGINAL_DIR" && ./"$BUILD_SCRIPT"); then
-        echo -e "${RED}Error: Build script $BUILD_SCRIPT failed${NC}" >&2
+    echo -e "${BLUE}Executing build script: $build_script${NC}"
+    if ! (cd "$ORIGINAL_DIR" && ./"$build_script"); then
+        echo -e "${RED}Error: Build script $build_script failed${NC}" >&2
         exit 1
     fi
 
-    echo -e "${BLUE}Building AppImage for $BUILD_TYPE${NC}"
+    echo -e "${BLUE}Building AppImage for $build_type${NC}"
     if ! (cd "$ORIGINAL_DIR" && ./"$APPIMAGE_SCRIPT"); then
         echo -e "${RED}Error: AppImage build failed${NC}" >&2
         exit 1
     fi
 
-    APPIMAGE_FILE="volt-gui-x86_64.AppImage"
-    RENAMED_APPIMAGE="volt-gui-${BUILD_TYPE}-x86_64.AppImage"
-
-    echo -e "${BLUE}Renaming AppImage to $RENAMED_APPIMAGE${NC}"
-    if [[ -f "$ORIGINAL_DIR/$APPIMAGE_FILE" ]]; then
-        mv "$ORIGINAL_DIR/$APPIMAGE_FILE" "$ORIGINAL_DIR/$RENAMED_APPIMAGE"
+    echo -e "${BLUE}Renaming AppImage to $renamed_appimage${NC}"
+    if [[ -f "$ORIGINAL_DIR/$appimage_file" ]]; then
+        mv "$ORIGINAL_DIR/$appimage_file" "$ORIGINAL_DIR/$renamed_appimage"
     else
         echo -e "${RED}Error: AppImage file not found${NC}" >&2
         exit 1
     fi
 
-    echo -e "${BLUE}Copying artifacts to $TARGET_DIR${NC}"
-    mkdir -p "$TARGET_DIR"
+    echo -e "${BLUE}Copying artifacts to $target_dir${NC}"
+    mkdir -p "$target_dir"
     for item in bin install.sh remove.sh; do
         if [[ -e "$ORIGINAL_DIR/$item" ]]; then
-            cp -r "$ORIGINAL_DIR/$item" "$TARGET_DIR/"
+            cp -r "$ORIGINAL_DIR/$item" "$target_dir/"
         else
             echo "Warning: $item not found, skipping"
         fi
     done
 
     echo -e "${BLUE}Moving AppImage to release directory${NC}"
-    mv "$ORIGINAL_DIR/$RENAMED_APPIMAGE" .
+    mv "$ORIGINAL_DIR/$renamed_appimage" .
 }
 
 compress_release() {
-    DIR_NAME=$1
-    echo -e "${BLUE}Compressing $DIR_NAME to ${DIR_NAME}.tar.gz${NC}"
-    tar -czf "${DIR_NAME}.tar.gz" "$DIR_NAME"
+    local dir_name="$1"
+
+    echo -e "${BLUE}Compressing $dir_name to ${dir_name}.tar.gz${NC}"
+    tar -czf "${dir_name}.tar.gz" "$dir_name"
 }
 
 main() {

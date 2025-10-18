@@ -17,9 +17,6 @@ NUITKA_OPTS=(
     "--assume-yes-for-downloads"
     "--enable-plugin=pyside6"
 )
-CURRENT_HASH=""
-STORED_HASH=""
-SIZE=""
 
 cleanup() {
     rm -rf "$BASE_FILENAME.build/" "$BASE_FILENAME.dist/" "$BASE_FILENAME.onefile-build/" 2>/dev/null || true
@@ -49,14 +46,17 @@ verify_requirements() {
 }
 
 update_dependencies() {
-    CURRENT_HASH=$(shasum -a 256 "$REQ_FILE" | cut -d" " -f1)
-    STORED_HASH=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
+    local current_hash=""
+    local stored_hash=""
 
-    if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$CURRENT_HASH" != "$STORED_HASH" ]]; then
+    current_hash=$(shasum -a 256 "$REQ_FILE" | cut -d" " -f1)
+    stored_hash=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
+
+    if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$current_hash" != "$stored_hash" ]]; then
         echo -e "${BLUE}Updating dependencies...${NC}"
         pip install --upgrade pip
         pip install --no-cache-dir -r "$REQ_FILE"
-        echo "$CURRENT_HASH" > "$REQ_HASH_FILE"
+        echo "$current_hash" > "$REQ_HASH_FILE"
     fi
 }
 
@@ -75,6 +75,8 @@ move_to_bin() {
 }
 
 main() {
+    local size=""
+
     trap cleanup EXIT
     check_commands
     verify_requirements
@@ -87,8 +89,8 @@ main() {
     echo -e "\nBuild successful!"
     echo -e "Executable: $BIN_DIR/$BASE_FILENAME"
     if command -v du &> /dev/null; then
-        SIZE=$(du -h "$BIN_DIR"/* 2>/dev/null | cut -f1 || echo "Unknown")
-        echo -e "File size: $SIZE"
+        size=$(du -h "$BIN_DIR"/* 2>/dev/null | cut -f1 || echo "Unknown")
+        echo -e "File size: $size"
     fi
 }
 

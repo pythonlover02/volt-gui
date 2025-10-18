@@ -9,8 +9,6 @@ VENV_DIR="py_env"
 REQ_FILE="requirements.txt"
 REQ_HASH_FILE="$VENV_DIR/requirements.sha256"
 SRC_FILE="src/volt-gui.py"
-CURRENT_HASH=""
-STORED_HASH=""
 
 cleanup() {
     if [[ -n "${VIRTUAL_ENV:-}" ]]; then
@@ -46,14 +44,17 @@ verify_files() {
 }
 
 update_dependencies() {
-    CURRENT_HASH=$(shasum -a 256 "$REQ_FILE" | cut -d" " -f1)
-    STORED_HASH=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
+    local current_hash=""
+    local stored_hash=""
 
-    if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$CURRENT_HASH" != "$STORED_HASH" ]]; then
+    current_hash=$(shasum -a 256 "$REQ_FILE" | cut -d" " -f1)
+    stored_hash=$(cat "$REQ_HASH_FILE" 2>/dev/null || true)
+
+    if [[ ! -f "$REQ_HASH_FILE" ]] || [[ "$current_hash" != "$stored_hash" ]]; then
         echo -e "${BLUE}Updating dependencies...${NC}"
         pip install --upgrade pip
         pip install --no-cache-dir -r "$REQ_FILE"
-        echo "$CURRENT_HASH" > "$REQ_HASH_FILE"
+        echo "$current_hash" > "$REQ_HASH_FILE"
     else
         echo "Dependencies are up to date"
     fi
