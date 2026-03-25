@@ -1,814 +1,575 @@
-import sys, os, signal, socket, threading
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QTabWidget, QFrame, QInputDialog
-from PySide6.QtCore import Qt, QProcess, Signal, QObject, QTimer
-from PySide6.QtGui import QIcon, QAction
-from cpu import CPUManager
-from gpu_launch import GPULaunchManager
-from disk import DiskManager
-from kernel import KernelManager
-from extras import ExtrasManager
-from options import OptionsManager
-from about import AboutManager
-from config import ConfigManager
-from theme import ThemeManager
-from workarounds import WorkaroundManager
-from welcome import WelcomeManager
-from update_checker import UpdateChecker
-from script_helper import HelperManager
+import sys, os, signal, socket, threading, stat, configparser, requests
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QFrame, QInputDialog, QSizePolicy, QStackedWidget, QListView
+from PySide6.QtCore import Qt, QProcess, QTimer, QThread
+from PySide6.QtGui import QIcon, QCursor, QAction
+from database import *
+from detection import *
+from profiles import *
+from themes import *
+from ui import *
+from welcome import *
 
-def check_sudo_execution():
-    """
-    Check if the application is run with sudo and exit if it is.
-    """
-    if os.environ.get("SUDO_USER"):
-        print("Error: This application should not be run with sudo.")
-        print("Please run as a regular user. The application will request")
-        print("elevated privileges when needed through pkexec.")
+
+def get_application_helper_script_content() -> str:
+    return r"""#!/usr/bin/env python3
+import sys, os
+
+
+def process_environment_script_write(volt_script_path, environment_arguments, launch_command):
+    unset_lines = []
+    set_lines = []
+    for environment_argument in environment_arguments:
+        if "=" not in environment_argument:
+            continue
+        env_key = environment_argument.split("=", 1)[0]
+        env_value = environment_argument.split("=", 1)[1]
+        if env_value == "":
+            unset_lines.append('os.environ.pop("' + env_key + '", None)')
+        else:
+            set_lines.append('os.environ["' + env_key + '"] = "' + env_value + '"')
+    script_parts = ["#!/usr/bin/env python3", "import os, sys", ""]
+    for line in unset_lines:
+        script_parts.append(line)
+    if len(unset_lines) > 0:
+        script_parts.append("")
+    for line in set_lines:
+        script_parts.append(line)
+    if len(set_lines) > 0:
+        script_parts.append("")
+    if launch_command != "":
+        prefix_items = launch_command.split()
+        script_parts.append("prefix = [" + ", ".join('"' + p + '"' for p in prefix_items) + "]")
+        script_parts.append("os.execvp(prefix[0], prefix + sys.argv[1:])")
+    else:
+        script_parts.append("os.execvp(sys.argv[1], sys.argv[1:])")
+    open(volt_script_path, "w").write("\n".join(script_parts) + "\n")
+    os.chmod(volt_script_path, 0o755)
+
+
+if __name__ == "__main__":
+    current_mode = None
+    environment_arguments = []
+    script_path = ""
+    launch_command = ""
+    for command_argument in sys.argv[1:]:
+        if command_argument in ("-p", "--path"):
+            current_mode = "path"
+        elif command_argument in ("-e", "--env"):
+            current_mode = "env"
+        elif current_mode == "path":
+            script_path = command_argument
+            current_mode = None
+        elif current_mode == "env":
+            if command_argument.startswith("launch:"):
+                launch_command = command_argument[7:]
+            else:
+                environment_arguments.append(command_argument)
+    if script_path != "":
+        process_environment_script_write(script_path, environment_arguments, launch_command)
+"""
+
+
+def get_option_value_from_display(display_text: str, option_items: tuple):
+    for item_entry in option_items:
+        if get_item_display(item_entry) == display_text: return get_item_value(item_entry)
+    return display_text
+
+
+def get_resolved_option_value(main_window, option_key: str):
+    return get_option_value_from_display(main_window.options_widgets[option_key].currentText(), get_setting_items("Options", option_key))
+
+
+def is_option_enabled(main_window, option_key: str) -> bool:
+    return get_resolved_option_value(main_window, option_key) == "enable"
+
+
+def get_persisted_option_value(option_key: str):
+    if not build_options_path().exists(): return get_option_default_value(option_key)
+    parser_instance = configparser.ConfigParser(interpolation=None)
+    parser_instance.read(build_options_path())
+    resolved = get_option_value_from_display(parser_instance.get("Options", option_key, fallback="default"), get_setting_items("Options", option_key))
+    if resolved is None: return get_option_default_value(option_key)
+    return resolved
+
+
+def calculate_initial_scale() -> float:
+    raw = get_persisted_option_value("interface_scale_factor")
+    if raw is None or not str(raw).replace(".", "", 1).isdigit():
+        os.environ["QT_SCALE_FACTOR"] = "1.0"
+        return 1.0
+    os.environ["QT_SCALE_FACTOR"] = str(raw)
+    return float(raw)
+
+
+def calculate_initial_volt_path():
+    return get_persisted_option_value("volt_script_location")
+
+
+def calculate_initial_theme():
+    return get_persisted_option_value("application_theme")
+
+
+def process_device_detection_complete(main_window, api_type: str) -> None:
+    if not hasattr(main_window, "all_widgets"): return None
+    setting_key = "opengl_rendering_device" if api_type == "opengl" else "vulkan_rendering_device"
+    if "Render Selector:" + setting_key not in main_window.all_widgets: return None
+    combobox = main_window.all_widgets["Render Selector:" + setting_key]
+    combobox.blockSignals(True)
+    current_text = combobox.currentText()
+    combobox.clear()
+    combobox.addItem("skip")
+    combobox.addItem("default")
+    for device_name in find_render_devices(api_type).get("devices", ()):
+        combobox.addItem(device_name)
+    combobox.device_map = find_render_devices(api_type).get("device_map", {})
+    if combobox.findText(current_text) >= 0: combobox.setCurrentIndex(combobox.findText(current_text))
+    else: combobox.setCurrentIndex(0)
+    combobox.blockSignals(False)
+    return None
+
+
+def create_profile_selector_widget(main_window) -> QFrame:
+    frame = QFrame()
+    frame.setFrameStyle(QFrame.Box)
+    frame.setLineWidth(1)
+    frame.setObjectName("profileFrame")
+    layout = QHBoxLayout(frame)
+    layout.setContentsMargins(8, 6, 8, 6)
+    layout.setSpacing(8)
+    label = QLabel("Profile:")
+    label.setMinimumWidth(60)
+    main_window.profile_selector = QComboBox()
+    main_window.profile_selector.setView(QListView())
+    main_window.profile_selector.setMinimumWidth(200)
+    process_profile_list_update(main_window)
+    main_window.profile_selector.setCurrentText(main_window.current_profile)
+    main_window.profile_selector.currentTextChanged.connect(lambda profile_name: process_profile_change(main_window, profile_name))
+    main_window.profile_selector.setFocusPolicy(Qt.ClickFocus)
+    new_profile_button = QPushButton("New Profile")
+    new_profile_button.setMinimumSize(90, 30)
+    new_profile_button.clicked.connect(lambda: process_new_profile_save(main_window))
+    delete_profile_button = QPushButton("Delete Profile")
+    delete_profile_button.setMinimumSize(90, 30)
+    delete_profile_button.clicked.connect(lambda: process_current_profile_delete(main_window))
+    layout.addWidget(label)
+    layout.addWidget(main_window.profile_selector)
+    layout.addStretch()
+    layout.addWidget(new_profile_button)
+    layout.addWidget(delete_profile_button)
+    return frame
+
+
+def process_profile_list_update(main_window) -> None:
+    main_window.profile_selector.blockSignals(True)
+    main_window.profile_selector.clear()
+    for profile_name in find_all_profiles():
+        main_window.profile_selector.addItem(profile_name)
+    main_window.profile_selector.blockSignals(False)
+    return None
+
+
+def process_profile_change(main_window, profile_name: str) -> None:
+    if getattr(main_window, "initial_setup_complete", False) is not True: return None
+    process_profile_save(main_window.all_widgets, main_window.current_profile)
+    main_window.current_profile = profile_name
+    process_profile_widget_load(main_window.all_widgets, profile_name)
+    process_tray_menu_update(main_window)
+    return None
+
+
+def process_new_profile_save(main_window) -> None:
+    profile_name, accepted = QInputDialog.getText(main_window, "New Profile", "Profile name:")
+    if accepted is not True: return None
+    if profile_name is None: return None
+    if profile_name.strip() == "": return None
+    if profile_name.strip().lower() == "default" or profile_name.strip() in find_all_profiles():
+        process_notification_display(main_window, "Profile already exists or is reserved.", True)
+        return None
+    process_profile_save(main_window.all_widgets, main_window.current_profile)
+    main_window.current_profile = profile_name.strip()
+    process_profile_save(main_window.all_widgets, profile_name.strip())
+    process_profile_list_update(main_window)
+    main_window.profile_selector.blockSignals(True)
+    main_window.profile_selector.setCurrentText(profile_name.strip())
+    main_window.profile_selector.blockSignals(False)
+    process_tray_menu_update(main_window)
+    process_notification_display(main_window, "Profile '" + profile_name.strip() + "' created.", False)
+    return None
+
+
+def process_current_profile_delete(main_window) -> None:
+    if main_window.current_profile == "Default":
+        process_notification_display(main_window, "Cannot delete Default profile.", True)
+        return None
+    if QMessageBox.question(main_window, "Delete Profile", "Delete profile '" + main_window.current_profile + "'?", QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes: return None
+    if not process_profile_delete(main_window.current_profile): return None
+    main_window.current_profile = "Default"
+    process_profile_list_update(main_window)
+    main_window.profile_selector.blockSignals(True)
+    main_window.profile_selector.setCurrentText("Default")
+    main_window.profile_selector.blockSignals(False)
+    process_profile_widget_load(main_window.all_widgets, "Default")
+    process_tray_menu_update(main_window)
+    process_notification_display(main_window, "Profile deleted.", False)
+    return None
+
+
+def create_system_tray_widget(main_window) -> None:
+    if not QSystemTrayIcon.isSystemTrayAvailable(): return None
+    main_window.tray_icon = QSystemTrayIcon(main_window)
+    main_window.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
+    menu = QMenu()
+    menu.addAction(QAction("Show", main_window, triggered=lambda: process_window_show(main_window)))
+    main_window.profile_submenu = QMenu("Apply Profile", menu)
+    process_tray_menu_update(main_window)
+    menu.addMenu(main_window.profile_submenu)
+    menu.addSeparator()
+    menu.addAction(QAction("Quit", main_window, triggered=lambda: process_application_quit(main_window)))
+    main_window.tray_icon.setContextMenu(menu)
+    main_window.tray_icon.show()
+    main_window.tray_icon.activated.connect(lambda activation_reason: process_tray_activation(main_window, activation_reason))
+    return None
+
+
+def process_tray_menu_update(main_window) -> None:
+    if not hasattr(main_window, "profile_submenu"): return None
+    main_window.profile_submenu.clear()
+    for profile_name in find_all_profiles():
+        action = QAction("Apply " + profile_name, main_window)
+        action.triggered.connect(lambda checked, bound_profile_name=profile_name: process_profile_apply_from_tray(main_window, bound_profile_name))
+        main_window.profile_submenu.addAction(action)
+    return None
+
+
+def process_tray_activation(main_window, activation_reason) -> None:
+    if activation_reason not in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick): return None
+    if main_window.isVisible():
+        main_window.hide()
+        return None
+    process_window_show(main_window)
+    return None
+
+
+def process_window_show(main_window) -> None:
+    if main_window.start_maximized: main_window.showMaximized()
+    else: main_window.show()
+    main_window.activateWindow()
+    main_window.raise_()
+    return None
+
+
+def process_profile_apply_from_tray(main_window, profile_name: str) -> None:
+    if profile_name != main_window.current_profile:
+        process_profile_save(main_window.all_widgets, main_window.current_profile)
+        main_window.current_profile = profile_name
+        main_window.profile_selector.blockSignals(True)
+        main_window.profile_selector.setCurrentText(profile_name)
+        main_window.profile_selector.blockSignals(False)
+        process_profile_widget_load(main_window.all_widgets, profile_name)
+    process_all_settings_apply(main_window)
+    return None
+
+
+def process_notification_display(main_window, notification_message: str, is_error: bool) -> None:
+    if hasattr(main_window, "tray_icon"):
+        main_window.tray_icon.showMessage("volt-gui", notification_message, QSystemTrayIcon.MessageIcon.Critical if is_error else QSystemTrayIcon.MessageIcon.Information, 2000)
+    elif is_error: QMessageBox.warning(main_window, "volt-gui", notification_message)
+    else: QMessageBox.information(main_window, "volt-gui", notification_message)
+    return None
+
+
+def process_options_application(main_window) -> None:
+    process_theme_application(QApplication.instance(), get_resolved_option_value(main_window, "application_theme"))
+    main_window.setWindowOpacity(0.95 if is_option_enabled(main_window, "window_transparency") else 1.0)
+    process_tray_option_update(main_window, is_option_enabled(main_window, "system_tray_behavior"))
+    main_window.start_minimized = is_option_enabled(main_window, "start_window_minimized")
+    main_window.start_maximized = is_option_enabled(main_window, "start_window_maximized")
+    main_window.show_welcome = is_option_enabled(main_window, "welcome_message_display")
+    main_window.check_updates = is_option_enabled(main_window, "automatic_update_check")
+    main_window.volt_path = get_resolved_option_value(main_window, "volt_script_location")
+    main_window.scaling_factor = float(get_resolved_option_value(main_window, "interface_scale_factor")) if get_resolved_option_value(main_window, "interface_scale_factor").replace(".", "", 1).isdigit() else 1.0
+    os.environ["QT_SCALE_FACTOR"] = str(main_window.scaling_factor)
+    return None
+
+
+def process_tray_option_update(main_window, tray_enabled: bool) -> None:
+    if main_window.use_system_tray == tray_enabled:
+        main_window.use_system_tray = tray_enabled
+        return None
+    main_window.use_system_tray = tray_enabled
+    if tray_enabled:
+        if not hasattr(main_window, "tray_icon"): create_system_tray_widget(main_window)
+    else:
+        if hasattr(main_window, "tray_icon"):
+            main_window.tray_icon.hide()
+            main_window.tray_icon.deleteLater()
+            delattr(main_window, "tray_icon")
+            if not main_window.isVisible(): process_window_show(main_window)
+    if QApplication.instance() is not None: QApplication.instance().setQuitOnLastWindowClosed(not main_window.use_system_tray)
+    return None
+
+
+def process_option_change(main_window, option_key: str) -> None:
+    if getattr(main_window, "initial_setup_complete", False) is not True: return None
+    process_application_options_save(main_window)
+    process_notification_display(main_window, "Restart required for changes to take effect.", False)
+    return None
+
+
+def process_application_options_save(main_window) -> None:
+    parser_instance = configparser.ConfigParser(interpolation=None)
+    parser_instance["Options"] = {}
+    for setting_key in find_settings_for_tab("Options"):
+        if setting_key in main_window.options_widgets:
+            parser_instance["Options"][setting_key] = main_window.options_widgets[setting_key].currentText()
+    parser_instance["Profile"] = {"last_active_profile": main_window.current_profile}
+    os.makedirs(os.path.dirname(build_options_path()), exist_ok=True)
+    with open(build_options_path(), "w") as file_handle:
+        parser_instance.write(file_handle)
+    return None
+
+
+def process_application_options_load(main_window) -> None:
+    for setting_key in find_settings_for_tab("Options"):
+        if setting_key in main_window.options_widgets:
+            main_window.options_widgets[setting_key].setCurrentText("default")
+    if not build_options_path().exists():
+        process_application_options_save(main_window)
+        return None
+    parser_instance = configparser.ConfigParser(interpolation=None)
+    parser_instance.read(build_options_path())
+    for setting_key in find_settings_for_tab("Options"):
+        if setting_key not in main_window.options_widgets: continue
+        saved_value = parser_instance.get("Options", setting_key, fallback=get_item_display(get_setting_items("Options", setting_key)[1]) if len(get_setting_items("Options", setting_key)) > 1 else "")
+        if main_window.options_widgets[setting_key].findText(saved_value) >= 0: main_window.options_widgets[setting_key].setCurrentText(saved_value)
+        else: main_window.options_widgets[setting_key].setCurrentText("skip")
+    if main_window.profile_selector.findText(parser_instance.get("Profile", "last_active_profile", fallback="Default")) >= 0:
+        main_window.profile_selector.setCurrentText(parser_instance.get("Profile", "last_active_profile", fallback="Default"))
+        main_window.current_profile = parser_instance.get("Profile", "last_active_profile", fallback="Default")
+    process_options_application(main_window)
+    return None
+
+
+def process_all_settings_apply(main_window) -> None:
+    main_window.all_widgets["main_apply_button"].setEnabled(False)
+    process_application_options_save(main_window)
+    process_profile_save(main_window.all_widgets, main_window.current_profile)
+    process_file_write("/tmp/volt-helper", get_application_helper_script_content())
+    os.chmod("/tmp/volt-helper", (stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH))
+    apply_arguments = build_apply_results_from_widgets(main_window.all_widgets)
+    command = ["pkexec", "/tmp/volt-helper", "-p", main_window.volt_path, "-e"] + list(apply_arguments)
+    process_instance = QProcess(main_window)
+    process_instance.setEnvironment(build_environment_list_from_dict(build_clean_process_environment()))
+    process_instance.start(command[0], command[1:])
+    process_instance.finished.connect(lambda: process_all_apply_completion(main_window, process_instance.exitCode()))
+    return None
+
+
+def process_all_apply_completion(main_window, exit_code: int) -> None:
+    main_window.all_widgets["main_apply_button"].setEnabled(True)
+    process_notification_display(main_window, "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", exit_code != 0)
+    return None
+
+
+def process_window_close(main_window, singleton_socket, close_event) -> None:
+    if main_window.use_system_tray and hasattr(main_window, "tray_icon"):
+        main_window.hide()
+        close_event.ignore()
+        return None
+    process_cleanup(main_window, singleton_socket)
+    QApplication.quit()
+    close_event.accept()
+    return None
+
+
+def process_cleanup(main_window, singleton_socket) -> None:
+    process_profile_save(main_window.all_widgets, main_window.current_profile)
+    process_application_options_save(main_window)
+    if singleton_socket is not None: singleton_socket.close()
+    if hasattr(main_window, "welcome_window") and main_window.welcome_window is not None:
+        main_window.welcome_window.close()
+        main_window.welcome_window = None
+    return None
+
+
+def process_application_quit(main_window) -> None:
+    process_cleanup(main_window, main_window.singleton_socket)
+    QApplication.quit()
+    return None
+
+
+def process_welcome_show(main_window) -> None:
+    if main_window.welcome_window is None: main_window.welcome_window = create_welcome_window_widget()
+    main_window.welcome_window.show()
+    main_window.welcome_window.activateWindow()
+    main_window.welcome_window.raise_()
+    return None
+
+
+def process_updates_check_worker(main_window, worker_thread) -> None:
+    response = requests.get("https://api.github.com/repos/pythonlover02/volt-gui/releases/latest", timeout=5)
+    if response is None or response.status_code != 200:
+        worker_thread.quit()
+        return None
+    if response.json() is None or "tag_name" not in response.json():
+        worker_thread.quit()
+        return None
+    if response.json()["tag_name"].lstrip("v") != get_about_version():
+        QTimer.singleShot(0, main_window, lambda: process_notification_display(main_window, "New version available: " + response.json()["tag_name"].lstrip("v"), False))
+    worker_thread.quit()
+    return None
+
+
+def process_updates_check_async(main_window) -> None:
+    worker_thread = QThread(main_window)
+    worker_thread.started.connect(lambda: process_updates_check_worker(main_window, worker_thread))
+    worker_thread.finished.connect(worker_thread.deleteLater)
+    worker_thread.start()
+    return None
+
+
+def validate_singleton_instance(singleton_port: int) -> dict:
+    singleton_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    singleton_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    show_callback = {"func": None}
+    check_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    check_socket.settimeout(1)
+    connect_result = check_socket.connect_ex(("localhost", singleton_port))
+    check_socket.close()
+    if connect_result == 0:
+        singleton_socket.close()
+        return {"socket": None, "running": True, "callback": show_callback}
+    singleton_socket.bind(("localhost", singleton_port))
+    threading.Thread(target=lambda: process_singleton_listen(singleton_socket, show_callback), daemon=True).start()
+    return {"socket": singleton_socket, "running": False, "callback": show_callback}
+
+
+def process_singleton_listen(singleton_socket, show_callback: dict) -> None:
+    singleton_socket.listen(1)
+    while True:
+        if singleton_socket.fileno() == -1: break
+        connection_result = singleton_socket.accept() if singleton_socket.fileno() != -1 else None
+        if connection_result is None: continue
+        if show_callback["func"] is not None: QTimer.singleShot(0, show_callback["func"])
+        connection_result[0].close()
+    return None
+
+
+def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict, main_window, tab_name: str) -> None:
+    if tab_name == "Options":
+        tab_result = create_options_tab_content_widget()
+        options_widgets.update(tab_result["widgets"])
+        stacked_widget.addWidget(tab_result["tab"])
+        return None
+    if tab_name == "About":
+        stacked_widget.addWidget(create_tab_content_widget(tab_name, get_about_data(), True)["tab"])
+        return None
+    if has_settings(tab_name):
+        tab_result_settings = create_tab_content_widget(tab_name, None, False)
+        all_widgets.update(tab_result_settings["widgets"])
+        stacked_widget.addWidget(tab_result_settings["tab"])
+    return None
+
+
+def process_signal_handlers_setup(main_window) -> None:
+    signal.signal(signal.SIGINT, lambda signal_number, frame: process_signal_handler(main_window, signal_number))
+    signal.signal(signal.SIGTERM, lambda signal_number, frame: process_signal_handler(main_window, signal_number))
+    return None
+
+
+def process_signal_handler(main_window, signal_number: int) -> None:
+    print("\nReceived signal " + str(signal_number) + ", closing...")
+    process_cleanup(main_window, main_window.singleton_socket)
+    QApplication.quit()
+    sys.exit(0)
+
+
+def create_main_window_widget(singleton_socket, show_callback: dict):
+    window = QMainWindow()
+    window.singleton_socket = singleton_socket
+    window.volt_path = get_option_default_value("volt_script_location")
+    window.check_updates = get_option_default_value("automatic_update_check") == "enable"
+    window.start_maximized = get_option_default_value("start_window_maximized") == "enable"
+    window.start_minimized = get_option_default_value("start_window_minimized") == "enable"
+    window.show_welcome = get_option_default_value("welcome_message_display") == "enable"
+    window.use_system_tray = get_option_default_value("system_tray_behavior") == "enable"
+    window.scaling_factor = 1.0
+    window.current_profile = "Default"
+    window.welcome_window = None
+    show_callback["func"] = lambda: QTimer.singleShot(0, lambda: process_window_show(window))
+    window.setWindowTitle("volt-gui")
+    window.setMinimumSize(540, 380)
+    window.setAttribute(Qt.WA_DontShowOnScreen, True)
+    process_theme_application(QApplication.instance(), calculate_initial_theme())
+    process_opengl_detection_async(lambda: process_device_detection_complete(window, "opengl"))
+    process_vulkan_detection_async(lambda: process_device_detection_complete(window, "vulkan"))
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+    main_layout.setContentsMargins(8, 8, 8, 8)
+    main_layout.setSpacing(8)
+    main_layout.addWidget(create_profile_selector_widget(window))
+    content_layout = QHBoxLayout()
+    content_layout.setContentsMargins(0, 0, 0, 0)
+    content_layout.setSpacing(0)
+    stacked_widget = QStackedWidget()
+    all_widgets = {}
+    options_widgets = {}
+    for tab_name in get_all_tab_names():
+        process_create_tab(stacked_widget, all_widgets, options_widgets, window, tab_name)
+    content_layout.addWidget(create_sidebar_widget(get_all_tab_names(), stacked_widget))
+    content_layout.addWidget(stacked_widget, 1)
+    main_layout.addLayout(content_layout, 1)
+    button_container = QWidget()
+    button_container.setProperty("buttonContainer", True)
+    button_layout = QHBoxLayout(button_container)
+    button_layout.setContentsMargins(12, 8, 12, 8)
+    apply_button = QPushButton("Apply")
+    apply_button.setMinimumSize(90, 30)
+    apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    apply_button.clicked.connect(lambda: process_all_settings_apply(window))
+    button_layout.addStretch(1)
+    button_layout.addWidget(apply_button)
+    button_layout.addStretch(1)
+    main_layout.addWidget(button_container)
+    all_widgets["main_apply_button"] = apply_button
+    window.setCentralWidget(central_widget)
+    window.all_widgets = all_widgets
+    window.options_widgets = options_widgets
+    for option_key in options_widgets:
+        options_widgets[option_key].currentTextChanged.connect(lambda text, bound_key=option_key: process_option_change(window, bound_key))
+    if QApplication.instance() is not None: QApplication.instance().setQuitOnLastWindowClosed(not window.use_system_tray)
+    timer_instance = QTimer(window)
+    timer_instance.start(5000)
+    window.refresh_timer = timer_instance
+    process_application_options_load(window)
+    process_profile_widget_load(window.all_widgets, window.current_profile)
+    window.initial_setup_complete = True
+    window.setAttribute(Qt.WA_DontShowOnScreen, False)
+    if window.show_welcome: QTimer.singleShot(100, lambda: process_welcome_show(window))
+    if window.check_updates: QTimer.singleShot(200, lambda: process_updates_check_async(window))
+    if not (window.start_minimized and window.use_system_tray): QTimer.singleShot(0, lambda: process_window_show(window))
+    window.closeEvent = lambda close_event: process_window_close(window, singleton_socket, close_event)
+    return window
+
+
+def main() -> None:
+    if os.environ.get("SUDO_USER") is not None:
+        print("Error: Do not run with sudo.\nRun as regular user.")
         sys.exit(1)
-
-class SingletonSignals(QObject):
-
-    show_window = Signal()
-
-class SingleInstanceChecker:
-
-    def __init__(self, port=47832):
-        """
-        Initialize the single instance checker with a specific port.
-        """
-        self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = ("localhost", self.port)
-        self.signals = SingletonSignals()
-        self.listener_thread = None
-        self.running = False
-
-    def is_already_running(self):
-        """
-        Check if another instance is already running.
-        """
-        try:
-            self.sock.bind(self.server_address)
-            self.start_listener()
-            return False
-        except socket.error:
-            self.signal_first_instance()
-            return True
-
-    def start_listener(self):
-        """
-        Start listening for signals from other instances.
-        """
-        self.sock.listen(1)
-        self.running = True
-        self.listener_thread = threading.Thread(target=self.listen_for_signals, daemon=True)
-        self.listener_thread.start()
-
-    def listen_for_signals(self):
-        """
-        Listen for incoming connections from other instances.
-        """
-        while self.running:
-            try:
-                connection, _ = self.sock.accept()
-                try:
-                    self.signals.show_window.emit()
-                finally:
-                    connection.close()
-            except:
-                break
-
-    def signal_first_instance(self):
-        """
-        Signal the first instance to show its window.
-        """
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.connect(self.server_address)
-        except:
-            pass
-
-    def cleanup(self):
-        """
-        Clean up the socket connection.
-        """
-        self.running = False
-        try:
-            self.sock.close()
-        except:
-            pass
-
-class SignalHandler:
-
-    def __init__(self, main_window):
-        self.main_window = main_window
-        self.setup_signal_handlers()
-
-    def setup_signal_handlers(self):
-        """
-        Set up signal handlers for SIGINT (Ctrl+C) and SIGTERM.
-        """
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
-
-    def signal_handler(self, signum, frame):
-        """
-        Handle received signals by closing the application.
-        """
-        print(f"\nReceived signal {signum}, closing...")
-
-        self.main_window.cleanup_resources()
-        QApplication.quit()
+    os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+    calculate_initial_scale()
+    application = QApplication(sys.argv)
+    application.setStyle("Fusion")
+    application.setQuitOnLastWindowClosed(False)
+    singleton_result = validate_singleton_instance(47832)
+    if singleton_result["running"]:
+        QMessageBox.information(None, "volt-gui", "Application already running.")
         sys.exit(0)
+    window = create_main_window_widget(singleton_result["socket"], singleton_result["callback"])
+    application.setQuitOnLastWindowClosed(not window.use_system_tray)
+    process_signal_handlers_setup(window)
+    sys.exit(application.exec())
 
-class MainWindow(QMainWindow):
-
-    def __init__(self, instance_checker):
-        """
-        Initialize the main window with all components.
-        """
-        super().__init__()
-        self.instance_checker = instance_checker
-        self.use_system_tray = False
-        self.start_minimized = False
-        self.start_maximized = False
-        self.volt_path = "/usr/local/bin/volt"
-        self.current_profile = "Default"
-        self.cpu_widgets = {}
-        self.kernel_widgets = {}
-        self.disk_widgets = {}
-        self.gpu_widgets = {}
-        self.extras_widgets = {}
-        self.about_widgets = {}
-        self.options_widgets = {}
-
-        self.welcome_window = None
-
-        self.instance_checker.signals.show_window.connect(self.handle_show_window_signal)
-        self.setWindowTitle("volt-gui")
-        self.setMinimumSize(540, 380)
-        self.setAttribute(Qt.WA_DontShowOnScreen, True)
-
-        self.apply_theme()
-        self.setup_ui()
-
-        self.update_quit_behavior()
-        self.setup_refresh_timer()
-        self.load_saved_settings()
-        self._initial_setup_complete = True
-
-        self.setAttribute(Qt.WA_DontShowOnScreen, False)
-
-        if OptionsManager.get_welcome_message_setting(self.options_widgets):
-            QTimer.singleShot(100, self.show_welcome_window)
-
-        if OptionsManager.get_check_updates_setting(self.options_widgets):
-            QTimer.singleShot(200, lambda: UpdateChecker.check_for_updates(self))
-
-        if not self.start_minimized:
-            QTimer.singleShot(0, self.show_and_activate)
-
-    def setup_ui(self):
-        """
-        Set up the main user interface with all tabs.
-        """
-        central_widget = QWidget()
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-
-        profile_frame = self.setup_profile_selector()
-        main_layout.addWidget(profile_frame)
-
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setDocumentMode(True)
-
-        self.setup_cpu_tab()
-        self.setup_gpu_tabs()
-        self.setup_disk_tab()
-        self.setup_kernel_tab()
-        self.setup_launch_options_tab()
-        self.setup_extras_tab()
-        self.setup_options_tab()
-        self.setup_about_tab()
-
-        main_layout.addWidget(self.tab_widget)
-        self.setCentralWidget(central_widget)
-
-    def show_welcome_window(self):
-        """
-        Show the separate welcome window.
-        """
-        if self.welcome_window is None:
-            self.welcome_window = WelcomeManager.create_welcome_window()
-
-        self.welcome_window.show()
-        self.welcome_window.activateWindow()
-        self.welcome_window.raise_()
-
-    def setup_profile_selector(self):
-        """
-        Set up the profile selector UI components.
-        """
-        profile_frame = QFrame()
-        profile_frame.setFrameStyle(QFrame.Box)
-        profile_frame.setLineWidth(1)
-        profile_frame.setObjectName("profileFrame")
-
-        profile_layout = QHBoxLayout(profile_frame)
-        profile_layout.setContentsMargins(10, 8, 10, 8)
-        profile_layout.setSpacing(10)
-
-        profile_label = QLabel("Profile:")
-        profile_label.setMinimumWidth(60)
-
-        self.profile_selector = QComboBox()
-        self.profile_selector.setMinimumWidth(200)
-        self.update_profile_list()
-        self.profile_selector.setCurrentText(self.current_profile)
-        self.profile_selector.currentTextChanged.connect(self.on_profile_changed)
-
-        self.save_profile_btn = QPushButton("New Profile")
-        self.save_profile_btn.setMinimumSize(100, 30)
-        self.save_profile_btn.clicked.connect(self.save_new_profile)
-
-        self.delete_profile_btn = QPushButton("Delete Profile")
-        self.delete_profile_btn.setMinimumSize(100, 30)
-        self.delete_profile_btn.clicked.connect(self.delete_current_profile)
-
-        profile_layout.addWidget(profile_label)
-        profile_layout.addWidget(self.profile_selector)
-        profile_layout.addStretch()
-        profile_layout.addWidget(self.save_profile_btn)
-        profile_layout.addWidget(self.delete_profile_btn)
-        self.profile_selector.setFocusPolicy(Qt.ClickFocus)
-
-        return profile_frame
-
-    def setup_cpu_tab(self):
-        """
-        Set up the CPU management tab.
-        """
-        cpu_tab, self.cpu_widgets = CPUManager.create_cpu_tab()
-        self.cpu_widgets["cpu_apply_button"].clicked.connect(self.apply_all_settings)
-        CPUManager.refresh_cpu_values(self.cpu_widgets)
-        self.tab_widget.addTab(cpu_tab, "CPU")
-
-    def setup_disk_tab(self):
-        """
-        Set up the disk management tab.
-        """
-        disk_tab, self.disk_widgets = DiskManager.create_disk_tab()
-        self.disk_widgets["disk_apply_button"].clicked.connect(self.apply_all_settings)
-        DiskManager.refresh_disk_values(self.disk_widgets)
-        self.tab_widget.addTab(disk_tab, "Disk")
-
-    def setup_gpu_tabs(self):
-        """
-        Set up the GPU management tab.
-        """
-        gpu_tab, self.gpu_widgets = GPULaunchManager.create_gpu_settings_tabs()
-
-        for category_name, category_widgets in self.gpu_widgets.items():
-            if category_name != "LaunchOptions":
-                apply_button_name = f"{category_name.lower()}_apply_button"
-                if apply_button_name in category_widgets:
-                    category_widgets[apply_button_name].clicked.connect(self.apply_all_settings)
-
-        self.tab_widget.addTab(gpu_tab, "GPU")
-
-    def setup_launch_options_tab(self):
-        """
-        Set up the launch options tab.
-        """
-        launch_options_tab, self.launch_options_widgets = GPULaunchManager.create_launch_options_tab()
-        self.gpu_widgets["LaunchOptions"] = self.launch_options_widgets
-        self.launch_options_widgets["launch_apply_button"].clicked.connect(self.apply_all_settings)
-        self.tab_widget.addTab(launch_options_tab, "Launch Options")
-
-    def setup_kernel_tab(self):
-        """
-        Set up the kernel management tab.
-        """
-        kernel_tab, self.kernel_widgets = KernelManager.create_kernel_tab(self)
-        self.kernel_widgets["kernel_apply_button"].clicked.connect(self.apply_all_settings)
-
-        for setting_name in KernelManager.KERNEL_SETTINGS.keys():
-            widget_key = f"{setting_name}_input"
-            self.kernel_widgets[widget_key].installEventFilter(self)
-
-        KernelManager.refresh_kernel_values(self.kernel_widgets)
-        self.tab_widget.addTab(kernel_tab, "Kernel")
-
-    def setup_extras_tab(self):
-        """
-        Set up the extras/additional features tab.
-        """
-        extras_tab, self.extras_widgets = ExtrasManager.create_extras_tab()
-        self.tab_widget.addTab(extras_tab, "Extras")
-
-    def setup_options_tab(self):
-        """
-        Set up the options tab.
-        """
-        options_tab, self.options_widgets = OptionsManager.create_options_tab(self)
-        self.options_widgets["options_apply_button"].clicked.connect(lambda: OptionsManager.save_and_apply_options(self.options_widgets))
-        self.tab_widget.addTab(options_tab, "Options")
-
-    def setup_about_tab(self):
-        """
-        Set up the about tab.
-        """
-        about_tab, self.about_widgets = AboutManager.create_about_tab()
-        self.tab_widget.addTab(about_tab, "About")
-
-    def setup_system_tray(self):
-        """
-        Set up the system tray icon and menu.
-        """
-        if not QSystemTrayIcon.isSystemTrayAvailable():
-            return
-
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
-
-        tray_menu = QMenu()
-        tray_menu.addAction(QAction("Show", self, triggered=self.show_and_activate))
-
-        self.profile_submenu = QMenu("Apply Profile", tray_menu)
-        self.update_tray_profile_menu()
-        tray_menu.addMenu(self.profile_submenu)
-
-        tray_menu.addSeparator()
-        tray_menu.addAction(QAction("Quit", self, triggered=self.quit_application))
-
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
-        self.tray_icon.activated.connect(self.tray_icon_activated)
-
-    def setup_refresh_timer(self):
-        """
-        Set up the timer for periodic value refresh.
-        """
-        self.refresh_timer = QTimer(self)
-        self.refresh_timer.timeout.connect(self.refresh_cpu_values)
-        self.refresh_timer.timeout.connect(self.refresh_disk_values)
-        self.refresh_timer.timeout.connect(self.refresh_kernel_values)
-        self.refresh_timer.start(5000)
-
-    def update_profile_list(self):
-        """
-        Update the profile selector with available profiles.
-        """
-        current_selection = self.profile_selector.currentText()
-        self.profile_selector.blockSignals(True)
-        self.profile_selector.clear()
-        profiles = ConfigManager.get_available_profiles()
-        self.profile_selector.addItems(profiles)
-
-        if current_selection in profiles:
-            self.profile_selector.setCurrentText(current_selection)
-        else:
-            self.profile_selector.setCurrentText("Default")
-
-        self.profile_selector.blockSignals(False)
-        self.update_tray_profile_menu()
-
-    def update_tray_profile_menu(self):
-        """
-        Update the tray profile menu with available profiles.
-        """
-        if not hasattr(self, "profile_submenu"):
-            return
-
-        self.profile_submenu.clear()
-        profiles = ConfigManager.get_available_profiles()
-
-        for profile in profiles:
-            action = QAction(f"Apply {profile} Profile", self)
-            action.triggered.connect(lambda checked, p=profile: self.apply_profile_from_tray(p))
-            self.profile_submenu.addAction(action)
-
-    def update_quit_behavior(self):
-        """
-        Update application quit behavior based on tray usage.
-        """
-        app = QApplication.instance()
-        if app:
-            app.setQuitOnLastWindowClosed(not self.use_system_tray)
-
-    def refresh_cpu_values(self):
-        """
-        Refresh CPU related values in the interface.
-        """
-        CPUManager.refresh_cpu_values(self.cpu_widgets)
-
-    def refresh_disk_values(self):
-        """
-        Refresh disk related values in the interface.
-        """
-        DiskManager.refresh_disk_values(self.disk_widgets)
-
-    def refresh_kernel_values(self):
-        """
-        Refresh kernel related values in the interface.
-        """
-        KernelManager.refresh_kernel_values(self.kernel_widgets)
-
-    def save_settings(self):
-        """
-        Save current settings to configuration file.
-        """
-        try:
-            ConfigManager.save_config(
-                self.cpu_widgets,
-                self.gpu_widgets,
-                self.kernel_widgets,
-                self.disk_widgets,
-                self.current_profile
-            )
-        except Exception as e:
-            print(f"Warning: Failed to save settings: {e}")
-
-    def load_saved_settings(self):
-        """
-        Load previously saved settings from configuration file.
-        """
-        try:
-            OptionsManager.load_options(self.options_widgets)
-            ConfigManager.load_config(
-                self.cpu_widgets,
-                self.gpu_widgets,
-                self.kernel_widgets,
-                self.disk_widgets,
-                self.current_profile
-            )
-        except Exception as e:
-            print(f"Warning: Failed to load settings: {e}")
-
-    def on_profile_changed(self, profile_name):
-        """
-        Handle profile selection changes.
-        """
-        if not profile_name or profile_name == self.current_profile or profile_name.isspace():
-            return
-
-        if hasattr(self, "_initial_setup_complete") and self._initial_setup_complete:
-            try:
-                ConfigManager.save_config(
-                    self.cpu_widgets,
-                    self.gpu_widgets,
-                    self.kernel_widgets,
-                    self.disk_widgets,
-                    self.current_profile
-                )
-            except Exception as e:
-                print(f"Warning: Failed to save current profile settings: {e}")
-
-        self.current_profile = profile_name
-        ConfigManager.load_config(
-            self.cpu_widgets,
-            self.gpu_widgets,
-            self.kernel_widgets,
-            self.disk_widgets,
-            profile_name
-        )
-
-    def save_new_profile(self):
-        """
-        Save current settings as a new profile.
-        """
-        profile_name, ok = QInputDialog.getText(self, "Save New Profile", "Enter profile name:", text="")
-
-        if ok and profile_name and profile_name.strip():
-            profile_name = profile_name.strip()
-
-            if not profile_name or profile_name.isspace():
-                QMessageBox.warning(self, "Invalid Name", "Profile name cannot be empty or contain only spaces.")
-                return
-
-            if profile_name in ConfigManager.get_available_profiles():
-                reply = QMessageBox.question(self, "Profile Exists", f"Profile '{profile_name}' already exists. Overwrite?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply != QMessageBox.Yes:
-                    return
-
-            try:
-                ConfigManager.save_config(
-                    self.cpu_widgets,
-                    self.gpu_widgets,
-                    self.kernel_widgets,
-                    self.disk_widgets,
-                    self.current_profile
-                )
-                ConfigManager.save_config(
-                    self.cpu_widgets,
-                    self.gpu_widgets,
-                    self.kernel_widgets,
-                    self.disk_widgets,
-                    profile_name
-                )
-
-                self.current_profile = profile_name
-                self.update_profile_list()
-                self.profile_selector.setCurrentText(profile_name)
-
-                if hasattr(self, "tray_icon") and self.use_system_tray:
-                    self.update_tray_profile_menu()
-
-                QMessageBox.information(self, "Profile Saved", f"Profile '{profile_name}' has been saved.")
-
-            except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to save profile '{profile_name}': {str(e)}")
-
-    def delete_current_profile(self):
-        """
-        Delete the selected profile.
-        """
-        current_profile = self.profile_selector.currentText()
-
-        if current_profile == "Default":
-            QMessageBox.warning(self, "Cannot Delete", "The Default profile cannot be deleted.")
-            return
-
-        if not current_profile or current_profile.isspace():
-            QMessageBox.warning(self, "Invalid Profile", "Cannot delete an empty or invalid profile.")
-            return
-
-        reply = QMessageBox.question(self, "Delete Profile", f"Are you sure you want to delete the '{current_profile}' profile?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
-            try:
-                ConfigManager.delete_profile(current_profile)
-
-                self.current_profile = "Default"
-                self.update_profile_list()
-                self.profile_selector.setCurrentText("Default")
-
-                ConfigManager.load_config(
-                    self.cpu_widgets,
-                    self.gpu_widgets,
-                    self.kernel_widgets,
-                    self.disk_widgets,
-                    "Default"
-                )
-
-                self.refresh_cpu_values()
-                self.refresh_disk_values()
-                self.refresh_kernel_values()
-
-                if hasattr(self, "tray_icon") and self.use_system_tray:
-                    self.update_tray_profile_menu()
-
-                QMessageBox.information(self, "Profile Deleted", f"Profile '{current_profile}' has been deleted.")
-            except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to delete profile '{current_profile}': {str(e)}")
-
-    def apply_profile_from_tray(self, profile_name):
-        """
-        Apply a specific profile from the system tray.
-        """
-        if profile_name != self.current_profile:
-            try:
-                ConfigManager.save_config(
-                    self.cpu_widgets,
-                    self.gpu_widgets,
-                    self.kernel_widgets,
-                    self.disk_widgets,
-                    self.current_profile
-                )
-            except Exception as e:
-                print(f"Warning: Failed to save current profile settings: {e}")
-
-            self.current_profile = profile_name
-            self.profile_selector.setCurrentText(profile_name)
-            ConfigManager.load_config(
-                self.cpu_widgets,
-                self.gpu_widgets,
-                self.kernel_widgets,
-                self.disk_widgets,
-                profile_name
-            )
-
-            self.refresh_cpu_values()
-            self.refresh_disk_values()
-            self.refresh_kernel_values()
-
-        self.apply_all_settings()
-
-    def apply_theme(self):
-        """
-        Apply the default dark theme to the application.
-        """
-        ThemeManager.apply_theme(QApplication.instance(), "amd")
-
-    def show_and_activate(self):
-        """
-        Show the window and bring it to the foreground.
-        Shows maximized if the option is enabled.
-        """
-        if self.start_maximized:
-            self.showMaximized()
-        else:
-            self.show()
-        self.activateWindow()
-        self.raise_()
-
-    def handle_show_window_signal(self):
-        """
-        Handle the signal to show the window from another instance.
-        """
-        self.show_and_activate()
-
-    def tray_icon_activated(self, reason):
-        """
-        Handle system tray icon activation events.
-        """
-        if reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
-            self.hide() if self.isVisible() else self.show_and_activate()
-
-    def apply_all_settings(self):
-        """
-        Collects all settings (CPU, Disk, GPU, Kernel) and applies them in one go using volt-helper.
-        Uses clean environment to avoid PyInstaller interference.
-        """
-        if (self.cpu_widgets.get("is_process_running", False) or
-            self.disk_widgets.get("is_process_running", False) or
-            self.kernel_widgets.get("is_process_running", False)):
-            return
-
-        try:
-            self.save_settings()
-
-            cpu_args = []
-            cpu_governor = self.cpu_widgets["scaling_governor"].currentText()
-
-            if "scaling_max_freq" in self.cpu_widgets:
-                cpu_max_freq = self.cpu_widgets["scaling_max_freq"].currentText()
-            else:
-                cpu_max_freq = "unset"
-
-            if "scaling_min_freq" in self.cpu_widgets:
-                cpu_min_freq = self.cpu_widgets["scaling_min_freq"].currentText()
-            else:
-                cpu_min_freq = "unset"
-
-            cpu_scheduler = self.cpu_widgets["scheduler"].currentText()
-            cpu_parts = []
-
-            if cpu_governor != "unset":
-                cpu_parts.append(f"governor:{cpu_governor}")
-
-            if cpu_max_freq != "unset":
-                max_freq_khz = int(cpu_max_freq) * 1000
-                cpu_parts.append(f"max_freq:{max_freq_khz}")
-
-            if cpu_min_freq != "unset":
-                min_freq_khz = int(cpu_min_freq) * 1000
-                cpu_parts.append(f"min_freq:{min_freq_khz}")
-
-            if cpu_scheduler != "unset":
-                cpu_parts.append(f"scheduler:{cpu_scheduler}")
-
-            if cpu_parts:
-                cpu_args.append("-c")
-                cpu_args.extend(cpu_parts)
-
-            disk_args = []
-            for disk_name, disk_widgets in self.disk_widgets["disk_settings"].items():
-                selected_scheduler = disk_widgets["scheduler"].currentText()
-                if selected_scheduler and selected_scheduler != "" and selected_scheduler != "unset":
-                    if not disk_args:
-                        disk_args.append("-d")
-                    disk_args.append(f"{disk_name}:{selected_scheduler}")
-
-            kernel_args = []
-            for category in KernelManager.KERNEL_SETTINGS_CATEGORIES.values():
-                for name, info in category.items():
-                    value = self.kernel_widgets[f"{name}_input"].text().strip()
-                    if value:
-                        if not kernel_args:
-                            kernel_args.append("-k")
-                        kernel_args.append(f"{info['path']}:{value}")
-
-            gpu_args = []
-            settings_file = GPULaunchManager.write_settings_file(
-                self.gpu_widgets["Mesa"],
-                self.gpu_widgets["NVIDIA"],
-                self.gpu_widgets["RenderSelector"],
-                self.gpu_widgets["MangoHud"],
-                self.gpu_widgets["LSFrameGen"],
-                self.gpu_widgets["LaunchOptions"]
-            )
-            if settings_file:
-                gpu_args.extend(["-p", self.volt_path, "-g", settings_file])
-
-            HelperManager.create_helper_script()
-            all_args = ["pkexec", "/tmp/volt-helper"] + cpu_args + disk_args + kernel_args + gpu_args
-
-            process = QProcess()
-            WorkaroundManager.setup_clean_process(process)
-
-            process.start(all_args[0], all_args[1:])
-            process.finished.connect(lambda: self.on_settings_applied(process.exitCode()))
-
-            self.cpu_widgets["cpu_apply_button"].setEnabled(False)
-            self.disk_widgets["disk_apply_button"].setEnabled(False)
-            self.kernel_widgets["kernel_apply_button"].setEnabled(False)
-
-            for category_name, category_widgets in self.gpu_widgets.items():
-                if category_name != "LaunchOptions":
-                    apply_button_name = f"{category_name.lower()}_apply_button"
-                    if apply_button_name in category_widgets:
-                        category_widgets[apply_button_name].setEnabled(False)
-
-            self.launch_options_widgets["launch_apply_button"].setEnabled(False)
-
-        except Exception as e:
-            print(f"Error applying settings: {e}")
-            if hasattr(self, "tray_icon"):
-                self.tray_icon.showMessage("volt-gui", f"Failed to apply settings: {e}", QSystemTrayIcon.MessageIcon.Critical, 2000)
-            else:
-                QMessageBox.warning(self, "volt-gui", f"Failed to apply settings: {e}")
-
-    def on_settings_applied(self, exit_code):
-        """
-        Handle the completion of the settings application process.
-        """
-        self.cpu_widgets["cpu_apply_button"].setEnabled(True)
-        self.disk_widgets["disk_apply_button"].setEnabled(True)
-        self.kernel_widgets["kernel_apply_button"].setEnabled(True)
-
-        for category_name, category_widgets in self.gpu_widgets.items():
-            if category_name != "LaunchOptions":
-                apply_button_name = f"{category_name.lower()}_apply_button"
-                if apply_button_name in category_widgets:
-                    category_widgets[apply_button_name].setEnabled(True)
-
-        self.launch_options_widgets["launch_apply_button"].setEnabled(True)
-
-        self.refresh_cpu_values()
-        self.refresh_disk_values()
-        self.refresh_kernel_values()
-
-        if hasattr(self, "tray_icon"):
-            self.tray_icon.showMessage("volt-gui", "Settings applied successfully" if exit_code == 0 else "Failed to apply settings", QSystemTrayIcon.MessageIcon.Information if exit_code == 0 else QSystemTrayIcon.MessageIcon.Critical, 2000)
-        else:
-            QMessageBox.information(self, "volt-gui", "Settings applied successfully")
-
-    def cleanup_resources(self):
-        """
-        Centralized cleanup method to avoid code duplication.
-        """
-        self.save_settings()
-        OptionsManager.save_options(self.options_widgets)
-        self.instance_checker.cleanup()
-
-        if self.welcome_window:
-            self.welcome_window.close()
-            self.welcome_window = None
-
-    def quit_application(self):
-        """
-        Quit the application properly, ensuring all settings are saved, only for the systray quit.
-        """
-        self.cleanup_resources()
-        QApplication.quit()
-
-    def closeEvent(self, event):
-        """
-        Handle the main window close event. If system tray is enabled, hide to tray.
-        If system tray is disabled, quit the application.
-        """
-        if self.use_system_tray and hasattr(self, "tray_icon"):
-            self.hide()
-            event.ignore()
-        else:
-            self.cleanup_resources()
-            QApplication.quit()
-            event.accept()
-
-def main():
-    """
-    Main application entry point.
-    """
-    check_sudo_execution()
-    WorkaroundManager.setup_qt_platform()
-    OptionsManager.get_early_scaling_factor()
-
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    app.setQuitOnLastWindowClosed(False)
-
-    instance_checker = SingleInstanceChecker()
-    if instance_checker.is_already_running():
-        QMessageBox.information(None, "volt-gui", "The application is already running and will be displayed.")
-        sys.exit(0)
-
-    main_window = MainWindow(instance_checker)
-    app.setQuitOnLastWindowClosed(not main_window.use_system_tray)
-    signal_handler = SignalHandler(main_window)
-
-    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
