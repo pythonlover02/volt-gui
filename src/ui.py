@@ -1,4 +1,3 @@
-import sys, os
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFrame, QInputDialog, QScrollArea, QSizePolicy, QStackedWidget, QTextEdit, QGraphicsOpacityEffect, QListWidget, QListWidgetItem, QLayout, QListView
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QCursor, QFont

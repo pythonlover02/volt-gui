@@ -101,10 +101,6 @@ def calculate_initial_scale() -> float:
     return float(raw)
 
 
-def calculate_initial_volt_path():
-    return get_persisted_option_value("volt_script_location")
-
-
 def calculate_initial_theme():
     return get_persisted_option_value("application_theme")
 

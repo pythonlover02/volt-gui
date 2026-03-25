@@ -121,10 +121,6 @@ def is_output_type_option(output_definition: tuple) -> bool:
     return output_definition[0] == "option"
 
 
-def get_output_type(output_definition: tuple) -> str:
-    return output_definition[0]
-
-
 def get_output_target(output_definition: tuple) -> str:
     return output_definition[1]
 
