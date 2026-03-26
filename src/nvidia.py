@@ -3,7 +3,7 @@ def get_nvidia_settings():
         "_tab_metadata": (True,),
         "_executable_required": (),
         "opengl_vertical_synchronization": (
-            "Vertical Synchronization",
+            "OpenGL Vertical Synchronization",
             (
                 ("skip", None),
                 ("default", ""),
@@ -1469,51 +1469,6 @@ def get_nvidia_settings():
                 ("environment_variable", "__NV_DISABLE_EXPLICIT_SYNC", "", "", ""),
             ),
         ),
-        "glx_force_vendor_library": (
-            "GLX Force Vendor Library",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GLX_FORCE_VENDOR_LIBRARY_0", "", "", ""),
-            ),
-        ),
-        "glx_vendor_library_name": (
-            "GLX Vendor Library Name",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("nvidia", "nvidia"),
-            ),
-            (
-                ("environment_variable", "__GLX_VENDOR_LIBRARY_NAME", "", "", ""),
-            ),
-        ),
-        "disable_high_dynamic_range_window_system_integration": (
-            "Disable High Dynamic Range Window System Integration",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "DISABLE_HDR_WSI", "", "", ""),
-            ),
-        ),
-        "enable_high_dynamic_range_window_system_integration": (
-            "Enable High Dynamic Range Window System Integration",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "ENABLE_HDR_WSI", "", "", ""),
-            ),
-        ),
         "vdpau_no_overlay": (
             "VDPAU No Overlay",
             (
@@ -1618,36 +1573,6 @@ def get_nvidia_settings():
             ),
             (
                 ("environment_variable", "NVD_MAX_INSTANCES", "", "", ""),
-            ),
-        ),
-        "egl_external_platform_configuration_directories": (
-            "EGL External Platform Configuration Directories",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS", "", "", ""),
-            ),
-        ),
-        "egl_vendor_library_filenames": (
-            "EGL Vendor Library Filenames",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__EGL_VENDOR_LIBRARY_FILENAMES", ",", "", ""),
-            ),
-        ),
-        "egl_vendor_library_directories": (
-            "EGL Vendor Library Directories",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__EGL_VENDOR_LIBRARY_DIRS", ",", "", ""),
             ),
         ),
         "experimental_performance_strategy": (

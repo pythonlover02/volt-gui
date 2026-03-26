@@ -7,10 +7,10 @@ def get_mesa_settings():
             (
                 ("skip", None),
                 ("default", ""),
-                ("none", "0"),
+                ("off", "0"),
                 ("permissive", "1"),
                 ("standard", "2"),
-                ("forced", "3"),
+                ("on", "3"),
             ),
             (
                 ("environment_variable", "vblank_mode", "", "", ""),
@@ -1758,31 +1758,6 @@ def get_mesa_settings():
             ),
             (
                 ("environment_variable", "DISABLE_VK_LAYER_MESA_OVERLAY", "", "", ""),
-            ),
-        ),
-        "vulkan_gamescope_wsi_layer": (
-            "Vulkan Gamescope WSI Layer",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "ENABLE_GAMESCOPE_WSI", "", "", ""),
-            ),
-        ),
-        "vulkan_gamescope_wsi_minimum_image_count": (
-            "Vulkan Gamescope WSI Minimum Image Count",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("environment_variable", "GAMESCOPE_WSI_MIN_IMAGE_COUNT", "", "", ""),
             ),
         ),
         "vulkan_hdr_wsi_layer": (
