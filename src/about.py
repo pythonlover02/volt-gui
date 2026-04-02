@@ -1,4 +1,4 @@
-def get_about_settings():
+def get_about_settings() -> dict:
     return {
         "_tab_metadata": (False,),
         "_executable_required": (),

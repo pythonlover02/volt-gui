@@ -1,1009 +1,479 @@
-def get_gamescope_settings():
+def get_gamescope_settings() -> dict:
     return {
         "_tab_metadata": (True,),
         "_executable_required": ("gamescope",),
-        "enable": (
-            "Gamescope",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gamescope"),
-            ),
-            (
-                ("argument", "gamescope", "", "", " --"),
-            ),
-        ),
-        "enable_gamescope_wsi_layer": (
-            "Gamescope Window System Integration Layer",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "ENABLE_GAMESCOPE_WSI", "", "", ""),
-            ),
-        ),
-        "vulkan_wsi_minimum_image_count": (
-            "Vulkan Window System Integration Minimum Image Count",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-                ("5", "5"),
-                ("6", "6"),
-            ),
-            (
-                ("environment_variable", "GAMESCOPE_WSI_MIN_IMAGE_COUNT", "", "", ""),
-            ),
-        ),
-        "vulkan_preferred_device": (
-            "Vulkan Preferred Device",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1002:7300", "1002:7300"),
-            ),
-            (
-                ("argument", "gamescope", "", "--prefer-vk-device ", ""),
-            ),
-        ),
-        "output_width": (
-            "Output Width",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1280", "1280"),
-                ("1920", "1920"),
-                ("2560", "2560"),
-                ("3840", "3840"),
-            ),
-            (
-                ("argument", "gamescope", "", "-W ", ""),
-            ),
-        ),
-        "output_height": (
-            "Output Height",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("720", "720"),
-                ("1080", "1080"),
-                ("1440", "1440"),
-                ("2160", "2160"),
-            ),
-            (
-                ("argument", "gamescope", "", "-H ", ""),
-            ),
-        ),
-        "game_width": (
-            "Game Width",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1280", "1280"),
-                ("1920", "1920"),
-                ("2560", "2560"),
-            ),
-            (
-                ("argument", "gamescope", "", "-w ", ""),
-            ),
-        ),
-        "game_height": (
-            "Game Height",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("720", "720"),
-                ("1080", "1080"),
-                ("1440", "1440"),
-            ),
-            (
-                ("argument", "gamescope", "", "-h ", ""),
-            ),
-        ),
-        "nested_refresh_rate": (
-            "Nested Refresh Rate",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("30", "30"),
-                ("60", "60"),
-                ("120", "120"),
-                ("144", "144"),
-                ("165", "165"),
-                ("240", "240"),
-            ),
-            (
-                ("argument", "gamescope", "", "-r ", ""),
-            ),
-        ),
-        "nested_unfocused_refresh_rate": (
-            "Nested Unfocused Refresh Rate",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("15", "15"),
-                ("30", "30"),
-                ("60", "60"),
-            ),
-            (
-                ("argument", "gamescope", "", "-o ", ""),
-            ),
-        ),
-        "framerate_limit": (
-            "Framerate Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("30", "30"),
-                ("60", "60"),
-                ("120", "120"),
-                ("144", "144"),
-            ),
-            (
-                ("argument", "gamescope", "", "--framerate-limit ", ""),
-            ),
-        ),
-        "maximum_scale_factor": (
-            "Maximum Scale Factor",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("argument", "gamescope", "", "-m ", ""),
-            ),
-        ),
-        "force_orientation": (
-            "Force Orientation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("normal", "normal"),
-                ("left", "left"),
-                ("right", "right"),
-                ("upsidedown", "upsidedown"),
-            ),
-            (
-                ("argument", "gamescope", "", "--force-orientation ", ""),
-            ),
-        ),
-        "display_index": (
-            "Display Index",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-            ),
-            (
-                ("argument", "gamescope", "", "--display-index ", ""),
-            ),
-        ),
-        "preferred_output_connectors": (
-            "Preferred Output Connectors",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("DP-1", "DP-1"),
-                ("HDMI-A-1", "HDMI-A-1"),
-            ),
-            (
-                ("argument", "gamescope", "", "-O ", ""),
-            ),
-        ),
-        "fullscreen": (
-            "Fullscreen",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "-f", ""),
-            ),
-        ),
-        "borderless": (
-            "Borderless",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "-b", ""),
-            ),
-        ),
-        "force_windows_fullscreen": (
-            "Force Windows Fullscreen",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--force-windows-fullscreen", ""),
-            ),
-        ),
-        "scaler_backend": (
-            "Scaler Backend",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("auto", "auto"),
-                ("integer", "integer"),
-                ("fit", "fit"),
-                ("fill", "fill"),
-                ("stretch", "stretch"),
-            ),
-            (
-                ("argument", "gamescope", "", "--scaler ", ""),
-            ),
-        ),
-        "upscale_filter": (
-            "Upscale Filter",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("linear", "linear"),
-                ("nearest", "nearest"),
-                ("fsr", "fsr"),
-                ("nis", "nis"),
-                ("pixel", "pixel"),
-            ),
-            (
-                ("argument", "gamescope", "", "--filter ", ""),
-            ),
-        ),
-        "upscaler_sharpness": (
-            "Upscaler Sharpness",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("2", "2"),
-                ("5", "5"),
-                ("10", "10"),
-                ("15", "15"),
-                ("20", "20"),
-            ),
-            (
-                ("argument", "gamescope", "", "--sharpness ", ""),
-            ),
-        ),
-        "grab_keyboard": (
-            "Grab Keyboard",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "-g", ""),
-            ),
-        ),
-        "force_grab_cursor": (
-            "Force Grab Cursor",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--force-grab-cursor", ""),
-            ),
-        ),
-        "mouse_sensitivity": (
-            "Mouse Sensitivity",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.5", "0.5"),
-                ("1.0", "1.0"),
-                ("1.5", "1.5"),
-                ("2.0", "2.0"),
-            ),
-            (
-                ("argument", "gamescope", "", "-s ", ""),
-            ),
-        ),
-        "default_touch_mode": (
-            "Default Touch Mode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("argument", "gamescope", "", "--default-touch-mode ", ""),
-            ),
-        ),
-        "cursor_image_path": (
-            "Cursor Image Path",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("/usr/share/steamos/steamos-cursor.png", "/usr/share/steamos/steamos-cursor.png"),
-            ),
-            (
-                ("argument", "gamescope", "", "--cursor ", ""),
-            ),
-        ),
-        "hide_cursor_delay": (
-            "Hide Cursor Delay",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("3000", "3000"),
-                ("5000", "5000"),
-                ("10000", "10000"),
-            ),
-            (
-                ("argument", "gamescope", "", "-C ", ""),
-            ),
-        ),
-        "cursor_scale_height": (
-            "Cursor Scale Height",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("720", "720"),
-                ("1080", "1080"),
-                ("1440", "1440"),
-            ),
-            (
-                ("argument", "gamescope", "", "--cursor-scale-height ", ""),
-            ),
-        ),
-        "rendering_backend": (
-            "Rendering Backend",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("auto", "auto"),
-                ("drm", "drm"),
-                ("sdl", "sdl"),
-                ("openvr", "openvr"),
-                ("headless", "headless"),
-                ("wayland", "wayland"),
-            ),
-            (
-                ("argument", "gamescope", "", "--backend ", ""),
-            ),
-        ),
-        "expose_wayland": (
-            "Expose Wayland",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--expose-wayland", ""),
-            ),
-        ),
-        "xwayland_server_count": (
-            "XWayland Server Count",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-            ),
-            (
-                ("argument", "gamescope", "", "--xwayland-count ", ""),
-            ),
-        ),
-        "adaptive_sync": (
-            "Adaptive Sync",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--adaptive-sync", ""),
-            ),
-        ),
-        "immediate_flips": (
-            "Immediate Flips",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--immediate-flips", ""),
-            ),
-        ),
-        "generate_direct_rendering_manager_mode": (
-            "Generate Direct Rendering Manager Mode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("cvt", "cvt"),
-                ("fixed", "fixed"),
-            ),
-            (
-                ("argument", "gamescope", "", "--generate-drm-mode ", ""),
-            ),
-        ),
-        "high_dynamic_range_output": (
-            "High Dynamic Range Output",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-enabled", ""),
-            ),
-        ),
-        "standard_dynamic_range_gamut_wideness": (
-            "Standard Dynamic Range Gamut Wideness",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.0", "0.0"),
-                ("0.25", "0.25"),
-                ("0.5", "0.5"),
-                ("0.75", "0.75"),
-                ("1.0", "1.0"),
-            ),
-            (
-                ("argument", "gamescope", "", "--sdr-gamut-wideness ", ""),
-            ),
-        ),
-        "high_dynamic_range_standard_dynamic_range_content_nits": (
-            "High Dynamic Range Standard Dynamic Range Content Nits",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("200", "200"),
-                ("400", "400"),
-                ("600", "600"),
-                ("800", "800"),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-sdr-content-nits ", ""),
-            ),
-        ),
-        "high_dynamic_range_inverse_tone_mapping": (
-            "High Dynamic Range Inverse Tone Mapping",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-itm-enabled", ""),
-            ),
-        ),
-        "high_dynamic_range_inverse_tone_mapping_standard_dynamic_range_nits": (
-            "High Dynamic Range Inverse Tone Mapping Standard Dynamic Range Input Nits",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("100", "100"),
-                ("200", "200"),
-                ("400", "400"),
-                ("600", "600"),
-                ("1000", "1000"),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-itm-sdr-nits ", ""),
-            ),
-        ),
-        "high_dynamic_range_inverse_tone_mapping_target_nits": (
-            "High Dynamic Range Inverse Tone Mapping Target Nits",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("400", "400"),
-                ("1000", "1000"),
-                ("2000", "2000"),
-                ("4000", "4000"),
-                ("10000", "10000"),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-itm-target-nits ", ""),
-            ),
-        ),
-        "disable_color_management": (
-            "Disable Color Management",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--disable-color-management", ""),
-            ),
-        ),
-        "steam_integration": (
-            "Steam Integration",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "-e", ""),
-            ),
-        ),
-        "mangoapp_overlay": (
-            "MangoApp Overlay",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--mangoapp", ""),
-            ),
-        ),
-        "reshade_effect": (
-            "Reshade Effect",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("CRT.fx", "CRT.fx"),
-            ),
-            (
-                ("argument", "gamescope", "", "--reshade-effect ", ""),
-            ),
-        ),
-        "reshade_technique_index": (
-            "Reshade Technique Index",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-            ),
-            (
-                ("argument", "gamescope", "", "--reshade-technique-idx ", ""),
-            ),
-        ),
-        "mura_compensation_map": (
-            "Mura Compensation Map",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("/usr/share/steamos/steamos-mura.png", "/usr/share/steamos/steamos-mura.png"),
-            ),
-            (
-                ("argument", "gamescope", "", "--mura-map ", ""),
-            ),
-        ),
-        "disable_hardware_planes": (
-            "Disable Hardware Planes",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--disable-layers", ""),
-            ),
-        ),
-        "realtime_scheduling": (
-            "Realtime Scheduling",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--rt", ""),
-            ),
-        ),
-        "keep_alive": (
-            "Keep Alive",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--keep-alive", ""),
-            ),
-        ),
-        "allow_deferred_backend": (
-            "Allow Deferred Backend Initialization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--allow-deferred-backend", ""),
-            ),
-        ),
-        "statistics_path": (
-            "Statistics Path",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("/tmp/gamescope-stats", "/tmp/gamescope-stats"),
-            ),
-            (
-                ("argument", "gamescope", "", "-T ", ""),
-            ),
-        ),
-        "ready_file_descriptor": (
-            "Ready File Descriptor",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("argument", "gamescope", "", "-R ", ""),
-            ),
-        ),
-        "virtual_connector_strategy": (
-            "Virtual Connector Strategy",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("single-application", "single_application"),
-                ("steam-controlled", "steam_controlled"),
-            ),
-            (
-                ("argument", "gamescope", "", "--virtual-connector-strategy ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_key": (
-            "Virtual Reality Overlay Key",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("gamescope", "gamescope"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-key ", ""),
-            ),
-        ),
-        "virtual_reality_application_overlay_key": (
-            "Virtual Reality Application Overlay Key",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("gamescope_child", "gamescope_child"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-app-overlay-key ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_explicit_name": (
-            "Virtual Reality Overlay Explicit Name",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("Gamescope", "Gamescope"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-explicit-name ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_default_name": (
-            "Virtual Reality Overlay Default Name",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("Gamescope", "Gamescope"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-default-name ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_icon": (
-            "Virtual Reality Overlay Icon",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("/usr/share/icons/gamescope.png", "/usr/share/icons/gamescope.png"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-icon ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_show_immediately": (
-            "Virtual Reality Overlay Show Immediately",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-show-immediately", ""),
-            ),
-        ),
-        "virtual_reality_overlay_control_bar": (
-            "Virtual Reality Overlay Control Bar",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-enable-control-bar", ""),
-            ),
-        ),
-        "virtual_reality_overlay_keyboard_button": (
-            "Virtual Reality Overlay Keyboard Button",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-enable-control-bar-keyboard", ""),
-            ),
-        ),
-        "virtual_reality_overlay_close_button": (
-            "Virtual Reality Overlay Close Button",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-enable-control-bar-close", ""),
-            ),
-        ),
-        "virtual_reality_overlay_click_stabilization": (
-            "Virtual Reality Overlay Click Stabilization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-enable-click-stabilization", ""),
-            ),
-        ),
-        "virtual_reality_overlay_modal": (
-            "Virtual Reality Overlay Modal",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-modal", ""),
-            ),
-        ),
-        "virtual_reality_overlay_physical_width": (
-            "Virtual Reality Overlay Physical Width",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1.0", "1.0"),
-                ("1.5", "1.5"),
-                ("2.0", "2.0"),
-                ("2.5", "2.5"),
-                ("3.0", "3.0"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-physical-width ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_physical_curvature": (
-            "Virtual Reality Overlay Physical Curvature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.0", "0.0"),
-                ("0.1", "0.1"),
-                ("0.25", "0.25"),
-                ("0.5", "0.5"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-physical-curvature ", ""),
-            ),
-        ),
-        "virtual_reality_overlay_pre_curve_pitch": (
-            "Virtual Reality Overlay Pre Curve Pitch",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.0", "0.0"),
-                ("0.1", "0.1"),
-                ("0.25", "0.25"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-overlay-physical-pre-curve-pitch ", ""),
-            ),
-        ),
-        "virtual_reality_trackpad_scroll_speed": (
-            "Virtual Reality Trackpad Scroll Speed",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("2.0", "2.0"),
-                ("4.0", "4.0"),
-                ("8.0", "8.0"),
-                ("12.0", "12.0"),
-                ("16.0", "16.0"),
-            ),
-            (
-                ("argument", "gamescope", "", "--vr-scrolls-speed ", ""),
-            ),
-        ),
-        "debug_hardware_planes": (
-            "Debug Hardware Planes",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--debug-layers", ""),
-            ),
-        ),
-        "debug_focus": (
-            "Debug Focus",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--debug-focus", ""),
-            ),
-        ),
-        "synchronous_x11": (
-            "Synchronous X11",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--synchronous-x11", ""),
-            ),
-        ),
-        "debug_heads_up_display": (
-            "Debug Heads Up Display",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--debug-hud", ""),
-            ),
-        ),
-        "debug_x11_events": (
-            "Debug X11 Events",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--debug-events", ""),
-            ),
-        ),
-        "force_composition": (
-            "Force Composition",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--force-composition", ""),
-            ),
-        ),
-        "composite_debug_markers": (
-            "Composite Debug Markers",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--composite-debug", ""),
-            ),
-        ),
-        "disable_x_resource": (
-            "Disable X Resource",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--disable-xres", ""),
-            ),
-        ),
-        "high_dynamic_range_debug_force_support": (
-            "High Dynamic Range Debug Force Support",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-debug-force-support", ""),
-            ),
-        ),
-        "high_dynamic_range_debug_force_output": (
-            "High Dynamic Range Debug Force Output",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-debug-force-output", ""),
-            ),
-        ),
-        "high_dynamic_range_debug_heatmap": (
-            "High Dynamic Range Debug Heatmap",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", ""),
-            ),
-            (
-                ("argument", "gamescope", "", "--hdr-debug-heatmap", ""),
-            ),
-        ),
+        "gamescope": {
+            "label": "Gamescope",
+            "description": "Gamescope compositing window manager.",
+            "inputs": "gamescope=enable",
+            "output": ("argument",),
+        },
+        "gamescope_wsi_layer": {
+            "label": "Gamescope WSI Layer",
+            "description": "Gamescope Vulkan WSI layer activation.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "ENABLE_GAMESCOPE_WSI", ""),
+        },
+        "vulkan_wsi_minimum_image_count": {
+            "label": "Vulkan WSI Minimum Image Count",
+            "description": "Minimum swapchain image count for Gamescope WSI.",
+            "inputs": "value=1, 2, 3, 4, 5, 6",
+            "output": ("environment_variable", "GAMESCOPE_WSI_MIN_IMAGE_COUNT", ""),
+        },
+        "vulkan_preferred_device": {
+            "label": "Vulkan Preferred Device",
+            "description": "Preferred Vulkan device by vendor:device ID.",
+            "inputs": "--prefer-vk-device=vendor:device (e.g. 1002:7300)",
+            "output": ("argument",),
+        },
+        "gamescope_output_width": {
+            "label": "Gamescope Output Width",
+            "description": "Output resolution width.",
+            "inputs": "-W=pixel_value (1280, 1920, 2560, 3840)",
+            "output": ("argument",),
+        },
+        "gamescope_output_height": {
+            "label": "Gamescope Output Height",
+            "description": "Output resolution height.",
+            "inputs": "-H=pixel_value (720, 1080, 1440, 2160)",
+            "output": ("argument",),
+        },
+        "gamescope_game_width": {
+            "label": "Gamescope Game Width",
+            "description": "Game rendering width.",
+            "inputs": "-w=pixel_value (1280, 1920, 2560)",
+            "output": ("argument",),
+        },
+        "gamescope_game_height": {
+            "label": "Gamescope Game Height",
+            "description": "Game rendering height.",
+            "inputs": "-h=pixel_value (720, 1080, 1440)",
+            "output": ("argument",),
+        },
+        "nested_refresh_rate": {
+            "label": "Nested Refresh Rate",
+            "description": "Refresh rate when running nested.",
+            "inputs": "-r=refresh_rate (30, 60, 120, 144, 165, 240)",
+            "output": ("argument",),
+        },
+        "nested_unfocused_refresh_rate": {
+            "label": "Nested Unfocused Refresh Rate",
+            "description": "Refresh rate when nested and unfocused.",
+            "inputs": "-o=refresh_rate (15, 30, 60)",
+            "output": ("argument",),
+        },
+        "framerate_limit": {
+            "label": "FPS Limit",
+            "description": "FPS cap applied by Gamescope.",
+            "inputs": "--framerate-limit=value (0=unlimited, 30, 60, 120, 144)",
+            "output": ("argument",),
+        },
+        "maximum_scale_factor": {
+            "label": "Maximum Scale Factor",
+            "description": "Maximum upscale factor.",
+            "inputs": "-m=value (1, 2, 3, 4)",
+            "output": ("argument",),
+        },
+        "force_orientation": {
+            "label": "Force Orientation",
+            "description": "Force a specific display orientation.",
+            "inputs": "--force-orientation=normal, left, right, upsidedown",
+            "output": ("argument",),
+        },
+        "display_index": {
+            "label": "Display Index",
+            "description": "Target display index.",
+            "inputs": "--display-index=value (0, 1, 2)",
+            "output": ("argument",),
+        },
+        "preferred_output_connectors": {
+            "label": "Preferred Output Connectors",
+            "description": "Preferred output connector name.",
+            "inputs": "-O=connector_name (DP-1, HDMI-A-1)",
+            "output": ("argument",),
+        },
+        "gamescope_fullscreen": {
+            "label": "Gamescope Fullscreen",
+            "description": "Run in fullscreen mode.",
+            "inputs": "-f=fullscreen",
+            "output": ("argument",),
+        },
+        "gamescope_borderless": {
+            "label": "Gamescope Borderless",
+            "description": "Run in borderless window mode.",
+            "inputs": "-b=borderless",
+            "output": ("argument",),
+        },
+        "force_windows_fullscreen": {
+            "label": "Force Windows Fullscreen",
+            "description": "Force Windows games to use fullscreen.",
+            "inputs": "--force-windows-fullscreen=enable",
+            "output": ("argument",),
+        },
+        "scaler_backend": {
+            "label": "Scaler Backend",
+            "description": "Scaling mode.",
+            "inputs": "--scaler=auto, integer, fit, fill, stretch",
+            "output": ("argument",),
+        },
+        "gamescope_upscale_filter": {
+            "label": "Gamescope Upscale Filter",
+            "description": "Upscaling filter method.",
+            "inputs": "--filter=linear, nearest, fsr, nis, pixel",
+            "output": ("argument",),
+        },
+        "upscaler_sharpness": {
+            "label": "Upscaler Sharpness",
+            "description": "Sharpness level for FSR and NIS upscalers.",
+            "inputs": "--sharpness=value (0, 2, 5, 10, 15, 20)",
+            "output": ("argument",),
+        },
+        "grab_keyboard": {
+            "label": "Grab Keyboard",
+            "description": "Grab keyboard input exclusively.",
+            "inputs": "-g=grab keyboard",
+            "output": ("argument",),
+        },
+        "force_grab_cursor": {
+            "label": "Force Grab Cursor",
+            "description": "Force cursor grab inside the window.",
+            "inputs": "--force-grab-cursor=enable",
+            "output": ("argument",),
+        },
+        "mouse_sensitivity": {
+            "label": "Mouse Sensitivity",
+            "description": "Mouse sensitivity multiplier.",
+            "inputs": "-s=value (0.5, 1.0, 1.5, 2.0)",
+            "output": ("argument",),
+        },
+        "default_touch_mode": {
+            "label": "Default Touch Mode",
+            "description": "Default touch input mode.",
+            "inputs": "--default-touch-mode=value (0, 1, 2, 3, 4)",
+            "output": ("argument",),
+        },
+        "cursor_image_path": {
+            "label": "Cursor Image Path",
+            "description": "Custom cursor image path.",
+            "inputs": "--cursor=filesystem_path",
+            "output": ("argument",),
+        },
+        "hide_cursor_delay": {
+            "label": "Hide Cursor Delay",
+            "description": "Milliseconds before cursor is hidden.",
+            "inputs": "-C=milliseconds (3000, 5000, 10000)",
+            "output": ("argument",),
+        },
+        "cursor_scale_height": {
+            "label": "Cursor Scale Height",
+            "description": "Reference height for cursor scaling.",
+            "inputs": "--cursor-scale-height=pixel_value (720, 1080, 1440)",
+            "output": ("argument",),
+        },
+        "rendering_backend": {
+            "label": "Rendering Backend",
+            "description": "Compositor backend.",
+            "inputs": "--backend=auto, drm, sdl, openvr, headless, wayland",
+            "output": ("argument",),
+        },
+        "expose_wayland": {
+            "label": "Expose Wayland",
+            "description": "Expose a Wayland socket for child apps.",
+            "inputs": "--expose-wayland=enable",
+            "output": ("argument",),
+        },
+        "xwayland_server_count": {
+            "label": "XWayland Server Count",
+            "description": "Number of XWayland servers to spawn.",
+            "inputs": "--xwayland-count=value (1, 2, 3)",
+            "output": ("argument",),
+        },
+        "adaptive_sync": {
+            "label": "Adaptive Sync",
+            "description": "Adaptive sync (VRR) output.",
+            "inputs": "--adaptive-sync=enable",
+            "output": ("argument",),
+        },
+        "immediate_flips": {
+            "label": "Immediate Flips",
+            "description": "Allow immediate page flips.",
+            "inputs": "--immediate-flips=enable",
+            "output": ("argument",),
+        },
+        "generate_direct_rendering_manager_mode": {
+            "label": "Generate Direct Rendering Manager Mode",
+            "description": "DRM mode generation method.",
+            "inputs": "--generate-drm-mode=cvt, fixed",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_output": {
+            "label": "HDR Output",
+            "description": "HDR output mode.",
+            "inputs": "--hdr-enabled=enable",
+            "output": ("argument",),
+        },
+        "standard_dynamic_range_gamut_wideness": {
+            "label": "SDR Gamut Wideness",
+            "description": "SDR gamut wideness factor.",
+            "inputs": "--sdr-gamut-wideness=value (0.0, 0.25, 0.5, 0.75, 1.0)",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_standard_dynamic_range_content_nits": {
+            "label": "HDR SDR Content Nits",
+            "description": "SDR content brightness in HDR mode.",
+            "inputs": "--hdr-sdr-content-nits=value (200, 400, 600, 800)",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_inverse_tone_mapping": {
+            "label": "HDR ITM",
+            "description": "Inverse tone mapping for HDR.",
+            "inputs": "--hdr-itm-enabled=enable",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_inverse_tone_mapping_standard_dynamic_range_nits": {
+            "label": "HDR ITM SDR Input Nits",
+            "description": "SDR input nits for inverse tone mapping.",
+            "inputs": "--hdr-itm-sdr-nits=value (100, 200, 400, 600, 1000)",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_inverse_tone_mapping_target_nits": {
+            "label": "HDR ITM Target Nits",
+            "description": "Target nits for inverse tone mapping output.",
+            "inputs": "--hdr-itm-target-nits=value (400, 1000, 2000, 4000, 10000)",
+            "output": ("argument",),
+        },
+        "color_management": {
+            "label": "Color Management",
+            "description": "Color management processing.",
+            "inputs": "--disable-color-management=enable",
+            "output": ("argument",),
+        },
+        "steam_integration": {
+            "label": "Steam Integration",
+            "description": "Steam overlay and input integration.",
+            "inputs": "-e=steam integration",
+            "output": ("argument",),
+        },
+        "mangoapp_overlay": {
+            "label": "MangoApp Overlay",
+            "description": "MangoApp performance overlay.",
+            "inputs": "--mangoapp=enable",
+            "output": ("argument",),
+        },
+        "reshade_effect": {
+            "label": "Reshade Effect",
+            "description": "ReShade effect file to load.",
+            "inputs": "--reshade-effect=effect_name (CRT.fx)",
+            "output": ("argument",),
+        },
+        "reshade_technique_index": {
+            "label": "Reshade Technique Index",
+            "description": "ReShade technique index to use.",
+            "inputs": "--reshade-technique-idx=value (0, 1, 2)",
+            "output": ("argument",),
+        },
+        "mura_compensation_map": {
+            "label": "Mura Compensation Map",
+            "description": "Mura compensation image path.",
+            "inputs": "--mura-map=filesystem_path",
+            "output": ("argument",),
+        },
+        "hardware_planes": {
+            "label": "Hardware Planes",
+            "description": "Hardware overlay plane usage.",
+            "inputs": "--disable-layers=enable",
+            "output": ("argument",),
+        },
+        "realtime_scheduling": {
+            "label": "Realtime Scheduling",
+            "description": "Realtime process scheduling priority.",
+            "inputs": "--rt=enable",
+            "output": ("argument",),
+        },
+        "keep_alive": {
+            "label": "Keep Alive",
+            "description": "Keep Gamescope running after child exits.",
+            "inputs": "--keep-alive=enable",
+            "output": ("argument",),
+        },
+        "allow_deferred_backend": {
+            "label": "Allow Deferred Backend",
+            "description": "Allow deferred backend initialization.",
+            "inputs": "--allow-deferred-backend=enable",
+            "output": ("argument",),
+        },
+        "statistics_path": {
+            "label": "Statistics Path",
+            "description": "Path for Gamescope statistics output.",
+            "inputs": "-T=filesystem_path",
+            "output": ("argument",),
+        },
+        "ready_file_descriptor": {
+            "label": "Ready FD",
+            "description": "File descriptor signaled when ready.",
+            "inputs": "-R=value (3, 4)",
+            "output": ("argument",),
+        },
+        "virtual_connector_strategy": {
+            "label": "Virtual Connector Strategy",
+            "description": "Virtual connector management strategy.",
+            "inputs": "--virtual-connector-strategy=single-application, steam-controlled",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_key": {
+            "label": "Virtual Reality Overlay Key",
+            "description": "OpenVR overlay key.",
+            "inputs": "--vr-overlay-key=string",
+            "output": ("argument",),
+        },
+        "virtual_reality_application_overlay_key": {
+            "label": "Virtual Reality Application Overlay Key",
+            "description": "OpenVR application overlay key.",
+            "inputs": "--vr-app-overlay-key=string",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_explicit_name": {
+            "label": "Virtual Reality Overlay Explicit Name",
+            "description": "Explicit name for the OpenVR overlay.",
+            "inputs": "--vr-overlay-explicit-name=string",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_default_name": {
+            "label": "Virtual Reality Overlay Default Name",
+            "description": "Default name for the OpenVR overlay.",
+            "inputs": "--vr-overlay-default-name=string",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_icon": {
+            "label": "Virtual Reality Overlay Icon",
+            "description": "Icon path for the OpenVR overlay.",
+            "inputs": "--vr-overlay-icon=filesystem_path",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_show_immediately": {
+            "label": "Virtual Reality Overlay Show Immediately",
+            "description": "Show the OpenVR overlay immediately on launch.",
+            "inputs": "--vr-overlay-show-immediately=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_control_bar": {
+            "label": "Virtual Reality Overlay Control Bar",
+            "description": "Show control bar on the OpenVR overlay.",
+            "inputs": "--vr-overlay-enable-control-bar=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_keyboard_button": {
+            "label": "Virtual Reality Overlay Keyboard Button",
+            "description": "Show keyboard button on the OpenVR overlay control bar.",
+            "inputs": "--vr-overlay-enable-control-bar-keyboard=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_close_button": {
+            "label": "Virtual Reality Overlay Close Button",
+            "description": "Show close button on the OpenVR overlay control bar.",
+            "inputs": "--vr-overlay-enable-control-bar-close=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_click_stabilization": {
+            "label": "Virtual Reality Overlay Click Stabilization",
+            "description": "Click stabilization for the OpenVR overlay.",
+            "inputs": "--vr-overlay-enable-click-stabilization=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_modal": {
+            "label": "Virtual Reality Overlay Modal",
+            "description": "Modal mode for the OpenVR overlay.",
+            "inputs": "--vr-overlay-modal=enable",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_physical_width": {
+            "label": "Virtual Reality Overlay Physical Width",
+            "description": "Physical width of the OpenVR overlay in meters.",
+            "inputs": "--vr-overlay-physical-width=value (1.0, 1.5, 2.0, 2.5, 3.0)",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_physical_curvature": {
+            "label": "Virtual Reality Overlay Physical Curvature",
+            "description": "Curvature of the OpenVR overlay surface.",
+            "inputs": "--vr-overlay-physical-curvature=value (0.0, 0.1, 0.25, 0.5)",
+            "output": ("argument",),
+        },
+        "virtual_reality_overlay_pre_curve_pitch": {
+            "label": "Virtual Reality Overlay Pre Curve Pitch",
+            "description": "Pre-curve pitch of the OpenVR overlay.",
+            "inputs": "--vr-overlay-physical-pre-curve-pitch=value (0.0, 0.1, 0.25)",
+            "output": ("argument",),
+        },
+        "virtual_reality_trackpad_scroll_speed": {
+            "label": "Virtual Reality Trackpad Scroll Speed",
+            "description": "Trackpad scroll speed in VR mode.",
+            "inputs": "--vr-scrolls-speed=value (2.0, 4.0, 8.0, 12.0, 16.0)",
+            "output": ("argument",),
+        },
+        "debug_hardware_planes": {
+            "label": "Debug Hardware Planes",
+            "description": "Debug hardware overlay plane usage.",
+            "inputs": "--debug-layers=enable",
+            "output": ("argument",),
+        },
+        "debug_focus": {
+            "label": "Debug Focus",
+            "description": "Debug window focus handling.",
+            "inputs": "--debug-focus=enable",
+            "output": ("argument",),
+        },
+        "synchronous_x11": {
+            "label": "Synchronous X11",
+            "description": "Synchronous X11 mode for debugging.",
+            "inputs": "--synchronous-x11=enable",
+            "output": ("argument",),
+        },
+        "debug_heads_up_display": {
+            "label": "Debug HUD",
+            "description": "Debug HUD overlay.",
+            "inputs": "--debug-hud=enable",
+            "output": ("argument",),
+        },
+        "debug_x11_events": {
+            "label": "Debug X11 Events",
+            "description": "Debug X11 event handling.",
+            "inputs": "--debug-events=enable",
+            "output": ("argument",),
+        },
+        "force_composition": {
+            "label": "Force Composition",
+            "description": "Force compositing even when unnecessary.",
+            "inputs": "--force-composition=enable",
+            "output": ("argument",),
+        },
+        "composite_debug_markers": {
+            "label": "Composite Debug Markers",
+            "description": "Debug markers in composite output.",
+            "inputs": "--composite-debug=enable",
+            "output": ("argument",),
+        },
+        "x_resource": {
+            "label": "X Resource",
+            "description": "X resource extension usage.",
+            "inputs": "--disable-xres=enable",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_debug_force_support": {
+            "label": "HDR Debug Force Support",
+            "description": "Force HDR support reporting for debugging.",
+            "inputs": "--hdr-debug-force-support=enable",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_debug_force_output": {
+            "label": "HDR Debug Force Output",
+            "description": "Force HDR output for debugging.",
+            "inputs": "--hdr-debug-force-output=enable",
+            "output": ("argument",),
+        },
+        "high_dynamic_range_debug_heatmap": {
+            "label": "HDR Debug Heatmap",
+            "description": "HDR heatmap debug overlay.",
+            "inputs": "--hdr-debug-heatmap=enable",
+            "output": ("argument",),
+        },
     }

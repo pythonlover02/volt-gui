@@ -1,121 +1,59 @@
-def get_options_settings():
+def get_options_settings() -> dict:
     return {
         "_tab_metadata": (False,),
         "_executable_required": (),
-        "application_theme": (
-            "Application Theme",
-            (
-                ("skip", None),
-                ("default", "cachyos"),
-                ("amd", "amd"),
-                ("intel", "intel"),
-                ("nvidia", "nvidia"),
-                ("cachyos", "cachyos"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "window_transparency": (
-            "Window Transparency",
-            (
-                ("skip", None),
-                ("default", "disable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "interface_scale_factor": (
-            "Interface Scale Factor",
-            (
-                ("skip", None),
-                ("default", "1.0"),
-                ("0.25", "0.25"),
-                ("0.5", "0.5"),
-                ("0.75", "0.75"),
-                ("1.0", "1.0"),
-                ("1.25", "1.25"),
-                ("1.5", "1.5"),
-                ("1.75", "1.75"),
-                ("2.0", "2.0"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "start_window_maximized": (
-            "Start Window Maximized",
-            (
-                ("skip", None),
-                ("default", "disable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "start_window_minimized": (
-            "Start Window Minimized",
-            (
-                ("skip", None),
-                ("default", "disable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "system_tray_behavior": (
-            "System Tray Behavior",
-            (
-                ("skip", None),
-                ("default", "disable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "volt_script_location": (
-            "Script Location",
-            (
-                ("skip", None),
-                ("default", "/usr/local/bin/volt"),
-                ("system", "/usr/local/bin/volt"),
-                ("temporary", "/tmp/volt"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "welcome_message_display": (
-            "Welcome Message Display",
-            (
-                ("skip", None),
-                ("default", "enable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
-        "automatic_update_check": (
-            "Automatic Update Check",
-            (
-                ("skip", None),
-                ("default", "disable"),
-                ("disable", ""),
-                ("enable", "enable"),
-            ),
-            (
-                ("option", "", "", "", ""),
-            ),
-        ),
+        "application_theme": {
+            "label": "Application Theme",
+            "description": "Color theme for the application.",
+            "inputs": "value=amd, intel, nvidia, cachyos",
+            "output": ("option",),
+        },
+        "window_transparency": {
+            "label": "Window Transparency",
+            "description": "Window background transparency.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
+        "interface_scale_factor": {
+            "label": "Interface Scale Factor",
+            "description": "UI scaling multiplier.",
+            "inputs": "value=0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0",
+            "output": ("option",),
+        },
+        "start_window_maximized": {
+            "label": "Start Window Maximized",
+            "description": "Start the window in maximized state.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
+        "start_window_minimized": {
+            "label": "Start Window Minimized",
+            "description": "Start the window minimized to tray.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
+        "system_tray_behavior": {
+            "label": "System Tray",
+            "description": "Show icon in the system tray.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
+        "volt_script_location": {
+            "label": "Script Location",
+            "description": "Filesystem path for the volt launcher script.",
+            "inputs": "path=filesystem path (e.g. /usr/local/bin/volt)",
+            "output": ("option",),
+        },
+        "welcome_message_display": {
+            "label": "Welcome Message",
+            "description": "Show the welcome message on startup.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
+        "automatic_update_check": {
+            "label": "Automatic Update Check",
+            "description": "Check for updates on startup.",
+            "inputs": "value=on, off",
+            "output": ("option",),
+        },
     }

@@ -1,2100 +1,1079 @@
-def get_mangohud_settings():
+def get_mangohud_settings() -> dict:
     return {
         "_tab_metadata": (True,),
         "_executable_required": ("mangohud",),
-        "enable": (
-            "Enable MangoHud",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("argument", "mangohud", "", "", ""),
-                ("environment_variable", "MANGOHUD", "", "", ""),
-            ),
-        ),
-        "disable": (
-            "Disable MangoHud",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "DISABLE_MANGOHUD", "", "", ""),
-            ),
-        ),
-        "opengl_vertical_synchronization": (
-            "OpenGL Vertical Synchronization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("on", "1"),
-                ("off", "0"),
-                ("adaptive", "-1"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gl_vsync=", ""),
-            ),
-        ),
-        "opengl_libraries_path": (
-            "OpenGL Libraries Path",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_OPENGL_LIBS", "", "", ""),
-            ),
-        ),
-        "vulkan_vertical_synchronization": (
-            "Vulkan Vertical Synchronization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("on", "3"),
-                ("off", "1"),
-                ("adaptive", "0"),
-                ("mailbox", "2"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "vsync=", ""),
-            ),
-        ),
-        "vulkan_driver": (
-            "Vulkan Driver",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "vulkan_driver"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "configuration_file": (
-            "Configuration File",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIGFILE", "", "", ""),
-            ),
-        ),
-        "presets_file": (
-            "Presets File",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_PRESETSFILE", "", "", ""),
-            ),
-        ),
-        "read_configuration": (
-            "Read Configuration File",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "read_cfg"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "anisotropic_filtering": (
-            "Anisotropic Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("4", "4"),
-                ("8", "8"),
-                ("16", "16"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "af=", ""),
-            ),
-        ),
-        "mipmap_level_of_detail_bias": (
-            "Mipmap Level of Detail Bias",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("-16", "-16"),
-                ("-8", "-8"),
-                ("-4", "-4"),
-                ("-2", "-2"),
-                ("-1", "-1"),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("4", "4"),
-                ("8", "8"),
-                ("16", "16"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "picmip=", ""),
-            ),
-        ),
-        "bicubic_filtering": (
-            "Bicubic Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "bicubic"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "trilinear_filtering": (
-            "Trilinear Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "trilinear"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "retro_filtering": (
-            "Retro Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "retro"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "frames_per_second_limit": (
-            "Frames Per Second Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("unlimited", "0"),
-                ("10", "10"),
-                ("15", "15"),
-                ("20", "20"),
-                ("24", "24"),
-                ("25", "25"),
-                ("30", "30"),
-                ("35", "35"),
-                ("40", "40"),
-                ("45", "45"),
-                ("48", "48"),
-                ("50", "50"),
-                ("55", "55"),
-                ("60", "60"),
-                ("70", "70"),
-                ("72", "72"),
-                ("75", "75"),
-                ("85", "85"),
-                ("90", "90"),
-                ("100", "100"),
-                ("110", "110"),
-                ("120", "120"),
-                ("144", "144"),
-                ("165", "165"),
-                ("180", "180"),
-                ("200", "200"),
-                ("240", "240"),
-                ("280", "280"),
-                ("300", "300"),
-                ("360", "360"),
-                ("480", "480"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_limit=", ""),
-            ),
-        ),
-        "frames_per_second_limit_method": (
-            "Frames Per Second Limit Method",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("late", "late"),
-                ("early", "early"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_limit_method=", ""),
-            ),
-        ),
-        "preset": (
-            "Preset",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("no-overlay", "0"),
-                ("frames-per-second-only", "1"),
-                ("horizontal", "2"),
-                ("extended", "3"),
-                ("detailed", "4"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "preset=", ""),
-            ),
-        ),
-        "full_overlay": (
-            "Full Overlay",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "full"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "frames_per_second_only": (
-            "Frames Per Second Only",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fps_only"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "no_display": (
-            "No Display",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "no_display"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "horizontal_layout": (
-            "Horizontal Layout",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "horizontal"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "horizontal_stretch": (
-            "Horizontal Stretch",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "horizontal_stretch"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "compact": (
-            "Compact Overlay",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "hud_compact"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "no_margin": (
-            "No Margin",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "hud_no_margin"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "position": (
-            "Position",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("top-left", "top-left"),
-                ("top-right", "top-right"),
-                ("top-center", "top-center"),
-                ("middle-left", "middle-left"),
-                ("middle-right", "middle-right"),
-                ("bottom-left", "bottom-left"),
-                ("bottom-right", "bottom-right"),
-                ("bottom-center", "bottom-center"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "position=", ""),
-            ),
-        ),
-        "width": (
-            "Width",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("200", "200"),
-                ("250", "250"),
-                ("300", "300"),
-                ("350", "350"),
-                ("400", "400"),
-                ("450", "450"),
-                ("500", "500"),
-                ("600", "600"),
-                ("700", "700"),
-                ("800", "800"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "width=", ""),
-            ),
-        ),
-        "height": (
-            "Height",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("100", "100"),
-                ("150", "150"),
-                ("200", "200"),
-                ("250", "250"),
-                ("300", "300"),
-                ("400", "400"),
-                ("500", "500"),
-                ("600", "600"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "height=", ""),
-            ),
-        ),
-        "offset_horizontal": (
-            "Horizontal Offset",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("10", "10"),
-                ("20", "20"),
-                ("50", "50"),
-                ("100", "100"),
-                ("200", "200"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "offset_x=", ""),
-            ),
-        ),
-        "offset_vertical": (
-            "Vertical Offset",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("10", "10"),
-                ("20", "20"),
-                ("50", "50"),
-                ("100", "100"),
-                ("200", "200"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "offset_y=", ""),
-            ),
-        ),
-        "table_columns": (
-            "Table Columns",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-                ("5", "5"),
-                ("6", "6"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "table_columns=", ""),
-            ),
-        ),
-        "cell_padding_vertical": (
-            "Vertical Cell Padding",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("-0.085", "-0.085"),
-                ("-0.05", "-0.05"),
-                ("0.0", "0.0"),
-                ("0.05", "0.05"),
-                ("0.1", "0.1"),
-                ("0.15", "0.15"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cellpadding_y=", ""),
-            ),
-        ),
-        "round_corners": (
-            "Round Corners",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("5", "5"),
-                ("10", "10"),
-                ("15", "15"),
-                ("20", "20"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "round_corners=", ""),
-            ),
-        ),
-        "frames_per_second_display": (
-            "Frames Per Second Display",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps=", ""),
-            ),
-        ),
-        "frames_per_second_sampling_period": (
-            "Frames Per Second Sampling Period",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("100", "100"),
-                ("200", "200"),
-                ("250", "250"),
-                ("500", "500"),
-                ("1000", "1000"),
-                ("2000", "2000"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_sampling_period=", ""),
-            ),
-        ),
-        "frames_per_second_color_change": (
-            "Frames Per Second Color Change",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fps_color_change"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "frames_per_second_colors": (
-            "Frames Per Second Colors",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_color=", ""),
-            ),
-        ),
-        "frames_per_second_color_breakpoints": (
-            "Frames Per Second Color Breakpoints",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("30,60", "30,60"),
-                ("30,90", "30,90"),
-                ("60,144", "60,144"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_value=", ""),
-            ),
-        ),
-        "frames_per_second_metrics": (
-            "Frames Per Second Metrics",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("avg", "avg"),
-                ("avg,0.1", "avg,0.1"),
-                ("avg,0.01,0.001", "avg,0.01,0.001"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_metrics=", ""),
-            ),
-        ),
-        "frames_per_second_text": (
-            "Frames Per Second Text",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fps_text=", ""),
-            ),
-        ),
-        "show_frames_per_second_limit": (
-            "Show Frames Per Second Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "show_fps_limit"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "benchmark_percentiles": (
-            "Benchmark Percentiles",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("97,AVG,1,0.1", "97,AVG,1,0.1"),
-                ("99,AVG,1,0.1", "99,AVG,1,0.1"),
-                ("99.9,99,AVG,1,0.1", "99.9,99,AVG,1,0.1"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "benchmark_percentiles=", ""),
-            ),
-        ),
-        "frame_count": (
-            "Frame Count",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "frame_count"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "frametime": (
-            "Frametime",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "frametime=", ""),
-            ),
-        ),
-        "frame_timing": (
-            "Frame Timing Graph",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "frame_timing=", ""),
-            ),
-        ),
-        "frame_timing_detailed": (
-            "Detailed Frame Timing",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "frame_timing_detailed"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "dynamic_frame_timing": (
-            "Dynamic Frame Timing",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "dynamic_frame_timing"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "histogram": (
-            "Histogram",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "histogram"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_statistics": (
-            "CPU Statistics",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_stats=", ""),
-            ),
-        ),
-        "cpu_temperature": (
-            "CPU Temperature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "cpu_temp"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_power": (
-            "CPU Power",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "cpu_power"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_megahertz": (
-            "CPU Megahertz",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "cpu_mhz"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_text": (
-            "CPU Text Override",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_text=", ""),
-            ),
-        ),
-        "cpu_load_color_change": (
-            "CPU Load Color Change",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "cpu_load_change"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_load_thresholds": (
-            "CPU Load Thresholds",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("50,90", "50,90"),
-                ("40,80", "40,80"),
-                ("60,90", "60,90"),
-                ("30,70", "30,70"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_load_value=", ""),
-            ),
-        ),
-        "cpu_load_colors": (
-            "CPU Load Colors",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0000FF,00FFFF,FF00FF", "0000FF,00FFFF,FF00FF"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_load_color=", ""),
-            ),
-        ),
-        "cpu_efficiency": (
-            "CPU Efficiency",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "cpu_efficiency"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "cpu_custom_temperature_sensor": (
-            "CPU Custom Temperature Sensor",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_custom_temp_sensor=", ""),
-            ),
-        ),
-        "core_load": (
-            "Core Load",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "core_load"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "core_load_color_change": (
-            "Core Load Color Change",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "core_load_change"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "core_load_bars": (
-            "Core Load Bars",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "core_bars"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "core_type": (
-            "Core Type",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "core_type"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_statistics": (
-            "GPU Statistics",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_stats=", ""),
-            ),
-        ),
-        "gpu_temperature": (
-            "GPU Temperature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_temp"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_junction_temperature": (
-            "GPU Junction Temperature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_junction_temp"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_memory_temperature": (
-            "GPU Memory Temperature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_mem_temp"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_power": (
-            "GPU Power",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_power"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_core_clock": (
-            "GPU Core Clock",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_core_clock"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_memory_clock": (
-            "GPU Memory Clock",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_mem_clock"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_fan": (
-            "GPU Fan",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_fan"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_voltage": (
-            "GPU Voltage",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_voltage"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_name": (
-            "GPU Name",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_name"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_text": (
-            "GPU Text Override",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_text=", ""),
-            ),
-        ),
-        "gpu_load_color_change": (
-            "GPU Load Color Change",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_load_change"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_load_thresholds": (
-            "GPU Load Thresholds",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("50,90", "50,90"),
-                ("40,80", "40,80"),
-                ("60,90", "60,90"),
-                ("30,70", "30,70"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_load_value=", ""),
-            ),
-        ),
-        "gpu_load_colors": (
-            "GPU Load Colors",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0000FF,00FFFF,FF00FF", "0000FF,00FFFF,FF00FF"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_load_color=", ""),
-            ),
-        ),
-        "gpu_efficiency": (
-            "GPU Efficiency",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_efficiency"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_power_limit": (
-            "GPU Power Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gpu_power_limit"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gpu_list": (
-            "GPU List",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("0,1", "0,1"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_list=", ""),
-            ),
-        ),
-        "pci_device": (
-            "PCI Device",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "pci_dev=", ""),
-            ),
-        ),
-        "throttling_status": (
-            "Throttling Status",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "throttling_status"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "throttling_status_graph": (
-            "Throttling Status Graph",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "throttling_status_graph"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "flip_efficiency": (
-            "Flip Efficiency",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "flip_efficiency"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "ram_usage": (
-            "RAM Usage",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "ram"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "vram_usage": (
-            "VRAM Usage",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "vram"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "swap_usage": (
-            "Swap Usage",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "swap"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "ram_temperature": (
-            "RAM Temperature",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "ram_temp"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "process_memory_resident": (
-            "Process Memory (Resident)",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "procmem"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "process_memory_shared": (
-            "Process Memory (Shared)",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "procmem_shared"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "process_memory_virtual": (
-            "Process Memory (Virtual)",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "procmem_virt"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "process_vram": (
-            "Process VRAM",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "proc_vram"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "input_output_read": (
-            "Input/Output Read",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "io_read"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "input_output_write": (
-            "Input/Output Write",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "io_write"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "network": (
-            "Network",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "network"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "battery": (
-            "Battery",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "battery"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "battery_icon": (
-            "Battery Icon",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "battery_icon"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "battery_wattage": (
-            "Battery Wattage",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "battery_watt"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "battery_time_remaining": (
-            "Battery Time Remaining",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "battery_time"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "device_battery": (
-            "Device Battery",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("gamepad", "gamepad"),
-                ("mouse", "mouse"),
-                ("gamepad,mouse", "gamepad,mouse"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "device_battery=", ""),
-            ),
-        ),
-        "device_battery_icon": (
-            "Device Battery Icon",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "device_battery_icon"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "engine_version": (
-            "Engine Version",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "engine_version"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "engine_short_names": (
-            "Engine Short Names",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "engine_short_names"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "wine_version": (
-            "Wine/Proton Version",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "wine"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "wine_synchronization_method": (
-            "Wine Synchronization Method",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "winesync"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "present_mode": (
-            "Present Mode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "present_mode"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "fsr_status": (
-            "FSR Status",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fsr"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "hide_fsr_sharpness": (
-            "Hide FSR Sharpness",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "hide_fsr_sharpness"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "high_dynamic_range_status": (
-            "High Dynamic Range Status",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "hdr"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "refresh_rate": (
-            "Refresh Rate",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "refresh_rate"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "debug_graph": (
-            "Debug Graph",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "debug"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "steam_deck_fan": (
-            "Steam Deck Fan",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fan"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "resolution": (
-            "Resolution",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "resolution"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "display_server": (
-            "Display Server",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "display_server"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "architecture": (
-            "Architecture",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "arch"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "executable_name": (
-            "Executable Name",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "exec_name"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "time": (
-            "Time",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "time"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "time_format": (
-            "Time Format",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("%T", "%T"),
-                ("%H:%M", "%H:%M"),
-                ("%I:%M-%p", "%I:%M %p"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "time_format=", ""),
-            ),
-        ),
-        "time_no_label": (
-            "Time No Label",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "time_no_label"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "gamemode": (
-            "GameMode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "gamemode"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "vkbasalt": (
-            "vkBasalt",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "vkbasalt"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "temperature_in_fahrenheit": (
-            "Temperature in Fahrenheit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "temp_fahrenheit"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "show_version": (
-            "Show Version",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "version"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "custom_text": (
-            "Custom Text",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "custom_text=", ""),
-            ),
-        ),
-        "custom_text_center": (
-            "Custom Text Center",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "custom_text_center=", ""),
-            ),
-        ),
-        "execute": (
-            "Execute Command",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "exec=", ""),
-            ),
-        ),
-        "media_player": (
-            "Media Player",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "media_player"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "media_player_name": (
-            "Media Player Name",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "media_player_name=", ""),
-            ),
-        ),
-        "media_player_format": (
-            "Media Player Format",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("{title};{artist};{album}", "{title};{artist};{album}"),
-                ("{title};{artist}", "{title};{artist}"),
-                ("{title}", "{title}"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "media_player_format=", ""),
-            ),
-        ),
-        "font_size": (
-            "Font Size",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("12", "12"),
-                ("14", "14"),
-                ("16", "16"),
-                ("18", "18"),
-                ("20", "20"),
-                ("22", "22"),
-                ("24", "24"),
-                ("26", "26"),
-                ("28", "28"),
-                ("30", "30"),
-                ("32", "32"),
-                ("36", "36"),
-                ("40", "40"),
-                ("48", "48"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_size=", ""),
-            ),
-        ),
-        "font_size_secondary": (
-            "Font Size Secondary",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("10", "10"),
-                ("11", "11"),
-                ("12", "12"),
-                ("13", "13"),
-                ("14", "14"),
-                ("16", "16"),
-                ("18", "18"),
-                ("20", "20"),
-                ("22", "22"),
-                ("24", "24"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_size_secondary=", ""),
-            ),
-        ),
-        "font_size_text": (
-            "Font Size Text",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("12", "12"),
-                ("14", "14"),
-                ("16", "16"),
-                ("18", "18"),
-                ("20", "20"),
-                ("22", "22"),
-                ("24", "24"),
-                ("26", "26"),
-                ("28", "28"),
-                ("32", "32"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_size_text=", ""),
-            ),
-        ),
-        "font_scale": (
-            "Font Scale",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.5", "0.5"),
-                ("0.75", "0.75"),
-                ("1.0", "1.0"),
-                ("1.25", "1.25"),
-                ("1.5", "1.5"),
-                ("2.0", "2.0"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_scale=", ""),
-            ),
-        ),
-        "font_scale_media_player": (
-            "Font Scale Media Player",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.5", "0.5"),
-                ("0.75", "0.75"),
-                ("1.0", "1.0"),
-                ("1.25", "1.25"),
-                ("1.5", "1.5"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_scale_media_player=", ""),
-            ),
-        ),
-        "font_file": (
-            "Font File",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_file=", ""),
-            ),
-        ),
-        "font_file_text": (
-            "Font File (Text)",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_file_text=", ""),
-            ),
-        ),
-        "font_glyph_ranges": (
-            "Font Glyph Ranges",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("korean", "korean"),
-                ("chinese", "chinese"),
-                ("chinese-simplified", "chinese_simplified"),
-                ("japanese", "japanese"),
-                ("cyrillic", "cyrillic"),
-                ("thai", "thai"),
-                ("vietnamese", "vietnamese"),
-                ("latin-extended-a", "latin_ext_a"),
-                ("latin-extended-b", "latin_ext_b"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "font_glyph_ranges=", ""),
-            ),
-        ),
-        "no_small_font": (
-            "No Small Font",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "no_small_font"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "text_alpha": (
-            "Text Alpha",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.0", "0.0"),
-                ("0.1", "0.1"),
-                ("0.2", "0.2"),
-                ("0.3", "0.3"),
-                ("0.4", "0.4"),
-                ("0.5", "0.5"),
-                ("0.6", "0.6"),
-                ("0.7", "0.7"),
-                ("0.8", "0.8"),
-                ("0.9", "0.9"),
-                ("1.0", "1.0"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "alpha=", ""),
-            ),
-        ),
-        "background_alpha": (
-            "Background Alpha",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.0", "0.0"),
-                ("0.1", "0.1"),
-                ("0.2", "0.2"),
-                ("0.3", "0.3"),
-                ("0.4", "0.4"),
-                ("0.5", "0.5"),
-                ("0.6", "0.6"),
-                ("0.7", "0.7"),
-                ("0.8", "0.8"),
-                ("0.9", "0.9"),
-                ("1.0", "1.0"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "background_alpha=", ""),
-            ),
-        ),
-        "gpu_color": (
-            "GPU Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "gpu_color=", ""),),
-        ),
-        "cpu_color": (
-            "CPU Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "cpu_color=", ""),),
-        ),
-        "vram_color": (
-            "VRAM Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "vram_color=", ""),),
-        ),
-        "ram_color": (
-            "RAM Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "ram_color=", ""),),
-        ),
-        "input_output_color": (
-            "Input/Output Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "io_color=", ""),),
-        ),
-        "engine_color": (
-            "Engine Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "engine_color=", ""),),
-        ),
-        "frametime_color": (
-            "Frametime Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "frametime_color=", ""),),
-        ),
-        "background_color": (
-            "Background Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "background_color=", ""),),
-        ),
-        "text_color": (
-            "Text Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "text_color=", ""),),
-        ),
-        "media_player_color": (
-            "Media Player Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "media_player_color=", ""),),
-        ),
-        "network_color": (
-            "Network Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "network_color=", ""),),
-        ),
-        "wine_color": (
-            "Wine Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "wine_color=", ""),),
-        ),
-        "battery_color": (
-            "Battery Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "battery_color=", ""),),
-        ),
-        "horizontal_separator_color": (
-            "Horizontal Separator Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "horizontal_separator_color=", ""),),
-        ),
-        "text_outline": (
-            "Text Outline",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "text_outline=", ""),
-            ),
-        ),
-        "text_outline_color": (
-            "Text Outline Color",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "text_outline_color=", ""),),
-        ),
-        "text_outline_thickness": (
-            "Text Outline Thickness",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0.5", "0.5"),
-                ("1.0", "1.0"),
-                ("1.5", "1.5"),
-                ("2.0", "2.0"),
-                ("2.5", "2.5"),
-                ("3.0", "3.0"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "text_outline_thickness=", ""),
-            ),
-        ),
-        "autostart_log": (
-            "Autostart Log",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("5", "5"),
-                ("10", "10"),
-                ("30", "30"),
-                ("60", "60"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "autostart_log=", ""),
-            ),
-        ),
-        "log_duration": (
-            "Log Duration",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("10", "10"),
-                ("30", "30"),
-                ("60", "60"),
-                ("120", "120"),
-                ("300", "300"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "log_duration=", ""),
-            ),
-        ),
-        "log_interval": (
-            "Log Interval",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("100", "100"),
-                ("250", "250"),
-                ("500", "500"),
-                ("1000", "1000"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "log_interval=", ""),
-            ),
-        ),
-        "log_versioning": (
-            "Log Versioning",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "log_versioning"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "output_folder": (
-            "Output Folder",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "output_folder=", ""),),
-        ),
-        "output_file": (
-            "Output File",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "output_file=", ""),),
-        ),
-        "permit_upload": (
-            "Permit Upload",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "permit_upload"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "upload_logs": (
-            "Auto Upload Logs",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "upload_logs"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "fcat": (
-            "FCAT",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fcat"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "fcat_overlay_width": (
-            "FCAT Overlay Width",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("12", "12"),
-                ("24", "24"),
-                ("48", "48"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fcat_overlay_width=", ""),
-            ),
-        ),
-        "fcat_screen_edge": (
-            "FCAT Screen Edge",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "fcat_screen_edge=", ""),
-            ),
-        ),
-        "toggle_overlay": (
-            "Toggle Overlay Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "toggle_hud=", ""),),
-        ),
-        "toggle_logging": (
-            "Toggle Logging Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "toggle_logging=", ""),),
-        ),
-        "toggle_frames_per_second_limit": (
-            "Toggle Frames Per Second Limit Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "toggle_fps_limit=", ""),),
-        ),
-        "toggle_preset": (
-            "Toggle Preset Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "toggle_preset=", ""),),
-        ),
-        "toggle_overlay_position": (
-            "Toggle Overlay Position Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "toggle_hud_position=", ""),),
-        ),
-        "reload_configuration": (
-            "Reload Configuration Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "reload_cfg=", ""),),
-        ),
-        "reset_frames_per_second_metrics": (
-            "Reset Frames Per Second Metrics Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "reset_fps_metrics=", ""),),
-        ),
-        "upload_log": (
-            "Upload Log Keybind",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "upload_log=", ""),),
-        ),
-        "control_socket": (
-            "Control Socket",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "control=", ""),),
-        ),
-        "blacklist": (
-            "Blacklist",
-            (("skip", None), ("default", "")),
-            (("environment_variable", "MANGOHUD_CONFIG", ",", "blacklist=", ""),),
-        ),
-        "fex_statistics": (
-            "FEX Statistics",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "fex_stats"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
-        "ftrace": (
-            "ftrace",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "ftrace"),
-            ),
-            (
-                ("environment_variable", "MANGOHUD_CONFIG", ",", "", ""),
-            ),
-        ),
+        "mangohud_argument": {
+            "label": "MangoHud Argument",
+            "description": "MangoHud command prefix.",
+            "inputs": "mangohud=enable",
+            "output": ("argument",),
+        },
+        "mangohud_environment_variable": {
+            "label": "MangoHud Environment Variable",
+            "description": "MangoHud activation variable.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "MANGOHUD", ""),
+        },
+        "mangohud_suppression": {
+            "label": "MangoHud Suppression",
+            "description": "Suppress MangoHud even when active.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "DISABLE_MANGOHUD", ""),
+        },
+        "opengl_vertical_synchronization": {
+            "label": "OpenGL VSync",
+            "description": "VSync mode for OpenGL via MangoHud.",
+            "inputs": "gl_vsync=value (1=on, 0=off, -1=adaptive)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "opengl_libraries_path": {
+            "label": "OpenGL Libraries Path",
+            "description": "Override path for MangoHud OpenGL libraries.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_OPENGL_LIBS", ""),
+        },
+        "vulkan_vertical_synchronization": {
+            "label": "Vulkan VSync",
+            "description": "VSync mode for Vulkan via MangoHud.",
+            "inputs": "vsync=value (3=on, 1=off, 0=adaptive, 2=mailbox)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "vulkan_driver": {
+            "label": "Vulkan Driver",
+            "description": "Show Vulkan driver name in the overlay.",
+            "inputs": "vulkan_driver=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "configuration_file": {
+            "label": "Configuration File",
+            "description": "Override path for the MangoHud config file.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIGFILE", ""),
+        },
+        "presets_file": {
+            "label": "Presets File",
+            "description": "Override path for the MangoHud presets file.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_PRESETSFILE", ""),
+        },
+        "read_configuration": {
+            "label": "Read Configuration File",
+            "description": "Read the MangoHud configuration file.",
+            "inputs": "read_cfg=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "anisotropic_filtering": {
+            "label": "Aniso Filtering",
+            "description": "Anisotropic filtering level via MangoHud.",
+            "inputs": "af=number (0, 1, 2, 4, 8, 16)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "mipmap_level_of_detail_bias": {
+            "label": "Mipmap LOD Bias",
+            "description": "Mipmap LOD bias via MangoHud.",
+            "inputs": "picmip=number (-16 to 16)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "bicubic_filtering": {
+            "label": "Bicubic Filtering",
+            "description": "Bicubic texture filtering via MangoHud.",
+            "inputs": "bicubic=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "trilinear_filtering": {
+            "label": "Trilinear Filtering",
+            "description": "Trilinear texture filtering via MangoHud.",
+            "inputs": "trilinear=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "retro_filtering": {
+            "label": "Retro Filtering",
+            "description": "Retro texture filtering via MangoHud.",
+            "inputs": "retro=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_limit": {
+            "label": "FPS Limit",
+            "description": "FPS limiter via MangoHud.",
+            "inputs": "fps_limit=number (0=unlimited, 30, 60, 144)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_limit_method": {
+            "label": "FPS Limit Method",
+            "description": "FPS limiter timing method.",
+            "inputs": "fps_limit_method=late, early",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "preset": {
+            "label": "Preset",
+            "description": "Overlay display preset.",
+            "inputs": "preset=0=no-overlay, 1=fps-only, 2=horizontal, 3=extended, 4=detailed",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "full_overlay": {
+            "label": "Full Overlay",
+            "description": "Show all overlay elements.",
+            "inputs": "full=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_only": {
+            "label": "FPS Only",
+            "description": "Show only FPS in the overlay.",
+            "inputs": "fps_only=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "no_display": {
+            "label": "No Display",
+            "description": "Hide the overlay at startup.",
+            "inputs": "no_display=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "horizontal_layout": {
+            "label": "Horizontal Layout",
+            "description": "Horizontal overlay layout.",
+            "inputs": "horizontal=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "horizontal_stretch": {
+            "label": "Horizontal Stretch",
+            "description": "Stretch horizontal layout to full width.",
+            "inputs": "horizontal_stretch=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "compact": {
+            "label": "Compact Overlay",
+            "description": "Compact overlay layout.",
+            "inputs": "hud_compact=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "no_margin": {
+            "label": "No Margin",
+            "description": "Remove overlay margin.",
+            "inputs": "hud_no_margin=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "position": {
+            "label": "Position",
+            "description": "Overlay screen position.",
+            "inputs": "position=top-left, top-right, top-center, middle-left, middle-right, bottom-left, bottom-right, bottom-center",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "width": {
+            "label": "Width",
+            "description": "Overlay width in pixels.",
+            "inputs": "width=number",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "height": {
+            "label": "Height",
+            "description": "Overlay height in pixels.",
+            "inputs": "height=number",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "offset_horizontal": {
+            "label": "Horizontal Offset",
+            "description": "Horizontal offset from the overlay position.",
+            "inputs": "offset_x=number",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "offset_vertical": {
+            "label": "Vertical Offset",
+            "description": "Vertical offset from the overlay position.",
+            "inputs": "offset_y=number",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "table_columns": {
+            "label": "Table Columns",
+            "description": "Number of overlay table columns.",
+            "inputs": "table_columns=number (1, 2, 3, 4, 5, 6)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cell_padding_vertical": {
+            "label": "Vertical Cell Padding",
+            "description": "Vertical padding between overlay rows.",
+            "inputs": "cellpadding_y=number",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "round_corners": {
+            "label": "Round Corners",
+            "description": "Overlay corner rounding radius.",
+            "inputs": "round_corners=number (0, 5, 10, 15, 20)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_display": {
+            "label": "FPS Display",
+            "description": "FPS counter in the overlay.",
+            "inputs": "fps=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_sampling_period": {
+            "label": "FPS Sampling Period",
+            "description": "FPS averaging period in milliseconds.",
+            "inputs": "fps_sampling_period=number (100, 200, 500, 1000, 2000)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_color_change": {
+            "label": "FPS Color Change",
+            "description": "FPS color changes based on thresholds.",
+            "inputs": "fps_color_change=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_colors": {
+            "label": "FPS Colors",
+            "description": "FPS threshold colors as hex values.",
+            "inputs": "fps_color=hex colors",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_color_breakpoints": {
+            "label": "FPS Color Breakpoints",
+            "description": "FPS values at which colors change.",
+            "inputs": "fps_value=comma-separated values (30,60)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_metrics": {
+            "label": "FPS Metrics",
+            "description": "Additional FPS percentile metrics.",
+            "inputs": "fps_metrics=avg, 0.1, 0.01, 0.001",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frames_per_second_text": {
+            "label": "FPS Text",
+            "description": "Custom label text for the FPS counter.",
+            "inputs": "fps_text=text",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "show_frames_per_second_limit": {
+            "label": "Show FPS Limit",
+            "description": "Show the active FPS limit in the overlay.",
+            "inputs": "show_fps_limit=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "benchmark_percentiles": {
+            "label": "Benchmark Percentiles",
+            "description": "Benchmark percentile values to display.",
+            "inputs": "benchmark_percentiles=values (97,AVG,1,0.1)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frame_count": {
+            "label": "Frame Count",
+            "description": "Total frame counter in the overlay.",
+            "inputs": "frame_count=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frametime": {
+            "label": "Frametime",
+            "description": "Frametime value in the overlay.",
+            "inputs": "frametime=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frame_timing": {
+            "label": "Frame Timing Graph",
+            "description": "Frametime graph in the overlay.",
+            "inputs": "frame_timing=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frame_timing_detailed": {
+            "label": "Detailed Frame Timing",
+            "description": "Detailed frametime breakdown graph.",
+            "inputs": "frame_timing_detailed=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "dynamic_frame_timing": {
+            "label": "Dynamic Frame Timing",
+            "description": "Dynamic frametime graph scaling.",
+            "inputs": "dynamic_frame_timing=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "histogram": {
+            "label": "Histogram",
+            "description": "FPS histogram graph.",
+            "inputs": "histogram=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_statistics": {
+            "label": "CPU Statistics",
+            "description": "CPU load statistics in the overlay.",
+            "inputs": "cpu_stats=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_temperature": {
+            "label": "CPU Temperature",
+            "description": "Show CPU temperature in the overlay.",
+            "inputs": "cpu_temp=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_power": {
+            "label": "CPU Power",
+            "description": "Show CPU power draw in the overlay.",
+            "inputs": "cpu_power=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_megahertz": {
+            "label": "CPU MHz",
+            "description": "Show CPU clock speed in the overlay.",
+            "inputs": "cpu_mhz=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_text": {
+            "label": "CPU Text Override",
+            "description": "Custom label text for the CPU section.",
+            "inputs": "cpu_text=text",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_load_color_change": {
+            "label": "CPU Load Color Change",
+            "description": "CPU load color changes based on thresholds.",
+            "inputs": "cpu_load_change=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_load_thresholds": {
+            "label": "CPU Load Thresholds",
+            "description": "CPU load percentage thresholds for color change.",
+            "inputs": "cpu_load_value=comma-separated values (50,90)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_load_colors": {
+            "label": "CPU Load Colors",
+            "description": "CPU load threshold colors as hex values.",
+            "inputs": "cpu_load_color=hex colors (0000FF,00FFFF,FF00FF)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_efficiency": {
+            "label": "CPU Efficiency",
+            "description": "Show CPU efficiency metric in the overlay.",
+            "inputs": "cpu_efficiency=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_custom_temperature_sensor": {
+            "label": "CPU Custom Temperature Sensor",
+            "description": "Custom hwmon path for CPU temperature.",
+            "inputs": "cpu_custom_temp_sensor=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "core_load": {
+            "label": "Core Load",
+            "description": "Per-core CPU load in the overlay.",
+            "inputs": "core_load=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "core_load_color_change": {
+            "label": "Core Load Color Change",
+            "description": "Per-core load color changes based on thresholds.",
+            "inputs": "core_load_change=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "core_load_bars": {
+            "label": "Core Load Bars",
+            "description": "Per-core load bar graph.",
+            "inputs": "core_bars=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "core_type": {
+            "label": "Core Type",
+            "description": "Show CPU core type labels.",
+            "inputs": "core_type=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_statistics": {
+            "label": "GPU Statistics",
+            "description": "GPU load statistics in the overlay.",
+            "inputs": "gpu_stats=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_temperature": {
+            "label": "GPU Temperature",
+            "description": "Show GPU temperature in the overlay.",
+            "inputs": "gpu_temp=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_junction_temperature": {
+            "label": "GPU Junction Temperature",
+            "description": "Show GPU junction temperature in the overlay.",
+            "inputs": "gpu_junction_temp=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_memory_temperature": {
+            "label": "GPU Memory Temperature",
+            "description": "Show GPU memory temperature in the overlay.",
+            "inputs": "gpu_mem_temp=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_power": {
+            "label": "GPU Power",
+            "description": "Show GPU power draw in the overlay.",
+            "inputs": "gpu_power=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_core_clock": {
+            "label": "GPU Core Clock",
+            "description": "Show GPU core clock in the overlay.",
+            "inputs": "gpu_core_clock=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_memory_clock": {
+            "label": "GPU Memory Clock",
+            "description": "Show GPU memory clock in the overlay.",
+            "inputs": "gpu_mem_clock=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_fan": {
+            "label": "GPU Fan",
+            "description": "Show GPU fan speed in the overlay.",
+            "inputs": "gpu_fan=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_voltage": {
+            "label": "GPU Voltage",
+            "description": "Show GPU voltage in the overlay.",
+            "inputs": "gpu_voltage=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_name": {
+            "label": "GPU Name",
+            "description": "Show GPU name in the overlay.",
+            "inputs": "gpu_name=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_text": {
+            "label": "GPU Text Override",
+            "description": "Custom label text for the GPU section.",
+            "inputs": "gpu_text=text",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_load_color_change": {
+            "label": "GPU Load Color Change",
+            "description": "GPU load color changes based on thresholds.",
+            "inputs": "gpu_load_change=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_load_thresholds": {
+            "label": "GPU Load Thresholds",
+            "description": "GPU load percentage thresholds for color change.",
+            "inputs": "gpu_load_value=comma-separated values (50,90)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_load_colors": {
+            "label": "GPU Load Colors",
+            "description": "GPU load threshold colors as hex values.",
+            "inputs": "gpu_load_color=hex colors (0000FF,00FFFF,FF00FF)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_efficiency": {
+            "label": "GPU Efficiency",
+            "description": "Show GPU efficiency metric in the overlay.",
+            "inputs": "gpu_efficiency=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_power_limit": {
+            "label": "GPU Power Limit",
+            "description": "Show GPU power limit in the overlay.",
+            "inputs": "gpu_power_limit=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_list": {
+            "label": "GPU List",
+            "description": "GPU indices to monitor.",
+            "inputs": "gpu_list=number (0, 1, 0,1)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "pci_device": {
+            "label": "PCI Device",
+            "description": "PCI device address to monitor.",
+            "inputs": "pci_dev=device address",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "throttling_status": {
+            "label": "Throttling Status",
+            "description": "Show GPU throttling status in the overlay.",
+            "inputs": "throttling_status=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "throttling_status_graph": {
+            "label": "Throttling Status Graph",
+            "description": "GPU throttling status graph.",
+            "inputs": "throttling_status_graph=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "flip_efficiency": {
+            "label": "Flip Efficiency",
+            "description": "Show flip efficiency metric in the overlay.",
+            "inputs": "flip_efficiency=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "ram_usage": {
+            "label": "RAM Usage",
+            "description": "Show system RAM usage in the overlay.",
+            "inputs": "ram=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "vram_usage": {
+            "label": "VRAM Usage",
+            "description": "Show GPU VRAM usage in the overlay.",
+            "inputs": "vram=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "swap_usage": {
+            "label": "Swap Usage",
+            "description": "Show swap memory usage in the overlay.",
+            "inputs": "swap=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "ram_temperature": {
+            "label": "RAM Temperature",
+            "description": "Show RAM temperature in the overlay.",
+            "inputs": "ram_temp=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "process_memory_resident": {
+            "label": "Process Memory Resident",
+            "description": "Show process resident memory usage.",
+            "inputs": "procmem=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "process_memory_shared": {
+            "label": "Process Memory Shared",
+            "description": "Show process shared memory usage.",
+            "inputs": "procmem_shared=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "process_memory_virtual": {
+            "label": "Process Memory Virtual",
+            "description": "Show process virtual memory usage.",
+            "inputs": "procmem_virt=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "process_vram": {
+            "label": "Process VRAM",
+            "description": "Show process VRAM usage.",
+            "inputs": "proc_vram=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "input_output_read": {
+            "label": "IO Read",
+            "description": "Show disk read throughput in the overlay.",
+            "inputs": "io_read=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "input_output_write": {
+            "label": "IO Write",
+            "description": "Show disk write throughput in the overlay.",
+            "inputs": "io_write=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "network": {
+            "label": "Network",
+            "description": "Show network throughput in the overlay.",
+            "inputs": "network=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "battery": {
+            "label": "Battery",
+            "description": "Show battery level in the overlay.",
+            "inputs": "battery=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "battery_icon": {
+            "label": "Battery Icon",
+            "description": "Show battery icon in the overlay.",
+            "inputs": "battery_icon=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "battery_wattage": {
+            "label": "Battery Wattage",
+            "description": "Show battery wattage in the overlay.",
+            "inputs": "battery_watt=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "battery_time_remaining": {
+            "label": "Battery Time Remaining",
+            "description": "Show battery time remaining in the overlay.",
+            "inputs": "battery_time=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "device_battery": {
+            "label": "Device Battery",
+            "description": "Show external device battery levels.",
+            "inputs": "device_battery=gamepad, mouse, gamepad,mouse",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "device_battery_icon": {
+            "label": "Device Battery Icon",
+            "description": "Show external device battery icons.",
+            "inputs": "device_battery_icon=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "engine_version": {
+            "label": "Engine Version",
+            "description": "Show game engine version in the overlay.",
+            "inputs": "engine_version=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "engine_short_names": {
+            "label": "Engine Short Names",
+            "description": "Use short engine name labels.",
+            "inputs": "engine_short_names=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "wine_version": {
+            "label": "Wine Proton Version",
+            "description": "Show Wine or Proton version in the overlay.",
+            "inputs": "wine=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "wine_synchronization_method": {
+            "label": "Wine Synchronization Method",
+            "description": "Show Wine sync method in the overlay.",
+            "inputs": "winesync=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "present_mode": {
+            "label": "Present Mode",
+            "description": "Show Vulkan present mode in the overlay.",
+            "inputs": "present_mode=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "fsr_status": {
+            "label": "FSR Status",
+            "description": "Show FSR status in the overlay.",
+            "inputs": "fsr=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "hide_fsr_sharpness": {
+            "label": "Hide FSR Sharpness",
+            "description": "Hide FSR sharpness value from the overlay.",
+            "inputs": "hide_fsr_sharpness=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "high_dynamic_range_status": {
+            "label": "HDR Status",
+            "description": "Show HDR status in the overlay.",
+            "inputs": "hdr=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "refresh_rate": {
+            "label": "Refresh Rate",
+            "description": "Show display refresh rate in the overlay.",
+            "inputs": "refresh_rate=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "debug_graph": {
+            "label": "Debug Graph",
+            "description": "Debug timing graph in the overlay.",
+            "inputs": "debug=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "steam_deck_fan": {
+            "label": "Steam Deck Fan",
+            "description": "Show Steam Deck fan speed in the overlay.",
+            "inputs": "fan=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "resolution": {
+            "label": "Resolution",
+            "description": "Show render resolution in the overlay.",
+            "inputs": "resolution=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "display_server": {
+            "label": "Display Server",
+            "description": "Show display server type in the overlay.",
+            "inputs": "display_server=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "architecture": {
+            "label": "Architecture",
+            "description": "Show CPU architecture in the overlay.",
+            "inputs": "arch=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "executable_name": {
+            "label": "Executable Name",
+            "description": "Show process executable name in the overlay.",
+            "inputs": "exec_name=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "time": {
+            "label": "Time",
+            "description": "Show current time in the overlay.",
+            "inputs": "time=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "time_format": {
+            "label": "Time Format",
+            "description": "Time format string for the overlay clock.",
+            "inputs": "time_format=format (%T, %H:%M, %I:%M %p)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "time_no_label": {
+            "label": "Time No Label",
+            "description": "Show time without a label prefix.",
+            "inputs": "time_no_label=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gamemode": {
+            "label": "GameMode",
+            "description": "Show GameMode status in the overlay.",
+            "inputs": "gamemode=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "vkbasalt": {
+            "label": "vkBasalt",
+            "description": "Show vkBasalt status in the overlay.",
+            "inputs": "vkbasalt=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "temperature_in_fahrenheit": {
+            "label": "Temperature in Fahrenheit",
+            "description": "Display temperatures in Fahrenheit.",
+            "inputs": "temp_fahrenheit=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "show_version": {
+            "label": "Show Version",
+            "description": "Show MangoHud version in the overlay.",
+            "inputs": "version=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "custom_text": {
+            "label": "Custom Text",
+            "description": "Custom text line in the overlay.",
+            "inputs": "custom_text=text",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "custom_text_center": {
+            "label": "Custom Text Center",
+            "description": "Centered custom text line in the overlay.",
+            "inputs": "custom_text_center=text",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "execute": {
+            "label": "Execute Command",
+            "description": "Shell command whose output is shown in the overlay.",
+            "inputs": "exec=command",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "media_player": {
+            "label": "Media Player",
+            "description": "Show media player info in the overlay.",
+            "inputs": "media_player=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "media_player_name": {
+            "label": "Media Player Name",
+            "description": "MPRIS player name to query.",
+            "inputs": "media_player_name=player name",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "media_player_format": {
+            "label": "Media Player Format",
+            "description": "Format string for media player info.",
+            "inputs": "media_player_format=format ({title};{artist};{album})",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_size": {
+            "label": "Font Size",
+            "description": "Primary overlay font size in points.",
+            "inputs": "font_size=number (12, 14, 16, 18, 20, 24, 32, 48)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_size_secondary": {
+            "label": "Font Size Secondary",
+            "description": "Secondary overlay font size in points.",
+            "inputs": "font_size_secondary=number (10, 11, 12, 14, 16, 18, 24)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_size_text": {
+            "label": "Font Size Text",
+            "description": "Text element font size in points.",
+            "inputs": "font_size_text=number (12, 14, 16, 18, 20, 24, 32)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_scale": {
+            "label": "Font Scale",
+            "description": "Global font scale multiplier.",
+            "inputs": "font_scale=number (0.5, 0.75, 1.0, 1.25, 1.5, 2.0)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_scale_media_player": {
+            "label": "Font Scale Media Player",
+            "description": "Font scale multiplier for media player text.",
+            "inputs": "font_scale_media_player=number (0.5, 0.75, 1.0, 1.25, 1.5)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_file": {
+            "label": "Font File",
+            "description": "Custom font file path for the overlay.",
+            "inputs": "font_file=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_file_text": {
+            "label": "Font File Text",
+            "description": "Custom font file path for text elements.",
+            "inputs": "font_file_text=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "font_glyph_ranges": {
+            "label": "Font Glyph Ranges",
+            "description": "Additional glyph ranges to load for the font.",
+            "inputs": "font_glyph_ranges=korean, chinese, chinese_simplified, japanese, cyrillic, thai, vietnamese, latin_ext_a, latin_ext_b",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "no_small_font": {
+            "label": "No Small Font",
+            "description": "Use the primary font size for all text.",
+            "inputs": "no_small_font=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "text_alpha": {
+            "label": "Text Alpha",
+            "description": "Overlay text opacity.",
+            "inputs": "alpha=number (0.0 to 1.0)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "background_alpha": {
+            "label": "Background Alpha",
+            "description": "Overlay background opacity.",
+            "inputs": "background_alpha=number (0.0 to 1.0)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "gpu_color": {
+            "label": "GPU Color",
+            "description": "GPU section text color.",
+            "inputs": "gpu_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "cpu_color": {
+            "label": "CPU Color",
+            "description": "CPU section text color.",
+            "inputs": "cpu_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "vram_color": {
+            "label": "VRAM Color",
+            "description": "VRAM section text color.",
+            "inputs": "vram_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "ram_color": {
+            "label": "RAM Color",
+            "description": "RAM section text color.",
+            "inputs": "ram_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "input_output_color": {
+            "label": "IO Color",
+            "description": "I/O section text color.",
+            "inputs": "io_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "engine_color": {
+            "label": "Engine Color",
+            "description": "Engine section text color.",
+            "inputs": "engine_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "frametime_color": {
+            "label": "Frametime Color",
+            "description": "Frametime section text color.",
+            "inputs": "frametime_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "background_color": {
+            "label": "Background Color",
+            "description": "Overlay background color.",
+            "inputs": "background_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "text_color": {
+            "label": "Text Color",
+            "description": "General overlay text color.",
+            "inputs": "text_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "media_player_color": {
+            "label": "Media Player Color",
+            "description": "Media player section text color.",
+            "inputs": "media_player_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "network_color": {
+            "label": "Network Color",
+            "description": "Network section text color.",
+            "inputs": "network_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "wine_color": {
+            "label": "Wine Color",
+            "description": "Wine section text color.",
+            "inputs": "wine_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "battery_color": {
+            "label": "Battery Color",
+            "description": "Battery section text color.",
+            "inputs": "battery_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "horizontal_separator_color": {
+            "label": "Horizontal Separator Color",
+            "description": "Horizontal separator line color.",
+            "inputs": "horizontal_separator_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "text_outline": {
+            "label": "Text Outline",
+            "description": "Text outline rendering.",
+            "inputs": "text_outline=0=off",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "text_outline_color": {
+            "label": "Text Outline Color",
+            "description": "Text outline color.",
+            "inputs": "text_outline_color=hex color",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "text_outline_thickness": {
+            "label": "Text Outline Thickness",
+            "description": "Text outline thickness in pixels.",
+            "inputs": "text_outline_thickness=number (0.5, 1.0, 1.5, 2.0, 2.5, 3.0)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "autostart_log": {
+            "label": "Autostart Log",
+            "description": "Seconds to wait before starting the log automatically.",
+            "inputs": "autostart_log=number (0, 5, 10, 30, 60)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "log_duration": {
+            "label": "Log Duration",
+            "description": "Log recording duration in seconds.",
+            "inputs": "log_duration=number (10, 30, 60, 120, 300)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "log_interval": {
+            "label": "Log Interval",
+            "description": "Log sampling interval in milliseconds.",
+            "inputs": "log_interval=number (0, 100, 250, 500, 1000)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "log_versioning": {
+            "label": "Log Versioning",
+            "description": "Append version suffix to log filenames.",
+            "inputs": "log_versioning=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "output_folder": {
+            "label": "Output Folder",
+            "description": "Directory for log output files.",
+            "inputs": "output_folder=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "output_file": {
+            "label": "Output File",
+            "description": "Filename for log output.",
+            "inputs": "output_file=filesystem path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "permit_upload": {
+            "label": "Permit Upload",
+            "description": "Allow log upload to flightlessmango.com.",
+            "inputs": "permit_upload=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "upload_logs": {
+            "label": "Auto Upload Logs",
+            "description": "Automatically upload logs after recording.",
+            "inputs": "upload_logs=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "fcat": {
+            "label": "FCAT",
+            "description": "FCAT overlay for frame capture analysis.",
+            "inputs": "fcat=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "fcat_overlay_width": {
+            "label": "FCAT Overlay Width",
+            "description": "FCAT overlay bar width in pixels.",
+            "inputs": "fcat_overlay_width=number (12, 24, 48)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "fcat_screen_edge": {
+            "label": "FCAT Screen Edge",
+            "description": "Screen edge for the FCAT overlay bar.",
+            "inputs": "fcat_screen_edge=number (1, 2, 3, 4)",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "toggle_overlay": {
+            "label": "Toggle Overlay Keybind",
+            "description": "Keybind to toggle the overlay visibility.",
+            "inputs": "toggle_hud=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "toggle_logging": {
+            "label": "Toggle Logging Keybind",
+            "description": "Keybind to start and stop logging.",
+            "inputs": "toggle_logging=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "toggle_frames_per_second_limit": {
+            "label": "Toggle FPS Limit Keybind",
+            "description": "Keybind to cycle FPS limit presets.",
+            "inputs": "toggle_fps_limit=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "toggle_preset": {
+            "label": "Toggle Preset Keybind",
+            "description": "Keybind to cycle overlay presets.",
+            "inputs": "toggle_preset=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "toggle_overlay_position": {
+            "label": "Toggle Overlay Position Keybind",
+            "description": "Keybind to cycle overlay screen positions.",
+            "inputs": "toggle_hud_position=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "reload_configuration": {
+            "label": "Reload Configuration Keybind",
+            "description": "Keybind to reload the MangoHud config file.",
+            "inputs": "reload_cfg=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "reset_frames_per_second_metrics": {
+            "label": "Reset FPS Metrics Keybind",
+            "description": "Keybind to reset FPS metric accumulators.",
+            "inputs": "reset_fps_metrics=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "upload_log": {
+            "label": "Upload Log Keybind",
+            "description": "Keybind to upload the current log.",
+            "inputs": "upload_log=keybind",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "control_socket": {
+            "label": "Control Socket",
+            "description": "Unix socket path for MangoHud IPC control.",
+            "inputs": "control=socket path",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "blacklist": {
+            "label": "Blacklist",
+            "description": "Comma-separated executable names to suppress MangoHud.",
+            "inputs": "blacklist=executable name",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "fex_statistics": {
+            "label": "FEX Statistics",
+            "description": "Show FEX emulation statistics in the overlay.",
+            "inputs": "fex_stats=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
+        "ftrace": {
+            "label": "ftrace",
+            "description": "ftrace-based CPU event tracing.",
+            "inputs": "ftrace=on",
+            "output": ("environment_variable", "MANGOHUD_CONFIG", ","),
+        },
     }

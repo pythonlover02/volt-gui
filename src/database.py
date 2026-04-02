@@ -16,11 +16,12 @@ def get_settings_database() -> dict:
         "Mesa": get_mesa_settings(),
         "NVIDIA Proprietary": get_nvidia_settings(),
         "Render Selector": get_render_settings(),
-        "MangoHud": get_mangohud_settings(),
         "Gamescope": get_gamescope_settings(),
+        "MangoHud": get_mangohud_settings(),
         "LSFG": get_lsfg_settings(),
         "Launch Options": get_launch_settings(),
-        "Options": get_options_settings(), "About": get_about_settings()
+        "Options": get_options_settings(),
+        "About": get_about_settings(),
     }
 
 
@@ -52,23 +53,19 @@ def get_all_tab_names() -> tuple:
 
 
 def get_setting_label(category_name: str, setting_name: str) -> str:
-    return get_settings_database()[category_name][setting_name][0]
+    return get_settings_database()[category_name][setting_name]["label"]
 
 
-def get_setting_items(category_name: str, setting_name: str) -> tuple:
-    return get_settings_database()[category_name][setting_name][1]
+def get_setting_description(category_name: str, setting_name: str) -> str:
+    return get_settings_database()[category_name][setting_name]["description"]
 
 
-def get_setting_output_definitions(category_name: str, setting_name: str) -> tuple:
-    return get_settings_database()[category_name][setting_name][2]
+def get_setting_inputs(category_name: str, setting_name: str) -> str:
+    return get_settings_database()[category_name][setting_name]["inputs"]
 
 
-def get_item_display(item_tuple: tuple) -> str:
-    return item_tuple[0]
-
-
-def get_item_value(item_tuple: tuple):
-    return item_tuple[1]
+def get_setting_output(category_name: str, setting_name: str) -> tuple:
+    return get_settings_database()[category_name][setting_name]["output"]
 
 
 def get_about_description() -> str:
@@ -88,7 +85,12 @@ def get_about_version() -> str:
 
 
 def get_about_data() -> dict:
-    return {"Description": get_about_description(), "License": get_about_license(), "Author": get_about_author(), "Version": get_about_version()}
+    return {
+        "Description": get_about_description(),
+        "License": get_about_license(),
+        "Author": get_about_author(),
+        "Version": get_about_version(),
+    }
 
 
 def is_non_metadata_setting(setting_pair: tuple) -> bool:
@@ -109,52 +111,56 @@ def is_render_selector_setting(category_name: str, setting_name: str) -> bool:
     return setting_name in ("opengl_rendering_device", "vulkan_rendering_device")
 
 
-def is_output_type_environment_variable(output_definition: tuple) -> bool:
-    return output_definition[0] == "environment_variable"
+def is_render_selector_output(output: tuple) -> bool:
+    if len(output) == 0: return False
+    return isinstance(output[0], tuple)
 
 
-def is_output_type_argument(output_definition: tuple) -> bool:
-    return output_definition[0] == "argument"
+def is_output_type_environment_variable(output: tuple) -> bool:
+    return output[0] == "environment_variable"
 
 
-def is_output_type_option(output_definition: tuple) -> bool:
-    return output_definition[0] == "option"
+def is_output_type_argument(output: tuple) -> bool:
+    return output[0] == "argument"
 
 
-def get_output_target(output_definition: tuple) -> str:
-    return output_definition[1]
+def is_output_type_option(output: tuple) -> bool:
+    return output[0] == "option"
 
 
-def get_output_joiner(output_definition: tuple) -> str:
-    return output_definition[2]
+def get_output_target(output: tuple) -> str:
+    return output[1]
 
 
-def get_output_prefix(output_definition: tuple) -> str:
-    return output_definition[3]
-
-
-def get_output_suffix(output_definition: tuple) -> str:
-    return output_definition[4]
-
-
-def get_value_at_index(setting_value, resource_index: int):
-    if isinstance(setting_value, tuple): return setting_value[resource_index] if resource_index < len(setting_value) else ""
-    if setting_value is None: return None
-    return setting_value
-
-
-def find_mapped_value_for_display(category_name: str, setting_name: str, display_text: str):
-    for item_entry in get_setting_items(category_name, setting_name):
-        if get_item_display(item_entry) == display_text: return get_item_value(item_entry)
-    return None
+def get_output_separator(output: tuple) -> str:
+    return output[2]
 
 
 def get_render_environment_keys(api_type: str) -> tuple:
     setting_name = "opengl_rendering_device" if api_type == "opengl" else "vulkan_rendering_device"
     result = []
-    for output_definition in get_setting_output_definitions("Render Selector", setting_name):
+    for output_definition in get_setting_output("Render Selector", setting_name):
         result.append(get_output_target(output_definition))
     return tuple(result)
+
+
+def find_environment_variable_targets_for_setting(category_name: str, setting_name: str) -> tuple:
+    output = get_setting_output(category_name, setting_name)
+    if is_render_selector_output(output):
+        seen = {}
+        for output_definition in output:
+            if not is_output_type_environment_variable(output_definition): continue
+            seen[get_output_target(output_definition)] = None
+        return tuple(seen.keys())
+    if is_output_type_environment_variable(output):
+        return (get_output_target(output),)
+    return ()
+
+
+def find_argument_targets_for_setting(category_name: str, setting_name: str) -> tuple:
+    output = get_setting_output(category_name, setting_name)
+    if is_output_type_argument(output): return ("argument",)
+    return ()
 
 
 def format_environment_pair(key_value_pair: tuple) -> str:
@@ -236,29 +242,14 @@ def validate_setting_availability(category_name: str, setting_name: str) -> dict
     tab_data = get_settings_database().get(category_name)
     if not isinstance(tab_data, dict): return {"locked": False, "message": ""}
     executable_required = tab_data.get("_executable_required")
-    if executable_required is not None and isinstance(executable_required, tuple) and len(executable_required) > 0 and not is_any_executable_available(executable_required): return {"locked": True, "message": build_missing_executables_message(executable_required)}
+    if executable_required is not None and isinstance(executable_required, tuple) and len(executable_required) > 0 and not is_any_executable_available(executable_required):
+        return {"locked": True, "message": build_missing_executables_message(executable_required)}
     if not is_render_selector_setting(category_name, setting_name): return {"locked": False, "message": ""}
-    if setting_name == "opengl_rendering_device" and not is_executable_available("glxinfo"): return {"locked": True, "message": "glxinfo not available"}
-    if setting_name == "vulkan_rendering_device" and not is_executable_available("vulkaninfo"): return {"locked": True, "message": "vulkaninfo not available"}
+    if setting_name == "opengl_rendering_device" and not is_executable_available("glxinfo"):
+        return {"locked": True, "message": "glxinfo not available"}
+    if setting_name == "vulkan_rendering_device" and not is_executable_available("vulkaninfo"):
+        return {"locked": True, "message": "vulkaninfo not available"}
     return {"locked": False, "message": ""}
-
-
-def find_environment_variable_targets_for_setting(category_name: str, setting_name: str) -> tuple:
-    seen = {}
-    for output_definition in get_setting_output_definitions(category_name, setting_name):
-        if not is_output_type_environment_variable(output_definition): continue
-        if get_output_target(output_definition) == "": continue
-        seen[get_output_target(output_definition)] = None
-    return tuple(seen.keys())
-
-
-def find_argument_targets_for_setting(category_name: str, setting_name: str) -> tuple:
-    seen = {}
-    for output_definition in get_setting_output_definitions(category_name, setting_name):
-        if not is_output_type_argument(output_definition): continue
-        if get_output_target(output_definition) == "": continue
-        seen[get_output_target(output_definition)] = None
-    return tuple(seen.keys())
 
 
 def process_file_write(file_path: str, file_content: str) -> bool:
@@ -267,69 +258,99 @@ def process_file_write(file_path: str, file_content: str) -> bool:
     return True
 
 
-def process_setting_into_collections(tab_name: str, setting_key: str, selected_display: str, widget_collection: dict, environment_collection: dict, grouped_environment_collection: dict, argument_collection: dict) -> None:
+def parse_widget_value(widget) -> str:
+    text = widget.currentText() if hasattr(widget, "currentText") else widget.text()
+    if text is None: return None
+    if text.strip() == "": return None
+    return text.strip()
+
+
+def get_option_default_value(option_key: str) -> str:
+    return {
+        "application_theme": "cachyos",
+        "window_transparency": "off",
+        "interface_scale_factor": "1.0",
+        "start_window_maximized": "off",
+        "start_window_minimized": "off",
+        "system_tray_behavior": "off",
+        "volt_script_location": "/usr/local/bin/volt",
+        "welcome_message_display": "on",
+        "automatic_update_check": "off",
+    }.get(option_key, "")
+
+
+def get_accent_colors(theme_name: str) -> tuple:
+    if theme_name == "amd": return ("#E31937", "#FF2D4A", "#B81430")
+    if theme_name == "intel": return ("#0068B5", "#1A8CFF", "#004D87")
+    if theme_name == "nvidia": return ("#76B900", "#8ED11A", "#5A8F00")
+    return ("#80dbcb", "#9ae4d8", "#66b0a2")
+
+
+def process_environment_variable_setting(output: tuple, value: str, environment_collection: dict, grouped_environment_collection: dict) -> None:
+    target = get_output_target(output)
+    separator = get_output_separator(output)
+    if separator != "":
+        if value == "unset":
+            environment_collection[target] = ""
+            return None
+        if target not in grouped_environment_collection:
+            grouped_environment_collection[target] = {"separator": separator, "parts": []}
+        grouped_environment_collection[target]["parts"].append(value)
+        return None
+    environment_collection[target] = "" if value == "unset" else value
+    return None
+
+
+def process_argument_setting(tab_name: str, value: str, argument_collection: list) -> None:
+    if value == "unset": return None
+    argument_collection.append((tab_name, value))
+    return None
+
+
+def process_setting_into_collections(tab_name: str, setting_key: str, value: str, widget_collection: dict, environment_collection: dict, grouped_environment_collection: dict, argument_collection: list) -> None:
+    output = get_setting_output(tab_name, setting_key)
     if is_render_selector_setting(tab_name, setting_key):
-        process_render_selector_into_environment(tab_name, setting_key, selected_display, widget_collection, environment_collection)
+        process_render_selector_into_environment(tab_name, setting_key, value, widget_collection, environment_collection)
         return None
-    mapped_value = find_mapped_value_for_display(tab_name, setting_key, selected_display)
-    is_custom = mapped_value is None
-    if is_custom: mapped_value = selected_display
-    if mapped_value is None: return None
-    for definition_index in range(len(get_setting_output_definitions(tab_name, setting_key))):
-        process_single_output_definition(get_setting_output_definitions(tab_name, setting_key)[definition_index], definition_index, mapped_value, is_custom, selected_display, environment_collection, grouped_environment_collection, argument_collection)
-    return None
-
-
-def process_single_output_definition(output_definition: tuple, definition_index: int, mapped_value, is_custom: bool, selected_display: str, environment_collection: dict, grouped_environment_collection: dict, argument_collection: dict) -> None:
-    value = mapped_value if is_custom else get_value_at_index(mapped_value, definition_index)
-    if value is None: return None
-    if is_output_type_option(output_definition): return None
-    if is_output_type_environment_variable(output_definition): process_environment_output_definition(output_definition, value, environment_collection, grouped_environment_collection)
-    if is_output_type_argument(output_definition): process_argument_output_definition(output_definition, value, selected_display, argument_collection)
-    return None
-
-
-def process_environment_output_definition(output_definition: tuple, value: str, environment_collection: dict, grouped_environment_collection: dict) -> None:
-    if get_output_joiner(output_definition) != "":
-        if get_output_target(output_definition) not in grouped_environment_collection: grouped_environment_collection[get_output_target(output_definition)] = {"joiner": get_output_joiner(output_definition), "parts": []}
-        if value != "": grouped_environment_collection[get_output_target(output_definition)]["parts"].append(get_output_prefix(output_definition) + value)
+    if is_output_type_option(output): return None
+    if is_output_type_environment_variable(output):
+        process_environment_variable_setting(output, value, environment_collection, grouped_environment_collection)
         return None
-    environment_collection[get_output_target(output_definition)] = value
-    return None
-
-
-def process_argument_output_definition(output_definition: tuple, value: str, selected_display: str, argument_collection: dict) -> None:
-    if get_output_target(output_definition) not in argument_collection: argument_collection[get_output_target(output_definition)] = {"command": "", "suffix": "", "flags": []}
-    if get_output_prefix(output_definition) == "":
-        argument_collection[get_output_target(output_definition)]["command"] = value
-        if get_output_suffix(output_definition) != "": argument_collection[get_output_target(output_definition)]["suffix"] = get_output_suffix(output_definition).strip()
+    if is_output_type_argument(output):
+        process_argument_setting(tab_name, value, argument_collection)
         return None
-    if value != "": argument_collection[get_output_target(output_definition)]["flags"].append((get_output_prefix(output_definition).strip(), value))
-    elif selected_display != "default": argument_collection[get_output_target(output_definition)]["flags"].append((get_output_prefix(output_definition).strip(), ""))
     return None
 
 
-def process_render_selector_into_environment(tab_name: str, setting_key: str, selected_display: str, widget_collection: dict, environment_collection: dict) -> None:
+def process_render_selector_into_environment(tab_name: str, setting_key: str, selected_value: str, widget_collection: dict, environment_collection: dict) -> None:
     environment_keys = get_render_environment_keys("opengl" if setting_key == "opengl_rendering_device" else "vulkan")
-    if selected_display == "default":
+    if selected_value == "unset":
         for environment_key in environment_keys: environment_collection[environment_key] = ""
         return None
     if setting_key == "opengl_rendering_device":
-        process_opengl_render_into_environment(widget_collection[tab_name + ":" + setting_key], selected_display, environment_keys, environment_collection)
+        process_opengl_render_into_environment(widget_collection["Render Selector:" + setting_key], selected_value, environment_keys, environment_collection)
         return None
     if setting_key == "vulkan_rendering_device":
-        process_vulkan_render_into_environment(widget_collection[tab_name + ":" + setting_key], selected_display, environment_keys, environment_collection)
+        process_vulkan_render_into_environment(widget_collection["Render Selector:" + setting_key], selected_value, environment_keys, environment_collection)
         return None
     return None
 
 
-def process_opengl_render_into_environment(combo_widget, selected_display: str, environment_keys: tuple, environment_collection: dict) -> None:
+def resolve_render_selector_value(combo_widget, selected_value: str) -> str:
+    index_map = getattr(combo_widget, "index_map", {})
+    if selected_value in index_map: return index_map[selected_value]
+    if "=" in selected_value: return selected_value.split("=", 1)[1]
+    return selected_value
+
+
+def process_opengl_render_into_environment(combo_widget, selected_value: str, environment_keys: tuple, environment_collection: dict) -> None:
+    resolved_value = resolve_render_selector_value(combo_widget, selected_value)
     device_map = getattr(combo_widget, "device_map", {})
-    if selected_display not in device_map:
-        for environment_key in environment_keys: environment_collection[environment_key] = selected_display
+    if resolved_value not in device_map:
+        for environment_key in environment_keys: environment_collection[environment_key] = resolved_value
         return None
     used_keys = set()
-    for environment_key, environment_value in device_map[selected_display].items():
+    for environment_key, environment_value in device_map[resolved_value].items():
         environment_collection[environment_key] = environment_value
         used_keys.add(environment_key)
     for environment_key in environment_keys:
@@ -337,50 +358,40 @@ def process_opengl_render_into_environment(combo_widget, selected_display: str, 
     return None
 
 
-def process_vulkan_render_into_environment(combo_widget, selected_display: str, environment_keys: tuple, environment_collection: dict) -> None:
+def process_vulkan_render_into_environment(combo_widget, selected_value: str, environment_keys: tuple, environment_collection: dict) -> None:
+    resolved_value = resolve_render_selector_value(combo_widget, selected_value)
     device_map = getattr(combo_widget, "device_map", {})
-    if selected_display in device_map and device_map[selected_display] != "":
-        environment_collection["MESA_VK_DEVICE_SELECT"] = device_map[selected_display] + "!"
+    if resolved_value in device_map and device_map[resolved_value] != "":
+        environment_collection["MESA_VK_DEVICE_SELECT"] = device_map[resolved_value] + "!"
     else:
-        environment_collection["MESA_VK_DEVICE_SELECT"] = selected_display
+        environment_collection["MESA_VK_DEVICE_SELECT"] = resolved_value
     for environment_key in environment_keys:
         if environment_key != "MESA_VK_DEVICE_SELECT": environment_collection[environment_key] = ""
     return None
 
 
-def build_argument_parts_with_suffix(data: dict, parts: list) -> None:
-    parts.append(data["command"])
-    for flag_name, flag_value in data["flags"]:
-        parts.append(flag_name)
-        if flag_value != "": parts.append(flag_value)
-    parts.append(data["suffix"])
-    return None
+def build_gamescope_command_string(argument_collection: list) -> str:
+    gamescope_parts = [value for tab, value in argument_collection if tab == "Gamescope"]
+    other_parts = [value for tab, value in argument_collection if tab != "Gamescope"]
+    if len(other_parts) == 0: return " ".join(gamescope_parts)
+    return " ".join(gamescope_parts) + " -- " + " ".join(other_parts)
 
 
-def build_argument_parts_without_suffix(data: dict, parts: list) -> None:
-    parts.append(data["command"])
-    for flag_name, flag_value in data["flags"]:
-        parts.append(flag_name)
-        if flag_value != "": parts.append(flag_value)
-    return None
+def build_launch_command_string(argument_collection: list) -> str:
+    if len(argument_collection) == 0: return ""
+    if argument_collection[0][1] == "gamescope": return build_gamescope_command_string(argument_collection)
+    return " ".join(value for tab, value in argument_collection)
 
 
-def build_launch_command_string(argument_collection: dict) -> str:
-    parts = []
-    for target, data in argument_collection.items():
-        if data["command"] == "": continue
-        if data["suffix"] != "": build_argument_parts_with_suffix(data, parts)
-        else: build_argument_parts_without_suffix(data, parts)
-    return " ".join(parts)
-
-
-def build_final_apply_arguments(environment_collection: dict, grouped_environment_collection: dict, argument_collection: dict) -> tuple:
+def build_final_apply_arguments(environment_collection: dict, grouped_environment_collection: dict, argument_collection: list) -> tuple:
     environment_arguments = []
     for environment_key, environment_value in environment_collection.items():
         environment_arguments.append(environment_key + "=" + environment_value)
     for target, group_data in grouped_environment_collection.items():
-        if len(group_data["parts"]) > 0: environment_arguments.append(target + "=" + group_data["joiner"].join(group_data["parts"]))
-        else: environment_arguments.append(target + "=")
+        if len(group_data["parts"]) > 0:
+            environment_arguments.append(target + "=" + group_data["separator"].join(group_data["parts"]))
+        else:
+            environment_arguments.append(target + "=")
     launch_command = build_launch_command_string(argument_collection)
     if launch_command != "": environment_arguments.append("launch:" + launch_command)
     return tuple(environment_arguments)
@@ -389,31 +400,12 @@ def build_final_apply_arguments(environment_collection: dict, grouped_environmen
 def build_apply_results_from_widgets(widget_collection: dict) -> tuple:
     environment_collection = {}
     grouped_environment_collection = {}
-    argument_collection = {}
+    argument_collection = []
     for tab_name in get_tabs_with_profile_support():
         for setting_key in find_settings_for_tab(tab_name):
             if widget_collection.get(tab_name + ":" + setting_key) is None: continue
             if not widget_collection[tab_name + ":" + setting_key].isEnabled(): continue
-            if parse_widget_value(widget_collection[tab_name + ":" + setting_key]) is None: continue
-            process_setting_into_collections(tab_name, setting_key, parse_widget_value(widget_collection[tab_name + ":" + setting_key]), widget_collection, environment_collection, grouped_environment_collection, argument_collection)
+            value = parse_widget_value(widget_collection[tab_name + ":" + setting_key])
+            if value is None: continue
+            process_setting_into_collections(tab_name, setting_key, value, widget_collection, environment_collection, grouped_environment_collection, argument_collection)
     return build_final_apply_arguments(environment_collection, grouped_environment_collection, argument_collection)
-
-
-def parse_widget_value(combo_widget) -> str:
-    if combo_widget.currentText() is None: return None
-    if combo_widget.currentText() == "": return None
-    if combo_widget.currentText() == "skip": return None
-    return combo_widget.currentText()
-
-
-def get_option_default_value(option_key: str):
-    for item_entry in get_setting_items("Options", option_key):
-        if get_item_display(item_entry) == "default": return get_item_value(item_entry)
-    return None
-
-
-def get_accent_colors(theme_name: str) -> tuple:
-    if theme_name == "amd": return ("#E31937", "#FF2D4A", "#B81430")
-    if theme_name == "intel": return ("#0068B5", "#1A8CFF", "#004D87")
-    if theme_name == "nvidia": return ("#76B900", "#8ED11A", "#5A8F00")
-    return ("#80dbcb", "#9ae4d8", "#66b0a2")

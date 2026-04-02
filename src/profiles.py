@@ -2,20 +2,20 @@ import os, configparser
 
 from pathlib import Path
 
-from PySide6.QtWidgets import QComboBox
+from PySide6.QtWidgets import QLineEdit, QComboBox
 
 from database import *
 
 
-def get_profile_name_from_path(file_path):
+def get_profile_name_from_path(file_path) -> str:
     return file_path.stem.replace("config-", "")
 
 
-def is_default_profile_path(file_path):
+def is_default_profile_path(file_path) -> bool:
     return get_profile_name_from_path(file_path).lower() == "default"
 
 
-def find_all_profiles():
+def find_all_profiles() -> tuple:
     if not Path(os.path.expanduser("~/.config/volt-gui")).exists(): return ("Default",)
     result = ["Default"]
     for profile_path in Path(os.path.expanduser("~/.config/volt-gui")).glob("config-*.ini"):
@@ -24,9 +24,10 @@ def find_all_profiles():
     return tuple(result)
 
 
-def build_configuration_path(profile_name):
+def build_configuration_path(profile_name: str):
     Path(os.path.expanduser("~/.config/volt-gui")).mkdir(parents=True, exist_ok=True)
-    if profile_name == "Default": return Path(os.path.expanduser("~/.config/volt-gui")) / "config-Default.ini"
+    if profile_name == "Default":
+        return Path(os.path.expanduser("~/.config/volt-gui")) / "config-Default.ini"
     return Path(os.path.expanduser("~/.config/volt-gui")) / ("config-" + profile_name + ".ini")
 
 
@@ -35,27 +36,13 @@ def build_options_path():
     return Path(os.path.expanduser("~/.config/volt-gui")) / "options.ini"
 
 
-def process_widget_value_update(combo_widget, display_value):
-    if not isinstance(combo_widget, QComboBox): return None
-    if combo_widget.findText(display_value) >= 0:
-        combo_widget.setCurrentIndex(combo_widget.findText(display_value))
-        combo_widget.custom_value = None
-        return None
-    combo_widget.addItem(display_value)
-    combo_widget.setCurrentIndex(combo_widget.count() - 1)
-    combo_widget.custom_value = display_value
+def process_widget_value_update(widget, display_value: str) -> None:
+    if isinstance(widget, QLineEdit): widget.setText(display_value); return None
+    if hasattr(widget, "setCurrentText"): widget.setCurrentText(display_value); return None
     return None
 
 
-def process_widget_custom_value_cleanup(combo_widget):
-    if getattr(combo_widget, "custom_value", None) is None: return None
-    found_index = combo_widget.findText(combo_widget.custom_value)
-    if found_index >= 0: combo_widget.removeItem(found_index)
-    combo_widget.custom_value = None
-    return None
-
-
-def process_profile_widgets_block_signals(widget_collection, should_block):
+def process_profile_widgets_block_signals(widget_collection: dict, should_block: bool) -> None:
     for tab_name in get_tabs_with_profile_support():
         for setting_key in find_settings_for_tab(tab_name):
             if widget_collection.get(tab_name + ":" + setting_key) is None: continue
@@ -63,16 +50,17 @@ def process_profile_widgets_block_signals(widget_collection, should_block):
     return None
 
 
-def process_profile_widgets_reset(widget_collection):
+def process_profile_widgets_reset(widget_collection: dict) -> None:
     for tab_name in get_tabs_with_profile_support():
         for setting_key in find_settings_for_tab(tab_name):
-            if widget_collection.get(tab_name + ":" + setting_key) is None: continue
-            process_widget_custom_value_cleanup(widget_collection[tab_name + ":" + setting_key])
-            widget_collection[tab_name + ":" + setting_key].setCurrentText("skip")
+            widget = widget_collection.get(tab_name + ":" + setting_key)
+            if widget is None: continue
+            if isinstance(widget, QLineEdit): widget.setText(""); continue
+            if hasattr(widget, "setCurrentText"): widget.setCurrentText(""); continue
     return None
 
 
-def process_profile_widget_load(widget_collection, profile_name):
+def process_profile_widget_load(widget_collection: dict, profile_name: str) -> bool:
     process_profile_widgets_block_signals(widget_collection, True)
     process_profile_widgets_reset(widget_collection)
     if build_configuration_path(profile_name).exists():
@@ -86,7 +74,7 @@ def process_profile_widget_load(widget_collection, profile_name):
     return True
 
 
-def process_profile_save(widget_collection, profile_name):
+def process_profile_save(widget_collection: dict, profile_name: str) -> None:
     parser_instance = configparser.ConfigParser(interpolation=None)
     for tab_name in get_tabs_with_profile_support():
         if len(find_settings_for_tab(tab_name)) == 0: continue
@@ -94,14 +82,15 @@ def process_profile_save(widget_collection, profile_name):
         for setting_key in find_settings_for_tab(tab_name):
             if widget_collection.get(tab_name + ":" + setting_key) is None: continue
             if not widget_collection[tab_name + ":" + setting_key].isEnabled(): continue
-            if parse_widget_value(widget_collection[tab_name + ":" + setting_key]) is None: continue
-            parser_instance[tab_name][setting_key] = parse_widget_value(widget_collection[tab_name + ":" + setting_key])
+            value = parse_widget_value(widget_collection[tab_name + ":" + setting_key])
+            if value is None: continue
+            parser_instance[tab_name][setting_key] = value
     with open(build_configuration_path(profile_name), "w") as file_handle:
         parser_instance.write(file_handle)
     return None
 
 
-def process_profile_delete(profile_name):
+def process_profile_delete(profile_name: str) -> bool:
     if profile_name == "Default": return False
     if not build_configuration_path(profile_name).exists(): return False
     build_configuration_path(profile_name).unlink()

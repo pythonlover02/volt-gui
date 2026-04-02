@@ -1,16 +1,11 @@
-def get_launch_settings():
+def get_launch_settings() -> dict:
     return {
         "_tab_metadata": (True,),
         "_executable_required": (),
-        "launch_options": (
-            "Launch Options",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("gamemode", "gamemoderun"),
-            ),
-            (
-                ("argument", "", "", "", ""),
-            ),
-        ),
+        "launch_options": {
+            "label": "Launch Options",
+            "description": "Additional launch command prefix.",
+            "inputs": "command=prefix (e.g. gamemoderun)",
+            "output": ("argument",),
+        },
     }

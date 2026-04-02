@@ -1,1590 +1,821 @@
-def get_nvidia_settings():
+def get_nvidia_settings() -> dict:
     return {
         "_tab_metadata": (True,),
         "_executable_required": (),
-        "opengl_vertical_synchronization": (
-            "OpenGL Vertical Synchronization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SYNC_TO_VBLANK", "", "", ""),
-            ),
-        ),
-        "opengl_adaptive_synchronization": (
-            "Adaptive Synchronization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ("0", "0")),
-                ("on", ("1", "1")),
-            ),
-            (
-                ("environment_variable", "__GL_VRR_ALLOWED", "", "", ""),
-                ("environment_variable", "__GL_GSYNC_ALLOWED", "", "", ""),
-            ),
-        ),
-        "opengl_synchronization_display_device": (
-            "Synchronization Display Device",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("DFP-0", "DFP-0"),
-                ("DFP-1", "DFP-1"),
-                ("DFP-2", "DFP-2"),
-                ("DFP-3", "DFP-3"),
-                ("DP-0", "DP-0"),
-                ("DP-1", "DP-1"),
-                ("HDMI-0", "HDMI-0"),
-                ("HDMI-1", "HDMI-1"),
-                ("CRT-0", "CRT-0"),
-                ("CRT-1", "CRT-1"),
-            ),
-            (
-                ("environment_variable", "__GL_SYNC_DISPLAY_DEVICE", "", "", ""),
-            ),
-        ),
-        "opengl_tearing_free_swap_present": (
-            "Tearing-Free Swap Present",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_TearingFreeSwapPresent", "", "", ""),
-            ),
-        ),
-        "opengl_constant_frame_rate_hint": (
-            "Constant Frame Rate Hint",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_CONSTANT_FRAME_RATE_HINT", "", "", ""),
-            ),
-        ),
-        "opengl_flush_control": (
-            "Flush Control",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("automatic", "0"),
-                ("explicit", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FLUSH_CONTROL", "", "", ""),
-            ),
-        ),
-        "opengl_threaded_optimization": (
-            "Threaded Optimization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_THREADED_OPTIMIZATIONS", "", "", ""),
-            ),
-        ),
-        "opengl_single_threaded": (
-            "Single Threaded",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SINGLE_THREADED", "", "", ""),
-            ),
-        ),
-        "opengl_thread_affinity": (
-            "Thread Affinity",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ThreadAffinity", "", "", ""),
-            ),
-        ),
-        "opengl_thread_control": (
-            "Thread Control",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("none", "NONE"),
-                ("driver", "DRIVER"),
-            ),
-            (
-                ("environment_variable", "__GL_ThreadControl", "", "", ""),
-            ),
-        ),
-        "opengl_thread_control_secondary": (
-            "Thread Control Secondary",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ThreadControl2", "", "", ""),
-            ),
-        ),
-        "opengl_wait_behavior": (
-            "Wait Behavior",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("active", "NOTHING"),
-                ("sleep", "USLEEP"),
-            ),
-            (
-                ("environment_variable", "__GL_YIELD", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function": (
-            "Yield Function",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunction", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function_fast": (
-            "Yield Function Fast",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunctionFast", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function_slow": (
-            "Yield Function Slow",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunctionSlow", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function_wait_display_controller_queue": (
-            "Yield Function Wait Display Controller Queue",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunctionWaitForDcQueue", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function_wait_frame": (
-            "Yield Function Wait Frame",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunctionWaitForFrame", "", "", ""),
-            ),
-        ),
-        "opengl_yield_function_wait_graphics_processing_unit": (
-            "Yield Function Wait Graphics Processing Unit",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_yieldFunctionWaitForGpu", "", "", ""),
-            ),
-        ),
-        "opengl_maximum_prerendered_frames": (
-            "Maximum Prerendered Frames",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("environment_variable", "__GL_MaxFramesAllowed", "", "", ""),
-            ),
-        ),
-        "opengl_texture_quality": (
-            "Texture Quality",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("quality", "1"),
-                ("balanced", "2"),
-                ("performance", "3"),
-            ),
-            (
-                ("environment_variable", "__GL_OpenGLImageSettings", "", "", ""),
-            ),
-        ),
-        "opengl_forced_antialiasing": (
-            "Forced Antialiasing",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("2x-multisampling", "1"),
-                ("2x-quincunx", "2"),
-                ("4x-multisampling", "5"),
-                ("4x-gaussian", "6"),
-                ("8x-coverage", "7"),
-                ("16x-coverage", "8"),
-                ("8x-hybrid", "9"),
-                ("8x-multisampling", "10"),
-                ("16x-hybrid", "11"),
-                ("16x-combined", "12"),
-                ("32x-combined", "14"),
-            ),
-            (
-                ("environment_variable", "__GL_FSAA_MODE", "", "", ""),
-            ),
-        ),
-        "opengl_fast_approximate_antialiasing": (
-            "Fast Approximate Antialiasing",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ALLOW_FXAA_USAGE", "", "", ""),
-            ),
-        ),
-        "opengl_forced_anisotropic_filtering": (
-            "Forced Anisotropic Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("2x", "1"),
-                ("4x", "2"),
-                ("8x", "3"),
-                ("16x", "4"),
-            ),
-            (
-                ("environment_variable", "__GL_LOG_MAX_ANISO", "", "", ""),
-            ),
-        ),
-        "opengl_cubemap_anisotropic_filtering": (
-            "Cubemap Anisotropic Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_CubemapAniso", "", "", ""),
-            ),
-        ),
-        "opengl_cubemap_filtering": (
-            "Cubemap Filtering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_CubemapFiltering", "", "", ""),
-            ),
-        ),
-        "opengl_antialiased_line_gamma": (
-            "Antialiased Line Gamma",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_AALineGamma", "", "", ""),
-            ),
-        ),
-        "opengl_antialiased_line_tweaks": (
-            "Antialiased Line Tweaks",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_AALineTweaks", "", "", ""),
-            ),
-        ),
-        "opengl_s3tc_compression_quality": (
-            "S3TC Compression Quality",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("lowest", "0"),
-                ("low", "1"),
-                ("medium", "2"),
-                ("high", "3"),
-                ("highest", "4"),
-            ),
-            (
-                ("environment_variable", "__GL_S3TCQuality", "", "", ""),
-            ),
-        ),
-        "opengl_texture_level_of_detail_bias": (
-            "Texture Level of Detail Bias",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_TexLODBias", "", "", ""),
-            ),
-        ),
-        "opengl_texture_clamp_behavior": (
-            "Texture Clamp Behavior",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("permissive", "0"),
-                ("strict", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_TexClampBehavior", "", "", ""),
-            ),
-        ),
-        "opengl_texture_precache": (
-            "Texture Precache",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_TexturePrecache", "", "", ""),
-            ),
-        ),
-        "opengl_implicit_mipmap_generation": (
-            "Implicit Mipmap Generation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_IMPLICIT_GENERATE_MIPMAP", "", "", ""),
-            ),
-        ),
-        "opengl_sparse_texture": (
-            "Sparse Texture",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SparseTexture", "", "", ""),
-            ),
-        ),
-        "opengl_skip_texture_host_copies": (
-            "Skip Texture Host Copies",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SkipTextureHostCopies", "", "", ""),
-            ),
-        ),
-        "opengl_skip_texture_host_copies_flags": (
-            "Skip Texture Host Copies Flags",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SkipTextureHostCopiesFlags", "", "", ""),
-            ),
-        ),
-        "opengl_early_texture_hardware_allocation": (
-            "Early Texture Hardware Allocation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_EarlyTextureHWAllocation", "", "", ""),
-            ),
-        ),
-        "opengl_framebuffer_blit_ignore_standard_rgb": (
-            "Framebuffer Blit Ignore Standard RGB",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FBO_BLIT_IGNORE_SRGB", "", "", ""),
-            ),
-        ),
-        "opengl_image_sharpening": (
-            "Image Sharpening",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SHARPEN_ENABLE", "", "", ""),
-            ),
-        ),
-        "opengl_image_sharpening_intensity": (
-            "Image Sharpening Intensity",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("10", "10"),
-                ("25", "25"),
-                ("35", "35"),
-                ("50", "50"),
-                ("75", "75"),
-                ("100", "100"),
-            ),
-            (
-                ("environment_variable", "__GL_SHARPEN_VALUE", "", "", ""),
-            ),
-        ),
-        "opengl_image_denoising_intensity": (
-            "Image Denoising Intensity",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("17", "17"),
-                ("25", "25"),
-                ("50", "50"),
-                ("75", "75"),
-                ("100", "100"),
-            ),
-            (
-                ("environment_variable", "__GL_SHARPEN_IGNORE_FILM_GRAIN", "", "", ""),
-            ),
-        ),
-        "opengl_fast_geometry_shader": (
-            "Fast Geometry Shader",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FastGS", "", "", ""),
-            ),
-        ),
-        "opengl_shader_atomics": (
-            "Shader Atomics",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ShaderAtomics", "", "", ""),
-            ),
-        ),
-        "opengl_next_generation_compiler": (
-            "Next Generation Compiler",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_NextGenCompiler", "", "", ""),
-            ),
-        ),
-        "opengl_glsl_extension_validation": (
-            "GLSL Extension Validation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("strict", "0"),
-                ("relaxed", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_IGNORE_GLSL_EXT_REQS", "", "", ""),
-            ),
-        ),
-        "opengl_extension_string_version": (
-            "Extension String Version",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ExtensionStringVersion", "", "", ""),
-            ),
-        ),
-        "opengl_extension_string_architecture": (
-            "Extension String Architecture",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ExtensionStringNVArch", "", "", ""),
-            ),
-        ),
-        "opengl_unofficial_glx_protocol": (
-            "Unofficial GLX Protocol",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ALLOW_UNOFFICIAL_PROTOCOL", "", "", ""),
-            ),
-        ),
-        "opengl_force_requested_embedded_systems_version": (
-            "Force Requested Embedded Systems Version",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ForceRequestedESVersion", "", "", ""),
-            ),
-        ),
-        "opengl_application_return_only_basic_glsl_type": (
-            "Application Return Only Basic GLSL Type",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_AppReturnOnlyBasicGlslType", "", "", ""),
-            ),
-        ),
-        "opengl_conformant_blit_framebuffer_scissor": (
-            "Conformant Blit Framebuffer Scissor",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("permissive", "0"),
-                ("conformant", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ConformantBlitFramebufferScissor", "", "", ""),
-            ),
-        ),
-        "opengl_conformant_incomplete_texture": (
-            "Conformant Incomplete Texture",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("permissive", "0"),
-                ("conformant", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ConformantIncompleteTexture", "", "", ""),
-            ),
-        ),
-        "opengl_disallow_software_fallback": (
-            "Disallow Software Fallback",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_DISALLOW_SOFTWARE_FALLBACK", "", "", ""),
-                ("environment_variable", "__GL_DisallowSWFallback", "", "", ""),
-            ),
-        ),
-        "opengl_framebuffer_configuration_sorting": (
-            "Framebuffer Configuration Sorting",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("server", "0"),
-                ("sorted", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SORT_FBCONFIGS", "", "", ""),
-            ),
-        ),
-        "opengl_force_direct_rendering": (
-            "Force Direct Rendering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FORCE_DIRECT", "", "", ""),
-            ),
-        ),
-        "opengl_force_indirect_rendering": (
-            "Force Indirect Rendering",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FORCE_INDIRECT", "", "", ""),
-            ),
-        ),
-        "opengl_software_renderer": (
-            "Software Renderer",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SW_RENDERER", "", "", ""),
-            ),
-        ),
-        "opengl_force_generic_cpu": (
-            "Force Generic CPU",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_FORCE_GENERIC_CPU", "", "", ""),
-            ),
-        ),
-        "opengl_strict_draw_range_elements": (
-            "Strict Draw Range Elements",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_StrictDrawRangeElements", "", "", ""),
-            ),
-        ),
-        "opengl_release_texture_image_error": (
-            "Release Texture Image Error",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_RELEASE_TEX_IMAGE_ERROR", "", "", ""),
-            ),
-        ),
-        "opengl_disallow_sixteen_bit_depth": (
-            "Disallow Sixteen Bit Depth",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_DisallowZ16", "", "", ""),
-            ),
-        ),
-        "opengl_scalable_link_interface_control": (
-            "Scalable Link Interface Control",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-            ),
-            (
-                ("environment_variable", "__GL_SLI_DLI_CONTROL", "", "", ""),
-            ),
-        ),
-        "opengl_mosaic_clip_to_sub_device": (
-            "Mosaic Clip to Sub Device",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV", "", "", ""),
-            ),
-        ),
-        "opengl_mosaic_horizontal_overlap": (
-            "Mosaic Horizontal Overlap",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV_H_OVERLAP", "", "", ""),
-            ),
-        ),
-        "opengl_mosaic_vertical_overlap": (
-            "Mosaic Vertical Overlap",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV_V_OVERLAP", "", "", ""),
-            ),
-        ),
-        "opengl_executable_memory_workaround": (
-            "Executable Memory Workaround",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_WRITE_TEXT_SECTION", "", "", ""),
-            ),
-        ),
-        "opengl_doom_3_compatibility": (
-            "Doom 3 Compatibility",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "true"),
-            ),
-            (
-                ("environment_variable", "__GL_DOOM3", "", "", ""),
-            ),
-        ),
-        "opengl_no_dynamic_shared_object_finalizer": (
-            "No Dynamic Shared Object Finalizer",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_NO_DSO_FINALIZER", "", "", ""),
-            ),
-        ),
-        "opengl_always_handle_fork": (
-            "Always Handle Fork",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ALWAYS_HANDLE_FORK", "", "", ""),
-            ),
-        ),
-        "opengl_at_fork_mode": (
-            "At Fork Mode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-            ),
-            (
-                ("environment_variable", "__GL_ATFORK_MODE", "", "", ""),
-            ),
-        ),
-        "opengl_force_exit_process_detach": (
-            "Force Exit Process Detach",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ForceExitProcessDetach", "", "", ""),
-            ),
-        ),
-        "opengl_selinux_booleans": (
-            "SELinux Booleans",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SELINUX_BOOLEANS", ",", "", ""),
-            ),
-        ),
-        "opengl_disable_low_level_driver_optimization": (
-            "Disable Low Level Driver Optimization",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_dislldopt", "", "", ""),
-            ),
-        ),
-        "opengl_hardware_context_control": (
-            "Hardware Context Control",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_HCCTRL", "", "", ""),
-            ),
-        ),
-        "opengl_maya_optimize": (
-            "Maya Optimize",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_MAYA_OPTIMIZE", "", "", ""),
-            ),
-        ),
-        "opengl_x_server_adapter_present": (
-            "X Server Adapter Present",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_XNvAdapterPresent", "", "", ""),
-            ),
-        ),
-        "opengl_texture_memory_space_enables": (
-            "Texture Memory Space Enables",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_TEX_MEMORY_SPACE_ENABLES", "", "", ""),
-                ("environment_variable", "__GL_TexMemorySpaceEnables", "", "", ""),
-            ),
-        ),
-        "opengl_heap_allocation_limit": (
-            "Heap Allocation Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("12MB", "12MB"),
-                ("20MB", "20MB"),
-                ("50MB", "50MB"),
-                ("100MB", "100MB"),
-                ("200MB", "200MB"),
-                ("500MB", "500MB"),
-            ),
-            (
-                ("environment_variable", "__GL_HEAP_ALLOC_LIMIT", "", "", ""),
-            ),
-        ),
-        "opengl_device_shared_memory_pageable_allocations": (
-            "Device Shared Memory Pageable Allocations",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_DevShmPageableAllocations", "", "", ""),
-            ),
-        ),
-        "opengl_allocate_device_events": (
-            "Allocate Device Events",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_AllocDeviceEvents", "", "", ""),
-            ),
-        ),
-        "opengl_hardware_state_per_context": (
-            "Hardware State Per Context",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_HWSTATE_PER_CTX", "", "", ""),
-            ),
-        ),
-        "opengl_system_memory_texture_promotion": (
-            "System Memory Texture Promotion",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SysmemTexturePromotion", "", "", ""),
-            ),
-        ),
-        "opengl_cache_disable": (
-            "Cache Disable",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_CacheDisable", "", "", ""),
-            ),
-        ),
-        "opengl_zero_bandwidth_compression_table_hysteresis": (
-            "Zero Bandwidth Compression Table Hysteresis",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ZbcTableAddHysteresis", "", "", ""),
-            ),
-        ),
-        "opengl_vertex_pipe_format_bloat_limit": (
-            "Vertex Pipe Format Bloat Limit",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_VpipeFormatBloatLimit", "", "", ""),
-            ),
-        ),
-        "opengl_copy_buffer_method": (
-            "Copy Buffer Method",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-            ),
-            (
-                ("environment_variable", "__GL_CopyBufferMethod", "", "", ""),
-            ),
-        ),
-        "opengl_overlay_merge_blit_timer": (
-            "Overlay Merge Blit Timer",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_OverlayMergeBlitTimerMs", "", "", ""),
-            ),
-        ),
-        "opengl_disallow_copy_engine_mask": (
-            "Disallow Copy Engine Mask",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_DisallowCEMask", "", "", ""),
-            ),
-        ),
-        "opengl_robust_hardware_context": (
-            "Robust Hardware Context",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "ENABLE_ROBUST"),
-            ),
-            (
-                ("environment_variable", "OGL_DEDICATED_HW_STATE_PER_CONTEXT", "", "", ""),
-            ),
-        ),
-        "opengl_application_profile": (
-            "Application Profile",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_APPLICATION_PROFILE", "", "", ""),
-            ),
-        ),
-        "opengl_application_profile_log": (
-            "Application Profile Log",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_APPLICATION_PROFILE_LOG", "", "", ""),
-            ),
-        ),
-        "opengl_application_key": (
-            "Application Key",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ApplicationKey", "", "", ""),
-            ),
-        ),
-        "opengl_application_support_bitmask_secondary": (
-            "Application Support Bitmask Secondary",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_App_SupportBits2", "", "", ""),
-            ),
-        ),
-        "opengl_shader_disk_cache": (
-            "Shader Disk Cache",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "0"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_DISK_CACHE", "", "", ""),
-            ),
-        ),
-        "opengl_shader_disk_cache_path": (
-            "Shader Disk Cache Path",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_DISK_CACHE_PATH", "", "", ""),
-            ),
-        ),
-        "opengl_shader_disk_cache_maximum_size": (
-            "Shader Disk Cache Maximum Size",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1GB", "1073741824"),
-                ("2GB", "2147483648"),
-                ("5GB", "5368709120"),
-                ("10GB", "10737418240"),
-                ("25GB", "26843545600"),
-                ("50GB", "53687091200"),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_DISK_CACHE_SIZE", "", "", ""),
-            ),
-        ),
-        "opengl_shader_disk_cache_cleanup": (
-            "Shader Disk Cache Cleanup",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", "1"),
-                ("on", ""),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_DISK_CACHE_SKIP_CLEANUP", "", "", ""),
-            ),
-        ),
-        "opengl_shader_disk_cache_read_only": (
-            "Shader Disk Cache Read Only",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_DISK_CACHE_READ_ONLY", "", "", ""),
-            ),
-        ),
-        "opengl_shader_cache_initial_size": (
-            "Shader Cache Initial Size",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_ShaderCacheInitSize", "", "", ""),
-            ),
-        ),
-        "opengl_shader_portability_warnings": (
-            "Shader Portability Warnings",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SHADER_PORTABILITY_WARNINGS", "", "", ""),
-            ),
-        ),
-        "opengl_graphics_on_screen_display": (
-            "Graphics On-Screen Display",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_SHOW_GRAPHICS_OSD", "", "", ""),
-            ),
-        ),
-        "opengl_debug_level": (
-            "Debug Level",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-            ),
-            (
-                ("environment_variable", "__GL_DEBUG_LEVEL", "", "", ""),
-            ),
-        ),
-        "opengl_debug_mask": (
-            "Debug Mask",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_DEBUG_MASK", "", "", ""),
-            ),
-        ),
-        "opengl_debug_options": (
-            "Debug Options",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_DEBUG_OPTIONS", "", "", ""),
-            ),
-        ),
-        "opengl_debug_bypass_assert": (
-            "Debug Bypass Assert",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_DEBUG_BYPASS_ASSERT", "", "", ""),
-            ),
-        ),
-        "opengl_debugger": (
-            "Debugger",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_DEBUGGER", "", "", ""),
-            ),
-        ),
-        "opengl_event_log_file": (
-            "Event Log File",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_EVENT_LOGFILE", "", "", ""),
-            ),
-        ),
-        "opengl_event_log_level": (
-            "Event Log Level",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-            ),
-            (
-                ("environment_variable", "__GL_EVENT_LOGLEVEL", "", "", ""),
-            ),
-        ),
-        "opengl_expert_detail_level": (
-            "Expert Detail Level",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-                ("4", "4"),
-            ),
-            (
-                ("environment_variable", "__GL_EXPERT_DETAIL_LEVEL", "", "", ""),
-            ),
-        ),
-        "opengl_expert_output_mask": (
-            "Expert Output Mask",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_EXPERT_OUTPUT_MASK", "", "", ""),
-            ),
-        ),
-        "opengl_expert_report_mask": (
-            "Expert Report Mask",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_EXPERT_REPORT_MASK", "", "", ""),
-            ),
-        ),
-        "opengl_performance_monitor_mode": (
-            "Performance Monitor Mode",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-            ),
-            (
-                ("environment_variable", "__GL_PerfmonMode", "", "", ""),
-            ),
-        ),
-        "opengl_graphics_video_interface_timeout_control": (
-            "Graphics Video Interface Timeout Control",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__GL_GVITimeOutControl", "", "", ""),
-            ),
-        ),
-        "opengl_use_graphics_video_interface_events": (
-            "Use Graphics Video Interface Events",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_UseGVIEvents", "", "", ""),
-            ),
-        ),
-        "vulkan_layer_optimus": (
-            "Vulkan Layer Optimus",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("nvidia-only", "NVIDIA_only"),
-                ("non-nvidia-only", "non_NVIDIA_only"),
-            ),
-            (
-                ("environment_variable", "__VK_LAYER_NV_optimus", "", "", ""),
-            ),
-        ),
-        "vulkan_disable_layer_optimus": (
-            "Disable Layer Optimus",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "DISABLE_LAYER_NV_OPTIMUS_1", "", "", ""),
-            ),
-        ),
-        "vulkan_ray_tracing_validation": (
-            "Ray Tracing Validation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "NV_ALLOW_RAYTRACING_VALIDATION", "", "", ""),
-            ),
-        ),
-        "vulkan_smooth_motion_frame_generation": (
-            "Smooth Motion Frame Generation",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "NVPRESENT_ENABLE_SMOOTH_MOTION", "", "", ""),
-            ),
-        ),
-        "vulkan_nvpresent_log_file": (
-            "NVPresent Log File",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "NVPRESENT_LOG_FILE", "", "", ""),
-            ),
-        ),
-        "vulkan_nvpresent_log_level": (
-            "NVPresent Log Level",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-                ("2", "2"),
-                ("3", "3"),
-            ),
-            (
-                ("environment_variable", "NVPRESENT_LOG_LEVEL", "", "", ""),
-            ),
-        ),
-        "vulkan_nvpresent_queue_family": (
-            "NVPresent Queue Family",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "NVPRESENT_QUEUE_FAMILY", "", "", ""),
-            ),
-        ),
-        "prime_render_offload": (
-            "PRIME Render Offload",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD", "", "", ""),
-            ),
-        ),
-        "prime_render_offload_provider": (
-            "PRIME Render Offload Provider",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD_PROVIDER", "", "", ""),
-            ),
-        ),
-        "disable_explicit_synchronization": (
-            "Disable Explicit Synchronization",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__NV_DISABLE_EXPLICIT_SYNC", "", "", ""),
-            ),
-        ),
-        "vdpau_no_overlay": (
-            "VDPAU No Overlay",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "VDPAU_NVIDIA_NO_OVERLAY", "", "", ""),
-            ),
-        ),
-        "vdpau_synchronization_display_device": (
-            "VDPAU Synchronization Display Device",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "VDPAU_NVIDIA_SYNC_DISPLAY_DEVICE", "", "", ""),
-            ),
-        ),
-        "vdpau_debug": (
-            "VDPAU Debug",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "VDPAU_NVIDIA_DEBUG", "", "", ""),
-            ),
-        ),
-        "vdpau_disable_error_concealment": (
-            "VDPAU Disable Error Concealment",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "VDPAU_NVIDIA_DISABLE_ERROR_CONCEALMENT", "", "", ""),
-            ),
-        ),
-        "vdpau_xinerama_physical_screen": (
-            "VDPAU Xinerama Physical Screen",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("0", "0"),
-                ("1", "1"),
-            ),
-            (
-                ("environment_variable", "VDPAU_NVIDIA_XINERAMA_PHYSICAL_SCREEN", "", "", ""),
-            ),
-        ),
-        "nvidia_video_decode_backend": (
-            "NVIDIA Video Decode Backend",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("nvdec", "nvdec"),
-                ("cuda", "cuda"),
-                ("gl", "gl"),
-            ),
-            (
-                ("environment_variable", "NVD_BACKEND", "", "", ""),
-            ),
-        ),
-        "nvidia_video_decode_graphics_processing_unit": (
-            "NVIDIA Video Decode Graphics Processing Unit",
-            (
-                ("skip", None),
-                ("default", ""),
-            ),
-            (
-                ("environment_variable", "NVD_GPU", "", "", ""),
-            ),
-        ),
-        "nvidia_video_decode_log": (
-            "NVIDIA Video Decode Log",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "NVD_LOG", "", "", ""),
-            ),
-        ),
-        "nvidia_video_decode_maximum_instances": (
-            "NVIDIA Video Decode Maximum Instances",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("1", "1"),
-                ("2", "2"),
-                ("4", "4"),
-            ),
-            (
-                ("environment_variable", "NVD_MAX_INSTANCES", "", "", ""),
-            ),
-        ),
-        "experimental_performance_strategy": (
-            "Experimental Performance Strategy",
-            (
-                ("skip", None),
-                ("default", ""),
-                ("off", ""),
-                ("on", "1"),
-            ),
-            (
-                ("environment_variable", "__GL_ExperimentalPerfStrategy", "", "", ""),
-            ),
-        ),
+        "opengl_vertical_synchronization": {
+            "label": "OpenGL VSync",
+            "description": "VSync behavior for NVIDIA OpenGL drivers.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_SYNC_TO_VBLANK", ""),
+        },
+        "opengl_vrr_allowed": {
+            "label": "OpenGL VRR Allowed",
+            "description": "Variable refresh rate permission for OpenGL.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_VRR_ALLOWED", ""),
+        },
+        "opengl_gsync_allowed": {
+            "label": "OpenGL G-Sync Allowed",
+            "description": "G-Sync permission for OpenGL.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_GSYNC_ALLOWED", ""),
+        },
+        "opengl_synchronization_display_device": {
+            "label": "Synchronization Display Device",
+            "description": "Display device used for OpenGL sync.",
+            "inputs": "DFP-0=dfp-0, DFP-1=dfp-1, DP-0=dp-0, HDMI-0=hdmi-0, CRT-0=crt-0",
+            "output": ("environment_variable", "__GL_SYNC_DISPLAY_DEVICE", ""),
+        },
+        "opengl_tearing_free_swap_present": {
+            "label": "Tearing-Free Swap Present",
+            "description": "Tearing-free swap present mode.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_TearingFreeSwapPresent", ""),
+        },
+        "opengl_constant_frame_rate_hint": {
+            "label": "Constant Frame Rate Hint",
+            "description": "Hint to the driver that frame rate is constant.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_CONSTANT_FRAME_RATE_HINT", ""),
+        },
+        "opengl_flush_control": {
+            "label": "Flush Control",
+            "description": "OpenGL flush control behavior.",
+            "inputs": "0=automatic, 1=explicit",
+            "output": ("environment_variable", "__GL_FLUSH_CONTROL", ""),
+        },
+        "opengl_threaded_optimization": {
+            "label": "Threaded Optimization",
+            "description": "Threaded OpenGL command processing.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_THREADED_OPTIMIZATIONS", ""),
+        },
+        "opengl_single_threaded": {
+            "label": "Single Threaded",
+            "description": "Force single-threaded OpenGL execution.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SINGLE_THREADED", ""),
+        },
+        "opengl_thread_affinity": {
+            "label": "Thread Affinity",
+            "description": "CPU affinity mask for the OpenGL thread.",
+            "inputs": "value=affinity mask value",
+            "output": ("environment_variable", "__GL_ThreadAffinity", ""),
+        },
+        "opengl_thread_control": {
+            "label": "Thread Control",
+            "description": "OpenGL thread control mode.",
+            "inputs": "NONE=none, DRIVER=driver",
+            "output": ("environment_variable", "__GL_ThreadControl", ""),
+        },
+        "opengl_thread_control_secondary": {
+            "label": "Thread Control Secondary",
+            "description": "Secondary OpenGL thread control value.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_ThreadControl2", ""),
+        },
+        "opengl_wait_behavior": {
+            "label": "Wait Behavior",
+            "description": "CPU wait strategy during OpenGL idle.",
+            "inputs": "NOTHING=active, USLEEP=sleep",
+            "output": ("environment_variable", "__GL_YIELD", ""),
+        },
+        "opengl_yield_function": {
+            "label": "Yield Function",
+            "description": "Custom yield function for OpenGL waits.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunction", ""),
+        },
+        "opengl_yield_function_fast": {
+            "label": "Yield Function Fast",
+            "description": "Fast path yield function for OpenGL waits.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunctionFast", ""),
+        },
+        "opengl_yield_function_slow": {
+            "label": "Yield Function Slow",
+            "description": "Slow path yield function for OpenGL waits.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunctionSlow", ""),
+        },
+        "opengl_yield_function_wait_display_controller_queue": {
+            "label": "Yield Function Wait Display Controller Queue",
+            "description": "Yield function used when waiting for the display controller queue.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunctionWaitForDcQueue", ""),
+        },
+        "opengl_yield_function_wait_frame": {
+            "label": "Yield Function Wait Frame",
+            "description": "Yield function used when waiting for a frame.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunctionWaitForFrame", ""),
+        },
+        "opengl_yield_function_wait_graphics_processing_unit": {
+            "label": "Yield Function Wait GPU",
+            "description": "Yield function used when waiting for the GPU.",
+            "inputs": "value=function name",
+            "output": ("environment_variable", "__GL_yieldFunctionWaitForGpu", ""),
+        },
+        "opengl_maximum_prerendered_frames": {
+            "label": "Maximum Prerendered Frames",
+            "description": "Maximum frames queued ahead for rendering.",
+            "inputs": "value=1, 2, 3, 4",
+            "output": ("environment_variable", "__GL_MaxFramesAllowed", ""),
+        },
+        "opengl_texture_quality": {
+            "label": "Texture Quality",
+            "description": "OpenGL texture filtering quality level.",
+            "inputs": "1=quality, 2=balanced, 3=performance",
+            "output": ("environment_variable", "__GL_OpenGLImageSettings", ""),
+        },
+        "opengl_forced_antialiasing": {
+            "label": "Forced Antialiasing",
+            "description": "Force a specific antialiasing mode.",
+            "inputs": "0=off, 1=2x-msaa, 2=2x-quincunx, 5=4x-msaa, 6=4x-gaussian, 7=8x-coverage, 8=16x-coverage, 9=8x-hybrid, 10=8x-msaa, 11=16x-hybrid, 12=16x-combined, 14=32x-combined",
+            "output": ("environment_variable", "__GL_FSAA_MODE", ""),
+        },
+        "opengl_fast_approximate_antialiasing": {
+            "label": "Fast Approximate Antialiasing",
+            "description": "FXAA post-process antialiasing.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_ALLOW_FXAA_USAGE", ""),
+        },
+        "opengl_forced_anisotropic_filtering": {
+            "label": "Forced Aniso Filtering",
+            "description": "Force a specific anisotropic filtering level.",
+            "inputs": "0=off, 1=2x, 2=4x, 3=8x, 4=16x",
+            "output": ("environment_variable", "__GL_LOG_MAX_ANISO", ""),
+        },
+        "opengl_cubemap_anisotropic_filtering": {
+            "label": "Cubemap Aniso Filtering",
+            "description": "Anisotropic filtering for cubemap textures.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_CubemapAniso", ""),
+        },
+        "opengl_cubemap_filtering": {
+            "label": "Cubemap Filtering",
+            "description": "Seamless cubemap filtering.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_CubemapFiltering", ""),
+        },
+        "opengl_antialiased_line_gamma": {
+            "label": "Antialiased Line Gamma",
+            "description": "Gamma correction for antialiased lines.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_AALineGamma", ""),
+        },
+        "opengl_antialiased_line_tweaks": {
+            "label": "Antialiased Line Tweaks",
+            "description": "Additional tweaks for antialiased line rendering.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_AALineTweaks", ""),
+        },
+        "opengl_s3tc_compression_quality": {
+            "label": "S3TC Compression Quality",
+            "description": "S3TC texture compression quality level.",
+            "inputs": "0=lowest, 1=low, 2=medium, 3=high, 4=highest",
+            "output": ("environment_variable", "__GL_S3TCQuality", ""),
+        },
+        "opengl_texture_level_of_detail_bias": {
+            "label": "Texture LOD Bias",
+            "description": "Texture LOD bias value.",
+            "inputs": "value=number",
+            "output": ("environment_variable", "__GL_TexLODBias", ""),
+        },
+        "opengl_texture_clamp_behavior": {
+            "label": "Texture Clamp Behavior",
+            "description": "Texture border clamp conformance mode.",
+            "inputs": "0=permissive, 1=strict",
+            "output": ("environment_variable", "__GL_TexClampBehavior", ""),
+        },
+        "opengl_texture_precache": {
+            "label": "Texture Precache",
+            "description": "Precache textures into GPU memory.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_TexturePrecache", ""),
+        },
+        "opengl_implicit_mipmap_generation": {
+            "label": "Implicit Mipmap Generation",
+            "description": "Implicit mipmap generation for textures.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_IMPLICIT_GENERATE_MIPMAP", ""),
+        },
+        "opengl_sparse_texture": {
+            "label": "Sparse Texture",
+            "description": "Sparse texture support.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SparseTexture", ""),
+        },
+        "opengl_skip_texture_host_copies": {
+            "label": "Skip Texture Host Copies",
+            "description": "Skip unnecessary texture host-to-device copies.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SkipTextureHostCopies", ""),
+        },
+        "opengl_skip_texture_host_copies_flags": {
+            "label": "Skip Texture Host Copies Flags",
+            "description": "Flags controlling skip texture host copy behavior.",
+            "inputs": "value=flags value",
+            "output": ("environment_variable", "__GL_SkipTextureHostCopiesFlags", ""),
+        },
+        "opengl_early_texture_hardware_allocation": {
+            "label": "Early Texture Hardware Allocation",
+            "description": "Allocate texture hardware resources early.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_EarlyTextureHWAllocation", ""),
+        },
+        "opengl_framebuffer_blit_ignore_standard_rgb": {
+            "label": "Framebuffer Blit Ignore sRGB",
+            "description": "Ignore sRGB conversion during framebuffer blits.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_FBO_BLIT_IGNORE_SRGB", ""),
+        },
+        "opengl_image_sharpening": {
+            "label": "Image Sharpening",
+            "description": "Image sharpening post-process filter.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SHARPEN_ENABLE", ""),
+        },
+        "opengl_image_sharpening_intensity": {
+            "label": "Image Sharpening Intensity",
+            "description": "Image sharpening strength.",
+            "inputs": "value=0, 10, 25, 35, 50, 75, 100",
+            "output": ("environment_variable", "__GL_SHARPEN_VALUE", ""),
+        },
+        "opengl_image_denoising_intensity": {
+            "label": "Image Denoising Intensity",
+            "description": "Image denoising filter strength.",
+            "inputs": "value=0, 17, 25, 50, 75, 100",
+            "output": ("environment_variable", "__GL_SHARPEN_IGNORE_FILM_GRAIN", ""),
+        },
+        "opengl_fast_geometry_shader": {
+            "label": "Fast Geometry Shader",
+            "description": "Fast geometry shader path.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_FastGS", ""),
+        },
+        "opengl_shader_atomics": {
+            "label": "Shader Atomics",
+            "description": "Shader atomic operation support.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_ShaderAtomics", ""),
+        },
+        "opengl_next_generation_compiler": {
+            "label": "Next Generation Compiler",
+            "description": "Next generation shader compiler.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_NextGenCompiler", ""),
+        },
+        "opengl_glsl_extension_validation": {
+            "label": "GLSL Extension Validation",
+            "description": "GLSL extension requirement strictness.",
+            "inputs": "0=strict, 1=relaxed",
+            "output": ("environment_variable", "__GL_IGNORE_GLSL_EXT_REQS", ""),
+        },
+        "opengl_extension_string_version": {
+            "label": "Extension String Version",
+            "description": "Override the OpenGL extension string version.",
+            "inputs": "value=version string",
+            "output": ("environment_variable", "__GL_ExtensionStringVersion", ""),
+        },
+        "opengl_extension_string_architecture": {
+            "label": "Extension String Architecture",
+            "description": "Override the OpenGL extension string architecture.",
+            "inputs": "value=architecture string",
+            "output": ("environment_variable", "__GL_ExtensionStringNVArch", ""),
+        },
+        "opengl_unofficial_glx_protocol": {
+            "label": "Unofficial GLX Protocol",
+            "description": "Allow unofficial GLX protocol extensions.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_ALLOW_UNOFFICIAL_PROTOCOL", ""),
+        },
+        "opengl_force_requested_embedded_systems_version": {
+            "label": "Force Requested ES Version",
+            "description": "Force the requested OpenGL ES version.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_ForceRequestedESVersion", ""),
+        },
+        "opengl_application_return_only_basic_glsl_type": {
+            "label": "Application Return Basic GLSL Type",
+            "description": "Return only basic GLSL types to the application.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_AppReturnOnlyBasicGlslType", ""),
+        },
+        "opengl_conformant_blit_framebuffer_scissor": {
+            "label": "Conformant Blit Framebuffer Scissor",
+            "description": "Scissor test conformance during framebuffer blits.",
+            "inputs": "0=permissive, 1=conformant",
+            "output": ("environment_variable", "__GL_ConformantBlitFramebufferScissor", ""),
+        },
+        "opengl_conformant_incomplete_texture": {
+            "label": "Conformant Incomplete Texture",
+            "description": "Incomplete texture conformance behavior.",
+            "inputs": "0=permissive, 1=conformant",
+            "output": ("environment_variable", "__GL_ConformantIncompleteTexture", ""),
+        },
+        "opengl_software_fallback_restriction": {
+            "label": "Software Fallback Restriction",
+            "description": "Prevent fallback to software rendering.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DISALLOW_SOFTWARE_FALLBACK", ""),
+        },
+        "opengl_software_fallback_restriction_gl": {
+            "label": "Software Fallback Restriction GL",
+            "description": "Secondary variable preventing software rendering fallback.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DisallowSWFallback", ""),
+        },
+        "opengl_framebuffer_configuration_sorting": {
+            "label": "Framebuffer Configuration Sorting",
+            "description": "Framebuffer configuration sort order.",
+            "inputs": "0=server, 1=sorted",
+            "output": ("environment_variable", "__GL_SORT_FBCONFIGS", ""),
+        },
+        "opengl_force_direct_rendering": {
+            "label": "Force Direct Rendering",
+            "description": "Force direct rendering mode.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_FORCE_DIRECT", ""),
+        },
+        "opengl_force_indirect_rendering": {
+            "label": "Force Indirect Rendering",
+            "description": "Force indirect rendering mode.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_FORCE_INDIRECT", ""),
+        },
+        "opengl_software_renderer": {
+            "label": "Software Renderer",
+            "description": "Force software OpenGL renderer.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SW_RENDERER", ""),
+        },
+        "opengl_force_generic_cpu": {
+            "label": "Force Generic CPU",
+            "description": "Force generic CPU code paths.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_FORCE_GENERIC_CPU", ""),
+        },
+        "opengl_strict_draw_range_elements": {
+            "label": "Strict Draw Range Elements",
+            "description": "Strict range checking for draw range elements.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_StrictDrawRangeElements", ""),
+        },
+        "opengl_release_texture_image_error": {
+            "label": "Release Texture Image Error",
+            "description": "Generate error on release texture image calls.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_RELEASE_TEX_IMAGE_ERROR", ""),
+        },
+        "opengl_z16_depth_restriction": {
+            "label": "Z16 Depth Restriction",
+            "description": "Restrict use of 16-bit depth buffers.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DisallowZ16", ""),
+        },
+        "opengl_scalable_link_interface_control": {
+            "label": "Scalable Link Interface Control",
+            "description": "SLI rendering mode control.",
+            "inputs": "value=0, 1, 2, 3",
+            "output": ("environment_variable", "__GL_SLI_DLI_CONTROL", ""),
+        },
+        "opengl_mosaic_clip_to_sub_device": {
+            "label": "Mosaic Clip to Sub Device",
+            "description": "Clip rendering to sub-device boundaries in Mosaic.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV", ""),
+        },
+        "opengl_mosaic_horizontal_overlap": {
+            "label": "Mosaic Horizontal Overlap",
+            "description": "Horizontal overlap pixels for Mosaic sub-devices.",
+            "inputs": "value=number",
+            "output": ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV_H_OVERLAP", ""),
+        },
+        "opengl_mosaic_vertical_overlap": {
+            "label": "Mosaic Vertical Overlap",
+            "description": "Vertical overlap pixels for Mosaic sub-devices.",
+            "inputs": "value=number",
+            "output": ("environment_variable", "__GL_MOSAIC_CLIP_TO_SUBDEV_V_OVERLAP", ""),
+        },
+        "opengl_executable_memory_workaround": {
+            "label": "Executable Memory Workaround",
+            "description": "Write to text section workaround for executable memory.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_WRITE_TEXT_SECTION", ""),
+        },
+        "opengl_doom_3_compatibility": {
+            "label": "Doom 3 Compatibility",
+            "description": "Doom 3 compatibility mode.",
+            "inputs": "true=on, false=off",
+            "output": ("environment_variable", "__GL_DOOM3", ""),
+        },
+        "opengl_no_dynamic_shared_object_finalizer": {
+            "label": "No DSO Finalizer",
+            "description": "Skip the DSO finalizer on unload.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_NO_DSO_FINALIZER", ""),
+        },
+        "opengl_always_handle_fork": {
+            "label": "Always Handle Fork",
+            "description": "Handle fork events in all cases.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_ALWAYS_HANDLE_FORK", ""),
+        },
+        "opengl_at_fork_mode": {
+            "label": "At Fork Mode",
+            "description": "Behavior at fork for OpenGL contexts.",
+            "inputs": "value=0, 1, 2",
+            "output": ("environment_variable", "__GL_ATFORK_MODE", ""),
+        },
+        "opengl_force_exit_process_detach": {
+            "label": "Force Exit Process Detach",
+            "description": "Force process detach on exit.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_ForceExitProcessDetach", ""),
+        },
+        "opengl_selinux_booleans": {
+            "label": "SELinux Booleans",
+            "description": "SELinux boolean overrides for OpenGL.",
+            "inputs": "value=boolean name",
+            "output": ("environment_variable", "__GL_SELINUX_BOOLEANS", ","),
+        },
+        "opengl_low_level_driver_optimization_suppression": {
+            "label": "Low Level Driver Optimization Suppression",
+            "description": "Suppress low level driver optimizations.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_dislldopt", ""),
+        },
+        "opengl_hardware_context_control": {
+            "label": "Hardware Context Control",
+            "description": "Hardware context control flags.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_HCCTRL", ""),
+        },
+        "opengl_maya_optimize": {
+            "label": "Maya Optimize",
+            "description": "Maya-specific OpenGL optimizations.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_MAYA_OPTIMIZE", ""),
+        },
+        "opengl_x_server_adapter_present": {
+            "label": "X Server Adapter Present",
+            "description": "Signal X server adapter presence.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_XNvAdapterPresent", ""),
+        },
+        "opengl_texture_memory_space": {
+            "label": "Texture Memory Space",
+            "description": "Texture memory space enable flags.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_TEX_MEMORY_SPACE_ENABLES", ""),
+        },
+        "opengl_texture_memory_space_gl": {
+            "label": "Texture Memory Space GL",
+            "description": "Secondary texture memory space enable flags.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_TexMemorySpaceEnables", ""),
+        },
+        "opengl_heap_allocation_limit": {
+            "label": "Heap Allocation Limit",
+            "description": "Limit for OpenGL heap memory allocation.",
+            "inputs": "size=12MB, 20MB, 50MB, 100MB, 200MB, 500MB",
+            "output": ("environment_variable", "__GL_HEAP_ALLOC_LIMIT", ""),
+        },
+        "opengl_device_shared_memory_pageable_allocations": {
+            "label": "Device Shared Memory Pageable Allocations",
+            "description": "Pageable allocations for device shared memory.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DevShmPageableAllocations", ""),
+        },
+        "opengl_allocate_device_events": {
+            "label": "Allocate Device Events",
+            "description": "Allocate device-side event objects.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_AllocDeviceEvents", ""),
+        },
+        "opengl_hardware_state_per_context": {
+            "label": "Hardware State Per Context",
+            "description": "Maintain separate hardware state per OpenGL context.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_HWSTATE_PER_CTX", ""),
+        },
+        "opengl_system_memory_texture_promotion": {
+            "label": "System Memory Texture Promotion",
+            "description": "Promote system memory textures to GPU memory.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SysmemTexturePromotion", ""),
+        },
+        "opengl_cache_bypass": {
+            "label": "Cache Bypass",
+            "description": "Bypass the OpenGL shader cache.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_CacheDisable", ""),
+        },
+        "opengl_zero_bandwidth_compression_table_hysteresis": {
+            "label": "ZBC Table Hysteresis",
+            "description": "Hysteresis for zero-bandwidth compression table additions.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_ZbcTableAddHysteresis", ""),
+        },
+        "opengl_vertex_pipe_format_bloat_limit": {
+            "label": "Vertex Pipe Format Bloat Limit",
+            "description": "Limit for vertex pipe format bloat.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_VpipeFormatBloatLimit", ""),
+        },
+        "opengl_copy_buffer_method": {
+            "label": "Copy Buffer Method",
+            "description": "Method used for buffer copy operations.",
+            "inputs": "value=0, 1, 2",
+            "output": ("environment_variable", "__GL_CopyBufferMethod", ""),
+        },
+        "opengl_overlay_merge_blit_timer": {
+            "label": "Overlay Merge Blit Timer",
+            "description": "Timer in milliseconds for overlay merge blit.",
+            "inputs": "value=milliseconds",
+            "output": ("environment_variable", "__GL_OverlayMergeBlitTimerMs", ""),
+        },
+        "opengl_copy_engine_mask_restriction": {
+            "label": "Copy Engine Mask Restriction",
+            "description": "Mask restricting which copy engines are used.",
+            "inputs": "value=bitmask value",
+            "output": ("environment_variable", "__GL_DisallowCEMask", ""),
+        },
+        "opengl_robust_hardware_context": {
+            "label": "Robust Hardware Context",
+            "description": "Dedicated robust hardware state per context.",
+            "inputs": "ENABLE_ROBUST=on",
+            "output": ("environment_variable", "OGL_DEDICATED_HW_STATE_PER_CONTEXT", ""),
+        },
+        "opengl_application_profile": {
+            "label": "Application Profile",
+            "description": "Application-specific OpenGL profile.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_APPLICATION_PROFILE", ""),
+        },
+        "opengl_application_profile_log": {
+            "label": "Application Profile Log",
+            "description": "Log application profile activity.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_APPLICATION_PROFILE_LOG", ""),
+        },
+        "opengl_application_key": {
+            "label": "Application Key",
+            "description": "Application key for profile matching.",
+            "inputs": "value=key string",
+            "output": ("environment_variable", "__GL_ApplicationKey", ""),
+        },
+        "opengl_application_support_bitmask_secondary": {
+            "label": "Application Support Bitmask Secondary",
+            "description": "Secondary application support bitmask.",
+            "inputs": "value=bitmask value",
+            "output": ("environment_variable", "__GL_App_SupportBits2", ""),
+        },
+        "opengl_shader_disk_cache": {
+            "label": "Shader Disk Cache",
+            "description": "Shader disk cache for OpenGL.",
+            "inputs": "0=off, 1=on",
+            "output": ("environment_variable", "__GL_SHADER_DISK_CACHE", ""),
+        },
+        "opengl_shader_disk_cache_path": {
+            "label": "Shader Disk Cache Path",
+            "description": "Directory for the OpenGL shader disk cache.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_PATH", ""),
+        },
+        "opengl_shader_disk_cache_maximum_size": {
+            "label": "Shader Disk Cache Maximum Size",
+            "description": "Maximum size of the OpenGL shader disk cache.",
+            "inputs": "bytes (1073741824=1GB, 2147483648=2GB, 5368709120=5GB)",
+            "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_SIZE", ""),
+        },
+        "opengl_shader_disk_cache_cleanup": {
+            "label": "Shader Disk Cache Cleanup",
+            "description": "Automatic cleanup of the shader disk cache.",
+            "inputs": "1=off, 0=on",
+            "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_SKIP_CLEANUP", ""),
+        },
+        "opengl_shader_disk_cache_read_only": {
+            "label": "Shader Disk Cache Read Only",
+            "description": "Open the shader disk cache in read-only mode.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_READ_ONLY", ""),
+        },
+        "opengl_shader_cache_initial_size": {
+            "label": "Shader Cache Initial Size",
+            "description": "Initial allocation size for the shader cache.",
+            "inputs": "value=size value",
+            "output": ("environment_variable", "__GL_ShaderCacheInitSize", ""),
+        },
+        "opengl_shader_portability_warnings": {
+            "label": "Shader Portability Warnings",
+            "description": "Warn about non-portable shader constructs.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SHADER_PORTABILITY_WARNINGS", ""),
+        },
+        "opengl_graphics_on_screen_display": {
+            "label": "Graphics On-Screen Display",
+            "description": "Show the NVIDIA graphics OSD overlay.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_SHOW_GRAPHICS_OSD", ""),
+        },
+        "opengl_debug_level": {
+            "label": "Debug Level",
+            "description": "OpenGL driver debug verbosity level.",
+            "inputs": "value=0, 1, 2, 3",
+            "output": ("environment_variable", "__GL_DEBUG_LEVEL", ""),
+        },
+        "opengl_debug_mask": {
+            "label": "Debug Mask",
+            "description": "Bitmask filtering OpenGL debug messages.",
+            "inputs": "value=bitmask value",
+            "output": ("environment_variable", "__GL_DEBUG_MASK", ""),
+        },
+        "opengl_debug_options": {
+            "label": "Debug Options",
+            "description": "Additional OpenGL debug options.",
+            "inputs": "value=options value",
+            "output": ("environment_variable", "__GL_DEBUG_OPTIONS", ""),
+        },
+        "opengl_debug_bypass_assert": {
+            "label": "Debug Bypass Assert",
+            "description": "Bypass assertion failures in debug mode.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DEBUG_BYPASS_ASSERT", ""),
+        },
+        "opengl_debugger": {
+            "label": "Debugger",
+            "description": "Attach a debugger on OpenGL errors.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_DEBUGGER", ""),
+        },
+        "opengl_event_log_file": {
+            "label": "Event Log File",
+            "description": "Output file path for OpenGL event logs.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "__GL_EVENT_LOGFILE", ""),
+        },
+        "opengl_event_log_level": {
+            "label": "Event Log Level",
+            "description": "Verbosity level for OpenGL event logging.",
+            "inputs": "value=0, 1, 2, 3",
+            "output": ("environment_variable", "__GL_EVENT_LOGLEVEL", ""),
+        },
+        "opengl_expert_detail_level": {
+            "label": "Expert Detail Level",
+            "description": "Detail level for OpenGL expert mode output.",
+            "inputs": "value=0, 1, 2, 3, 4",
+            "output": ("environment_variable", "__GL_EXPERT_DETAIL_LEVEL", ""),
+        },
+        "opengl_expert_output_mask": {
+            "label": "Expert Output Mask",
+            "description": "Output channel mask for OpenGL expert mode.",
+            "inputs": "value=bitmask value",
+            "output": ("environment_variable", "__GL_EXPERT_OUTPUT_MASK", ""),
+        },
+        "opengl_expert_report_mask": {
+            "label": "Expert Report Mask",
+            "description": "Report category mask for OpenGL expert mode.",
+            "inputs": "value=bitmask value",
+            "output": ("environment_variable", "__GL_EXPERT_REPORT_MASK", ""),
+        },
+        "opengl_performance_monitor_mode": {
+            "label": "Performance Monitor Mode",
+            "description": "Performance monitor collection mode.",
+            "inputs": "value=0, 1, 2",
+            "output": ("environment_variable", "__GL_PerfmonMode", ""),
+        },
+        "opengl_graphics_video_interface_timeout_control": {
+            "label": "Graphics Video Interface Timeout Control",
+            "description": "GVI capture timeout control value.",
+            "inputs": "value=value",
+            "output": ("environment_variable", "__GL_GVITimeOutControl", ""),
+        },
+        "opengl_use_graphics_video_interface_events": {
+            "label": "Use Graphics Video Interface Events",
+            "description": "Use GVI events for capture synchronization.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_UseGVIEvents", ""),
+        },
+        "vulkan_layer_optimus": {
+            "label": "Vulkan Layer Optimus",
+            "description": "Optimus layer GPU selection filter.",
+            "inputs": "NVIDIA_only=nvidia-gpu, non_NVIDIA_only=other-gpu",
+            "output": ("environment_variable", "__VK_LAYER_NV_optimus", ""),
+        },
+        "vulkan_layer_optimus_restriction": {
+            "label": "Vulkan Layer Optimus Restriction",
+            "description": "Suppress the Optimus Vulkan layer.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "DISABLE_LAYER_NV_OPTIMUS_1", ""),
+        },
+        "vulkan_ray_tracing_validation": {
+            "label": "Ray Tracing Validation",
+            "description": "Ray tracing validation layer.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "NV_ALLOW_RAYTRACING_VALIDATION", ""),
+        },
+        "vulkan_smooth_motion_frame_generation": {
+            "label": "Smooth Motion Frame Generation",
+            "description": "NVIDIA smooth motion frame generation.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "NVPRESENT_ENABLE_SMOOTH_MOTION", ""),
+        },
+        "vulkan_nvpresent_log_file": {
+            "label": "NVPresent Log File",
+            "description": "Output file path for NVPresent logs.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "NVPRESENT_LOG_FILE", ""),
+        },
+        "vulkan_nvpresent_log_level": {
+            "label": "NVPresent Log Level",
+            "description": "Verbosity level for NVPresent logging.",
+            "inputs": "value=0, 1, 2, 3",
+            "output": ("environment_variable", "NVPRESENT_LOG_LEVEL", ""),
+        },
+        "vulkan_nvpresent_queue_family": {
+            "label": "NVPresent Queue Family",
+            "description": "Vulkan queue family used by NVPresent.",
+            "inputs": "value=queue family index",
+            "output": ("environment_variable", "NVPRESENT_QUEUE_FAMILY", ""),
+        },
+        "prime_render_offload": {
+            "label": "PRIME Render Offload",
+            "description": "PRIME render offload to the NVIDIA GPU.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD", ""),
+        },
+        "prime_render_offload_provider": {
+            "label": "PRIME Render Offload Provider",
+            "description": "Provider string for PRIME render offload.",
+            "inputs": "value=provider string",
+            "output": ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD_PROVIDER", ""),
+        },
+        "explicit_synchronization_restriction": {
+            "label": "Explicit Synchronization Restriction",
+            "description": "Suppress explicit synchronization.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__NV_DISABLE_EXPLICIT_SYNC", ""),
+        },
+        "vdpau_no_overlay": {
+            "label": "VDPAU No Overlay",
+            "description": "Suppress VDPAU overlay plane usage.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "VDPAU_NVIDIA_NO_OVERLAY", ""),
+        },
+        "vdpau_synchronization_display_device": {
+            "label": "VDPAU Synchronization Display Device",
+            "description": "Display device for VDPAU sync.",
+            "inputs": "value=device name",
+            "output": ("environment_variable", "VDPAU_NVIDIA_SYNC_DISPLAY_DEVICE", ""),
+        },
+        "vdpau_debug": {
+            "label": "VDPAU Debug",
+            "description": "VDPAU debug output.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "VDPAU_NVIDIA_DEBUG", ""),
+        },
+        "vdpau_error_concealment_restriction": {
+            "label": "VDPAU Error Concealment Restriction",
+            "description": "Suppress VDPAU error concealment.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "VDPAU_NVIDIA_DISABLE_ERROR_CONCEALMENT", ""),
+        },
+        "vdpau_xinerama_physical_screen": {
+            "label": "VDPAU Xinerama Physical Screen",
+            "description": "Physical screen index for VDPAU in Xinerama.",
+            "inputs": "value=0, 1",
+            "output": ("environment_variable", "VDPAU_NVIDIA_XINERAMA_PHYSICAL_SCREEN", ""),
+        },
+        "nvidia_video_decode_backend": {
+            "label": "NVIDIA Video Decode Backend",
+            "description": "Backend used for NVIDIA video decoding.",
+            "inputs": "nvdec=hardware, cuda=cuda, gl=opengl",
+            "output": ("environment_variable", "NVD_BACKEND", ""),
+        },
+        "nvidia_video_decode_graphics_processing_unit": {
+            "label": "NVIDIA Video Decode GPU",
+            "description": "GPU used for NVIDIA video decoding.",
+            "inputs": "value=GPU identifier",
+            "output": ("environment_variable", "NVD_GPU", ""),
+        },
+        "nvidia_video_decode_log": {
+            "label": "NVIDIA Video Decode Log",
+            "description": "NVIDIA video decode debug logging.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "NVD_LOG", ""),
+        },
+        "nvidia_video_decode_maximum_instances": {
+            "label": "NVIDIA Video Decode Maximum Instances",
+            "description": "Maximum concurrent NVIDIA video decode instances.",
+            "inputs": "value=1, 2, 4",
+            "output": ("environment_variable", "NVD_MAX_INSTANCES", ""),
+        },
+        "experimental_performance_strategy": {
+            "label": "Experimental Performance Strategy",
+            "description": "Experimental performance strategy hint.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "__GL_ExperimentalPerfStrategy", ""),
+        },
     }

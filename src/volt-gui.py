@@ -69,27 +69,25 @@ if __name__ == "__main__":
 """
 
 
-def get_option_value_from_display(display_text: str, option_items: tuple):
-    for item_entry in option_items:
-        if get_item_display(item_entry) == display_text: return get_item_value(item_entry)
-    return display_text
-
-
-def get_resolved_option_value(main_window, option_key: str):
-    return get_option_value_from_display(main_window.options_widgets[option_key].currentText(), get_setting_items("Options", option_key))
+def get_resolved_option_value(main_window, option_key: str) -> str:
+    widget = main_window.options_widgets.get(option_key)
+    if widget is None: return get_option_default_value(option_key)
+    text = widget.text().strip() if hasattr(widget, "text") else widget.currentText().strip()
+    if text == "": return get_option_default_value(option_key)
+    return text
 
 
 def is_option_enabled(main_window, option_key: str) -> bool:
-    return get_resolved_option_value(main_window, option_key) == "enable"
+    return get_resolved_option_value(main_window, option_key) == "on"
 
 
-def get_persisted_option_value(option_key: str):
+def get_persisted_option_value(option_key: str) -> str:
     if not build_options_path().exists(): return get_option_default_value(option_key)
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance.read(build_options_path())
-    resolved = get_option_value_from_display(parser_instance.get("Options", option_key, fallback="default"), get_setting_items("Options", option_key))
-    if resolved is None: return get_option_default_value(option_key)
-    return resolved
+    value = parser_instance.get("Options", option_key, fallback=None)
+    if value is None or value.strip() == "": return get_option_default_value(option_key)
+    return value.strip()
 
 
 def calculate_initial_scale() -> float:
@@ -101,26 +99,24 @@ def calculate_initial_scale() -> float:
     return float(raw)
 
 
-def calculate_initial_theme():
+def calculate_initial_theme() -> str:
     return get_persisted_option_value("application_theme")
 
 
 def process_device_detection_complete(main_window, api_type: str) -> None:
     if not hasattr(main_window, "all_widgets"): return None
     setting_key = "opengl_rendering_device" if api_type == "opengl" else "vulkan_rendering_device"
-    if "Render Selector:" + setting_key not in main_window.all_widgets: return None
-    combobox = main_window.all_widgets["Render Selector:" + setting_key]
-    combobox.blockSignals(True)
-    current_text = combobox.currentText()
-    combobox.clear()
-    combobox.addItem("skip")
-    combobox.addItem("default")
-    for device_name in find_render_devices(api_type).get("devices", ()):
-        combobox.addItem(device_name)
-    combobox.device_map = find_render_devices(api_type).get("device_map", {})
-    if combobox.findText(current_text) >= 0: combobox.setCurrentIndex(combobox.findText(current_text))
-    else: combobox.setCurrentIndex(0)
-    combobox.blockSignals(False)
+    widget_key = "Render Selector:" + setting_key
+    if widget_key not in main_window.all_widgets: return None
+    line_edit = main_window.all_widgets[widget_key]
+    devices = find_render_devices(api_type).get("devices", ())
+    line_edit.index_map = {}
+    for device_index, device_name in enumerate(devices, 1):
+        line_edit.index_map[str(device_index)] = device_name
+    line_edit.device_map = find_render_devices(api_type).get("device_map", {})
+    if hasattr(line_edit, "device_label"):
+        device_str = ", ".join(str(i + 1) + "=" + name for i, name in enumerate(devices)) if devices else "no devices detected"
+        line_edit.device_label.setText(device_str)
     return None
 
 
@@ -130,22 +126,23 @@ def create_profile_selector_widget(main_window) -> QFrame:
     frame.setLineWidth(1)
     frame.setObjectName("profileFrame")
     layout = QHBoxLayout(frame)
-    layout.setContentsMargins(8, 6, 8, 6)
+    layout.setContentsMargins(8, 4, 8, 4)
     layout.setSpacing(8)
     label = QLabel("Profile:")
     label.setMinimumWidth(60)
     main_window.profile_selector = QComboBox()
     main_window.profile_selector.setView(QListView())
+    main_window.profile_selector.setFixedHeight(40)
     main_window.profile_selector.setMinimumWidth(200)
     process_profile_list_update(main_window)
     main_window.profile_selector.setCurrentText(main_window.current_profile)
     main_window.profile_selector.currentTextChanged.connect(lambda profile_name: process_profile_change(main_window, profile_name))
     main_window.profile_selector.setFocusPolicy(Qt.ClickFocus)
     new_profile_button = QPushButton("New Profile")
-    new_profile_button.setMinimumSize(90, 30)
+    new_profile_button.setMinimumSize(90, 40)
     new_profile_button.clicked.connect(lambda: process_new_profile_save(main_window))
     delete_profile_button = QPushButton("Delete Profile")
-    delete_profile_button.setMinimumSize(90, 30)
+    delete_profile_button.setMinimumSize(90, 40)
     delete_profile_button.clicked.connect(lambda: process_current_profile_delete(main_window))
     layout.addWidget(label)
     layout.addWidget(main_window.profile_selector)
@@ -283,7 +280,8 @@ def process_options_application(main_window) -> None:
     main_window.show_welcome = is_option_enabled(main_window, "welcome_message_display")
     main_window.check_updates = is_option_enabled(main_window, "automatic_update_check")
     main_window.volt_path = get_resolved_option_value(main_window, "volt_script_location")
-    main_window.scaling_factor = float(get_resolved_option_value(main_window, "interface_scale_factor")) if get_resolved_option_value(main_window, "interface_scale_factor").replace(".", "", 1).isdigit() else 1.0
+    raw_scale = get_resolved_option_value(main_window, "interface_scale_factor")
+    main_window.scaling_factor = float(raw_scale) if raw_scale.replace(".", "", 1).isdigit() else 1.0
     os.environ["QT_SCALE_FACTOR"] = str(main_window.scaling_factor)
     return None
 
@@ -308,7 +306,6 @@ def process_tray_option_update(main_window, tray_enabled: bool) -> None:
 def process_option_change(main_window, option_key: str) -> None:
     if getattr(main_window, "initial_setup_complete", False) is not True: return None
     process_application_options_save(main_window)
-    process_notification_display(main_window, "Restart required for changes to take effect.", False)
     return None
 
 
@@ -316,8 +313,10 @@ def process_application_options_save(main_window) -> None:
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance["Options"] = {}
     for setting_key in find_settings_for_tab("Options"):
-        if setting_key in main_window.options_widgets:
-            parser_instance["Options"][setting_key] = main_window.options_widgets[setting_key].currentText()
+        if setting_key not in main_window.options_widgets: continue
+        widget = main_window.options_widgets[setting_key]
+        text = widget.text().strip() if hasattr(widget, "text") else widget.currentText().strip()
+        parser_instance["Options"][setting_key] = text
     parser_instance["Profile"] = {"last_active_profile": main_window.current_profile}
     os.makedirs(os.path.dirname(build_options_path()), exist_ok=True)
     with open(build_options_path(), "w") as file_handle:
@@ -327,8 +326,8 @@ def process_application_options_save(main_window) -> None:
 
 def process_application_options_load(main_window) -> None:
     for setting_key in find_settings_for_tab("Options"):
-        if setting_key in main_window.options_widgets:
-            main_window.options_widgets[setting_key].setCurrentText("default")
+        if setting_key not in main_window.options_widgets: continue
+        main_window.options_widgets[setting_key].setText(get_option_default_value(setting_key))
     if not build_options_path().exists():
         process_application_options_save(main_window)
         return None
@@ -336,12 +335,12 @@ def process_application_options_load(main_window) -> None:
     parser_instance.read(build_options_path())
     for setting_key in find_settings_for_tab("Options"):
         if setting_key not in main_window.options_widgets: continue
-        saved_value = parser_instance.get("Options", setting_key, fallback=get_item_display(get_setting_items("Options", setting_key)[1]) if len(get_setting_items("Options", setting_key)) > 1 else "")
-        if main_window.options_widgets[setting_key].findText(saved_value) >= 0: main_window.options_widgets[setting_key].setCurrentText(saved_value)
-        else: main_window.options_widgets[setting_key].setCurrentText("skip")
-    if main_window.profile_selector.findText(parser_instance.get("Profile", "last_active_profile", fallback="Default")) >= 0:
-        main_window.profile_selector.setCurrentText(parser_instance.get("Profile", "last_active_profile", fallback="Default"))
-        main_window.current_profile = parser_instance.get("Profile", "last_active_profile", fallback="Default")
+        saved_value = parser_instance.get("Options", setting_key, fallback=get_option_default_value(setting_key))
+        main_window.options_widgets[setting_key].setText(saved_value if saved_value is not None else "")
+    last_profile = parser_instance.get("Profile", "last_active_profile", fallback="Default")
+    if main_window.profile_selector.findText(last_profile) >= 0:
+        main_window.profile_selector.setCurrentText(last_profile)
+        main_window.current_profile = last_profile
     process_options_application(main_window)
     return None
 
@@ -451,7 +450,7 @@ def process_singleton_listen(singleton_socket, show_callback: dict) -> None:
     return None
 
 
-def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict, main_window, tab_name: str) -> None:
+def process_create_tab(stacked_widget, all_widgets: dict, all_cards: dict, options_widgets: dict, main_window, tab_name: str) -> None:
     if tab_name == "Options":
         tab_result = create_options_tab_content_widget()
         options_widgets.update(tab_result["widgets"])
@@ -463,8 +462,58 @@ def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict,
     if has_settings(tab_name):
         tab_result_settings = create_tab_content_widget(tab_name, None, False)
         all_widgets.update(tab_result_settings["widgets"])
+        all_cards.update(tab_result_settings["cards"])
         stacked_widget.addWidget(tab_result_settings["tab"])
     return None
+
+
+def build_search_index(main_window) -> None:
+    main_window.search_index = {}
+    for tab_name in get_tabs_with_profile_support():
+        for setting_key in find_settings_for_tab(tab_name):
+            card_key = tab_name + ":" + setting_key
+            if card_key not in main_window.all_cards: continue
+            searchable = " ".join((
+                setting_key,
+                get_setting_label(tab_name, setting_key),
+                get_setting_inputs(tab_name, setting_key),
+                get_setting_description(tab_name, setting_key),
+            )).lower()
+            main_window.search_index[card_key] = searchable
+    return None
+
+
+def matches_search_query(tab_name: str, setting_key: str, query: str) -> bool:
+    query_lower = query.lower()
+    if query_lower in setting_key.lower(): return True
+    if query_lower in get_setting_label(tab_name, setting_key).lower(): return True
+    if query_lower in get_setting_inputs(tab_name, setting_key).lower(): return True
+    if query_lower in get_setting_description(tab_name, setting_key).lower(): return True
+    return False
+
+
+def process_search_filter(main_window, query: str) -> None:
+    query_lower = query.strip().lower()
+    for card_key, card_widget in main_window.all_cards.items():
+        if query_lower == "":
+            card_widget.setVisible(True)
+        else:
+            card_widget.setVisible(query_lower in main_window.search_index.get(card_key, ""))
+    return None
+
+
+def create_search_bar_widget(main_window) -> QLineEdit:
+    search_bar = QLineEdit()
+    search_bar.setPlaceholderText("Search settings...")
+    search_bar.setFixedHeight(40)
+    search_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    search_bar.setStyleSheet("QLineEdit { border: 1px solid palette(highlight); } QLineEdit:hover { border: 1px solid palette(highlight); } QLineEdit:focus { border: 1px solid palette(highlight); }")
+    main_window.search_debounce_timer = QTimer()
+    main_window.search_debounce_timer.setSingleShot(True)
+    main_window.search_debounce_timer.setInterval(150)
+    main_window.search_debounce_timer.timeout.connect(lambda: process_search_filter(main_window, search_bar.text()))
+    search_bar.textChanged.connect(lambda query: main_window.search_debounce_timer.start())
+    return search_bar
 
 
 def process_signal_handlers_setup(main_window) -> None:
@@ -509,9 +558,10 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     content_layout.setSpacing(0)
     stacked_widget = QStackedWidget()
     all_widgets = {}
+    all_cards = {}
     options_widgets = {}
     for tab_name in get_all_tab_names():
-        process_create_tab(stacked_widget, all_widgets, options_widgets, window, tab_name)
+        process_create_tab(stacked_widget, all_widgets, all_cards, options_widgets, window, tab_name)
     content_layout.addWidget(create_sidebar_widget(get_all_tab_names(), stacked_widget))
     content_layout.addWidget(stacked_widget, 1)
     main_layout.addLayout(content_layout, 1)
@@ -520,7 +570,7 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     button_layout = QHBoxLayout(button_container)
     button_layout.setContentsMargins(12, 8, 12, 8)
     apply_button = QPushButton("Apply")
-    apply_button.setMinimumSize(90, 30)
+    apply_button.setMinimumSize(90, 40)
     apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     apply_button.clicked.connect(lambda: process_all_settings_apply(window))
     button_layout.addStretch(1)
@@ -530,9 +580,16 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     all_widgets["main_apply_button"] = apply_button
     window.setCentralWidget(central_widget)
     window.all_widgets = all_widgets
+    window.all_cards = all_cards
     window.options_widgets = options_widgets
+    window.search_bar = create_search_bar_widget(window)
+    main_layout.insertWidget(1, window.search_bar)
     for option_key in options_widgets:
-        options_widgets[option_key].currentTextChanged.connect(lambda text, bound_key=option_key: process_option_change(window, bound_key))
+        widget = options_widgets[option_key]
+        if hasattr(widget, "textChanged"):
+            widget.textChanged.connect(lambda text, bound_key=option_key: process_option_change(window, bound_key))
+        elif hasattr(widget, "currentTextChanged"):
+            widget.currentTextChanged.connect(lambda text, bound_key=option_key: process_option_change(window, bound_key))
     if QApplication.instance() is not None: QApplication.instance().setQuitOnLastWindowClosed(not window.use_system_tray)
     timer_instance = QTimer(window)
     timer_instance.start(5000)
@@ -540,6 +597,7 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     process_application_options_load(window)
     process_profile_widget_load(window.all_widgets, window.current_profile)
     window.initial_setup_complete = True
+    build_search_index(window)
     window.setAttribute(Qt.WA_DontShowOnScreen, False)
     if window.show_welcome: QTimer.singleShot(100, lambda: process_welcome_show(window))
     if window.check_updates: QTimer.singleShot(200, lambda: process_updates_check_async(window))
