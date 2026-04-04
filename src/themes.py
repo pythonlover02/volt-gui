@@ -95,15 +95,15 @@ QMessageBox QPushButton {{ min-width: 60px; padding: 6px 12px; }}
 
 def build_theme_colors(theme_name: str) -> dict:
     return {
-        "background": "#080808",
-        "background_darker": "#000000",
-        "background_lighter": "#202020",
-        "surface": "#141414",
+        "background": "#1a1a1a",
+        "background_darker": "#121212",
+        "background_lighter": "#2e2e2e",
+        "surface": "#242424",
         "text_primary": "#E8E8E8",
-        "text_secondary": "#8A8A8A",
-        "text_disabled": "#383838",
-        "card_background": "#0e0e0e",
-        "card_border": "#0e0e0e",
+        "text_secondary": "#9A9A9A",
+        "text_disabled": "#4a4a4a",
+        "card_background": "#1e1e1e",
+        "card_border": "#1e1e1e",
         "accent": get_accent_colors(theme_name)[0],
         "accent_hover": get_accent_colors(theme_name)[1],
         "accent_pressed": get_accent_colors(theme_name)[2],

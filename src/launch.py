@@ -5,7 +5,7 @@ def get_launch_settings() -> dict:
         "launch_options": {
             "label": "Launch Options",
             "description": "Additional launch command prefix.",
-            "inputs": "command=prefix (e.g. gamemoderun)",
-            "output": ("argument",),
+            "inputs": "e.g. gamemoderun=e.g. gamemoderun",
+            "output": ("argument", "", "", "", ""),
         },
     }

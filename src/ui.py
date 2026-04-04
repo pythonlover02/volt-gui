@@ -10,7 +10,7 @@ def create_line_edit_widget(is_locked: bool) -> QLineEdit:
     line_edit.setEnabled(not is_locked)
     line_edit.setFixedHeight(36)
     line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    line_edit.setPlaceholderText("empty = skip, unset = remove variable")
+    line_edit.setPlaceholderText("empty = skip, unset = remove from environment")
     return line_edit
 
 
@@ -24,7 +24,7 @@ def create_render_selector_widget(setting_name: str, is_locked: bool) -> QLineEd
     line_edit.index_map = {}
     for device_index, device_name in enumerate(find_render_devices(api_type).get("devices", ()), 1):
         line_edit.index_map[str(device_index)] = device_name
-    line_edit.setPlaceholderText("empty = skip, unset = remove variable")
+    line_edit.setPlaceholderText("empty = skip, unset = remove from environment")
     return line_edit
 
 
@@ -59,16 +59,10 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
     card_layout.addWidget(description_label)
     inputs_text = get_setting_inputs(category_name, setting_key)
     if inputs_text != "dynamic":
-        output = get_setting_output(category_name, setting_key)
-        if is_output_type_environment_variable(output):
-            display_inputs = get_output_target(output) + ": " + inputs_text
-        elif is_output_type_argument(output):
-            display_inputs = "argument: " + inputs_text
-        elif is_output_type_option(output):
-            display_inputs = "option: " + inputs_text
-        else:
-            display_inputs = inputs_text
-        inputs_label = QLabel(display_inputs)
+        mapping_line = build_setting_mapping_display(category_name, setting_key)
+        values_line = build_setting_values_display(inputs_text)
+        display_text = mapping_line + "\n  " + values_line + "\n  empty = skip, unset = remove from environment"
+        inputs_label = QLabel(display_text)
         inputs_label.setWordWrap(True)
         inputs_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         inputs_label.setStyleSheet("color: #505050; font-size: 8pt; font-family: monospace;")
@@ -77,7 +71,8 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
         api_type = "opengl" if setting_key == "opengl_rendering_device" else "vulkan"
         devices = find_render_devices(api_type).get("devices", ())
         device_str = ", ".join(str(i + 1) + "=" + name for i, name in enumerate(devices)) if devices else "detecting devices..."
-        inputs_label = QLabel("render selector: " + device_str)
+        display_text = "render selector: [value] \u2192 device environment variables\n  " + device_str + "\n  empty = skip, unset = remove from environment"
+        inputs_label = QLabel(display_text)
         inputs_label.setWordWrap(True)
         inputs_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         inputs_label.setStyleSheet("color: #505050; font-size: 8pt; font-family: monospace;")
@@ -135,7 +130,7 @@ def create_code_block_widget(code_text: str) -> QFrame:
     text_edit.setFont(build_monospace_font())
     widget_height = get_default_widget_height()
     text_edit.setFixedHeight(widget_height)
-    text_edit.setStyleSheet("QTextEdit { background-color: #141414; color: #C0C0C0; border: none; border-left: 2px solid transparent; padding: 8px 12px; selection-background-color: #4a4a4a; } QTextEdit:hover { border-left: 2px solid palette(highlight); }")
+    text_edit.setStyleSheet("QTextEdit { background-color: #242424; color: #C0C0C0; border: none; border-left: 2px solid transparent; padding: 8px 12px; selection-background-color: #505050; } QTextEdit:hover { border-left: 2px solid palette(highlight); }")
     copy_button = QPushButton("Copy")
     copy_button.setCursor(QCursor(Qt.PointingHandCursor))
     copy_button.setFixedSize(widget_height, widget_height)

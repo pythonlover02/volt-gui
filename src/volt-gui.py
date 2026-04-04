@@ -116,7 +116,7 @@ def process_device_detection_complete(main_window, api_type: str) -> None:
     line_edit.device_map = find_render_devices(api_type).get("device_map", {})
     if hasattr(line_edit, "device_label"):
         device_str = ", ".join(str(i + 1) + "=" + name for i, name in enumerate(devices)) if devices else "no devices detected"
-        line_edit.device_label.setText(device_str)
+        line_edit.device_label.setText("render selector: [value] \u2192 device environment variables\n  " + device_str + "\n  empty = skip, unset = remove from environment")
     return None
 
 

@@ -133,7 +133,15 @@ def get_output_target(output: tuple) -> str:
 
 
 def get_output_separator(output: tuple) -> str:
+    return output[4]
+
+
+def get_output_sub_environment_variable(output: tuple) -> str:
     return output[2]
+
+
+def get_output_sub_argument(output: tuple) -> str:
+    return output[3]
 
 
 def get_render_environment_keys(api_type: str) -> tuple:
@@ -295,15 +303,27 @@ def process_environment_variable_setting(output: tuple, value: str, environment_
             return None
         if target not in grouped_environment_collection:
             grouped_environment_collection[target] = {"separator": separator, "parts": []}
-        grouped_environment_collection[target]["parts"].append(value)
+        if get_output_sub_argument(output) != "":
+            grouped_environment_collection[target]["parts"].append(get_output_sub_argument(output))
+        elif get_output_sub_environment_variable(output) != "":
+            grouped_environment_collection[target]["parts"].append(get_output_sub_environment_variable(output) + value)
+        else:
+            grouped_environment_collection[target]["parts"].append(value)
         return None
     environment_collection[target] = "" if value == "unset" else value
     return None
 
 
-def process_argument_setting(tab_name: str, value: str, argument_collection: list) -> None:
+def build_argument_value_from_output(output: tuple, value: str) -> str:
+    target = get_output_target(output)
+    if target == "": return value
+    if target.endswith("=") or target.endswith(" "): return target + value
+    return target
+
+
+def process_argument_setting(output: tuple, tab_name: str, value: str, argument_collection: list) -> None:
     if value == "unset": return None
-    argument_collection.append((tab_name, value))
+    argument_collection.append((tab_name, build_argument_value_from_output(output, value)))
     return None
 
 
@@ -317,7 +337,7 @@ def process_setting_into_collections(tab_name: str, setting_key: str, value: str
         process_environment_variable_setting(output, value, environment_collection, grouped_environment_collection)
         return None
     if is_output_type_argument(output):
-        process_argument_setting(tab_name, value, argument_collection)
+        process_argument_setting(output, tab_name, value, argument_collection)
         return None
     return None
 
@@ -395,6 +415,57 @@ def build_final_apply_arguments(environment_collection: dict, grouped_environmen
     launch_command = build_launch_command_string(argument_collection)
     if launch_command != "": environment_arguments.append("launch:" + launch_command)
     return tuple(environment_arguments)
+
+
+def build_argument_mapping_display(output: tuple) -> str:
+    if get_output_target(output) == "": return "argument: [value] \u2192 [value]"
+    if get_output_target(output).endswith("=") or get_output_target(output).endswith(" "): return "argument: [value] \u2192 " + get_output_target(output) + "[value]"
+    return "argument: [value] \u2192 " + get_output_target(output)
+
+
+def build_plain_environment_variable_mapping_display(output: tuple) -> str:
+    return "environment variable: [value] \u2192 " + get_output_target(output) + "=[value]"
+
+
+def build_grouped_environment_variable_mapping_display(output: tuple) -> str:
+    if get_output_sub_argument(output) != "": return "environment variable: [value] \u2192 " + get_output_target(output) + "=..." + get_output_separator(output) + get_output_sub_argument(output) + get_output_separator(output) + "..."
+    if get_output_sub_environment_variable(output) != "": return "environment variable: [value] \u2192 " + get_output_target(output) + "=..." + get_output_separator(output) + get_output_sub_environment_variable(output) + "[value]" + get_output_separator(output) + "..."
+    return "environment variable: [value] \u2192 " + get_output_target(output) + "=..." + get_output_separator(output) + "[value]" + get_output_separator(output) + "..."
+
+
+def build_environment_variable_mapping_display(output: tuple) -> str:
+    if get_output_separator(output) != "": return build_grouped_environment_variable_mapping_display(output)
+    return build_plain_environment_variable_mapping_display(output)
+
+
+def build_setting_mapping_display(category_name: str, setting_name: str) -> str:
+    if is_render_selector_setting(category_name, setting_name): return "render selector: [value] \u2192 device environment variables"
+    if is_output_type_argument(get_setting_output(category_name, setting_name)): return build_argument_mapping_display(get_setting_output(category_name, setting_name))
+    if is_output_type_environment_variable(get_setting_output(category_name, setting_name)): return build_environment_variable_mapping_display(get_setting_output(category_name, setting_name))
+    if is_output_type_option(get_setting_output(category_name, setting_name)): return "option: [value] \u2192 application preference"
+    return ""
+
+
+def is_identity_input_pair(pair_text: str) -> bool:
+    if "=" not in pair_text.strip(): return True
+    return pair_text.strip().split("=", 1)[0].strip() == pair_text.strip().split("=", 1)[1].strip()
+
+
+def is_toggle_setting_input(inputs_text: str) -> bool:
+    if "," in inputs_text: return False
+    if "=" not in inputs_text: return False
+    return inputs_text.strip().split("=", 1)[0].strip() == "value"
+
+
+def format_input_pair_display(pair_text: str) -> str:
+    if "=" not in pair_text.strip(): return pair_text.strip()
+    if is_identity_input_pair(pair_text): return pair_text.strip().split("=", 1)[0].strip()
+    return pair_text.strip().split("=", 1)[0].strip() + " = " + pair_text.strip().split("=", 1)[1].strip()
+
+
+def build_setting_values_display(inputs_text: str) -> str:
+    if is_toggle_setting_input(inputs_text): return "any value that isn\u2019t unset"
+    return ", ".join(format_input_pair_display(pair) for pair in inputs_text.split(",") if pair.strip() != "")
 
 
 def build_apply_results_from_widgets(widget_collection: dict) -> tuple:
