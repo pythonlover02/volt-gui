@@ -7,6 +7,7 @@ from gamescope import *
 from lsfg import *
 from launch import *
 from render import *
+from proton import *
 from options import *
 from about import *
 
@@ -20,6 +21,7 @@ def get_settings_database() -> dict:
         "MangoHud": get_mangohud_settings(),
         "LSFG": get_lsfg_settings(),
         "Launch Options": get_launch_settings(),
+        "Proton": get_proton_settings(),
         "Options": get_options_settings(),
         "About": get_about_settings(),
     }

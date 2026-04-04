@@ -38,6 +38,12 @@ def get_welcome_settings() -> dict:
                 ("text", "Changes to Options are saved automatically but require a restart of volt-gui to take effect."),
             )
         },
+        "Proton": {
+            "Proton Tab": (
+                ("text", "The Proton tab provides environment variables for configuring Proton and Wine behavior when running Windows games on Linux through Steam.\n\nThe settings are based on the Proton-CachyOS project and include options for DXVK, synchronization, upscaling (FSR4, DLSS, XeSS), NVIDIA libraries, Wayland support, audio configuration, and more."),
+                ("text", "These environment variables are applied via the volt script, just like all other settings. Use them in Steam Launch Options or any other launcher."),
+            )
+        },
         "Usage": {
             "Using the volt Script": (
                 ("text", "To apply Environment Settings, prepend the volt script to your command:"),
