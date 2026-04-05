@@ -62,6 +62,30 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER", "", "", ""),
         },
+        "proton_dxvk_sarek": {
+            "label": "DXVK Sarek",
+            "description": "Use the dxvk-sarek fork as DXVK replacement for older GPUs that don't properly support Vulkan 1.3 (supported Vulkan 1.1.x to 1.2.x).",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_DXVK_SAREK", "", "", ""),
+        },
+        "proton_dxvk_lowlatency": {
+            "label": "DXVK Low Latency",
+            "description": "Enable the alternative dxvk-low-latency fork, which enhances DXVK with low-latency frame pacing capabilities to improve game responsiveness and input lag.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_DXVK_LOWLATENCY", "", "", ""),
+        },
+        "proton_vkd3d_bratan": {
+            "label": "VKD3D Bratan",
+            "description": "Use the vkd3d-bratan fork as the VKD3D replacement, which includes additional patches and optimizations for DX12 games.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_VKD3D_BRATAN", "", "", ""),
+        },
+        "proton_vkd3d_heap": {
+            "label": "VKD3D Heap",
+            "description": "Enable alternative VKD3D heap allocation strategy, which may improve performance or stability in some DX12 games.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_VKD3D_HEAP", "", "", ""),
+        },
         "proton_no_esync": {
             "label": "No Esync",
             "description": "Do not use eventfd-based in-process synchronization primitives.",
@@ -74,17 +98,47 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_NO_FSYNC", "", "", ""),
         },
+        "proton_use_ntsync": {
+            "label": "NTSync",
+            "description": "Enable the use of the in-process synchronization method. You will need to have loaded the ntsync module beforehand.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_USE_NTSYNC", "", "", ""),
+        },
         "proton_disable_nvapi": {
             "label": "Disable NVAPI",
             "description": "Disable NVIDIA's NVAPI GPU support library.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_DISABLE_NVAPI", "", "", ""),
         },
+        "proton_force_nvapi": {
+            "label": "Force NVAPI",
+            "description": "Force enable NVAPI even on non-Nvidia GPUs. Allows games that require NVAPI to run on AMD or Intel hardware by spoofing an Nvidia adapter.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_FORCE_NVAPI", "", "", ""),
+        },
         "proton_hide_nvidia_gpu": {
             "label": "Hide NVIDIA GPU",
             "description": "Force Nvidia GPUs to always be reported as AMD GPUs. Some games require this if they depend on Windows-only Nvidia driver functionality.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_HIDE_NVIDIA_GPU", "", "", ""),
+        },
+        "proton_hide_vangogh_gpu": {
+            "label": "Hide Van Gogh GPU",
+            "description": "Force AMD Van Gogh integrated GPUs (as found in the Steam Deck) to be reported as a different GPU model.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_HIDE_VANGOGH_GPU", "", "", ""),
+        },
+        "proton_hide_intel_gpu": {
+            "label": "Hide Intel GPU",
+            "description": "Hide Intel GPU from the game. Useful for systems with both Intel and discrete GPUs where the game incorrectly selects the integrated adapter.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_HIDE_INTEL_GPU", "", "", ""),
+        },
+        "proton_hide_apu": {
+            "label": "Hide APU",
+            "description": "Hide the APU's integrated graphics from the game. Useful on systems where the game incorrectly selects the APU over a discrete GPU.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_HIDE_APU", "", "", ""),
         },
         "proton_nvidia_libs": {
             "label": "NVIDIA Libraries",
@@ -121,6 +175,12 @@ def get_proton_settings() -> dict:
             "description": "Enable alternative nvoptix.dll only.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_NVIDIA_NVOPTIX", "", "", ""),
+        },
+        "proton_native_ags": {
+            "label": "Native AGS",
+            "description": "Enable native AMD AGS library support. Uses the native atiadlxx and atidxx64 alongside native amd_ags_x64 for games that rely on AMD GPU Services.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_NATIVE_AGS", "", "", ""),
         },
         "proton_no_wm_decoration": {
             "label": "No WM Decoration",
@@ -200,6 +260,12 @@ def get_proton_settings() -> dict:
             "inputs": "value=host list",
             "output": ("environment_variable", "WINE_BLOCK_HOSTS", "", "", ""),
         },
+        "steamdeck": {
+            "label": "Steam Deck",
+            "description": "Make the game believe it is running on a Steam Deck. Sets the SteamDeck environment variable to 1, enabling Steam Deck-specific code paths and optimizations in supported games.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "SteamDeck", "", "", ""),
+        },
         "proton_enable_mediaconv": {
             "label": "Media Conversion",
             "description": "Enable media conversion. For debugging purposes.",
@@ -272,48 +338,6 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_FSR3_UPGRADE", "", "", ""),
         },
-        "proton_log": {
-            "label": "Proton Log",
-            "description": "Dump a useful debug log to $PROTON_LOG_DIR/steam-$APPID.log. Set to 1 for default logging, or set to a string to append to the default WINEDEBUG channels. For video/audio issues, use +mfplat,+quartz,+wmvcore,+wmadec,+dmo instead of 1.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "PROTON_LOG", "", "", ""),
-        },
-        "proton_log_directory": {
-            "label": "Proton Log Directory",
-            "description": "Output log files into the specified directory. Defaults to your home directory.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "PROTON_LOG_DIR", "", "", ""),
-        },
-        "proton_wait_attach": {
-            "label": "Proton Wait Attach",
-            "description": "Wait for a debugger to attach to steam.exe before launching the game process.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "PROTON_WAIT_ATTACH", "", "", ""),
-        },
-        "proton_crash_report_directory": {
-            "label": "Proton Crash Report Directory",
-            "description": "Write crash logs into this directory. Does not clean up old logs.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "PROTON_CRASH_REPORT_DIR", "", "", ""),
-        },
-        "proton_use_ntsync": {
-            "label": "NTSync",
-            "description": "Enable the use of the in-process synchronization method. You will need to have loaded the ntsync module beforehand.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "PROTON_USE_NTSYNC", "", "", ""),
-        },
-        "proton_dxvk_sarek": {
-            "label": "DXVK Sarek",
-            "description": "Use the dxvk-sarek fork as DXVK replacement for older GPUs that don't properly support Vulkan 1.3 (supported Vulkan 1.1.x to 1.2.x). Uses the async branch, should not be used with anti-cheat or multiplayer games.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "PROTON_DXVK_SAREK", "", "", ""),
-        },
-        "proton_dxvk_lowlatency": {
-            "label": "DXVK Low Latency",
-            "description": "Enable the alternative dxvk-low-latency fork, which enhances DXVK with low-latency frame pacing capabilities to improve game responsiveness and input lag.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "PROTON_DXVK_LOWLATENCY", "", "", ""),
-        },
         "proton_fsr4_upgrade": {
             "label": "FSR4 Upgrade",
             "description": "Automatically download amdxcffx64.dll and upgrade games with FSR 3.1 to use FSR 4. Set to 1 for latest version, or specify a version like 4.0.1.",
@@ -337,5 +361,29 @@ def get_proton_settings() -> dict:
             "description": "Enables the use of MLFG when amdxcffx64.dll >= 4.0.3. Automatically enabled with FSR4 Upgrade options. Set to 0 to disable while still using FSR4.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_MLFG_UPGRADE", "", "", ""),
+        },
+        "proton_log": {
+            "label": "Proton Log",
+            "description": "Dump a useful debug log to $PROTON_LOG_DIR/steam-$APPID.log. Set to 1 for default logging, or set to a string to append to the default WINEDEBUG channels. For video/audio issues, use +mfplat,+quartz,+wmvcore,+wmadec,+dmo instead of 1.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_LOG", "", "", ""),
+        },
+        "proton_log_directory": {
+            "label": "Proton Log Directory",
+            "description": "Output log files into the specified directory. Defaults to your home directory.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "PROTON_LOG_DIR", "", "", ""),
+        },
+        "proton_wait_attach": {
+            "label": "Proton Wait Attach",
+            "description": "Wait for a debugger to attach to steam.exe before launching the game process.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_WAIT_ATTACH", "", "", ""),
+        },
+        "proton_crash_report_directory": {
+            "label": "Proton Crash Report Directory",
+            "description": "Write crash logs into this directory. Does not clean up old logs.",
+            "inputs": "path=filesystem path",
+            "output": ("environment_variable", "PROTON_CRASH_REPORT_DIR", "", "", ""),
         },
     }
