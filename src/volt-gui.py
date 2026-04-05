@@ -494,11 +494,15 @@ def matches_search_query(tab_name: str, setting_key: str, query: str) -> bool:
 
 def process_search_filter(main_window, query: str) -> None:
     query_lower = query.strip().lower()
+    affected_containers = set()
     for card_key, card_widget in main_window.all_cards.items():
         if query_lower == "":
             card_widget.setVisible(True)
         else:
             card_widget.setVisible(query_lower in main_window.search_index.get(card_key, ""))
+        if card_widget.parentWidget() is not None: affected_containers.add(card_widget.parentWidget())
+    for container in affected_containers:
+        container.adjustSize()
     return None
 
 

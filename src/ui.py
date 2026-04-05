@@ -194,8 +194,14 @@ def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> d
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(0)
     scroll_area = QScrollArea()
-    scroll_area.setWidgetResizable(True)
+    scroll_area.setWidgetResizable(False)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    original_resize = scroll_area.resizeEvent
+    def sync_width(event):
+        original_resize(event)
+        viewport_width = scroll_area.viewport().width()
+        scroll_area.widget().setFixedWidth(viewport_width)
+    scroll_area.resizeEvent = sync_width
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -214,7 +220,6 @@ def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> d
         content_layout.addWidget(card_result["card"])
         all_widgets[tab_name + ":" + setting_key] = card_result["widgets"]["main"]
         all_cards[tab_name + ":" + setting_key] = card_result["card"]
-    content_layout.addStretch(1)
     scroll_area.setWidget(container_widget)
     main_layout.addWidget(scroll_area, 1)
     return {"tab": widget, "widgets": all_widgets, "cards": all_cards}
@@ -227,8 +232,14 @@ def create_options_tab_content_widget() -> dict:
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(0)
     scroll_area = QScrollArea()
-    scroll_area.setWidgetResizable(True)
+    scroll_area.setWidgetResizable(False)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    original_resize = scroll_area.resizeEvent
+    def sync_width(event):
+        original_resize(event)
+        viewport_width = scroll_area.viewport().width()
+        scroll_area.widget().setFixedWidth(viewport_width)
+    scroll_area.resizeEvent = sync_width
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -238,7 +249,6 @@ def create_options_tab_content_widget() -> dict:
         card_result = create_setting_card_widget("Options", setting_key)
         content_layout.addWidget(card_result["card"])
         options_widgets[setting_key] = card_result["widgets"]["main"]
-    content_layout.addStretch(1)
     scroll_area.setWidget(container_widget)
     main_layout.addWidget(scroll_area, 1)
     return {"tab": widget, "widgets": options_widgets}
