@@ -62,6 +62,30 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER", "", "", ""),
         },
+        "wine_cpu_topology": {
+            "label": "CPU Topology",
+            "description": "Override the CPU topology reported to the game. Format: COUNT:ID0,ID1,... (e.g. 8:0,1,2,3,4,5,6,7). Useful for high thread-count CPUs or X3D chips to limit visible cores.",
+            "inputs": "value=topology string",
+            "output": ("environment_variable", "WINE_CPU_TOPOLOGY", "", "", ""),
+        },
+        "wine_logical_cpus_as_cores": {
+            "label": "Logical CPUs as Cores",
+            "description": "Report all logical CPUs (hyperthreads) as physical cores to the game.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "WINE_LOGICAL_CPUS_AS_CORES", "", "", ""),
+        },
+        "proton_use_wow64": {
+            "label": "WoW64",
+            "description": "Use WoW64 mode for running 32-bit applications. Note: incompatible with NVIDIA alternative libraries.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_USE_WOW64", "", "", ""),
+        },
+        "proton_disable_hidraw": {
+            "label": "Disable Hidraw",
+            "description": "Disable hidraw input device access. Can help with controller detection issues.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_DISABLE_HIDRAW", "", "", ""),
+        },
         "proton_dxvk_sarek": {
             "label": "DXVK Sarek",
             "description": "Use the dxvk-sarek fork as DXVK replacement for older GPUs that don't properly support Vulkan 1.3 (supported Vulkan 1.1.x to 1.2.x).",
