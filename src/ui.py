@@ -187,12 +187,18 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
     return card
 
 
-def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> dict:
-    widget = QWidget()
-    all_widgets = {}
-    main_layout = QVBoxLayout(widget)
-    main_layout.setContentsMargins(0, 0, 0, 0)
-    main_layout.setSpacing(0)
+def process_container_relayout(container_widget) -> None:
+    layout = container_widget.layout()
+    if layout is None: return None
+    width = container_widget.width()
+    if width <= 0: return None
+    height = layout.heightForWidth(width)
+    if height >= 0:
+        container_widget.setFixedHeight(height)
+    return None
+
+
+def create_scrollable_content_area(container_widget) -> QScrollArea:
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(False)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -200,8 +206,19 @@ def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> d
     def sync_width(event):
         original_resize(event)
         viewport_width = scroll_area.viewport().width()
-        scroll_area.widget().setFixedWidth(viewport_width)
+        container_widget.setFixedWidth(viewport_width)
+        process_container_relayout(container_widget)
     scroll_area.resizeEvent = sync_width
+    scroll_area.setWidget(container_widget)
+    return scroll_area
+
+
+def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> dict:
+    widget = QWidget()
+    all_widgets = {}
+    main_layout = QVBoxLayout(widget)
+    main_layout.setContentsMargins(0, 0, 0, 0)
+    main_layout.setSpacing(0)
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -211,7 +228,7 @@ def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> d
         for label_text, card_data in info_items.items():
             content_layout.addWidget(create_info_card_widget(label_text, card_data))
         if add_stretch: content_layout.addStretch()
-        scroll_area.setWidget(container_widget)
+        scroll_area = create_scrollable_content_area(container_widget)
         main_layout.addWidget(scroll_area, 1)
         return {"tab": widget, "widgets": all_widgets}
     all_cards = {}
@@ -220,7 +237,7 @@ def create_tab_content_widget(tab_name: str, info_items, add_stretch: bool) -> d
         content_layout.addWidget(card_result["card"])
         all_widgets[tab_name + ":" + setting_key] = card_result["widgets"]["main"]
         all_cards[tab_name + ":" + setting_key] = card_result["card"]
-    scroll_area.setWidget(container_widget)
+    scroll_area = create_scrollable_content_area(container_widget)
     main_layout.addWidget(scroll_area, 1)
     return {"tab": widget, "widgets": all_widgets, "cards": all_cards}
 
@@ -231,15 +248,6 @@ def create_options_tab_content_widget() -> dict:
     main_layout = QVBoxLayout(widget)
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(0)
-    scroll_area = QScrollArea()
-    scroll_area.setWidgetResizable(False)
-    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    original_resize = scroll_area.resizeEvent
-    def sync_width(event):
-        original_resize(event)
-        viewport_width = scroll_area.viewport().width()
-        scroll_area.widget().setFixedWidth(viewport_width)
-    scroll_area.resizeEvent = sync_width
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -249,7 +257,7 @@ def create_options_tab_content_widget() -> dict:
         card_result = create_setting_card_widget("Options", setting_key)
         content_layout.addWidget(card_result["card"])
         options_widgets[setting_key] = card_result["widgets"]["main"]
-    scroll_area.setWidget(container_widget)
+    scroll_area = create_scrollable_content_area(container_widget)
     main_layout.addWidget(scroll_area, 1)
     return {"tab": widget, "widgets": options_widgets}
 

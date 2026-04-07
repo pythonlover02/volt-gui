@@ -502,7 +502,7 @@ def process_search_filter(main_window, query: str) -> None:
             card_widget.setVisible(query_lower in main_window.search_index.get(card_key, ""))
         if card_widget.parentWidget() is not None: affected_containers.add(card_widget.parentWidget())
     for container in affected_containers:
-        container.adjustSize()
+        process_container_relayout(container)
     return None
 
 
