@@ -1,5 +1,4 @@
 from PySide6.QtGui import QPalette, QColor
-
 from database import *
 
 
@@ -31,6 +30,18 @@ def get_style_palette_disabled_roles() -> tuple:
     )
 
 
+def get_accent_border_width() -> int:
+    return 3
+
+
+def get_standard_button_width() -> int:
+    return 90
+
+
+def get_standard_button_height() -> int:
+    return 36
+
+
 def get_style_stylesheet_template() -> str:
     return """
 QWidget {{ background-color: {background}; color: {text_primary}; font-size: 10pt; font-family: "Segoe UI", "SF Pro Display", sans-serif; border: none; }}
@@ -38,7 +49,7 @@ QLabel {{ color: {text_primary}; background-color: transparent; border: none; qp
 QScrollArea {{ background-color: transparent; border: none; }}
 QScrollArea > QWidget > QWidget {{ background-color: transparent; }}
 QWidget[scrollContainer="true"], QWidget[buttonContainer="true"] {{ background-color: transparent; border: none; }}
-QWidget[buttonContainer="true"] {{ min-height: 56px; background-color: {background}; }}
+QWidget[buttonContainer="true"] {{ background-color: {background}; }}
 QMainWindow {{ background-color: {background}; border: none; }}
 QScrollBar:vertical {{ background-color: {background}; width: 6px; margin: 0px; border: none; }}
 QScrollBar::handle:vertical {{ background-color: {surface}; min-height: 40px; margin: 2px; border-radius: 3px; }}
@@ -52,58 +63,58 @@ QScrollBar::handle:horizontal:hover {{ background-color: {accent}; }}
 QScrollBar::handle:horizontal:pressed {{ background-color: {accent_pressed}; }}
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ background: none; width: 0px; border: none; }}
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{ background: transparent; }}
-QPushButton {{ background-color: {surface}; color: {text_primary}; border: 1px solid transparent; outline: none; padding: 8px 14px; min-width: 70px; font-weight: 500; }}
-QPushButton:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: 1px solid transparent; }}
-QPushButton:hover {{ background-color: {background_lighter}; color: {text_primary}; border: 1px solid {accent}; }}
-QPushButton:pressed {{ background-color: {accent_pressed}; color: white; border: 1px solid {accent}; }}
-QLineEdit {{ background-color: {surface}; color: {text_primary}; border: 1px solid transparent; padding: 8px 12px; selection-background-color: {accent}; }}
-QLineEdit:hover {{ background-color: {background_lighter}; border: 1px solid {accent}; }}
-QLineEdit:focus {{ background-color: {background_lighter}; border: 1px solid {accent}; }}
-QLineEdit:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: 1px solid transparent; }}
-QComboBox {{ background-color: {surface}; color: {text_primary}; border: 1px solid transparent; padding: 8px 12px; selection-background-color: transparent; selection-color: {text_primary}; min-width: 100px; }}
-QComboBox:hover {{ background-color: {background_lighter}; border: 1px solid {accent}; }}
-QComboBox:focus {{ background-color: {background_lighter}; border: 1px solid {accent}; }}
-QComboBox:on {{ background-color: {background_lighter}; border: 1px solid {accent}; }}
-QComboBox:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: 1px solid transparent; }}
+QPushButton {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; outline: none; padding: 0px 14px; font-weight: 500; border-radius: 6px; }}
+QPushButton:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
+QPushButton:hover {{ background-color: {background_lighter}; color: {text_primary}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QPushButton:pressed {{ background-color: {accent_pressed}; color: white; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: {accent}; border-radius: 6px; }}
+QLineEdit:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QLineEdit:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QLineEdit:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
+QComboBox {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: transparent; selection-color: {text_primary}; min-width: 60px; border-radius: 6px; }}
+QComboBox:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QComboBox:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QComboBox:on {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QComboBox:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
 QComboBox::drop-down {{ subcontrol-origin: padding; subcontrol-position: top right; width: 20px; border: none; background-color: transparent; }}
-QComboBox QAbstractItemView {{ background-color: {background}; color: {text_primary}; border: 1px solid {accent}; outline: none; padding: 4px 0px; selection-background-color: {background_lighter}; selection-color: {text_primary}; }}
-QComboBox QAbstractItemView::item {{ padding: 8px 12px; border: none; margin: 0px; background-color: {background}; }}
+QComboBox QAbstractItemView {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; outline: none; padding: 4px 0px; selection-background-color: {background_lighter}; selection-color: {text_primary}; border-radius: 6px; }}
+QComboBox QAbstractItemView::item {{ padding: 6px 12px; border: none; margin: 0px; background-color: {background}; }}
 QComboBox QAbstractItemView::item:hover {{ background-color: {surface}; color: {text_primary}; }}
 QComboBox QAbstractItemView::item:selected {{ background-color: {background_lighter}; color: {text_primary}; }}
-QWidget[statusContainer="true"] {{ background-color: {card_background}; color: {text_primary}; border: 1px solid transparent; padding: 8px; }}
+QWidget[statusContainer="true"] {{ background-color: {card_background}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 8px; border-radius: 6px; }}
 QWidget[statusContainer="true"] QLabel {{ background-color: transparent; color: {text_primary}; padding: 4px; border: none; }}
-QFrame#profileFrame {{ border: 1px solid {accent}; background-color: {card_background}; }}
-QMenu {{ background-color: {background}; color: {text_primary}; border: 1px solid {accent}; padding: 6px; }}
-QMenu::item {{ padding: 8px 20px; border: 1px solid transparent; margin: 1px 0px; }}
-QMenu::item:selected {{ background-color: {surface}; color: {text_primary}; border: 1px solid {accent}; }}
+QMenu {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 6px; border-radius: 6px; }}
+QMenu::item {{ padding: 6px 20px; border: none; border-left: 3px solid transparent; margin: 1px 0px; border-radius: 4px; }}
+QMenu::item:selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
 QMenu::separator {{ height: 1px; background-color: {surface}; margin: 6px 0px; }}
-QToolTip {{ background-color: {background}; color: {text_primary}; border: 1px solid {accent}; padding: 10px 14px; font-size: 10pt; }}
+QToolTip {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 8px 12px; font-size: 10pt; border-radius: 6px; }}
 QListWidget {{ background-color: {background}; border: none; outline: none; padding: 0px; }}
-QListWidget::item {{ background-color: transparent; color: {text_secondary}; border: none; padding: 10px 14px; margin: 1px 4px; }}
-QListWidget::item:selected {{ background-color: {surface}; color: {text_primary}; border: 1px solid {accent}; }}
-QListWidget::item:hover:!selected {{ background-color: {surface}; color: {text_primary}; border: 1px solid {accent}; }}
-QFrame[settingCard="true"] {{ background-color: {card_background}; border: 1px solid transparent; }}
-QFrame[settingCard="true"]:hover {{ border: 1px solid {accent}; }}
+QListWidget::item {{ background-color: transparent; color: {text_secondary}; border: none; border-left: 3px solid transparent; padding: 8px 14px; margin: 1px 4px; border-radius: 6px; }}
+QListWidget::item:selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
+QListWidget::item:hover:!selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent_hover}; }}
+QFrame[settingCard="true"] {{ background-color: {card_background}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
+QFrame[settingCard="true"]:hover {{ border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
 QInputDialog {{ background-color: {background}; }}
-QInputDialog QLineEdit {{ background-color: {surface}; color: {text_primary}; border: 1px solid transparent; padding: 8px 12px; selection-background-color: {accent}; }}
-QInputDialog QLineEdit:focus {{ border: 1px solid {accent}; }}
-QInputDialog QPushButton {{ min-width: 60px; padding: 6px 12px; }}
+QInputDialog QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; min-height: 36px; max-height: 36px; selection-background-color: {accent}; border-radius: 6px; }}
+QInputDialog QLineEdit:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QInputDialog QLineEdit:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QInputDialog QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
 QMessageBox {{ background-color: {background}; }}
-QMessageBox QPushButton {{ min-width: 60px; padding: 6px 12px; }}
+QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
 """
 
 
 def build_theme_colors(theme_name: str) -> dict:
     return {
-        "background": "#1a1a1a",
-        "background_darker": "#121212",
-        "background_lighter": "#2e2e2e",
-        "surface": "#242424",
+        "background": "#161616",
+        "background_darker": "#0e0e0e",
+        "background_lighter": "#262626",
+        "surface": "#1e1e1e",
         "text_primary": "#E8E8E8",
         "text_secondary": "#9A9A9A",
-        "text_disabled": "#4a4a4a",
-        "card_background": "#1e1e1e",
-        "card_border": "#1e1e1e",
+        "text_disabled": "#444444",
+        "card_background": "#1a1a1a",
+        "card_border": "#1a1a1a",
         "accent": get_accent_colors(theme_name)[0],
         "accent_hover": get_accent_colors(theme_name)[1],
         "accent_pressed": get_accent_colors(theme_name)[2],

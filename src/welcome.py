@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSizePolicy, QStackedWidget
 from PySide6.QtCore import Qt
 from database import *
+from themes import *
 from ui import *
 
 
@@ -8,7 +9,7 @@ def get_welcome_settings() -> dict:
     return {
         "Welcome": {
             "Welcome to volt gui": (
-                ("text", "volt gui its my AMD Adrenaline / NVIDIA Settings Linux Alternative.\n\nIt allows you to manage GPU drivers and environment variables through a single interface, with support for MangoHud, Gamescope, and LSFG-VK."),
+                ("text", "volt gui is my AMD Adrenaline / NVIDIA Settings Linux Alternative.\n\nIt allows you to manage GPU drivers and environment variables through a single interface, with support for MangoHud, Gamescope, Proton, and LSFG."),
             )
         },
         "How it Works": {
@@ -35,7 +36,7 @@ def get_welcome_settings() -> dict:
         },
         "Options": {
             "Options": (
-                ("text", "Changes to Options are saved automatically but require a restart of volt-gui to take effect."),
+                ("text", "Changes to Options are saved automatically as you type but only take effect after restarting volt-gui. This includes the theme, scaling, tray behavior, script location, and all other preferences."),
             )
         },
         "Proton": {
@@ -50,6 +51,13 @@ def get_welcome_settings() -> dict:
                 ("code", "volt %command%", "Steam (Launch Options):"),
                 ("code", "volt", "Lutris (Command prefix):"),
                 ("code", "volt flatpak run net.pcsx2.PCSX2", "Flatpak:"),
+            ),
+            "Script Location": (
+                ("text", "The default location /usr/local/bin/volt lets you type just 'volt' because /usr/local/bin is part of the system PATH. Writing to this location requires sudo, which the application requests automatically."),
+                ("text", "If your distro restricts writes to system directories, you can use a path like /tmp/volt or ~/volt instead. These do not require sudo but you must use the full path when launching:"),
+                ("code", "/tmp/volt %command%", "Steam with /tmp/volt:"),
+                ("code", "~/volt %command%", "Steam with ~/volt:"),
+                ("text", "You can change the script location in the Options tab. The application will only request elevated permissions when the chosen path requires it."),
             )
         }
     }
@@ -70,19 +78,20 @@ def create_welcome_window_widget() -> QMainWindow:
     stacked_widget = QStackedWidget()
     for section_name, section_data in welcome_settings.items():
         stacked_widget.addWidget(create_tab_content_widget(section_name, section_data, True)["tab"])
-    content_layout.addWidget(create_sidebar_widget(tuple(welcome_settings.keys()), stacked_widget))
+    content_layout.addWidget(create_simple_sidebar_widget(tuple(welcome_settings.keys()), stacked_widget))
     content_layout.addWidget(stacked_widget, 1)
     main_layout.addLayout(content_layout, 1)
     button_container = QWidget()
     button_container.setProperty("buttonContainer", True)
     button_layout = QHBoxLayout(button_container)
-    button_layout.setContentsMargins(12, 8, 12, 8)
+    button_layout.setContentsMargins(8, 8, 8, 8)
+    button_layout.setSpacing(8)
+    button_layout.setAlignment(Qt.AlignVCenter)
     close_button = QPushButton("Close")
-    close_button.setMinimumSize(90, 40)
-    close_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    close_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
     close_button.clicked.connect(window.close)
     button_layout.addStretch(1)
-    button_layout.addWidget(close_button)
+    button_layout.addWidget(close_button, 0, Qt.AlignVCenter)
     button_layout.addStretch(1)
     main_layout.addWidget(button_container)
     window.setCentralWidget(central_widget)

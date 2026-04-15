@@ -62,26 +62,16 @@ def find_opengl_mesa_device_at_index(device_index: int):
 
 def find_opengl_mesa_devices() -> tuple:
     if not has_executable_in_path("glxinfo"): return ()
-    result = []
-    for device_index in range(5):
-        device_result = find_opengl_mesa_device_at_index(device_index)
-        if device_result is not None: result.append(device_result)
-    return tuple(result)
+    return tuple(result for result in (find_opengl_mesa_device_at_index(device_index) for device_index in range(5)) if result is not None)
 
 
 def build_deduplicated_device_names(detected_devices: tuple) -> tuple:
-    seen = {}
-    for pair in detected_devices:
-        seen[pair[0]] = None
-    return tuple(seen.keys())
+    return tuple(dict.fromkeys(pair[0] for pair in detected_devices).keys())
 
 
 def build_device_map_from_detected(detected_devices: tuple) -> dict:
     if len(detected_devices) == 0: return {}
-    result = {}
-    for pair in reversed(detected_devices):
-        result[pair[0]] = pair[1]
-    return result
+    return {pair[0]: pair[1] for pair in reversed(detected_devices)}
 
 
 def build_deduplicated_device_result(detected_devices: tuple) -> dict:
@@ -92,16 +82,11 @@ def build_deduplicated_device_result(detected_devices: tuple) -> dict:
 
 
 def find_opengl_devices_sync() -> dict:
-    default_device = find_opengl_device_from_environment(None)
-    nvidia_device = find_opengl_device_from_environment({"__GLX_VENDOR_LIBRARY_NAME": "nvidia"})
-    mesa_devices = find_opengl_mesa_devices()
-    all_detected = []
-    if default_device is not None: all_detected.append(default_device)
-    if nvidia_device is not None: all_detected.append(nvidia_device)
-    for mesa_device in mesa_devices: all_detected.append(mesa_device)
-    all_detected.append(("llvmpipe (software rendering)", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "LIBGL_ALWAYS_SOFTWARE": "1"}))
-    all_detected.append(("zink", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "MESA_LOADER_DRIVER_OVERRIDE": "zink", "LIBGL_KOPPER_DRI2": "1"}))
-    return build_deduplicated_device_result(tuple(all_detected))
+    return build_deduplicated_device_result(
+        tuple(device for device in (find_opengl_device_from_environment(None), find_opengl_device_from_environment({"__GLX_VENDOR_LIBRARY_NAME": "nvidia"})) if device is not None)
+        + find_opengl_mesa_devices()
+        + (("llvmpipe (software rendering)", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "LIBGL_ALWAYS_SOFTWARE": "1"}), ("zink", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "MESA_LOADER_DRIVER_OVERRIDE": "zink", "LIBGL_KOPPER_DRI2": "1"}))
+    )
 
 
 def find_opengl_devices() -> dict:
@@ -159,12 +144,7 @@ def find_vulkan_devices_sync() -> dict:
     process_instance.start("vulkaninfo")
     if not process_instance.waitForFinished(10000): return {"devices": (), "device_map": {}}
     device_entries = parse_vulkan_device_entries(process_instance.readAllStandardOutput().data().decode())
-    device_names = []
-    device_map = {}
-    for entry in device_entries:
-        device_names.append(entry[0])
-        device_map[entry[0]] = entry[1]
-    return {"devices": tuple(device_names), "device_map": device_map}
+    return {"devices": tuple(entry[0] for entry in device_entries), "device_map": {entry[0]: entry[1] for entry in device_entries}}
 
 
 def find_vulkan_devices() -> dict:

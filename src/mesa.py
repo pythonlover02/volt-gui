@@ -1787,7 +1787,7 @@ def get_mesa_settings() -> dict:
         "gallium_overlay_update_period": {
             "label": "Gallium Overlay Update Period",
             "description": "Update period in seconds for the Gallium HUD overlay.",
-            "inputs": "number (0=realtime, 0.1=0.1, 0.25=0.25, 0.5=0.5, 1.0=1.0, 2.0)=2.0)",
+            "inputs": "number (0=realtime, 0.1=0.1, 0.25=0.25, 0.5=0.5, 1.0=1.0, 2.0=2.0",
             "output": ("environment_variable", "GALLIUM_HUD_PERIOD", "", "", ""),
         },
         "gallium_overlay_opacity": {
@@ -2425,6 +2425,54 @@ def get_mesa_settings() -> dict:
             "description": "NV cooperative matrix2 extension in RADV.",
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "radv_cooperative_matrix2_nv", "", "", ""),
+        },
+        "radv_experimental_bfloat16": {
+            "label": "RADV Experimental BFloat16",
+            "description": "Bfloat16 cooperative matrix support on GFX11-11.5.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "bfloat16", ","),
+        },
+        "radv_experimental_emulate_ray_tracing": {
+            "label": "RADV Experimental Emulate Ray Tracing",
+            "description": "Force ray-tracing to be emulated in software on GFX10_3+ and enable rt extensions on older hardware.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "emulate_rt", ","),
+        },
+        "radv_experimental_host_image_copy": {
+            "label": "RADV Experimental Host Image Copy",
+            "description": "Experimental VK_EXT_host_image_copy implementation on GFX10+.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "hic", ","),
+        },
+        "radv_experimental_sparse": {
+            "label": "RADV Experimental Sparse",
+            "description": "Experimental sparse binding and sparse residency on GPUs where it is not supported by default (pre Polaris).",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "sparse", ","),
+        },
+        "radv_experimental_transfer_queue": {
+            "label": "RADV Experimental Transfer Queue",
+            "description": "Experimental transfer queue support on GFX9+ (not yet spec compliant).",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "transfer_queue", ","),
+        },
+        "radv_experimental_video_decode": {
+            "label": "RADV Experimental Video Decode",
+            "description": "Experimental video decoding support on GFX6-9.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "video_decode", ","),
+        },
+        "radv_experimental_video_encode": {
+            "label": "RADV Experimental Video Encode",
+            "description": "Experimental video encoding support on GFX6-9.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "video_encode", ","),
+        },
+        "radv_experimental_descriptor_heap": {
+            "label": "RADV Experimental Descriptor Heap",
+            "description": "Experimental VK_EXT_descriptor_heap support. Not enabled by default due to limited test coverage.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "RADV_EXPERIMENTAL", "", "heap", ","),
         },
         "radv_debug_llvm": {
             "label": "RADV Debug LLVM",

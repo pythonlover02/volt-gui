@@ -473,7 +473,7 @@ def get_mangohud_settings() -> dict:
         "gpu_list": {
             "label": "GPU List",
             "description": "GPU indices to monitor.",
-            "inputs": "0=0, 1=1, 0=0, 1=1",
+            "inputs": "0=0, 1=1",
             "output": ("environment_variable", "MANGOHUD_CONFIG", "gpu_list=", "", ","),
         },
         "pci_device": {
@@ -593,7 +593,7 @@ def get_mangohud_settings() -> dict:
         "device_battery": {
             "label": "Device Battery",
             "description": "Show external device battery levels.",
-            "inputs": "gamepad=gamepad, mouse=mouse, gamepad=gamepad, mouse=mouse",
+            "inputs": "gamepad=gamepad, mouse=mouse",
             "output": ("environment_variable", "MANGOHUD_CONFIG", "device_battery=", "", ","),
         },
         "device_battery_icon": {

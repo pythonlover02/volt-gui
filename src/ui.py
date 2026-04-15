@@ -3,6 +3,11 @@ from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QCursor, QFont
 from database import *
 from detection import *
+from themes import *
+
+
+def get_sidebar_width() -> int:
+    return 200
 
 
 def create_line_edit_widget(is_locked: bool) -> QLineEdit:
@@ -50,12 +55,12 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
         lock_label = QLabel(lock_status["message"])
         lock_label.setWordWrap(True)
         lock_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        lock_label.setStyleSheet("color: #686868; font-size: 9pt;")
+        lock_label.setStyleSheet("color: #585858; font-size: 9pt;")
         card_layout.addWidget(lock_label)
     description_label = QLabel(get_setting_description(category_name, setting_key))
     description_label.setWordWrap(True)
     description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    description_label.setStyleSheet("color: #686868; font-size: 9pt;")
+    description_label.setStyleSheet("color: #585858; font-size: 9pt;")
     card_layout.addWidget(description_label)
     inputs_text = get_setting_inputs(category_name, setting_key)
     if inputs_text != "dynamic":
@@ -65,7 +70,7 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
         inputs_label = QLabel(display_text)
         inputs_label.setWordWrap(True)
         inputs_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        inputs_label.setStyleSheet("color: #505050; font-size: 8pt; font-family: monospace;")
+        inputs_label.setStyleSheet("color: #404040; font-size: 8pt; font-family: monospace;")
         card_layout.addWidget(inputs_label)
     else:
         api_type = "opengl" if setting_key == "opengl_rendering_device" else "vulkan"
@@ -75,7 +80,7 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
         inputs_label = QLabel(display_text)
         inputs_label.setWordWrap(True)
         inputs_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        inputs_label.setStyleSheet("color: #505050; font-size: 8pt; font-family: monospace;")
+        inputs_label.setStyleSheet("color: #404040; font-size: 8pt; font-family: monospace;")
         input_widget.device_label = inputs_label
         card_layout.addWidget(inputs_label)
     return {"card": card, "widgets": {"main": input_widget, "category": category_name, "setting": setting_key}}
@@ -102,13 +107,12 @@ def process_copy_button_action(copy_button, clipboard_text: str) -> None:
     return None
 
 
-def get_default_widget_height() -> int:
-    reference = QLineEdit()
-    return reference.sizeHint().height()
+def get_copy_button_width() -> int:
+    return 70
 
 
-def build_copy_button_stylesheet(button_size: int) -> str:
-    return "QPushButton { min-width: " + str(button_size) + "px; max-width: " + str(button_size) + "px; min-height: " + str(button_size) + "px; max-height: " + str(button_size) + "px; padding: 0px; font-size: 10pt; font-weight: bold; border-left: 2px solid transparent; } QPushButton:hover { border-left: 2px solid palette(highlight); }"
+def build_copy_button_stylesheet(button_width: int, button_height: int) -> str:
+    return "QPushButton { min-width: " + str(button_width) + "px; max-width: " + str(button_width) + "px; min-height: " + str(button_height) + "px; max-height: " + str(button_height) + "px; padding: 0px; font-size: 10pt; font-weight: bold; border: none; border-left: 3px solid transparent; border-radius: 6px; } QPushButton:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
 
 
 def create_code_block_widget(code_text: str) -> QFrame:
@@ -128,13 +132,12 @@ def create_code_block_widget(code_text: str) -> QFrame:
     text_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     text_edit.document().setDocumentMargin(0)
     text_edit.setFont(build_monospace_font())
-    widget_height = get_default_widget_height()
-    text_edit.setFixedHeight(widget_height)
-    text_edit.setStyleSheet("QTextEdit { background-color: #242424; color: #C0C0C0; border: none; border-left: 2px solid transparent; padding: 8px 12px; selection-background-color: #505050; } QTextEdit:hover { border-left: 2px solid palette(highlight); }")
+    text_edit.setFixedHeight(get_standard_button_height())
+    text_edit.setStyleSheet("QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }")
     copy_button = QPushButton("Copy")
     copy_button.setCursor(QCursor(Qt.PointingHandCursor))
-    copy_button.setFixedSize(widget_height, widget_height)
-    copy_button.setStyleSheet(build_copy_button_stylesheet(widget_height))
+    copy_button.setFixedSize(get_copy_button_width(), get_standard_button_height())
+    copy_button.setStyleSheet(build_copy_button_stylesheet(get_copy_button_width(), get_standard_button_height()))
     copy_button.clicked.connect(lambda: process_copy_button_action(copy_button, code_text))
     layout.addWidget(text_edit, 1)
     layout.addWidget(copy_button, 0)
@@ -145,11 +148,10 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
-    card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+    card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
     layout = QVBoxLayout(card)
     layout.setContentsMargins(14, 12, 14, 12)
     layout.setSpacing(6)
-    layout.setSizeConstraint(QLayout.SetMinimumSize)
     title_label = QLabel(label_text)
     title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
     title_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
@@ -158,14 +160,14 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
         description_label = QLabel(card_data)
         description_label.setWordWrap(True)
         description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        description_label.setStyleSheet("color: #686868; font-size: 9pt;")
+        description_label.setStyleSheet("color: #585858; font-size: 9pt;")
         layout.addWidget(description_label)
         return card
     if isinstance(card_data, dict):
         description_label = QLabel(card_data.get("description", ""))
         description_label.setWordWrap(True)
         description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        description_label.setStyleSheet("color: #686868; font-size: 9pt;")
+        description_label.setStyleSheet("color: #585858; font-size: 9pt;")
         layout.addWidget(description_label)
         return card
     if isinstance(card_data, tuple):
@@ -174,13 +176,13 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
                 text_label = QLabel(item_entry[1])
                 text_label.setWordWrap(True)
                 text_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
-                text_label.setStyleSheet("color: #686868; font-size: 9pt;")
+                text_label.setStyleSheet("color: #585858; font-size: 9pt;")
                 layout.addWidget(text_label)
             elif item_entry[0] == "code":
                 if len(item_entry) > 2 and item_entry[2] != "":
                     code_label = QLabel(item_entry[2])
                     code_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
-                    code_label.setStyleSheet("color: #686868; font-size: 9pt; margin-top: 4px;")
+                    code_label.setStyleSheet("color: #585858; font-size: 9pt; margin-top: 4px;")
                     layout.addWidget(code_label)
                 layout.addWidget(create_code_block_widget(item_entry[1]))
         return card
@@ -188,13 +190,17 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
 
 
 def process_container_relayout(container_widget) -> None:
-    layout = container_widget.layout()
-    if layout is None: return None
-    width = container_widget.width()
-    if width <= 0: return None
-    height = layout.heightForWidth(width)
-    if height >= 0:
-        container_widget.setFixedHeight(height)
+    if container_widget.layout() is None: return None
+    if container_widget.width() <= 0: return None
+    if container_widget.layout().heightForWidth(container_widget.width()) < 0: return None
+    container_widget.setFixedHeight(container_widget.layout().heightForWidth(container_widget.width()))
+    return None
+
+
+def process_scroll_area_resize_sync(event, original_resize_handler, scroll_area_widget, content_container_widget) -> None:
+    original_resize_handler(event)
+    content_container_widget.setFixedWidth(scroll_area_widget.viewport().width())
+    process_container_relayout(content_container_widget)
     return None
 
 
@@ -203,12 +209,7 @@ def create_scrollable_content_area(container_widget) -> QScrollArea:
     scroll_area.setWidgetResizable(False)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     original_resize = scroll_area.resizeEvent
-    def sync_width(event):
-        original_resize(event)
-        viewport_width = scroll_area.viewport().width()
-        container_widget.setFixedWidth(viewport_width)
-        process_container_relayout(container_widget)
-    scroll_area.resizeEvent = sync_width
+    scroll_area.resizeEvent = lambda event: process_scroll_area_resize_sync(event, original_resize, scroll_area, container_widget)
     scroll_area.setWidget(container_widget)
     return scroll_area
 
@@ -262,15 +263,45 @@ def create_options_tab_content_widget() -> dict:
     return {"tab": widget, "widgets": options_widgets}
 
 
-def create_sidebar_widget(tab_names: tuple, stacked_widget) -> QListWidget:
-    sidebar = QListWidget()
-    sidebar.setFixedWidth(160)
-    sidebar.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    sidebar.setFocusPolicy(Qt.NoFocus)
+def create_sidebar_tab_list(tab_names: tuple, stacked_widget) -> QListWidget:
+    tab_list = QListWidget()
+    tab_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    tab_list.setFocusPolicy(Qt.NoFocus)
     for tab_name in tab_names:
         item = QListWidgetItem(tab_name)
-        item.setSizeHint(item.sizeHint().__class__(item.sizeHint().width(), 40))
-        sidebar.addItem(item)
-    sidebar.setCurrentRow(0)
-    sidebar.currentRowChanged.connect(stacked_widget.setCurrentIndex)
-    return sidebar
+        item.setSizeHint(item.sizeHint().__class__(item.sizeHint().width(), 36))
+        tab_list.addItem(item)
+    tab_list.setCurrentRow(0)
+    tab_list.currentRowChanged.connect(stacked_widget.setCurrentIndex)
+    return tab_list
+
+
+def get_header_vertical_margin() -> int:
+    return 14
+
+
+def create_simple_sidebar_widget(tab_names: tuple, stacked_widget) -> QWidget:
+    sidebar_container = QWidget()
+    sidebar_container.setFixedWidth(get_sidebar_width())
+    sidebar_layout = QVBoxLayout(sidebar_container)
+    sidebar_layout.setContentsMargins(0, 0, 0, 0)
+    sidebar_layout.setSpacing(0)
+    header_widget = QWidget()
+    header_widget.setStyleSheet("background-color: transparent;")
+    header_layout = QHBoxLayout(header_widget)
+    header_layout.setContentsMargins(14, get_header_vertical_margin(), 14, get_header_vertical_margin())
+    header_layout.setSpacing(0)
+    volt_label = QLabel("volt")
+    volt_label.setStyleSheet("font-weight: bold; font-size: 13pt; color: palette(highlight); background: transparent;")
+    gui_label = QLabel("-gui")
+    gui_label.setStyleSheet("font-weight: bold; font-size: 13pt; background: transparent;")
+    version_label = QLabel("v" + get_about_version())
+    version_label.setStyleSheet("font-size: 8pt; color: #9A9A9A; background: transparent;")
+    version_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    header_layout.addWidget(volt_label, 0)
+    header_layout.addWidget(gui_label, 0)
+    header_layout.addStretch()
+    header_layout.addWidget(version_label, 0)
+    sidebar_layout.addWidget(header_widget)
+    sidebar_layout.addWidget(create_sidebar_tab_list(tab_names, stacked_widget), 1)
+    return sidebar_container

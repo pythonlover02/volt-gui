@@ -17,11 +17,7 @@ def is_default_profile_path(file_path) -> bool:
 
 def find_all_profiles() -> tuple:
     if not Path(os.path.expanduser("~/.config/volt-gui")).exists(): return ("Default",)
-    result = ["Default"]
-    for profile_path in Path(os.path.expanduser("~/.config/volt-gui")).glob("config-*.ini"):
-        if is_default_profile_path(profile_path): continue
-        result.append(get_profile_name_from_path(profile_path))
-    return tuple(result)
+    return ("Default",) + tuple(get_profile_name_from_path(profile_path) for profile_path in Path(os.path.expanduser("~/.config/volt-gui")).glob("config-*.ini") if not is_default_profile_path(profile_path))
 
 
 def build_configuration_path(profile_name: str):

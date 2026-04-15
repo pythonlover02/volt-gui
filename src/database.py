@@ -20,8 +20,8 @@ def get_settings_database() -> dict:
         "Gamescope": get_gamescope_settings(),
         "MangoHud": get_mangohud_settings(),
         "LSFG": get_lsfg_settings(),
-        "Launch Options": get_launch_settings(),
         "Proton": get_proton_settings(),
+        "Launch Options": get_launch_settings(),
         "Options": get_options_settings(),
         "About": get_about_settings(),
     }
@@ -178,10 +178,7 @@ def format_environment_pair(key_value_pair: tuple) -> str:
 
 
 def build_environment_list_from_dict(environment_dict: dict) -> list:
-    result = []
-    for key_value in environment_dict.items():
-        result.append(format_environment_pair(key_value))
-    return result
+    return [format_environment_pair(key_value) for key_value in environment_dict.items()]
 
 
 def is_not_frozen_restricted_key(key_value_pair: tuple) -> bool:
@@ -189,15 +186,12 @@ def is_not_frozen_restricted_key(key_value_pair: tuple) -> bool:
 
 
 def filter_frozen_environment_variables(environment_variables: dict) -> dict:
-    if not getattr(sys, "frozen", False): return environment_variables
+    if getattr(sys, "frozen", False) is False: return environment_variables
     return dict(filter(is_not_frozen_restricted_key, environment_variables.items()))
 
 
 def build_filtered_path_string(path_value: str) -> str:
-    result = []
-    for path_entry in path_value.split(os.pathsep):
-        if getattr(sys, "_MEIPASS") not in path_entry: result.append(path_entry)
-    return os.pathsep.join(result)
+    return os.pathsep.join(path_entry for path_entry in path_value.split(os.pathsep) if getattr(sys, "_MEIPASS") not in path_entry)
 
 
 def filter_meipass_from_path(environment_variables: dict) -> dict:
@@ -262,10 +256,9 @@ def validate_setting_availability(category_name: str, setting_name: str) -> dict
     return {"locked": False, "message": ""}
 
 
-def process_file_write(file_path: str, file_content: str) -> bool:
-    if not os.access(os.path.dirname(file_path) or ".", os.W_OK): return False
-    open(file_path, "w").write(file_content)
-    return True
+def is_path_writable_without_elevation(file_path: str) -> bool:
+    if os.path.exists(file_path): return os.access(file_path, os.W_OK)
+    return os.access(os.path.dirname(file_path) or ".", os.W_OK)
 
 
 def parse_widget_value(widget) -> str:
@@ -393,22 +386,20 @@ def process_vulkan_render_into_environment(combo_widget, selected_value: str, en
 
 
 def build_gamescope_command_string(argument_collection: list) -> str:
-    gamescope_parts = [value for tab, value in argument_collection if tab == "Gamescope"]
-    other_parts = [value for tab, value in argument_collection if tab != "Gamescope"]
+    gamescope_parts = tuple(value for tab, value in argument_collection if tab == "Gamescope")
+    other_parts = tuple(value for tab, value in argument_collection if tab != "Gamescope")
     if len(other_parts) == 0: return " ".join(gamescope_parts)
     return " ".join(gamescope_parts) + " -- " + " ".join(other_parts)
 
 
-def build_launch_command_string(argument_collection: list) -> str:
+def build_launch_command_string(argument_collection: tuple) -> str:
     if len(argument_collection) == 0: return ""
     if argument_collection[0][1] == "gamescope": return build_gamescope_command_string(argument_collection)
     return " ".join(value for tab, value in argument_collection)
 
 
 def build_final_apply_arguments(environment_collection: dict, grouped_environment_collection: dict, argument_collection: list) -> tuple:
-    environment_arguments = []
-    for environment_key, environment_value in environment_collection.items():
-        environment_arguments.append(environment_key + "=" + environment_value)
+    environment_arguments = [environment_key + "=" + environment_value for environment_key, environment_value in environment_collection.items()]
     for target, group_data in grouped_environment_collection.items():
         if len(group_data["parts"]) > 0:
             environment_arguments.append(target + "=" + group_data["separator"].join(group_data["parts"]))
@@ -466,7 +457,7 @@ def format_input_pair_display(pair_text: str) -> str:
 
 
 def build_setting_values_display(inputs_text: str) -> str:
-    if is_toggle_setting_input(inputs_text): return "any value that isn\u2019t unset"
+    if is_toggle_setting_input(inputs_text) is True: return "any value that isn\u2019t unset"
     return ", ".join(format_input_pair_display(pair) for pair in inputs_text.split(",") if pair.strip() != "")
 
 

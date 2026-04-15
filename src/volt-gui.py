@@ -70,11 +70,9 @@ if __name__ == "__main__":
 
 
 def get_resolved_option_value(main_window, option_key: str) -> str:
-    widget = main_window.options_widgets.get(option_key)
-    if widget is None: return get_option_default_value(option_key)
-    text = widget.text().strip() if hasattr(widget, "text") else widget.currentText().strip()
-    if text == "": return get_option_default_value(option_key)
-    return text
+    if main_window.options_widgets.get(option_key) is None: return get_option_default_value(option_key)
+    if (main_window.options_widgets[option_key].text().strip() if hasattr(main_window.options_widgets[option_key], "text") else main_window.options_widgets[option_key].currentText().strip()) == "": return get_option_default_value(option_key)
+    return main_window.options_widgets[option_key].text().strip() if hasattr(main_window.options_widgets[option_key], "text") else main_window.options_widgets[option_key].currentText().strip()
 
 
 def is_option_enabled(main_window, option_key: str) -> bool:
@@ -85,18 +83,16 @@ def get_persisted_option_value(option_key: str) -> str:
     if not build_options_path().exists(): return get_option_default_value(option_key)
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance.read(build_options_path())
-    value = parser_instance.get("Options", option_key, fallback=None)
-    if value is None or value.strip() == "": return get_option_default_value(option_key)
-    return value.strip()
+    if parser_instance.get("Options", option_key, fallback=None) is None: return get_option_default_value(option_key)
+    if parser_instance.get("Options", option_key, fallback="").strip() == "": return get_option_default_value(option_key)
+    return parser_instance.get("Options", option_key, fallback="").strip()
 
 
 def calculate_initial_scale() -> float:
-    raw = get_persisted_option_value("interface_scale_factor")
-    if raw is None or not str(raw).replace(".", "", 1).isdigit():
-        os.environ["QT_SCALE_FACTOR"] = "1.0"
-        return 1.0
-    os.environ["QT_SCALE_FACTOR"] = str(raw)
-    return float(raw)
+    if get_persisted_option_value("interface_scale_factor") is None: os.environ["QT_SCALE_FACTOR"] = "1.0"; return 1.0
+    if not str(get_persisted_option_value("interface_scale_factor")).replace(".", "", 1).isdigit(): os.environ["QT_SCALE_FACTOR"] = "1.0"; return 1.0
+    os.environ["QT_SCALE_FACTOR"] = str(get_persisted_option_value("interface_scale_factor"))
+    return float(get_persisted_option_value("interface_scale_factor"))
 
 
 def calculate_initial_theme() -> str:
@@ -120,36 +116,47 @@ def process_device_detection_complete(main_window, api_type: str) -> None:
     return None
 
 
-def create_profile_selector_widget(main_window) -> QFrame:
-    frame = QFrame()
-    frame.setFrameStyle(QFrame.Box)
-    frame.setLineWidth(1)
-    frame.setObjectName("profileFrame")
-    layout = QHBoxLayout(frame)
-    layout.setContentsMargins(8, 4, 8, 4)
-    layout.setSpacing(8)
-    label = QLabel("Profile:")
-    label.setMinimumWidth(60)
-    main_window.profile_selector = QComboBox()
-    main_window.profile_selector.setView(QListView())
-    main_window.profile_selector.setFixedHeight(40)
-    main_window.profile_selector.setMinimumWidth(200)
-    process_profile_list_update(main_window)
-    main_window.profile_selector.setCurrentText(main_window.current_profile)
-    main_window.profile_selector.currentTextChanged.connect(lambda profile_name: process_profile_change(main_window, profile_name))
-    main_window.profile_selector.setFocusPolicy(Qt.ClickFocus)
-    new_profile_button = QPushButton("New Profile")
-    new_profile_button.setMinimumSize(90, 40)
-    new_profile_button.clicked.connect(lambda: process_new_profile_save(main_window))
-    delete_profile_button = QPushButton("Delete Profile")
-    delete_profile_button.setMinimumSize(90, 40)
-    delete_profile_button.clicked.connect(lambda: process_current_profile_delete(main_window))
-    layout.addWidget(label)
-    layout.addWidget(main_window.profile_selector)
-    layout.addStretch()
-    layout.addWidget(new_profile_button)
-    layout.addWidget(delete_profile_button)
-    return frame
+def get_profile_action_new_label() -> str:
+    return "New Profile..."
+
+
+def get_profile_action_delete_label() -> str:
+    return "Delete Current"
+
+
+def is_profile_action_item(selected_text: str) -> bool:
+    if selected_text == get_profile_action_new_label(): return True
+    if selected_text == get_profile_action_delete_label(): return True
+    return False
+
+
+def create_main_sidebar_widget(tab_names: tuple, stacked_widget, main_window) -> QWidget:
+    sidebar_container = QWidget()
+    sidebar_container.setFixedWidth(get_sidebar_width())
+    sidebar_layout = QVBoxLayout(sidebar_container)
+    sidebar_layout.setContentsMargins(0, 0, 0, 0)
+    sidebar_layout.setSpacing(0)
+    header_widget = QWidget()
+    header_widget.setStyleSheet("background-color: transparent;")
+    header_layout = QHBoxLayout(header_widget)
+    header_layout.setContentsMargins(14, get_header_vertical_margin(), 14, get_header_vertical_margin())
+    header_layout.setSpacing(0)
+    volt_label = QLabel("volt")
+    volt_label.setStyleSheet("font-weight: bold; font-size: 13pt; color: palette(highlight); background: transparent;")
+    gui_label = QLabel("-gui")
+    gui_label.setStyleSheet("font-weight: bold; font-size: 13pt; background: transparent;")
+    version_label = QLabel("v" + get_about_version())
+    version_label.setStyleSheet("font-size: 8pt; color: #9A9A9A; background: transparent;")
+    version_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    header_layout.addWidget(volt_label, 0)
+    header_layout.addWidget(gui_label, 0)
+    header_layout.addStretch()
+    header_layout.addWidget(version_label, 0)
+    sidebar_layout.addWidget(header_widget)
+    tab_list = create_sidebar_tab_list(tab_names, stacked_widget)
+    sidebar_layout.addWidget(tab_list, 1)
+    main_window.sidebar_tab_list = tab_list
+    return sidebar_container
 
 
 def process_profile_list_update(main_window) -> None:
@@ -157,7 +164,30 @@ def process_profile_list_update(main_window) -> None:
     main_window.profile_selector.clear()
     for profile_name in find_all_profiles():
         main_window.profile_selector.addItem(profile_name)
+    main_window.profile_selector.insertSeparator(main_window.profile_selector.count())
+    main_window.profile_selector.addItem(get_profile_action_new_label())
+    main_window.profile_selector.addItem(get_profile_action_delete_label())
     main_window.profile_selector.blockSignals(False)
+    return None
+
+
+def process_profile_selector_restore(main_window) -> None:
+    main_window.profile_selector.blockSignals(True)
+    main_window.profile_selector.setCurrentText(main_window.current_profile)
+    main_window.profile_selector.blockSignals(False)
+    return None
+
+
+def process_profile_combo_change(main_window, selected_text: str) -> None:
+    if selected_text == get_profile_action_new_label():
+        process_profile_selector_restore(main_window)
+        process_new_profile_save(main_window)
+        return None
+    if selected_text == get_profile_action_delete_label():
+        process_profile_selector_restore(main_window)
+        process_current_profile_delete(main_window)
+        return None
+    process_profile_change(main_window, selected_text)
     return None
 
 
@@ -345,14 +375,19 @@ def process_application_options_load(main_window) -> None:
     return None
 
 
+def build_apply_command(volt_path: str, apply_arguments: tuple) -> list:
+    if is_path_writable_without_elevation(volt_path):
+        return ["/tmp/volt-helper", "-p", volt_path, "-e"] + list(apply_arguments)
+    return ["pkexec", "/tmp/volt-helper", "-p", volt_path, "-e"] + list(apply_arguments)
+
+
 def process_all_settings_apply(main_window) -> None:
     main_window.all_widgets["main_apply_button"].setEnabled(False)
     process_application_options_save(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
-    process_file_write("/tmp/volt-helper", get_application_helper_script_content())
+    open("/tmp/volt-helper", "w").write(get_application_helper_script_content())
     os.chmod("/tmp/volt-helper", (stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH))
-    apply_arguments = build_apply_results_from_widgets(main_window.all_widgets)
-    command = ["pkexec", "/tmp/volt-helper", "-p", main_window.volt_path, "-e"] + list(apply_arguments)
+    command = build_apply_command(main_window.volt_path, build_apply_results_from_widgets(main_window.all_widgets))
     process_instance = QProcess(main_window)
     process_instance.setEnvironment(build_environment_list_from_dict(build_clean_process_environment()))
     process_instance.start(command[0], command[1:])
@@ -509,9 +544,13 @@ def process_search_filter(main_window, query: str) -> None:
 def create_search_bar_widget(main_window) -> QLineEdit:
     search_bar = QLineEdit()
     search_bar.setPlaceholderText("Search settings...")
-    search_bar.setFixedHeight(40)
+    search_bar.setFixedHeight(get_standard_button_height())
     search_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    search_bar.setStyleSheet("QLineEdit { border: 1px solid palette(highlight); } QLineEdit:hover { border: 1px solid palette(highlight); } QLineEdit:focus { border: 1px solid palette(highlight); }")
+    search_bar.setStyleSheet(
+        "QLineEdit { background-color: palette(base); color: palette(text); border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: palette(highlight); border-radius: 6px; }"
+        "QLineEdit:hover { background-color: palette(alternate-base); border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
+        "QLineEdit:focus { background-color: palette(alternate-base); border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
+    )
     main_window.search_debounce_timer = QTimer()
     main_window.search_debounce_timer.setSingleShot(True)
     main_window.search_debounce_timer.setInterval(150)
@@ -556,7 +595,6 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)
     main_layout.setSpacing(8)
-    main_layout.addWidget(create_profile_selector_widget(window))
     content_layout = QHBoxLayout()
     content_layout.setContentsMargins(0, 0, 0, 0)
     content_layout.setSpacing(0)
@@ -566,28 +604,56 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     options_widgets = {}
     for tab_name in get_all_tab_names():
         process_create_tab(stacked_widget, all_widgets, all_cards, options_widgets, window, tab_name)
-    content_layout.addWidget(create_sidebar_widget(get_all_tab_names(), stacked_widget))
-    content_layout.addWidget(stacked_widget, 1)
+    content_layout.addWidget(create_main_sidebar_widget(get_all_tab_names(), stacked_widget, window))
+    right_content_widget = QWidget()
+    right_content_layout = QVBoxLayout(right_content_widget)
+    right_content_layout.setContentsMargins(0, 0, 0, 0)
+    right_content_layout.setSpacing(0)
+    window.search_bar = create_search_bar_widget(window)
+    search_wrapper = QWidget()
+    search_wrapper_layout = QVBoxLayout(search_wrapper)
+    search_wrapper_layout.setContentsMargins(12, get_header_vertical_margin(), 8, 8)
+    search_wrapper_layout.setSpacing(0)
+    search_wrapper_layout.addWidget(window.search_bar)
+    right_content_layout.addWidget(search_wrapper)
+    right_content_layout.addWidget(stacked_widget, 1)
+    content_layout.addWidget(right_content_widget, 1)
     main_layout.addLayout(content_layout, 1)
-    button_container = QWidget()
-    button_container.setProperty("buttonContainer", True)
-    button_layout = QHBoxLayout(button_container)
-    button_layout.setContentsMargins(12, 8, 12, 8)
+    bottom_bar_widget = QWidget()
+    bottom_bar_widget.setProperty("buttonContainer", True)
+    bottom_bar_layout = QHBoxLayout(bottom_bar_widget)
+    bottom_bar_layout.setContentsMargins(8, 8, 8, 8)
+    bottom_bar_layout.setSpacing(8)
+    bottom_bar_layout.setAlignment(Qt.AlignVCenter)
+    profile_combo = QComboBox()
+    profile_combo.setView(QListView())
+    profile_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    profile_combo.setFocusPolicy(Qt.ClickFocus)
+    window.profile_selector = profile_combo
     apply_button = QPushButton("Apply")
-    apply_button.setMinimumSize(90, 40)
-    apply_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    apply_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
     apply_button.clicked.connect(lambda: process_all_settings_apply(window))
-    button_layout.addStretch(1)
-    button_layout.addWidget(apply_button)
-    button_layout.addStretch(1)
-    main_layout.addWidget(button_container)
+    combo_container = QWidget()
+    combo_container.setFixedWidth(get_sidebar_width() - 32)
+    combo_container_layout = QHBoxLayout(combo_container)
+    combo_container_layout.setContentsMargins(0, 0, 0, 0)
+    combo_container_layout.setSpacing(0)
+    combo_container_layout.addStretch(1)
+    combo_container_layout.addWidget(profile_combo, 0, Qt.AlignVCenter)
+    combo_container_layout.addStretch(1)
+    bottom_bar_layout.addWidget(combo_container, 0, Qt.AlignVCenter)
+    bottom_bar_layout.addStretch(1)
+    bottom_bar_layout.addWidget(apply_button, 0, Qt.AlignVCenter)
+    bottom_bar_layout.addStretch(1)
+    main_layout.addWidget(bottom_bar_widget)
     all_widgets["main_apply_button"] = apply_button
     window.setCentralWidget(central_widget)
     window.all_widgets = all_widgets
     window.all_cards = all_cards
     window.options_widgets = options_widgets
-    window.search_bar = create_search_bar_widget(window)
-    main_layout.insertWidget(1, window.search_bar)
+    process_profile_list_update(window)
+    window.profile_selector.setCurrentText(window.current_profile)
+    window.profile_selector.currentTextChanged.connect(lambda text: process_profile_combo_change(window, text))
     for option_key in options_widgets:
         widget = options_widgets[option_key]
         if hasattr(widget, "textChanged"):
