@@ -202,10 +202,7 @@ Based on documentation and references from:
 - [lsfg-vk Github - Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki)
 - [Mesa Documentation - Environment Variables](https://docs.mesa3d.org/envvars.html#environment-variables)
 - [FreeDesktop - Dri Configuration Options](https://dri.freedesktop.org/wiki/ConfigurationOptions/)
-- [NVIDIA 580 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/580.82.09/README/)
-- [NVIDIA 570 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/570.153.02/README/)
-- [NVIDIA 470 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/470.256.02/README/)
-- [NVIDIA 390 Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/390.157/README/)
+- [NVIDIA Drivers - Documentation](https://download.nvidia.com/XFree86/Linux-x86_64/)
 - [Proton-CachyOS Github](https://github.com/CachyOS/proton-cachyos)
 - Additionally, sometimes i had to read code from Open Source projects to check how some options work.
 
