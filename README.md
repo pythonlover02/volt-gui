@@ -67,7 +67,7 @@ These will be passed to the executed program. Example:
 ## Additional Requirements:
 
 - [mangohud](https://github.com/flightlessmango/MangoHud) is required to use the MangoHud tab. Both the native and Flatpak versions are supported.
-- [gamescope](https://github.com/ValveSoftware/gamescope) is required to use the Gamescope tab.
+- [gamescope](https://github.com/ValveSoftware/gamescope) is required to use the Gamescope tab. . Both the native and Flatpak versions are supported.
 - [lsfg](https://github.com/PancakeTAS/lsfg-vk) is required to use the LSFG tab. Both the native and Flatpak versions are supported.
 - `glxinfo` is required for OpenGL device detection in the Render Selector. Without it, no OpenGL devices will be detected and the selector will be empty, though manual values can still be typed.
 - `vulkaninfo` and the `vulkan-mesa-layers` package are required for Vulkan device detection in the Render Selector. Without them, no Vulkan devices will be detected and the selector will be empty, though manual values can still be typed.
