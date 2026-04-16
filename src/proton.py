@@ -104,17 +104,35 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_FSR4_INDICATOR", "", "", ""),
         },
+        "fsr4_watermark": {
+            "label": "FSR4 Watermark",
+            "description": "Standalone FSR4 watermark at the top left of the screen to verify FSR4 is active. Only available on Proton-EM 10.0-2F and higher.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "FSR4_WATERMARK", "", "", ""),
+        },
         "proton_fsr4_rdna3_upgrade": {
             "label": "FSR4 RDNA3 Upgrade",
             "description": "Identical to FSR4 Upgrade but for RDNA3 GPUs. Enables required compatibility options and downloads version 4.0.0 of the DLL by default.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_FSR4_RDNA3_UPGRADE", "", "", ""),
         },
+        "dxil_spirv_config_rdna3_workaround": {
+            "label": "DXIL SPIRV RDNA3 Workaround",
+            "description": "Workaround for graphical glitches when running FSR4 on RDNA3 GPUs in FP16 mode. Required alongside FSR4 Upgrade on RDNA3 hardware.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "DXIL_SPIRV_CONFIG", "", "wmma_rdna3_workaround", ","),
+        },
         "proton_mlfg_upgrade": {
             "label": "MLFG Upgrade",
             "description": "Enables the use of MLFG when amdxcffx64.dll >= 4.0.3. Automatically enabled with FSR4 Upgrade options. Set to 0 to disable while still using FSR4.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_MLFG_UPGRADE", "", "", ""),
+        },
+        "mlfg_watermark": {
+            "label": "MLFG Watermark",
+            "description": "Standalone MLFG watermark to verify redstone frame generation is active. Only available on Proton-EM 10.0-33 and higher.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "MLFG_WATERMARK", "", "", ""),
         },
         "proton_no_d3d11": {
             "label": "No D3D11",
