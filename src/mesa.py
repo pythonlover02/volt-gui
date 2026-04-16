@@ -1,7 +1,6 @@
 def get_mesa_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": (),
         "opengl_vertical_synchronization": {
             "label": "OpenGL VSync",
             "description": "VSync behavior for Mesa OpenGL drivers.",

@@ -1,7 +1,6 @@
 def get_proton_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": (),
         "proton_use_wined3d": {
             "label": "Use wined3d",
             "description": "Use OpenGL-based wined3d instead of Vulkan-based DXVK for d3d11, d3d10, and d3d9.",

@@ -1,7 +1,6 @@
 def get_vkd3d_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": (),
         "vkd3d_frame_rate": {
             "label": "Frame Rate Limit",
             "description": "Limit the frame rate. 0 uncaps the frame rate; any positive integer limits rendering to that many frames per second. Note: starting from vkd3d-proton v2.14+, DXVK_FRAME_RATE is no longer supported for DX12 games; only VKD3D_FRAME_RATE remains.",

@@ -1,7 +1,6 @@
 def get_render_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": ("glxinfo", "vulkaninfo"),
         "opengl_rendering_device": {
             "label": "OpenGL Rendering Device",
             "description": "GPU used for OpenGL rendering. Enter the number shown next to the detected device.",

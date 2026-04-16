@@ -47,7 +47,6 @@ def parse_opengl_device_from_output(command_output: str):
 
 
 def find_opengl_device_from_environment(extra_environment):
-    if not has_executable_in_path("glxinfo"): return None
     command_output = process_opengl_info_command_sync(extra_environment)
     if command_output is None: return None
     device_name = parse_opengl_device_from_output(command_output)
@@ -61,7 +60,6 @@ def find_opengl_mesa_device_at_index(device_index: int):
 
 
 def find_opengl_mesa_devices() -> tuple:
-    if not has_executable_in_path("glxinfo"): return ()
     return tuple(result for result in (find_opengl_mesa_device_at_index(device_index) for device_index in range(5)) if result is not None)
 
 
@@ -138,7 +136,6 @@ def parse_vulkan_device_entries(command_output: str) -> tuple:
 
 
 def find_vulkan_devices_sync() -> dict:
-    if not has_executable_in_path("vulkaninfo"): return {"devices": (), "device_map": {}}
     process_instance = QProcess()
     process_instance.setEnvironment(build_environment_list_from_dict(build_clean_process_environment()))
     process_instance.start("vulkaninfo")

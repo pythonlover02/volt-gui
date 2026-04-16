@@ -1,7 +1,6 @@
 def get_gamescope_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": ("gamescope",),
         "gamescope": {
             "label": "Gamescope",
             "description": "Gamescope compositing window manager.",

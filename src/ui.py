@@ -34,7 +34,6 @@ def create_render_selector_widget(setting_name: str, is_locked: bool) -> QLineEd
 
 
 def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
-    lock_status = validate_setting_availability(category_name, setting_key)
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
@@ -47,16 +46,10 @@ def create_setting_card_widget(category_name: str, setting_key: str) -> dict:
     title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     card_layout.addWidget(title_label)
     if is_render_selector_setting(category_name, setting_key):
-        input_widget = create_render_selector_widget(setting_key, lock_status["locked"])
+        input_widget = create_render_selector_widget(setting_key, False)
     else:
-        input_widget = create_line_edit_widget(lock_status["locked"])
+        input_widget = create_line_edit_widget(False)
     card_layout.addWidget(input_widget)
-    if lock_status["locked"] and lock_status["message"] != "":
-        lock_label = QLabel(lock_status["message"])
-        lock_label.setWordWrap(True)
-        lock_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        lock_label.setStyleSheet("color: #585858; font-size: 9pt;")
-        card_layout.addWidget(lock_label)
     description_label = QLabel(get_setting_description(category_name, setting_key))
     description_label.setWordWrap(True)
     description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)

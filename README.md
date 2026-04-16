@@ -64,15 +64,13 @@ These will be passed to the executed program. Example:
 - fuse or fuse3
 - wget
 
-## Additional requirements for some Options:
+## Additional Requirements:
 
-If this software is not provided, its options will be locked.
-
-- [mangohud](https://github.com/flightlessmango/MangoHud) in the case you want to make use of the MangoHud Settings. Both the native or the Flatpak version satisfy the dependency.
-- [gamescope](https://github.com/ValveSoftware/gamescope) in the case you want to make use of the Gamescope Settings.
-- [lsfg](https://github.com/PancakeTAS/lsfg-vk) in the case you want to make use of the LSFG Frame Gen Settings. Both the native or the Flatpak version satisfy the dependency.
-- `glxinfo` is required to use the OpenGL Render Selector.
-- `vulkaninfo` and the `vulkan mesa layer` are required to use the Vulkan Render Selector.
+- [mangohud](https://github.com/flightlessmango/MangoHud) is required to use the MangoHud tab. Both the native and Flatpak versions are supported.
+- [gamescope](https://github.com/ValveSoftware/gamescope) is required to use the Gamescope tab.
+- [lsfg](https://github.com/PancakeTAS/lsfg-vk) is required to use the LSFG tab. Both the native and Flatpak versions are supported.
+- `glxinfo` is required for OpenGL device detection in the Render Selector. Without it, no OpenGL devices will be detected and the selector will be empty, though manual values can still be typed.
+- `vulkaninfo` and the `vulkan-mesa-layers` package are required for Vulkan device detection in the Render Selector. Without them, no Vulkan devices will be detected and the selector will be empty, though manual values can still be typed.
 
 ## Installation:
 

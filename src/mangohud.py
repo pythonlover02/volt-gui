@@ -1,7 +1,6 @@
 def get_mangohud_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": ("mangohud",),
         "mangohud_argument": {
             "label": "MangoHud Argument",
             "description": "MangoHud command prefix.",

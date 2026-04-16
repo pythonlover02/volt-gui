@@ -1,5 +1,4 @@
-import sys, os, glob
-from PySide6.QtCore import QProcess
+import sys, os
 from mesa import *
 from nvidia import *
 from render import *
@@ -206,58 +205,6 @@ def filter_meipass_from_path(environment_variables: dict) -> dict:
 
 def build_clean_process_environment() -> dict:
     return filter_meipass_from_path(filter_frozen_environment_variables(os.environ.copy()))
-
-
-def is_executable_file(file_path: str) -> bool:
-    return os.access(file_path, os.X_OK)
-
-
-def has_executable_in_directory(search_directory: str, executable_name: str) -> bool:
-    for match_path in glob.glob(os.path.join(search_directory, executable_name + "*")):
-        if is_executable_file(match_path): return True
-    return False
-
-
-def has_executable_in_path(executable_name: str) -> bool:
-    if has_executable_in_directory("/usr/bin/", executable_name): return True
-    return has_executable_in_directory("/usr/local/bin/", executable_name)
-
-
-def is_available_in_flatpak(program_name: str) -> bool:
-    process_instance = QProcess()
-    process_instance.setEnvironment(build_environment_list_from_dict(build_clean_process_environment()))
-    process_instance.start("flatpak", ["list"])
-    if not process_instance.waitForFinished(10000): return False
-    return program_name.lower() in process_instance.readAllStandardOutput().data().decode().lower()
-
-
-def is_executable_available(executable_name: str) -> bool:
-    if has_executable_in_path(executable_name): return True
-    return is_available_in_flatpak(executable_name)
-
-
-def is_any_executable_available(executable_tuple: tuple) -> bool:
-    for executable_name in executable_tuple:
-        if is_executable_available(executable_name): return True
-    return False
-
-
-def build_missing_executables_message(executable_tuple: tuple) -> str:
-    return " + ".join(executable_tuple) + " not found"
-
-
-def validate_setting_availability(category_name: str, setting_name: str) -> dict:
-    tab_data = get_settings_database().get(category_name)
-    if not isinstance(tab_data, dict): return {"locked": False, "message": ""}
-    executable_required = tab_data.get("_executable_required")
-    if executable_required is not None and isinstance(executable_required, tuple) and len(executable_required) > 0 and not is_any_executable_available(executable_required):
-        return {"locked": True, "message": build_missing_executables_message(executable_required)}
-    if not is_render_selector_setting(category_name, setting_name): return {"locked": False, "message": ""}
-    if setting_name == "opengl_rendering_device" and not is_executable_available("glxinfo"):
-        return {"locked": True, "message": "glxinfo not available"}
-    if setting_name == "vulkan_rendering_device" and not is_executable_available("vulkaninfo"):
-        return {"locked": True, "message": "vulkaninfo not available"}
-    return {"locked": False, "message": ""}
 
 
 def is_path_writable_without_elevation(file_path: str) -> bool:

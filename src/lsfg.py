@@ -1,7 +1,6 @@
 def get_lsfg_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": ("lsfg",),
         "lsfg": {
             "label": "LSFG",
             "description": "LSFG frame generation activation variable.",

@@ -1,7 +1,6 @@
 def get_options_settings() -> dict:
     return {
         "_tab_metadata": (False,),
-        "_executable_required": (),
         "application_theme": {
             "label": "Application Theme",
             "description": "Color theme for the application. Takes effect on program restart.",

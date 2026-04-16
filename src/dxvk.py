@@ -1,7 +1,6 @@
 def get_dxvk_settings() -> dict:
     return {
         "_tab_metadata": (True,),
-        "_executable_required": (),
         "dxvk_hud": {
             "label": "HUD",
             "description": "Controls the DXVK in-game HUD overlay. Accepts a comma-separated list: devinfo, fps, frametimes, submissions, drawcalls, pipelines, descriptors, memory, allocations, gpuload, version, api, cs, compiler, samplers (D3D9), ffshaders (D3D9), swvp (D3D9). Additional modifiers: scale=x (e.g. 1.5), opacity=y (e.g. 0.5). Use '1' for devinfo+fps, 'full' for all elements.",
