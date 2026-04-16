@@ -194,6 +194,18 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_USE_NTSYNC", "", "", ""),
         },
+        "proton_no_ntsync": {
+            "label": "No NTSync",
+            "description": "Disable NTSync synchronization primitives even if the ntsync kernel module is loaded. Takes precedence over NTSync.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_NO_NTSYNC", "", "", ""),
+        },
+        "proton_use_writecopy": {
+            "label": "Write Copy",
+            "description": "Enable write copy memory protection handling. May fix certain copy-protection schemes or games that rely on specific memory protection behavior.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_USE_WRITECOPY", "", "", ""),
+        },
         "proton_disable_nvapi": {
             "label": "Disable NVAPI",
             "description": "Disable NVIDIA's NVAPI GPU support library.",
@@ -320,17 +332,41 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_FORCE_LARGE_ADDRESS_AWARE", "", "", ""),
         },
+        "wine_large_address_aware": {
+            "label": "Large Address Aware (Wine)",
+            "description": "Directly control the LARGE_ADDRESS_AWARE flag in Wine. Set to 1 to allow 32-bit apps to use more than 2 GB of RAM, or 0 to disable. PROTON_FORCE_LARGE_ADDRESS_AWARE sets this automatically; use this for manual override.",
+            "inputs": "1=enable, 0=disable",
+            "output": ("environment_variable", "WINE_LARGE_ADDRESS_AWARE", "", "", ""),
+        },
         "proton_heap_delay_free": {
             "label": "Heap Delay Free",
             "description": "Delay freeing some memory, to work around application use-after-free bugs.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_HEAP_DELAY_FREE", "", "", ""),
         },
+        "proton_heap_zero_memory": {
+            "label": "Heap Zero Memory",
+            "description": "Zero out heap memory on allocation. May fix games that incorrectly rely on zeroed memory behavior, at the cost of increased CPU overhead.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_HEAP_ZERO_MEMORY", "", "", ""),
+        },
         "proton_set_game_drive": {
             "label": "Game Drive",
             "description": "Create an S: drive which points to the Steam Library which contains the game.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_SET_GAME_DRIVE", "", "", ""),
+        },
+        "proton_set_steam_drive": {
+            "label": "Steam Drive",
+            "description": "Create an S: drive pointing to the root of the Steam installation directory.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "PROTON_SET_STEAM_DRIVE", "", "", ""),
+        },
+        "proton_limit_resolutions": {
+            "label": "Limit Resolutions",
+            "description": "Limit the number of display resolution modes reported to the game. Some older games crash or behave incorrectly when too many modes are available. Common values: 16 for very limited, 32 for moderate.",
+            "inputs": "16=very limited, 32=moderate, value=custom count",
+            "output": ("environment_variable", "PROTON_LIMIT_RESOLUTIONS", "", "", ""),
         },
         "proton_local_shader_cache": {
             "label": "Local Shader Cache",

@@ -41,7 +41,7 @@ def get_welcome_settings() -> dict:
         },
         "Proton": {
             "Proton Tab": (
-                ("text", "The Proton tab provides environment variables for configuring Proton and Wine behavior when running Windows games on Linux through Steam.\n\nThe settings are based on the Proton-CachyOS project and include options for DXVK, synchronization, upscaling (FSR4, DLSS, XeSS), NVIDIA libraries, Wayland support, audio configuration, and more."),
+                ("text", "The Proton tab provides environment variables for configuring Proton and Wine behavior when running Windows games on Linux through Steam.\n\nThe settings are sourced from both Proton-CachyOS and Proton-GE, and cover DXVK fork selection, synchronization primitives (Esync, Fsync, NTSync), upscaling (FSR4, DLSS, XeSS), NVIDIA libraries, Wayland support, audio configuration, memory handling, and more."),
                 ("text", "These environment variables are applied via the volt script, just like all other settings. Use them in Steam Launch Options or any other launcher."),
             )
         },
