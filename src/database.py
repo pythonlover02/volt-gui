@@ -2,12 +2,14 @@ import sys, os, glob
 from PySide6.QtCore import QProcess
 from mesa import *
 from nvidia import *
-from mangohud import *
-from gamescope import *
-from lsfg import *
-from launch import *
 from render import *
 from proton import *
+from dxvk import *
+from vkd3d import *
+from gamescope import *
+from mangohud import *
+from lsfg import *
+from launch import *
 from options import *
 from about import *
 
@@ -17,10 +19,12 @@ def get_settings_database() -> dict:
         "Mesa": get_mesa_settings(),
         "NVIDIA Proprietary": get_nvidia_settings(),
         "Render Selector": get_render_settings(),
+        "Proton": get_proton_settings(),
+        "DXVK": get_dxvk_settings(),
+        "VKD3D": get_vkd3d_settings(),
         "Gamescope": get_gamescope_settings(),
         "MangoHud": get_mangohud_settings(),
         "LSFG": get_lsfg_settings(),
-        "Proton": get_proton_settings(),
         "Launch Options": get_launch_settings(),
         "Options": get_options_settings(),
         "About": get_about_settings(),

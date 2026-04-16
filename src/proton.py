@@ -116,12 +116,6 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_FSR4_RDNA3_UPGRADE", "", "", ""),
         },
-        "dxil_spirv_config_rdna3_workaround": {
-            "label": "DXIL SPIRV RDNA3 Workaround",
-            "description": "Workaround for graphical glitches when running FSR4 on RDNA3 GPUs in FP16 mode. Required alongside FSR4 Upgrade on RDNA3 hardware.",
-            "inputs": "value=on",
-            "output": ("environment_variable", "DXIL_SPIRV_CONFIG", "", "wmma_rdna3_workaround", ","),
-        },
         "proton_mlfg_upgrade": {
             "label": "MLFG Upgrade",
             "description": "Enables the use of MLFG when amdxcffx64.dll >= 4.0.3. Automatically enabled with FSR4 Upgrade options. Set to 0 to disable while still using FSR4.",

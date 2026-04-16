@@ -1,0 +1,113 @@
+def get_dxvk_settings() -> dict:
+    return {
+        "_tab_metadata": (True,),
+        "_executable_required": (),
+        "dxvk_hud": {
+            "label": "HUD",
+            "description": "Controls the DXVK in-game HUD overlay. Accepts a comma-separated list: devinfo, fps, frametimes, submissions, drawcalls, pipelines, descriptors, memory, allocations, gpuload, version, api, cs, compiler, samplers (D3D9), ffshaders (D3D9), swvp (D3D9). Additional modifiers: scale=x (e.g. 1.5), opacity=y (e.g. 0.5). Use '1' for devinfo+fps, 'full' for all elements.",
+            "inputs": "1=basic (devinfo+fps), full=all elements, value=custom comma-separated list",
+            "output": ("environment_variable", "DXVK_HUD", "", "", ""),
+        },
+        "dxvk_frame_rate": {
+            "label": "Frame Rate Limit",
+            "description": "Limit the frame rate. 0 uncaps the frame rate; any positive integer limits rendering to that many frames per second.",
+            "inputs": "0=uncap, value=fps limit (e.g. 60)",
+            "output": ("environment_variable", "DXVK_FRAME_RATE", "", "", ""),
+        },
+        "dxvk_filter_device_name": {
+            "label": "Filter Device Name",
+            "description": "Force DXVK to use a GPU whose Vulkan device name contains this substring. Useful on multi-GPU systems. If the substring matches more than one device, the first matched device is used.",
+            "inputs": "value=device name substring (e.g. RX 7900)",
+            "output": ("environment_variable", "DXVK_FILTER_DEVICE_NAME", "", "", ""),
+        },
+        "dxvk_filter_device_uuid": {
+            "label": "Filter Device UUID",
+            "description": "Force DXVK to use a specific GPU by its Vulkan device UUID. Must be a 32-character hexadecimal string with no dashes. Provides more precise selection than name filtering, especially with multiple identical GPUs.",
+            "inputs": "value=32-char hex UUID (no dashes)",
+            "output": ("environment_variable", "DXVK_FILTER_DEVICE_UUID", "", "", ""),
+        },
+        "dxvk_hdr": {
+            "label": "HDR",
+            "description": "Enable HDR support. Exposes the HDR10 color space (DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) to the application. Many games require this to be set to consider exposing HDR output.",
+            "inputs": "1=on, 0=off",
+            "output": ("environment_variable", "DXVK_HDR", "", "", ""),
+        },
+        "dxvk_config": {
+            "label": "Inline Config",
+            "description": "Set dxvk.conf options directly via environment without a config file. Semicolons are used as separators. Example: 'dxgi.syncInterval = 0; d3d11.samplerAnisotropy = 16'.",
+            "inputs": "value=semicolon-separated key=value pairs",
+            "output": ("environment_variable", "DXVK_CONFIG", "", "", ""),
+        },
+        "dxvk_config_file": {
+            "label": "Config File Path",
+            "description": "Override the path to the dxvk.conf configuration file.",
+            "inputs": "value=filesystem path (e.g. /path/to/dxvk.conf)",
+            "output": ("environment_variable", "DXVK_CONFIG_FILE", "", "", ""),
+        },
+        "dxvk_log_level": {
+            "label": "Log Level",
+            "description": "Control DXVK log verbosity.",
+            "inputs": "none=none, error=error, warn=warn, info=info, debug=debug",
+            "output": ("environment_variable", "DXVK_LOG_LEVEL", "", "", ""),
+        },
+        "dxvk_log_path": {
+            "label": "Log Path",
+            "description": "Write DXVK log files to the specified directory. Set to 'none' to disable log file creation without disabling stderr logging.",
+            "inputs": "value=directory path, none=disable log files",
+            "output": ("environment_variable", "DXVK_LOG_PATH", "", "", ""),
+        },
+        "dxvk_debug": {
+            "label": "Debug Utils",
+            "description": "Enable VK_EXT_debug_utils. 'markers' translates Direct3D performance event markers (BeginEvent/EndEvent). 'validation' enables Vulkan validation (requires Vulkan SDK installed).",
+            "inputs": "markers=performance markers, validation=vulkan validation",
+            "output": ("environment_variable", "DXVK_DEBUG", "", "", ""),
+        },
+        "dxvk_shader_cache": {
+            "label": "Shader Cache",
+            "description": "Control DXVK's internal shader cache. Set to 0 to disable it entirely. Any caching would then have to be managed externally.",
+            "inputs": "0=disable",
+            "output": ("environment_variable", "DXVK_SHADER_CACHE", "", "", ""),
+        },
+        "dxvk_shader_cache_path": {
+            "label": "Shader Cache Path",
+            "description": "Override the directory where DXVK stores internal shader cache files. Defaults to %LOCALAPPDATA%/dxvk on Windows or Wine, and $HOME/.cache or $XDG_CACHE_HOME on native Linux.",
+            "inputs": "value=directory path",
+            "output": ("environment_variable", "DXVK_SHADER_CACHE_PATH", "", "", ""),
+        },
+        "vk_instance_layers_dxvk": {
+            "label": "Vulkan Validation Layers",
+            "description": "Enable Vulkan debug and validation layers. Highly recommended for troubleshooting rendering issues and driver crashes. Requires the Vulkan SDK installed on the host system.",
+            "inputs": "VK_LAYER_KHRONOS_validation=enable validation",
+            "output": ("environment_variable", "VK_INSTANCE_LAYERS", "", "", ""),
+        },
+        "dxvk_frame_pace": {
+            "label": "Frame Pace Mode (Low-Latency)",
+            "description": "Frame pacing mode for dxvk-low-latency. 'low-latency' (default) combines high fps with low input lag and minimizes latency variance. 'max-frame-latency' matches upstream DXVK behavior and offers great visual smoothness. 'min-latency' prioritizes the absolute lowest latency at the cost of fps by stalling the GPU between frames. 'low-latency-vrr-X' (replace X with your monitor Hz, e.g. low-latency-vrr-240) adds VRR-aware v-blank timing to prevent additional v-sync buffering latency. Only effective with the dxvk-low-latency fork.",
+            "inputs": "low-latency=low latency (default), max-frame-latency=upstream, min-latency=minimum latency, low-latency-vrr-240=vrr 240 Hz",
+            "output": ("environment_variable", "DXVK_FRAME_PACE", "", "", ""),
+        },
+        "dxvk_state_cache": {
+            "label": "State Cache (Sarek)",
+            "description": "Control the DXVK-Sarek pipeline state cache. Set to 0 to disable. This cache allows shaders to be recompiled ahead of time on subsequent runs, reducing stutter. Only applicable to DXVK-Sarek.",
+            "inputs": "0=disable",
+            "output": ("environment_variable", "DXVK_STATE_CACHE", "", "", ""),
+        },
+        "dxvk_state_cache_path": {
+            "label": "State Cache Path (Sarek)",
+            "description": "Directory where DXVK-Sarek stores pipeline state cache files. Defaults to the current working directory of the application. Only applicable to DXVK-Sarek.",
+            "inputs": "value=directory path",
+            "output": ("environment_variable", "DXVK_STATE_CACHE_PATH", "", "", ""),
+        },
+        "dxvk_all_cores": {
+            "label": "All Cores Shader Compilation (Sarek)",
+            "description": "Use all available CPU cores for background shader compilation instead of the default half. May cause brief unresponsiveness during compilation bursts but can improve load times on CPUs that rely on all cores for throughput. Only applicable to DXVK-Sarek.",
+            "inputs": "1=on",
+            "output": ("environment_variable", "DXVK_ALL_CORES", "", "", ""),
+        },
+        "dxvk_disable_dyasync": {
+            "label": "Disable Dyasync (Sarek)",
+            "description": "Disable Dynamic Asynchronous Pipeline Compilation in DXVK-Sarek. Dyasync reduces stuttering by compiling shader variants in the background and using a closest-match placeholder pipeline in the meantime. Disabling reverts to fully synchronous compilation. Only applicable to DXVK-Sarek.",
+            "inputs": "1=on",
+            "output": ("environment_variable", "DXVK_DISABLE_DYASYNC", "", "", ""),
+        },
+    }

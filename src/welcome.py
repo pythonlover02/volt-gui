@@ -45,6 +45,16 @@ def get_welcome_settings() -> dict:
                 ("text", "These environment variables are applied via the volt script, just like all other settings. Use them in Steam Launch Options or any other launcher."),
             )
         },
+        "DXVK & VKD3D": {
+            "DXVK Tab": (
+                ("text", "The DXVK tab provides environment variables for configuring DXVK, the Vulkan-based translation layer for Direct3D 8, 9, 10, and 11.\n\nSettings are organized on this way:"),
+                ("text", "DXVK, covers the upstream DXVK project. Includes the HUD, frame rate limiter, device filtering, HDR, inline config overrides, shader cache control, and debug options.\n\nDXVK Low-Latency, covers the dxvk-low-latency fork. Adds the frame pace mode setting (low-latency, max-frame-latency, min-latency, and VRR-aware modes) to reduce input lag and improve frame pacing.\n\nDXVK Sarek, covers the dxvk-sarek fork, intended for older GPUs that do not fully support Vulkan 1.3. Adds the legacy state cache controls, all-cores shader compilation, and the dyasync toggle."),
+            ),
+            "VKD3D Tab": (
+                ("text", "The VKD3D tab provides environment variables for configuring vkd3d-proton, the Vulkan-based translation layer for Direct3D 12.\n\nIncludes the frame rate limiter, device selection, swapchain present mode, shader cache path, all VKD3D_CONFIG flags (ray tracing, queue control, NVIDIA static CBV hack, breadcrumbs debugging, and more), and advanced shader debugging tools such as dump paths, overrides, and RenderDoc auto-capture."),
+                ("text", "The DXIL SPIRV RDNA3 Workaround setting is also found here, as it directly relates to vkd3d-proton's DXIL-to-SPIR-V compilation and is required for FSR4 on RDNA3 hardware."),
+            ),
+        },
         "Usage": {
             "Using the volt Script": (
                 ("text", "To apply Environment Settings, prepend the volt script to your command:"),
