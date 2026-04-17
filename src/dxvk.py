@@ -202,13 +202,13 @@ def get_dxvk_settings() -> dict:
         "ddraw_emulate_fsaa": {
             "label": "DDraw Emulate FSAA",
             "description": "Use supported MSAA up to 4x to emulate FSAA on the DDraw/D3D7 path. 'true' enables emulation when the app requests FSAA; 'forced' enables it unconditionally; 'auto' (default) disables it.",
-            "inputs": "auto=disabled (default), true=enabled, forced=force on",
+            "inputs": "auto=disabled (default), true=on, forced=force on",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.emulateFSAA=", "", ";"),
         },
         "ddraw_back_buffer_guard": {
             "label": "DDraw Back Buffer Guard",
             "description": "Determines how uploads for back buffer blits are handled. 'auto' (default) enables the standard guard path; 'strict' is a stricter path for games that read back the back buffer aggressively; 'disabled' turns the guard off.",
-            "inputs": "auto=enabled (default), strict=strict path, disabled=off",
+            "inputs": "auto=on (default), strict=strict path, disabled=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.backBufferGuard=", "", ";"),
         },
         "ddraw_max_available_memory": {
@@ -825,7 +825,7 @@ def get_dxvk_settings() -> dict:
         },
         "dxgi_sync_interval": {
             "label": "DXGI Sync Interval (Vsync)",
-            "description": "Override vsync sync interval. 0=disable vsync entirely; positive n=enable vsync and repeat the same image n times; negative=no effect (use app setting).",
+            "description": "Override vsync sync interval. 0=disable vsync entirely; positive n=on vsync and repeat the same image n times; negative=no effect (use app setting).",
             "inputs": "0=vsync off, n=repeat n times, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.syncInterval=", "", ";"),
         },
@@ -843,7 +843,7 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_latency_sleep": {
             "label": "Latency Sleep / Reflex",
-            "description": "Controls latency sleep and Nvidia Reflex support. Auto=only D3D11+Reflex games with VK_NV_low_latency2 and dxvk-nvapi in Proton. True=enable built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=disable Reflex and built-in latency reduction.",
+            "description": "Controls latency sleep and Nvidia Reflex support. Auto=only D3D11+Reflex games with VK_NV_low_latency2 and dxvk-nvapi in Proton. True=on built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=disable Reflex and built-in latency reduction.",
             "inputs": "Auto=default, True=force on, False=disable",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.latencySleep=", "", ";"),
         },
@@ -861,7 +861,7 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_tear_free": {
             "label": "Tear Free Mode",
-            "description": "Controls tearing behaviour. True=enable mailbox present mode when vsync is disabled (eliminates tearing, may be unsupported on some systems). False=enable relaxed FIFO present mode when vsync is enabled (tearing but less stutter at low FPS). Do not report issues with this option.",
+            "description": "Controls tearing behaviour. True=on mailbox present mode when vsync is disabled (eliminates tearing, may be unsupported on some systems). False=on relaxed FIFO present mode when vsync is enabled (tearing but less stutter at low FPS). Do not report issues with this option.",
             "inputs": "Auto=default, True=mailbox, False=relaxed fifo",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.tearFree=", "", ";"),
         },
@@ -909,7 +909,7 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_enable_graphics_pipeline_library": {
             "label": "Graphics Pipeline Library",
-            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. Auto=enable if supported and compile optimized pipelines in background. True=enable but don't compile optimized pipelines. False=always disable.",
+            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. Auto=on if supported and compile optimized pipelines in background. True=on but don't compile optimized pipelines. False=always disable.",
             "inputs": "Auto=default, True=no optimized, False=disable",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableGraphicsPipelineLibrary=", "", ";"),
         },

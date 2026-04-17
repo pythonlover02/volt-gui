@@ -157,18 +157,6 @@ def get_nvidia_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_CubemapFiltering", "", "", ""),
         },
-        "opengl_antialiased_line_gamma": {
-            "label": "Antialiased Line Gamma",
-            "description": "Gamma correction for antialiased lines.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "__GL_AALineGamma", "", "", ""),
-        },
-        "opengl_antialiased_line_tweaks": {
-            "label": "Antialiased Line Tweaks",
-            "description": "Additional tweaks for antialiased line rendering.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "__GL_AALineTweaks", "", "", ""),
-        },
         "opengl_s3tc_compression_quality": {
             "label": "S3TC Compression Quality",
             "description": "S3TC texture compression quality level.",

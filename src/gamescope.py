@@ -242,8 +242,8 @@ def get_gamescope_settings() -> dict:
             "output": ("argument", "--hdr-itm-target-nits=", "", "", ""),
         },
         "color_management": {
-            "label": "Color Management",
-            "description": "Color management processing.",
+            "label": "Disable Color Management",
+            "description": "Disables Gamescope's color management pipeline (tone mapping, gamut conversion, ICC profile handling). Colors are passed through untouched. Useful for debugging or when the application already performs its own color management.",
             "inputs": "value=on",
             "output": ("argument", "--disable-color-management", "", "", ""),
         },
@@ -278,8 +278,8 @@ def get_gamescope_settings() -> dict:
             "output": ("argument", "--mura-map=", "", "", ""),
         },
         "hardware_planes": {
-            "label": "Hardware Planes",
-            "description": "Hardware overlay plane usage.",
+            "label": "Disable Hardware Planes",
+            "description": "Disables hardware overlay plane usage. Forces Gamescope to composite everything in the shader pipeline instead of letting the display controller scan out overlays directly. Useful for debugging plane-related issues; usually hurts power efficiency.",
             "inputs": "value=on",
             "output": ("argument", "--disable-layers", "", "", ""),
         },
@@ -452,8 +452,8 @@ def get_gamescope_settings() -> dict:
             "output": ("argument", "--composite-debug", "", "", ""),
         },
         "x_resource": {
-            "label": "X Resource",
-            "description": "X resource extension usage.",
+            "label": "Disable X Resource Extension",
+            "description": "Disables Gamescope's use of the X-Resource extension for GPU usage tracking. Only relevant for debugging tools that conflict with Gamescope's resource queries.",
             "inputs": "value=on",
             "output": ("argument", "--disable-xres", "", "", ""),
         },

@@ -3,8 +3,8 @@ def get_lsfg_settings() -> dict:
         "_tab_metadata": (True,),
         "lsfg": {
             "label": "LSFG",
-            "description": "LSFG frame generation activation variable.",
-            "inputs": "1=on, 0=off",
+            "description": "Enables lsfg-vk frame generation. The layer checks only for the presence of this environment variable, not its value, any value (including 0) enables it. Leave empty to disable, or use 'unset' to actively remove it from the environment. Setting this also fully bypasses lsfg-vk file configuration system.",
+            "inputs": "value=on",
             "output": ("environment_variable", "LSFG_LEGACY", "", "", ""),
         },
         "vulkan_frames_per_second_multiplier": {
