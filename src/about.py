@@ -4,5 +4,5 @@ def get_about_settings() -> dict:
         "description": "My AMD Adrenaline / NVIDIA Settings Linux Alternative",
         "license": "GPL 3.0 License",
         "author": "pythonlover02",
-        "version": "1.4.0"
+        "version": "1.4.1"
     }
