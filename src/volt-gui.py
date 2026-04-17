@@ -1,4 +1,4 @@
-import sys, os, signal, socket, threading, stat, configparser, requests
+import sys, os, signal, socket, stat, configparser, requests
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QFrame, QInputDialog, QSizePolicy, QStackedWidget, QListView
 from PySide6.QtCore import Qt, QProcess, QTimer, QThread
 from PySide6.QtGui import QIcon, QCursor, QAction
