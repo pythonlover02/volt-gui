@@ -459,30 +459,16 @@ def process_updates_check_async(main_window) -> None:
 
 
 def validate_singleton_instance(singleton_port: int) -> dict:
-    singleton_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    singleton_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    show_callback = {"func": None}
-    check_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    check_socket.settimeout(1)
-    connect_result = check_socket.connect_ex(("localhost", singleton_port))
-    check_socket.close()
-    if connect_result == 0:
-        singleton_socket.close()
-        return {"socket": None, "running": True, "callback": show_callback}
-    singleton_socket.bind(("localhost", singleton_port))
-    threading.Thread(target=lambda: process_singleton_listen(singleton_socket, show_callback), daemon=True).start()
-    return {"socket": singleton_socket, "running": False, "callback": show_callback}
-
-
-def process_singleton_listen(singleton_socket, show_callback: dict) -> None:
-    singleton_socket.listen(1)
-    while True:
-        if singleton_socket.fileno() == -1: break
-        connection_result = singleton_socket.accept() if singleton_socket.fileno() != -1 else None
-        if connection_result is None: continue
-        if show_callback["func"] is not None: QTimer.singleShot(0, show_callback["func"])
-        connection_result[0].close()
-    return None
+    lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    lock_name = "\0volt-gui-singleton-" + str(singleton_port)
+    bind_result = lock_socket.connect_ex(lock_name)
+    if bind_result != 0:
+        lock_socket.close()
+        lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        lock_socket.bind(lock_name)
+        return {"socket": lock_socket, "running": False}
+    lock_socket.close()
+    return {"socket": None, "running": True}
 
 
 def process_create_tab(stacked_widget, all_widgets: dict, all_cards: dict, options_widgets: dict, main_window, tab_name: str) -> None:
@@ -572,7 +558,7 @@ def process_signal_handler(main_window, signal_number: int) -> None:
     sys.exit(0)
 
 
-def create_main_window_widget(singleton_socket, show_callback: dict):
+def create_main_window_widget(singleton_socket):
     window = QMainWindow()
     window.singleton_socket = singleton_socket
     window.volt_path = get_option_default_value("volt_script_location")
@@ -584,7 +570,6 @@ def create_main_window_widget(singleton_socket, show_callback: dict):
     window.scaling_factor = 1.0
     window.current_profile = "Default"
     window.welcome_window = None
-    show_callback["func"] = lambda: QTimer.singleShot(0, lambda: process_window_show(window))
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(540, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
@@ -680,16 +665,16 @@ def main() -> None:
     if os.environ.get("SUDO_USER") is not None:
         print("Error: Do not run with sudo.\nRun as regular user.")
         sys.exit(1)
+    singleton_result = validate_singleton_instance(47832)
+    if singleton_result["running"]:
+        print("volt-gui is already running.")
+        sys.exit(0)
     os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
     calculate_initial_scale()
     application = QApplication(sys.argv)
     application.setStyle("Fusion")
     application.setQuitOnLastWindowClosed(False)
-    singleton_result = validate_singleton_instance(47832)
-    if singleton_result["running"]:
-        QMessageBox.information(None, "volt-gui", "Application already running.")
-        sys.exit(0)
-    window = create_main_window_widget(singleton_result["socket"], singleton_result["callback"])
+    window = create_main_window_widget(singleton_result["socket"])
     application.setQuitOnLastWindowClosed(not window.use_system_tray)
     process_signal_handlers_setup(window)
     sys.exit(application.exec())
