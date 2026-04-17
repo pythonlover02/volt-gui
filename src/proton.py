@@ -57,7 +57,7 @@ def get_proton_settings() -> dict:
         },
         "proton_vkd3d_heap": {
             "label": "VKD3D Heap",
-            "description": "Enable alternative VKD3D heap allocation strategy, which may improve performance or stability in some DX12 games.",
+            "description": "Enable vkd3d-proton's alternative heap allocation code path, which may improve performance or stability in some DX12 games. Combine with VKD3D's Config: Descriptor Heap (VKD3D_CONFIG=descriptor_heap) to additionally switch to the new VK_EXT_descriptor_heap code path.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_VKD3D_HEAP", "", "", ""),
         },

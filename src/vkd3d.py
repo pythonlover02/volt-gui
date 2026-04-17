@@ -109,6 +109,12 @@ def get_vkd3d_settings() -> dict:
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "breadcrumbs", ","),
         },
+        "vkd3d_config_descriptor_heap": {
+            "label": "Config: Descriptor Heap",
+            "description": "Switch vkd3d-proton to its new VK_EXT_descriptor_heap code path. Requires VKD3D Heap (PROTON_VKD3D_HEAP=1) to be enabled.",
+            "inputs": "value=on",
+            "output": ("environment_variable", "VKD3D_CONFIG", "", "descriptor_heap", ","),
+        },
         "vkd3d_shader_cache_path": {
             "label": "Shader Cache Path",
             "description": "Override the directory where vkd3d-proton.cache is stored. Set to 0 to disable the internal shader cache entirely (useful if the application manages its own pipeline cache via ID3D12PipelineLibrary).",

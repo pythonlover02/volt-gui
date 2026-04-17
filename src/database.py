@@ -395,10 +395,23 @@ def is_identity_input_pair(pair_text: str) -> bool:
     return pair_text.strip().split("=", 1)[0].strip() == pair_text.strip().split("=", 1)[1].strip()
 
 
-def is_toggle_setting_input(inputs_text: str) -> bool:
+def is_flag_style_toggle_input(inputs_text: str) -> bool:
     if "," in inputs_text: return False
     if "=" not in inputs_text: return False
-    return inputs_text.strip().split("=", 1)[0].strip() == "value"
+    if inputs_text.strip().split("=", 1)[0].strip() != "value": return False
+    return inputs_text.strip().split("=", 1)[1].strip() == "on"
+
+
+def is_freeform_toggle_input(inputs_text: str) -> bool:
+    if "," in inputs_text: return False
+    if "=" not in inputs_text: return False
+    if inputs_text.strip().split("=", 1)[0].strip() != "value": return False
+    return inputs_text.strip().split("=", 1)[1].strip() != "on"
+
+
+def is_toggle_setting_input(inputs_text: str) -> bool:
+    if is_flag_style_toggle_input(inputs_text): return True
+    return is_freeform_toggle_input(inputs_text)
 
 
 def format_input_pair_display(pair_text: str) -> str:
@@ -408,7 +421,8 @@ def format_input_pair_display(pair_text: str) -> str:
 
 
 def build_setting_values_display(inputs_text: str) -> str:
-    if is_toggle_setting_input(inputs_text) is True: return "any value that isn\u2019t unset"
+    if is_flag_style_toggle_input(inputs_text) is True: return "on (flag is only active when the literal value is present)"
+    if is_freeform_toggle_input(inputs_text) is True: return "any value that isn\u2019t unset"
     return ", ".join(format_input_pair_display(pair) for pair in inputs_text.split(",") if pair.strip() != "")
 
 

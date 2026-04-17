@@ -273,12 +273,7 @@ def get_header_vertical_margin() -> int:
     return 14
 
 
-def create_simple_sidebar_widget(tab_names: tuple, stacked_widget) -> QWidget:
-    sidebar_container = QWidget()
-    sidebar_container.setFixedWidth(get_sidebar_width())
-    sidebar_layout = QVBoxLayout(sidebar_container)
-    sidebar_layout.setContentsMargins(0, 0, 0, 0)
-    sidebar_layout.setSpacing(0)
+def build_sidebar_header_widget() -> QWidget:
     header_widget = QWidget()
     header_widget.setStyleSheet("background-color: transparent;")
     header_layout = QHBoxLayout(header_widget)
@@ -295,6 +290,20 @@ def create_simple_sidebar_widget(tab_names: tuple, stacked_widget) -> QWidget:
     header_layout.addWidget(gui_label, 0)
     header_layout.addStretch()
     header_layout.addWidget(version_label, 0)
-    sidebar_layout.addWidget(header_widget)
-    sidebar_layout.addWidget(create_sidebar_tab_list(tab_names, stacked_widget), 1)
-    return sidebar_container
+    return header_widget
+
+
+def build_sidebar_container_widget(tab_names: tuple, stacked_widget) -> tuple:
+    sidebar_container = QWidget()
+    sidebar_container.setFixedWidth(get_sidebar_width())
+    sidebar_layout = QVBoxLayout(sidebar_container)
+    sidebar_layout.setContentsMargins(0, 0, 0, 0)
+    sidebar_layout.setSpacing(0)
+    sidebar_layout.addWidget(build_sidebar_header_widget())
+    tab_list = create_sidebar_tab_list(tab_names, stacked_widget)
+    sidebar_layout.addWidget(tab_list, 1)
+    return (sidebar_container, tab_list)
+
+
+def create_simple_sidebar_widget(tab_names: tuple, stacked_widget) -> QWidget:
+    return build_sidebar_container_widget(tab_names, stacked_widget)[0]

@@ -131,30 +131,7 @@ def is_profile_action_item(selected_text: str) -> bool:
 
 
 def create_main_sidebar_widget(tab_names: tuple, stacked_widget, main_window) -> QWidget:
-    sidebar_container = QWidget()
-    sidebar_container.setFixedWidth(get_sidebar_width())
-    sidebar_layout = QVBoxLayout(sidebar_container)
-    sidebar_layout.setContentsMargins(0, 0, 0, 0)
-    sidebar_layout.setSpacing(0)
-    header_widget = QWidget()
-    header_widget.setStyleSheet("background-color: transparent;")
-    header_layout = QHBoxLayout(header_widget)
-    header_layout.setContentsMargins(14, get_header_vertical_margin(), 14, get_header_vertical_margin())
-    header_layout.setSpacing(0)
-    volt_label = QLabel("volt")
-    volt_label.setStyleSheet("font-weight: bold; font-size: 13pt; color: palette(highlight); background: transparent;")
-    gui_label = QLabel("-gui")
-    gui_label.setStyleSheet("font-weight: bold; font-size: 13pt; background: transparent;")
-    version_label = QLabel("v" + get_about_version())
-    version_label.setStyleSheet("font-size: 8pt; color: #9A9A9A; background: transparent;")
-    version_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-    header_layout.addWidget(volt_label, 0)
-    header_layout.addWidget(gui_label, 0)
-    header_layout.addStretch()
-    header_layout.addWidget(version_label, 0)
-    sidebar_layout.addWidget(header_widget)
-    tab_list = create_sidebar_tab_list(tab_names, stacked_widget)
-    sidebar_layout.addWidget(tab_list, 1)
+    sidebar_container, tab_list = build_sidebar_container_widget(tab_names, stacked_widget)
     main_window.sidebar_tab_list = tab_list
     return sidebar_container
 
@@ -436,16 +413,24 @@ def process_welcome_show(main_window) -> None:
     return None
 
 
-def process_updates_check_worker(main_window, worker_thread) -> None:
+def fetch_latest_release_tag() -> str:
     response = requests.get("https://api.github.com/repos/pythonlover02/volt-gui/releases/latest", timeout=5)
-    if response is None or response.status_code != 200:
+    if response is None: return ""
+    if response.status_code != 200: return ""
+    if response.json() is None: return ""
+    if "tag_name" not in response.json(): return ""
+    return response.json()["tag_name"].lstrip("v")
+
+
+def process_updates_check_worker(main_window, worker_thread) -> None:
+    latest_tag = fetch_latest_release_tag()
+    if latest_tag == "":
         worker_thread.quit()
         return None
-    if response.json() is None or "tag_name" not in response.json():
+    if latest_tag == get_about_version():
         worker_thread.quit()
         return None
-    if response.json()["tag_name"].lstrip("v") != get_about_version():
-        QTimer.singleShot(0, main_window, lambda: process_notification_display(main_window, "New version available: " + response.json()["tag_name"].lstrip("v"), False))
+    QTimer.singleShot(0, main_window, lambda bound_tag=latest_tag: process_notification_display(main_window, "New version available: " + bound_tag, False))
     worker_thread.quit()
     return None
 
@@ -562,11 +547,11 @@ def create_main_window_widget(singleton_socket):
     window = QMainWindow()
     window.singleton_socket = singleton_socket
     window.volt_path = get_option_default_value("volt_script_location")
-    window.check_updates = get_option_default_value("automatic_update_check") == "enable"
-    window.start_maximized = get_option_default_value("start_window_maximized") == "enable"
-    window.start_minimized = get_option_default_value("start_window_minimized") == "enable"
-    window.show_welcome = get_option_default_value("welcome_message_display") == "enable"
-    window.use_system_tray = get_option_default_value("system_tray_behavior") == "enable"
+    window.check_updates = get_option_default_value("automatic_update_check") == "on"
+    window.start_maximized = get_option_default_value("start_window_maximized") == "on"
+    window.start_minimized = get_option_default_value("start_window_minimized") == "on"
+    window.show_welcome = get_option_default_value("welcome_message_display") == "on"
+    window.use_system_tray = get_option_default_value("system_tray_behavior") == "on"
     window.scaling_factor = 1.0
     window.current_profile = "Default"
     window.welcome_window = None

@@ -63,6 +63,10 @@ def find_opengl_mesa_devices() -> tuple:
     return tuple(result for result in (find_opengl_mesa_device_at_index(device_index) for device_index in range(5)) if result is not None)
 
 
+def find_opengl_nvidia_device():
+    return find_opengl_device_from_environment({"__GLX_VENDOR_LIBRARY_NAME": "nvidia", "__NV_PRIME_RENDER_OFFLOAD": "1"})
+
+
 def build_deduplicated_device_names(detected_devices: tuple) -> tuple:
     return tuple(dict.fromkeys(pair[0] for pair in detected_devices).keys())
 
@@ -81,7 +85,7 @@ def build_deduplicated_device_result(detected_devices: tuple) -> dict:
 
 def find_opengl_devices_sync() -> dict:
     return build_deduplicated_device_result(
-        tuple(device for device in (find_opengl_device_from_environment(None), find_opengl_device_from_environment({"__GLX_VENDOR_LIBRARY_NAME": "nvidia"})) if device is not None)
+        tuple(device for device in (find_opengl_device_from_environment(None), find_opengl_nvidia_device()) if device is not None)
         + find_opengl_mesa_devices()
         + (("llvmpipe (software rendering)", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "LIBGL_ALWAYS_SOFTWARE": "1"}), ("zink", {"__GLX_VENDOR_LIBRARY_NAME": "mesa", "MESA_LOADER_DRIVER_OVERRIDE": "zink", "LIBGL_KOPPER_DRI2": "1"}))
     )
