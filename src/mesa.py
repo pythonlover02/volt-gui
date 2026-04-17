@@ -67,47 +67,11 @@ def get_mesa_settings() -> dict:
             "inputs": "year=2001, 2003=2003, 2005=2005, 2007=2007, 2010=2010, 2012=2012, 2014=2014, 2016=2016, 2018=2018, 2020=2020",
             "output": ("environment_variable", "MESA_EXTENSION_MAX_YEAR", "", "", ""),
         },
-        "opengl_indirect_rendering": {
-            "label": "OpenGL Indirect Rendering",
-            "description": "Force indirect rendering mode.",
-            "inputs": "true=on, false=off",
-            "output": ("environment_variable", "LIBGL_ALWAYS_INDIRECT", "", "", ""),
-        },
-        "opengl_software_rendering": {
-            "label": "OpenGL Software Rendering",
-            "description": "Force software rendering for OpenGL.",
-            "inputs": "true=on, false=off",
-            "output": ("environment_variable", "LIBGL_ALWAYS_SOFTWARE", "", "", ""),
-        },
         "opengl_draw_arrays": {
             "label": "OpenGL Draw Arrays",
             "description": "Draw arrays path for Mesa OpenGL.",
             "inputs": "true=off, false=on",
             "output": ("environment_variable", "LIBGL_NO_DRAWARRAYS", "", "", ""),
-        },
-        "opengl_dri3_buffer_sharing": {
-            "label": "OpenGL DRI3 Buffer Sharing",
-            "description": "DRI3 buffer sharing for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
-            "output": ("environment_variable", "LIBGL_DRI3_DISABLE", "", "", ""),
-        },
-        "opengl_dri2_buffer_sharing": {
-            "label": "OpenGL DRI2 Buffer Sharing",
-            "description": "DRI2 buffer sharing for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
-            "output": ("environment_variable", "LIBGL_DRI2_DISABLE", "", "", ""),
-        },
-        "opengl_kopper_display_interface": {
-            "label": "OpenGL Kopper Display Interface",
-            "description": "Kopper display interface for Mesa OpenGL.",
-            "inputs": "true=off, false=on",
-            "output": ("environment_variable", "LIBGL_KOPPER_DISABLE", "", "", ""),
-        },
-        "opengl_kopper_dri2_mode": {
-            "label": "OpenGL Kopper DRI2 Mode",
-            "description": "DRI2 mode for Kopper display interface.",
-            "inputs": "true=on, false=off",
-            "output": ("environment_variable", "LIBGL_KOPPER_DRI2", "", "", ""),
         },
         "opengl_frames_per_second_counter": {
             "label": "OpenGL FPS Counter",
@@ -120,18 +84,6 @@ def get_mesa_settings() -> dict:
             "description": "Debug verbosity for the Mesa OpenGL loader.",
             "inputs": "value=verbose",
             "output": ("environment_variable", "LIBGL_DEBUG", "", "", ""),
-        },
-        "opengl_drivers_path": {
-            "label": "OpenGL Drivers Path",
-            "description": "Search path for Mesa OpenGL driver files.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "LIBGL_DRIVERS_PATH", "", "", ":"),
-        },
-        "opengl_glx_vendor_library": {
-            "label": "OpenGL GLX Vendor Library",
-            "description": "GLX vendor library name.",
-            "inputs": "nvidia=nvidia, mesa=mesa",
-            "output": ("environment_variable", "__GLX_VENDOR_LIBRARY_NAME", "", "", ""),
         },
         "opengl_glx_force_vendor_library_display_0": {
             "label": "OpenGL GLX Force Vendor Library Display 0",
@@ -168,12 +120,6 @@ def get_mesa_settings() -> dict:
             "description": "Keep native window GLX drawable alive.",
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "keep_native_window_glx_drawable", "", "", ""),
-        },
-        "opengl_force_direct_glx_context": {
-            "label": "OpenGL Force Direct GLX Context",
-            "description": "Force direct GLX context creation.",
-            "inputs": "true=on, false=off",
-            "output": ("environment_variable", "force_direct_glx_context", "", "", ""),
         },
         "opengl_allow_invalid_glx_destroy_window": {
             "label": "OpenGL Allow Invalid GLX Destroy Window",
@@ -793,24 +739,6 @@ def get_mesa_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "MESA_VK_VALIDATE_SHADER_BINARIES", "", "", ""),
         },
-        "vulkan_device_select": {
-            "label": "Vulkan Device Select",
-            "description": "Vulkan device selection mode.",
-            "inputs": "value=list",
-            "output": ("environment_variable", "MESA_VK_DEVICE_SELECT", "", "", ""),
-        },
-        "vulkan_device_select_force_default": {
-            "label": "Vulkan Device Select Force Default",
-            "description": "Force default device in Vulkan device selection.",
-            "inputs": "0=off, 1=on",
-            "output": ("environment_variable", "MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE", "", "", ""),
-        },
-        "vulkan_device_select_debug": {
-            "label": "Vulkan Device Select Debug",
-            "description": "Debug output for Vulkan device selection.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "MESA_VK_DEVICE_SELECT_DEBUG", "", "", ""),
-        },
         "vulkan_trace_radeon_memory_visualizer": {
             "label": "Vulkan Trace Radeon Memory Visualizer",
             "description": "RMV trace capture for Radeon Memory Visualizer.",
@@ -853,12 +781,6 @@ def get_mesa_settings() -> dict:
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "MESA_VK_TRACE_TRIGGER", "", "", ""),
         },
-        "vulkan_device_chooser_layer": {
-            "label": "Vulkan Device Chooser Layer",
-            "description": "Vulkan device chooser layer.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "ENABLE_DEVICE_CHOOSER_LAYER", "", "", ""),
-        },
         "vulkan_mesa_overlay_layer": {
             "label": "Vulkan Mesa Overlay Layer",
             "description": "Mesa Vulkan overlay layer.",
@@ -883,41 +805,11 @@ def get_mesa_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "DISABLE_HDR_WSI", "", "", ""),
         },
-        "vulkan_device_selection_layer_suppression": {
-            "label": "Vulkan Device Selection Layer Suppression",
-            "description": "Suppress the Vulkan device selection layer.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "NODEVICE_SELECT", "", "", ""),
-        },
         "vulkan_layer_settings_path": {
             "label": "Vulkan Layer Settings Path",
             "description": "Path to the Vulkan layer settings file.",
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "VK_LAYER_SETTINGS_PATH", "", "", ""),
-        },
-        "vulkan_icd_filenames": {
-            "label": "Vulkan ICD Filenames",
-            "description": "Override Vulkan ICD JSON file paths.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "VK_ICD_FILENAMES", "", "", ":"),
-        },
-        "vulkan_driver_files": {
-            "label": "Vulkan Driver Files",
-            "description": "Override Vulkan driver JSON file paths.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "VK_DRIVER_FILES", "", "", ":"),
-        },
-        "vulkan_add_driver_files": {
-            "label": "Vulkan Add Driver Files",
-            "description": "Append Vulkan driver JSON file paths.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "VK_ADD_DRIVER_FILES", "", "", ":"),
-        },
-        "vulkan_drivers_path": {
-            "label": "Vulkan Drivers Path",
-            "description": "Search path for Vulkan driver files.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "VK_DRIVERS_PATH", "", "", ":"),
         },
         "vulkan_layer_path": {
             "label": "Vulkan Layer Path",
@@ -1051,36 +943,6 @@ def get_mesa_settings() -> dict:
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LOADER_LAYERS_ENABLE", "", "", ":"),
         },
-        "vulkan_loader_drivers_select": {
-            "label": "Vulkan Loader Drivers Select",
-            "description": "Select specific drivers in the Vulkan loader.",
-            "inputs": "value=driver filter string",
-            "output": ("environment_variable", "VK_LOADER_DRIVERS_SELECT", "", "", ""),
-        },
-        "vulkan_loader_drivers_disable": {
-            "label": "Vulkan Loader Drivers Disable",
-            "description": "Suppress specific drivers in the Vulkan loader.",
-            "inputs": "value=driver filter string",
-            "output": ("environment_variable", "VK_LOADER_DRIVERS_DISABLE", "", "", ""),
-        },
-        "vulkan_loader_driver_identifier_filter": {
-            "label": "Vulkan Loader Driver Identifier Filter",
-            "description": "Filter Vulkan drivers by driver ID.",
-            "inputs": "value=driver ID string",
-            "output": ("environment_variable", "VK_LOADER_DRIVER_ID_FILTER", "", "", ""),
-        },
-        "vulkan_loader_device_identifier_filter": {
-            "label": "Vulkan Loader Device Identifier Filter",
-            "description": "Filter Vulkan devices by device ID.",
-            "inputs": "value=device ID string",
-            "output": ("environment_variable", "VK_LOADER_DEVICE_ID_FILTER", "", "", ""),
-        },
-        "vulkan_loader_vendor_identifier_filter": {
-            "label": "Vulkan Loader Vendor Identifier Filter",
-            "description": "Filter Vulkan devices by vendor ID.",
-            "inputs": "value=vendor ID string",
-            "output": ("environment_variable", "VK_LOADER_VENDOR_ID_FILTER", "", "", ""),
-        },
         "vulkan_loader_dynamic_library_unloading": {
             "label": "Vulkan Loader Dynamic Library Unloading",
             "description": "Dynamic library unloading in the Vulkan loader.",
@@ -1092,12 +954,6 @@ def get_mesa_settings() -> dict:
             "description": "Instance extension filter in the Vulkan loader.",
             "inputs": "1=off, 0=on",
             "output": ("environment_variable", "VK_LOADER_DISABLE_INST_EXT_FILTER", "", "", ""),
-        },
-        "vulkan_loader_select": {
-            "label": "Vulkan Loader Select",
-            "description": "Device selection logic in the Vulkan loader.",
-            "inputs": "1=off, 0=on",
-            "output": ("environment_variable", "VK_LOADER_DISABLE_SELECT", "", "", ""),
         },
         "vulkan_screenshot_directory": {
             "label": "Vulkan Screenshot Directory",
@@ -1147,12 +1003,6 @@ def get_mesa_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "VK_CRASH_DIAGNOSTIC_DISABLE", "", "", ""),
         },
-        "vulkan_device_index": {
-            "label": "Vulkan Device Index",
-            "description": "Select Vulkan device by index.",
-            "inputs": "value=0, 1=1, 2=2",
-            "output": ("environment_variable", "VULKAN_DEVICE_INDEX", "", "", ""),
-        },
         "vulkan_custom_border_colors_without_format": {
             "label": "Vulkan Custom Border Colors Without Format",
             "description": "Allow custom border colors without specifying format.",
@@ -1164,12 +1014,6 @@ def get_mesa_settings() -> dict:
             "description": "Emulate sparse resources without hardware support.",
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "fake_sparse", "", "", ""),
-        },
-        "vulkan_force_vendor": {
-            "label": "Vulkan Force Vendor",
-            "description": "Override the reported Vulkan vendor ID.",
-            "inputs": "value=vendor ID string",
-            "output": ("environment_variable", "force_vk_vendor", "", "", ""),
         },
         "vulkan_force_indirect_descriptors": {
             "label": "Vulkan Force Indirect Descriptors",
@@ -1351,53 +1195,11 @@ def get_mesa_settings() -> dict:
             "inputs": "value=number",
             "output": ("environment_variable", "generated_indirect_threshold", "", "", ""),
         },
-        "egl_platform": {
-            "label": "EGL Platform",
-            "description": "EGL platform backend.",
-            "inputs": "x11=x11, wayland=wayland, drm=drm, surfaceless=surfaceless, device=device",
-            "output": ("environment_variable", "EGL_PLATFORM", "", "", ""),
-        },
         "egl_log_level": {
             "label": "EGL Log Level",
             "description": "EGL log verbosity level.",
             "inputs": "fatal=fatal, warning=warning, info=info, debug=debug",
             "output": ("environment_variable", "EGL_LOG_LEVEL", "", "", ""),
-        },
-        "egl_driver": {
-            "label": "EGL Driver",
-            "description": "Override the EGL driver.",
-            "inputs": "value=driver name",
-            "output": ("environment_variable", "EGL_DRIVER", "", "", ""),
-        },
-        "egl_software_rendering": {
-            "label": "EGL Software Rendering",
-            "description": "Force software rendering for EGL.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "EGL_SOFTWARE", "", "", ""),
-        },
-        "egl_drivers_path": {
-            "label": "EGL Drivers Path",
-            "description": "Search path for EGL driver files.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "EGL_DRIVERS_PATH", "", "", ":"),
-        },
-        "egl_external_platform_configuration_directories": {
-            "label": "EGL External Platform Configuration Directories",
-            "description": "Configuration directories for EGL external platforms.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS", "", "", ""),
-        },
-        "egl_vendor_library_filenames": {
-            "label": "EGL Vendor Library Filenames",
-            "description": "Override EGL vendor library JSON file paths.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "__EGL_VENDOR_LIBRARY_FILENAMES", "", "", ":"),
-        },
-        "egl_vendor_library_directories": {
-            "label": "EGL Vendor Library Directories",
-            "description": "Search directories for EGL vendor library files.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "__EGL_VENDOR_LIBRARY_DIRS", "", "", ":"),
         },
         "gbm_backend": {
             "label": "GBM Backend",
@@ -1410,24 +1212,6 @@ def get_mesa_settings() -> dict:
             "description": "Search path for GBM backend libraries.",
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "GBM_BACKENDS_PATH", "", "", ""),
-        },
-        "dri_prime_gpu_selection": {
-            "label": "DRI PRIME GPU Selection",
-            "description": "GPU selection for DRI PRIME offloading.",
-            "inputs": "0=integrated, 1=discrete",
-            "output": ("environment_variable", "DRI_PRIME", "", "", ""),
-        },
-        "dri_prime_debug": {
-            "label": "DRI PRIME Debug",
-            "description": "Debug output for DRI PRIME GPU selection.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "DRI_PRIME_DEBUG", "", "", ""),
-        },
-        "dri_driver_override": {
-            "label": "DRI Driver Override",
-            "description": "Override the DRI driver loaded.",
-            "inputs": "value=driver name",
-            "output": ("environment_variable", "dri_driver", "", "", ""),
         },
         "driver_configuration_directory": {
             "label": "Driver Configuration Directory",
@@ -1518,24 +1302,6 @@ def get_mesa_settings() -> dict:
             "description": "Directory to read SPIR-V binaries from.",
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "MESA_SPIRV_READ_PATH", "", "", ""),
-        },
-        "d3d12_default_adapter_name": {
-            "label": "D3D12 Default Adapter Name",
-            "description": "Default adapter name for D3D12 on Mesa.",
-            "inputs": "value=adapter name string",
-            "output": ("environment_variable", "MESA_D3D12_DEFAULT_ADAPTER_NAME", "", "", ""),
-        },
-        "driver_override": {
-            "label": "Driver Override",
-            "description": "Override the Mesa Gallium driver loaded.",
-            "inputs": "zink=zink, radeonsi=radeonsi, iris=iris, crocus=crocus, nouveau=nouveau, i915=i915, r600=r600, etnaviv=etnaviv, freedreno=freedreno, lima=lima, panfrost=panfrost, v3d=v3d, vc4=vc4, virgl=virgl, svga=svga, softpipe=softpipe, llvmpipe=llvmpipe",
-            "output": ("environment_variable", "MESA_LOADER_DRIVER_OVERRIDE", "", "", ""),
-        },
-        "device_identifier_override": {
-            "label": "Device Identifier Override",
-            "description": "Override the device identifier used by Mesa.",
-            "inputs": "value=device ID string",
-            "output": ("environment_variable", "device_id", "", "", ""),
         },
         "override_vram_size": {
             "label": "Override VRAM Size",
@@ -1638,24 +1404,6 @@ def get_mesa_settings() -> dict:
             "description": "Directory for JIT compiler symbol map files.",
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "JIT_SYMBOL_MAP_DIR", "", "", ""),
-        },
-        "draw_fast_shader_execution": {
-            "label": "Draw Fast Shader Execution",
-            "description": "Fast shader execution path for the Draw module.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "DRAW_FSE", "", "", ""),
-        },
-        "draw_no_fast_shader_execution": {
-            "label": "Draw No Fast Shader Execution",
-            "description": "Suppress fast shader execution in the Draw module.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "DRAW_NO_FSE", "", "", ""),
-        },
-        "draw_use_llvm": {
-            "label": "Draw Use LLVM",
-            "description": "Use LLVM JIT in the Draw module.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "DRAW_USE_LLVM", "", "", ""),
         },
         "nir_print": {
             "label": "NIR Print",
@@ -1771,12 +1519,6 @@ def get_mesa_settings() -> dict:
             "inputs": "value=on",
             "output": ("environment_variable", "ST_DEBUG", "", "tgsi", ","),
         },
-        "gallium_software_renderer": {
-            "label": "Gallium Software Renderer",
-            "description": "Select Gallium software renderer.",
-            "inputs": "softpipe=softpipe, llvmpipe=llvmpipe",
-            "output": ("environment_variable", "GALLIUM_DRIVER", "", "", ""),
-        },
         "gallium_overlay_default_visibility": {
             "label": "Gallium Overlay Default Visibility",
             "description": "Default visibility of the Gallium HUD overlay.",
@@ -1867,12 +1609,6 @@ def get_mesa_settings() -> dict:
             "inputs": "nosse=no-sse, sse=sse, sse2=sse2, sse3=sse3, ssse3=ssse3, sse4.1=sse4.1, avx=avx",
             "output": ("environment_variable", "GALLIUM_OVERRIDE_CPU_CAPS", "", "", ""),
         },
-        "gallium_pipe_search_directory": {
-            "label": "Gallium Pipe Search Directory",
-            "description": "Search directory for Gallium pipe drivers.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "GALLIUM_PIPE_SEARCH_DIR", "", "", ""),
-        },
         "gallium_multisample_antialiasing": {
             "label": "Gallium MSAA",
             "description": "Force multisample antialiasing for Gallium.",
@@ -1896,12 +1632,6 @@ def get_mesa_settings() -> dict:
             "description": "Suppress SSE optimizations in Gallium.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "GALLIUM_NOSSE", "", "", ""),
-        },
-        "amd_vulkan_driver_selection": {
-            "label": "AMD Vulkan Driver Selection",
-            "description": "Select between RADV and AMDVLK Vulkan drivers.",
-            "inputs": "RADV=radv, AMDVLK=amdvlk",
-            "output": ("environment_variable", "AMD_VULKAN_ICD", "", "", ""),
         },
         "amd_force_variable_rate_shading": {
             "label": "AMD Force VRS",
@@ -2196,12 +1926,6 @@ def get_mesa_settings() -> dict:
             "description": "Output file path for RADV trace.",
             "inputs": "path=filesystem path",
             "output": ("environment_variable", "RADV_TRACE_FILE", "", "", ""),
-        },
-        "radv_force_family": {
-            "label": "RADV Force Family",
-            "description": "Force a specific GPU family for RADV.",
-            "inputs": "value=gfx900, gfx906=gfx906, gfx1010=gfx1010, gfx1030=gfx1030, gfx1100=gfx1100, gfx1101=gfx1101, gfx1102=gfx1102",
-            "output": ("environment_variable", "RADV_FORCE_FAMILY", "", "", ""),
         },
         "radv_secure_compile_threads": {
             "label": "RADV Secure Compile Threads",
@@ -2641,12 +2365,6 @@ def get_mesa_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "INTEL_PRECISE_TRIG", "", "", ""),
         },
-        "intel_hardware_submission": {
-            "label": "Intel Hardware Submission",
-            "description": "Hardware command submission for Intel drivers.",
-            "inputs": "1=off, 0=on",
-            "output": ("environment_variable", "INTEL_NO_HW", "", "", ""),
-        },
         "intel_no_blit": {
             "label": "Intel No Blit",
             "description": "Skip blit operations for Intel drivers.",
@@ -2724,12 +2442,6 @@ def get_mesa_settings() -> dict:
             "description": "Extended performance metrics for Intel.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "INTEL_EXTENDED_METRICS", "", "", ""),
-        },
-        "intel_force_probe": {
-            "label": "Intel Force Probe",
-            "description": "Force probe specific Intel device IDs.",
-            "inputs": "value=device ID",
-            "output": ("environment_variable", "INTEL_FORCE_PROBE", "", "", ""),
         },
         "intel_modifier_override": {
             "label": "Intel Modifier Override",
@@ -3097,12 +2809,6 @@ def get_mesa_settings() -> dict:
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "anv_force_filter_addr_rounding", "", "", ""),
         },
-        "anv_force_vulkan_vendor": {
-            "label": "ANV Force Vulkan Vendor",
-            "description": "Override the Vulkan vendor ID for ANV.",
-            "inputs": "value=vendor ID string",
-            "output": ("environment_variable", "anv_force_vk_vendor", "", "", ""),
-        },
         "anv_large_workgroup_non_coherent_image_workaround": {
             "label": "ANV Large Workgroup Non-Coherent Image Workaround",
             "description": "Workaround for large workgroup non-coherent image access in ANV.",
@@ -3469,12 +3175,6 @@ def get_mesa_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "ZINK_INLINE_UNIFORMS", "", "", ""),
         },
-        "zink_use_lavapipe": {
-            "label": "Zink Use Lavapipe",
-            "description": "Use Lavapipe software Vulkan for Zink.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "ZINK_USE_LAVAPIPE", "", "", ""),
-        },
         "zink_emulate_point_smooth": {
             "label": "Zink Emulate Point Smooth",
             "description": "Emulate point smoothing for Zink.",
@@ -3642,12 +3342,6 @@ def get_mesa_settings() -> dict:
             "description": "Skip rasterization for Softpipe.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "SOFTPIPE_NO_RAST", "", "", ""),
-        },
-        "softpipe_use_llvm": {
-            "label": "Softpipe Use LLVM",
-            "description": "Use LLVM JIT in Softpipe.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "SOFTPIPE_USE_LLVM", "", "", ""),
         },
         "softpipe_debug_triangles": {
             "label": "Softpipe Debug Triangles",
@@ -3847,12 +3541,6 @@ def get_mesa_settings() -> dict:
             "inputs": "value=on",
             "output": ("environment_variable", "PAN_MESA_DEBUG", "", "gl3", ","),
         },
-        "panfrost_gpu_identifier": {
-            "label": "Panfrost GPU Identifier",
-            "description": "Override GPU identifier for Panfrost.",
-            "inputs": "value=GPU ID string",
-            "output": ("environment_variable", "PAN_GPU_ID", "", "", ""),
-        },
         "panfrost_compute_core_mask": {
             "label": "Panfrost Compute Core Mask",
             "description": "Core mask for compute in Panfrost.",
@@ -3955,12 +3643,6 @@ def get_mesa_settings() -> dict:
             "inputs": "value=on",
             "output": ("environment_variable", "LIMA_DEBUG", "", "dump", ","),
         },
-        "v3d_simulator_file": {
-            "label": "V3D Simulator File",
-            "description": "Simulator binary file for V3D.",
-            "inputs": "path=filesystem path",
-            "output": ("environment_variable", "V3D_SIMULATOR_FILE", "", "", ""),
-        },
         "v3d_non_msaa_texture_size_limit": {
             "label": "V3D Non-MSAA Texture Size Limit",
             "description": "Non-MSAA texture size limit for V3D.",
@@ -3996,18 +3678,6 @@ def get_mesa_settings() -> dict:
             "description": "Print assembly for VC4 shaders.",
             "inputs": "value=on",
             "output": ("environment_variable", "VC4_DEBUG", "", "asm", ","),
-        },
-        "vmware_force_software_transform": {
-            "label": "VMware Force Software Transform",
-            "description": "Force software transform and lighting for VMware.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "SVGA_FORCE_SWTNL", "", "", ""),
-        },
-        "vmware_no_software_transform": {
-            "label": "VMware No Software Transform",
-            "description": "Skip software transform and lighting for VMware.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "SVGA_NO_SWTNL", "", "", ""),
         },
         "vmware_extra_logging": {
             "label": "VMware Extra Logging",
@@ -4171,12 +3841,6 @@ def get_mesa_settings() -> dict:
             "inputs": "auto=auto, off=off, on=on",
             "output": ("environment_variable", "PCO_COLOR", "", "", ""),
         },
-        "pvr_shim_device_bvnc": {
-            "label": "PVR Shim Device BVNC",
-            "description": "Device BVNC string for the PVR shim.",
-            "inputs": "value=BVNC string",
-            "output": ("environment_variable", "PVR_SHIM_DEVICE_BVNC", "", "", ""),
-        },
         "pvr_shim_enhancements": {
             "label": "PVR Shim Enhancements",
             "description": "Enhancement flags for the PVR shim.",
@@ -4236,12 +3900,6 @@ def get_mesa_settings() -> dict:
             "description": "Skip specific passes in PCO compilation.",
             "inputs": "value=pass name",
             "output": ("environment_variable", "PCO_SKIP_PASSES", "", "", ""),
-        },
-        "dzn_restriction": {
-            "label": "DZN Restriction",
-            "description": "DZN Vulkan driver restriction.",
-            "inputs": "true=on, false=off",
-            "output": ("environment_variable", "dzn_disable", "", "", ""),
         },
         "dzn_claim_wide_lines": {
             "label": "DZN Claim Wide Lines",

@@ -93,7 +93,6 @@ def get_render_settings() -> dict:
                 ("environment_variable", "PVR_SHIM_DEVICE_BVNC", "", "", ""),
                 ("environment_variable", "dzn_disable", "", "", ""),
                 ("environment_variable", "ZINK_USE_LAVAPIPE", "", "", ""),
-                ("environment_variable", "ENABLE_GAMESCOPE_WSI", "", "", ""),
                 ("environment_variable", "MESA_D3D12_DEFAULT_ADAPTER_NAME", "", "", ""),
             ),
         },

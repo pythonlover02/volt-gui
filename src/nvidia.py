@@ -697,18 +697,6 @@ def get_nvidia_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_UseGVIEvents", "", "", ""),
         },
-        "vulkan_layer_optimus": {
-            "label": "Vulkan Layer Optimus",
-            "description": "Optimus layer GPU selection filter.",
-            "inputs": "NVIDIA_only=nvidia-gpu, non_NVIDIA_only=other-gpu",
-            "output": ("environment_variable", "__VK_LAYER_NV_optimus", "", "", ""),
-        },
-        "vulkan_layer_optimus_restriction": {
-            "label": "Vulkan Layer Optimus Restriction",
-            "description": "Suppress the Optimus Vulkan layer.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "DISABLE_LAYER_NV_OPTIMUS_1", "", "", ""),
-        },
         "vulkan_ray_tracing_validation": {
             "label": "Ray Tracing Validation",
             "description": "Ray tracing validation layer.",
@@ -738,18 +726,6 @@ def get_nvidia_settings() -> dict:
             "description": "Vulkan queue family used by NVPresent.",
             "inputs": "value=queue family index",
             "output": ("environment_variable", "NVPRESENT_QUEUE_FAMILY", "", "", ""),
-        },
-        "prime_render_offload": {
-            "label": "PRIME Render Offload",
-            "description": "PRIME render offload to the NVIDIA GPU.",
-            "inputs": "1=on, 0=off",
-            "output": ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD", "", "", ""),
-        },
-        "prime_render_offload_provider": {
-            "label": "PRIME Render Offload Provider",
-            "description": "Provider string for PRIME render offload.",
-            "inputs": "value=provider string",
-            "output": ("environment_variable", "__NV_PRIME_RENDER_OFFLOAD_PROVIDER", "", "", ""),
         },
         "explicit_synchronization_restriction": {
             "label": "Explicit Synchronization Restriction",
