@@ -5,12 +5,16 @@ from PySide6.QtCore import QProcess, QTimer
 from database import *
 
 
-def get_opengl_detection_result(storage={"devices": (), "device_map": {}, "loaded": False}):
-    return storage
+def build_empty_detection_state() -> dict:
+    return {"devices": (), "device_map": {}, "loaded": False}
 
 
-def get_vulkan_detection_result(storage={"devices": (), "device_map": {}, "loaded": False}):
-    return storage
+def get_opengl_detection_result(cache=[build_empty_detection_state()]):
+    return cache[0]
+
+
+def get_vulkan_detection_result(cache=[build_empty_detection_state()]):
+    return cache[0]
 
 
 def parse_device_name_from_raw(raw_text: str) -> str:

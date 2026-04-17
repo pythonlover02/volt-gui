@@ -24,9 +24,9 @@ def process_environment_script_write(volt_script_path, environment_arguments, la
         env_key = environment_argument.split("=", 1)[0]
         env_value = environment_argument.split("=", 1)[1]
         if env_value == "":
-            unset_lines.append('os.environ.pop("' + env_key + '", None)')
+            unset_lines.append("os.environ.pop(" + repr(env_key) + ", None)")
         else:
-            set_lines.append('os.environ["' + env_key + '"] = "' + env_value + '"')
+            set_lines.append("os.environ[" + repr(env_key) + "] = " + repr(env_value))
     script_parts = ["#!/usr/bin/env python3", "import os, sys", ""]
     for line in unset_lines:
         script_parts.append(line)
@@ -38,7 +38,7 @@ def process_environment_script_write(volt_script_path, environment_arguments, la
         script_parts.append("")
     if launch_command != "":
         prefix_items = launch_command.split()
-        script_parts.append("prefix = [" + ", ".join('"' + p + '"' for p in prefix_items) + "]")
+        script_parts.append("prefix = [" + ", ".join(repr(p) for p in prefix_items) + "]")
         script_parts.append("os.execvp(prefix[0], prefix + sys.argv[1:])")
     else:
         script_parts.append("os.execvp(sys.argv[1], sys.argv[1:])")
@@ -89,7 +89,6 @@ def get_persisted_option_value(option_key: str) -> str:
 
 
 def calculate_initial_scale() -> float:
-    if get_persisted_option_value("interface_scale_factor") is None: os.environ["QT_SCALE_FACTOR"] = "1.0"; return 1.0
     if not str(get_persisted_option_value("interface_scale_factor")).replace(".", "", 1).isdigit(): os.environ["QT_SCALE_FACTOR"] = "1.0"; return 1.0
     os.environ["QT_SCALE_FACTOR"] = str(get_persisted_option_value("interface_scale_factor"))
     return float(get_persisted_option_value("interface_scale_factor"))
@@ -310,9 +309,22 @@ def process_tray_option_update(main_window, tray_enabled: bool) -> None:
     return None
 
 
+def get_options_save_debounce_ms() -> int:
+    return 500
+
+
+def process_options_save_timer_trigger(main_window) -> None:
+    if getattr(main_window, "options_save_timer", None) is None:
+        main_window.options_save_timer = QTimer(main_window)
+        main_window.options_save_timer.setSingleShot(True)
+        main_window.options_save_timer.timeout.connect(lambda: process_application_options_save(main_window))
+    main_window.options_save_timer.start(get_options_save_debounce_ms())
+    return None
+
+
 def process_option_change(main_window, option_key: str) -> None:
     if getattr(main_window, "initial_setup_complete", False) is not True: return None
-    process_application_options_save(main_window)
+    process_options_save_timer_trigger(main_window)
     return None
 
 
@@ -390,6 +402,8 @@ def process_window_close(main_window, singleton_socket, close_event) -> None:
 
 
 def process_cleanup(main_window, singleton_socket) -> None:
+    if getattr(main_window, "options_save_timer", None) is not None:
+        main_window.options_save_timer.stop()
     process_profile_save(main_window.all_widgets, main_window.current_profile)
     process_application_options_save(main_window)
     if singleton_socket is not None: singleton_socket.close()
@@ -413,13 +427,36 @@ def process_welcome_show(main_window) -> None:
     return None
 
 
+def get_update_check_url() -> str:
+    return "https://api.github.com/repos/pythonlover02/volt-gui/releases/latest"
+
+
+def get_update_check_timeout() -> int:
+    return 5
+
+
+def fetch_release_response(url: str, timeout_seconds: int):
+    try: return requests.get(url, timeout=timeout_seconds)
+    except Exception: return None
+
+
+def parse_response_json(response):
+    if response is None: return None
+    if response.status_code != 200: return None
+    try: return response.json()
+    except Exception: return None
+
+
+def extract_tag_from_payload(payload) -> str:
+    if payload is None: return ""
+    if not isinstance(payload, dict): return ""
+    if "tag_name" not in payload: return ""
+    if payload["tag_name"] is None: return ""
+    return str(payload["tag_name"]).lstrip("v")
+
+
 def fetch_latest_release_tag() -> str:
-    response = requests.get("https://api.github.com/repos/pythonlover02/volt-gui/releases/latest", timeout=5)
-    if response is None: return ""
-    if response.status_code != 200: return ""
-    if response.json() is None: return ""
-    if "tag_name" not in response.json(): return ""
-    return response.json()["tag_name"].lstrip("v")
+    return extract_tag_from_payload(parse_response_json(fetch_release_response(get_update_check_url(), get_update_check_timeout())))
 
 
 def process_updates_check_worker(main_window, worker_thread) -> None:

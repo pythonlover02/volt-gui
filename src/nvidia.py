@@ -573,8 +573,8 @@ def get_nvidia_settings() -> dict:
         },
         "opengl_shader_disk_cache_maximum_size": {
             "label": "Shader Disk Cache Maximum Size",
-            "description": "Maximum size of the OpenGL shader disk cache.",
-            "inputs": "bytes (1073741824=1GB, 2147483648=2GB, 5368709120=5GB)",
+            "description": "Maximum size of the OpenGL shader disk cache, in bytes.",
+            "inputs": "1073741824=1GB, 2147483648=2GB, 5368709120=5GB",
             "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_SIZE", "", "", ""),
         },
         "opengl_shader_disk_cache_cleanup": {

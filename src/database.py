@@ -13,7 +13,7 @@ from options import *
 from about import *
 
 
-def get_settings_database() -> dict:
+def build_settings_database() -> dict:
     return {
         "Mesa": get_mesa_settings(),
         "NVIDIA Proprietary": get_nvidia_settings(),
@@ -28,6 +28,11 @@ def get_settings_database() -> dict:
         "Options": get_options_settings(),
         "About": get_about_settings(),
     }
+
+
+def get_settings_database(cache=[None]) -> dict:
+    if cache[0] is None: cache[0] = build_settings_database()
+    return cache[0]
 
 
 def get_tab_metadata(tab_name: str):
@@ -194,7 +199,7 @@ def filter_frozen_environment_variables(environment_variables: dict) -> dict:
 
 
 def build_filtered_path_string(path_value: str) -> str:
-    return os.pathsep.join(path_entry for path_entry in path_value.split(os.pathsep) if getattr(sys, "_MEIPASS") not in path_entry)
+    return os.pathsep.join(path_entry for path_entry in path_value.split(os.pathsep) if getattr(sys, "_MEIPASS", "") not in path_entry)
 
 
 def filter_meipass_from_path(environment_variables: dict) -> dict:

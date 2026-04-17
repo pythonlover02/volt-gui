@@ -1527,8 +1527,8 @@ def get_mesa_settings() -> dict:
         },
         "gallium_overlay_update_period": {
             "label": "Gallium Overlay Update Period",
-            "description": "Update period in seconds for the Gallium HUD overlay.",
-            "inputs": "number (0=realtime, 0.1=0.1, 0.25=0.25, 0.5=0.5, 1.0=1.0, 2.0=2.0",
+            "description": "Update period in seconds for the Gallium HUD overlay. 0 means realtime (update every frame).",
+            "inputs": "0=realtime, 0.1=0.1, 0.25=0.25, 0.5=0.5, 1.0=1.0, 2.0=2.0",
             "output": ("environment_variable", "GALLIUM_HUD_PERIOD", "", "", ""),
         },
         "gallium_overlay_opacity": {
@@ -1563,8 +1563,8 @@ def get_mesa_settings() -> dict:
         },
         "gallium_performance_overlay": {
             "label": "Gallium Performance Overlay",
-            "description": "Gallium HUD overlay configuration string.",
-            "inputs": "value=fps, cpu=cpu, GPU-load=GPU-load, VRAM-usage=VRAM-usage, frametime=frametime",
+            "description": "Gallium HUD overlay configuration string. Accepts a '+' separated list of metrics (e.g. 'fps+cpu+GPU-load+VRAM-usage+frametime'). Run 'GALLIUM_HUD=help glxgears' for the full list.",
+            "inputs": "value=plus-separated metric list (e.g. fps+cpu+GPU-load)",
             "output": ("environment_variable", "GALLIUM_HUD", "", "", ""),
         },
         "gallium_print_options": {
@@ -1839,14 +1839,14 @@ def get_mesa_settings() -> dict:
         },
         "radv_profiler_buffer_size": {
             "label": "RADV Profiler Buffer Size",
-            "description": "Thread trace buffer size for RADV profiler.",
-            "inputs": "bytes (16777216=16MB, 33554432=32MB, 67108864=64MB, 134217728=128MB, 268435456=256MB)",
+            "description": "Thread trace buffer size for RADV profiler, in bytes.",
+            "inputs": "16777216=16MB, 33554432=32MB, 67108864=64MB, 134217728=128MB, 268435456=256MB",
             "output": ("environment_variable", "RADV_THREAD_TRACE_BUFFER_SIZE", "", "", ""),
         },
         "radv_sqtt_buffer_size": {
             "label": "RADV SQTT Buffer Size",
-            "description": "SQTT buffer size for RADV.",
-            "inputs": "bytes (33554432=32MB, 67108864=64MB, 134217728=128MB)",
+            "description": "SQTT buffer size for RADV, in bytes.",
+            "inputs": "33554432=32MB, 67108864=64MB, 134217728=128MB",
             "output": ("environment_variable", "RADV_SQTT_BUFFER_SIZE", "", "", ""),
         },
         "radv_profiler_cache_counters": {
@@ -1905,14 +1905,14 @@ def get_mesa_settings() -> dict:
         },
         "radv_raytracing_analyzer_trace_buffer_size": {
             "label": "RADV Raytracing Analyzer Trace Buffer Size",
-            "description": "Buffer size for RRA trace capture.",
-            "inputs": "bytes (67108864=64MB, 134217728=128MB, 268435456=256MB)",
+            "description": "Buffer size for RRA trace capture, in bytes.",
+            "inputs": "67108864=64MB, 134217728=128MB, 268435456=256MB",
             "output": ("environment_variable", "RADV_RRA_TRACE_BUFFER_SIZE", "", "", ""),
         },
         "radv_raytracing_analyzer_trace_history_size": {
             "label": "RADV Raytracing Analyzer Trace History Size",
-            "description": "History buffer size for RRA trace capture.",
-            "inputs": "bytes (52428800=50MB, 104857600=100MB, 209715200=200MB)",
+            "description": "History buffer size for RRA trace capture, in bytes.",
+            "inputs": "52428800=50MB, 104857600=100MB, 209715200=200MB",
             "output": ("environment_variable", "RADV_RRA_TRACE_HISTORY_SIZE", "", "", ""),
         },
         "radv_raytracing_analyzer_resolution_scale": {
