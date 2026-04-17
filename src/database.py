@@ -354,8 +354,13 @@ def build_launch_command_string(argument_collection: tuple) -> str:
     return " ".join(value for tab, value in argument_collection)
 
 
+def is_grouped_target_overridden(environment_key: str, grouped_environment_collection: dict) -> bool:
+    if environment_key not in grouped_environment_collection: return False
+    return len(grouped_environment_collection[environment_key]["parts"]) > 0
+
+
 def build_final_apply_arguments(environment_collection: dict, grouped_environment_collection: dict, argument_collection: list) -> tuple:
-    environment_arguments = [environment_key + "=" + environment_value for environment_key, environment_value in environment_collection.items()]
+    environment_arguments = [environment_key + "=" + environment_value for environment_key, environment_value in environment_collection.items() if not is_grouped_target_overridden(environment_key, grouped_environment_collection)]
     for target, group_data in grouped_environment_collection.items():
         if len(group_data["parts"]) > 0:
             environment_arguments.append(target + "=" + group_data["separator"].join(group_data["parts"]))
@@ -400,23 +405,10 @@ def is_identity_input_pair(pair_text: str) -> bool:
     return pair_text.strip().split("=", 1)[0].strip() == pair_text.strip().split("=", 1)[1].strip()
 
 
-def is_flag_style_toggle_input(inputs_text: str) -> bool:
-    if "," in inputs_text: return False
-    if "=" not in inputs_text: return False
-    if inputs_text.strip().split("=", 1)[0].strip() != "value": return False
-    return inputs_text.strip().split("=", 1)[1].strip() == "on"
-
-
-def is_freeform_toggle_input(inputs_text: str) -> bool:
-    if "," in inputs_text: return False
-    if "=" not in inputs_text: return False
-    if inputs_text.strip().split("=", 1)[0].strip() != "value": return False
-    return inputs_text.strip().split("=", 1)[1].strip() != "on"
-
-
 def is_toggle_setting_input(inputs_text: str) -> bool:
-    if is_flag_style_toggle_input(inputs_text): return True
-    return is_freeform_toggle_input(inputs_text)
+    if "," in inputs_text: return False
+    if "=" not in inputs_text: return False
+    return inputs_text.strip().split("=", 1)[0].strip() == "value"
 
 
 def format_input_pair_display(pair_text: str) -> str:
@@ -426,8 +418,7 @@ def format_input_pair_display(pair_text: str) -> str:
 
 
 def build_setting_values_display(inputs_text: str) -> str:
-    if is_flag_style_toggle_input(inputs_text) is True: return "on (flag is only active when the literal value is present)"
-    if is_freeform_toggle_input(inputs_text) is True: return "any value that isn\u2019t unset"
+    if is_toggle_setting_input(inputs_text) is True: return "any value that isn\u2019t unset"
     return ", ".join(format_input_pair_display(pair) for pair in inputs_text.split(",") if pair.strip() != "")
 
 
