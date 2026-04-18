@@ -10,7 +10,7 @@ def get_dxvk_settings() -> dict:
         "dxvk_frame_rate": {
             "label": "Frame Rate Limit",
             "description": "Limit the frame rate. 0 uncaps the frame rate; any positive integer limits rendering to that many frames per second.",
-            "inputs": "0=uncap, value=fps limit (e.g. 60)",
+            "inputs": "value=fps limit (e.g. 60), 0=off",
             "output": ("environment_variable", "DXVK_FRAME_RATE", "", "", ""),
         },
         "dxvk_filter_device_name": {
@@ -27,7 +27,7 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_hdr": {
             "label": "HDR",
-            "description": "Enable HDR support. Exposes the HDR10 color space (DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) to the application. Many games require this to be set to consider exposing HDR output.",
+            "description": "HDR support. Exposes the HDR10 color space (DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) to the application. Many games require this to be set to consider exposing HDR output.",
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "DXVK_HDR", "", "", ""),
         },
@@ -39,8 +39,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_shader_cache": {
             "label": "Shader Cache",
-            "description": "Control DXVK's internal shader cache. Set to 0 to disable it entirely. Any caching would then have to be managed externally.",
-            "inputs": "0=disable",
+            "description": "Control DXVK's internal shader cache. Set to 0 to turn it off entirely. Any caching would then have to be managed externally.",
+            "inputs": "0=off",
             "output": ("environment_variable", "DXVK_SHADER_CACHE", "", "", ""),
         },
         "dxvk_shader_cache_path": {
@@ -57,8 +57,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_state_cache": {
             "label": "State Cache (Sarek)",
-            "description": "Control the DXVK-Sarek pipeline state cache. Set to 0 to disable. This cache allows shaders to be recompiled ahead of time on subsequent runs, reducing stutter. Only applicable to DXVK-Sarek.",
-            "inputs": "0=disable",
+            "description": "Control the DXVK-Sarek pipeline state cache. Set to 0 to turn off. This cache allows shaders to be recompiled ahead of time on subsequent runs, reducing stutter. Only applicable to DXVK-Sarek.",
+            "inputs": "0=off",
             "output": ("environment_variable", "DXVK_STATE_CACHE", "", "", ""),
         },
         "dxvk_state_cache_path": {
@@ -73,38 +73,38 @@ def get_dxvk_settings() -> dict:
             "inputs": "1=on",
             "output": ("environment_variable", "DXVK_ALL_CORES", "", "", ""),
         },
-        "dxvk_disable_dyasync": {
-            "label": "Disable Dyasync (Sarek)",
-            "description": "Disable Dynamic Asynchronous Pipeline Compilation in DXVK-Sarek. Dyasync reduces stuttering by compiling shader variants in the background and using a closest-match placeholder pipeline in the meantime. Disabling reverts to fully synchronous compilation. Only applicable to DXVK-Sarek.",
-            "inputs": "1=on",
+        "dxvk_dyasync_sarek": {
+            "label": "Dyasync (Sarek)",
+            "description": "Dynamic Asynchronous Pipeline Compilation in DXVK-Sarek. Dyasync reduces stuttering by compiling shader variants in the background and using a closest-match placeholder pipeline in the meantime. Disabling reverts to fully synchronous compilation. Only applicable to DXVK-Sarek.",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "DXVK_DISABLE_DYASYNC", "", "", ""),
         },
-        "ddraw_force_multi_threaded": {
-            "label": "DDraw Force Multi-Threaded",
+        "ddraw_multi_threaded": {
+            "label": "DDraw Multi-Threaded",
             "description": "Enforce the use of DDSCL_MULTITHREADED. Some games require multi-threaded DirectDraw access but don't request it themselves.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceMultiThreaded=", "", ";"),
         },
-        "ddraw_force_swvp": {
-            "label": "DDraw Force SWVP",
+        "ddraw_swvp": {
+            "label": "DDraw SWVP",
             "description": "Use Software Vertex Processing mode for all D3D9 devices (via the DDraw/D3D7 path).",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceSWVP=", "", ";"),
         },
-        "ddraw_support_r3g3b2": {
-            "label": "DDraw Support R3G3B2",
+        "ddraw_r3g3b2": {
+            "label": "DDraw R3G3B2",
             "description": "Advertise support for the R3G3B2 (8-bit packed RGB) format. Needed by some older titles that require this format.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.supportR3G3B2=", "", ";"),
         },
-        "ddraw_support_d16": {
-            "label": "DDraw Support D16",
+        "ddraw_d16": {
+            "label": "DDraw D16",
             "description": "Advertise support for the D16 depth format.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.supportD16=", "", ";"),
         },
-        "ddraw_use_d24x8_for_d32": {
-            "label": "DDraw Use D24X8 for D32",
+        "ddraw_d24x8_for_d32": {
+            "label": "DDraw D24X8 for D32",
             "description": "Replace any use of D32 depth format with D24X8. Workaround for games that request D32 but misbehave with it.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.useD24X8forD32=", "", ";"),
@@ -115,14 +115,14 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.mask8BitModes=", "", ";"),
         },
-        "ddraw_force_pow2_textures": {
-            "label": "DDraw Force POW2 Textures",
+        "ddraw_pow2_textures": {
+            "label": "DDraw POW2 Textures",
             "description": "Report power-of-two texture dimension restrictions to the application. Some older games rely on this cap being advertised.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forcePOW2Textures=", "", ";"),
         },
-        "ddraw_force_legacy_discard": {
-            "label": "DDraw Force Legacy Discard",
+        "ddraw_legacy_discard": {
+            "label": "DDraw Legacy Discard",
             "description": "Respect DISCARD only on DYNAMIC + WRITEONLY buffers. Matches older DirectDraw behaviour at a small performance cost.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceLegacyDiscard=", "", ";"),
@@ -133,8 +133,8 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.colorKeyCompatibility=", "", ";"),
         },
-        "ddraw_force_single_back_buffer": {
-            "label": "DDraw Force Single Back Buffer",
+        "ddraw_single_back_buffer": {
+            "label": "DDraw Single Back Buffer",
             "description": "Map all back buffers onto a single D3D9 back buffer. Fixes games that create multi-buffer flip chains but don't handle them correctly.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceSingleBackBuffer=", "", ";"),
@@ -159,18 +159,18 @@ def get_dxvk_settings() -> dict:
         },
         "ddraw_upload_depth_stencils": {
             "label": "DDraw Upload Depth Stencils",
-            "description": "Upload or skip uploading depth stencils. Disabling can reduce overhead for games that never read depth back, but breaks those that do.",
-            "inputs": "True=upload (default), False=skip",
+            "description": "Upload depth stencils. Turning this off can reduce overhead for games that never read depth back, but breaks those that do.",
+            "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.uploadDepthStencils=", "", ";"),
         },
-        "ddraw_force_proxied_present": {
-            "label": "DDraw Force Proxied Present",
+        "ddraw_proxied_present": {
+            "label": "DDraw Proxied Present",
             "description": "Blit back to the proxied flippable surface and present with DDraw. Compatibility path for titles that rely on DDraw-level presentation semantics.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceProxiedPresent=", "", ";"),
         },
-        "ddraw_force_blit_on_flip": {
-            "label": "DDraw Force Blit On Flip",
+        "ddraw_blit_on_flip": {
+            "label": "DDraw Blit On Flip",
             "description": "Workaround that uses blits instead of flips for presentation. Fixes games where the flip path produces incorrect results or artifacts.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.forceBlitOnFlip=", "", ";"),
@@ -195,20 +195,20 @@ def get_dxvk_settings() -> dict:
         },
         "ddraw_apitrace_mode": {
             "label": "DDraw APITrace Mode",
-            "description": "Enable all surface write-backs. Intended for debugging / apitrace capture. Comes with significant performance penalties.",
+            "description": "All surface write-backs. Intended for debugging / apitrace capture. Comes with significant performance penalties.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.apitraceMode=", "", ";"),
         },
         "ddraw_emulate_fsaa": {
             "label": "DDraw Emulate FSAA",
-            "description": "Use supported MSAA up to 4x to emulate FSAA on the DDraw/D3D7 path. 'true' enables emulation when the app requests FSAA; 'forced' enables it unconditionally; 'auto' (default) disables it.",
-            "inputs": "auto=disabled (default), true=on, forced=force on",
+            "description": "Use supported MSAA up to 4x to emulate FSAA on the DDraw/D3D7 path. 'true' applies emulation when the app requests FSAA; 'forced' applies it unconditionally; 'auto' (default) is off.",
+            "inputs": "true=on, forced=force on, auto=off (default)",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.emulateFSAA=", "", ";"),
         },
         "ddraw_back_buffer_guard": {
             "label": "DDraw Back Buffer Guard",
-            "description": "Determines how uploads for back buffer blits are handled. 'auto' (default) enables the standard guard path; 'strict' is a stricter path for games that read back the back buffer aggressively; 'disabled' turns the guard off.",
-            "inputs": "auto=on (default), strict=strict path, disabled=off",
+            "description": "Determines how uploads for back buffer blits are handled. 'auto' (default) uses the standard guard path; 'strict' is a stricter path for games that read back the back buffer aggressively; 'disabled' turns the guard off.",
+            "inputs": "auto=on (default), disabled=off, strict=strict path",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.backBufferGuard=", "", ";"),
         },
         "ddraw_max_available_memory": {
@@ -220,13 +220,13 @@ def get_dxvk_settings() -> dict:
         "d3d8_scale_dref": {
             "label": "D3D8 Scale Dref",
             "description": "Some early D3D8 games expect Dref (depth texcoord Z) to be on the range [0..2^bitDepth - 1]. This option scales it back to [0..1] in DXSO and fixed vertex function.",
-            "inputs": "0=disable, value=bitDepth (typically 24)",
+            "inputs": "value=bitDepth (typically 24), 0=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.scaleDref=", "", ";"),
         },
         "d3d8_dref_scaling": {
             "label": "D3D8 Dref Scaling (Low-Latency)",
             "description": "Low-latency fork name for d3d8.scaleDref. Some early D3D8 games expect Dref on range [0..2^bitDepth - 1]; scales it back to [0..1].",
-            "inputs": "0=disable, value=bitDepth (typically 24)",
+            "inputs": "value=bitDepth (typically 24), 0=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.drefScaling=", "", ";"),
         },
         "d3d8_shadow_perspective_divide": {
@@ -235,8 +235,8 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.shadowPerspectiveDivide=", "", ";"),
         },
-        "d3d8_force_vs_decl": {
-            "label": "D3D8 Force VS Decl",
+        "d3d8_vs_decl": {
+            "label": "D3D8 VS Decl",
             "description": "Some games rely on undefined behavior by using undeclared vertex shader inputs. Modifies vertex shader declaration. Comma-separated list of colon-separated number pairs (D3DVSDE_REGISTER:D3DVSDT_TYPE).",
             "inputs": "value=e.g. '0:2,3:2,7:1' for float3 pos/normal/uv",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.forceVsDecl=", "", ";"),
@@ -253,8 +253,8 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.placeP8InScratch=", "", ";"),
         },
-        "d3d8_force_legacy_discard": {
-            "label": "D3D8 Force Legacy Discard",
+        "d3d8_legacy_discard": {
+            "label": "D3D8 Legacy Discard",
             "description": "Older applications may rely on D3DLOCK_DISCARD being ignored for everything except D3DUSAGE_DYNAMIC + D3DUSAGE_WRITEONLY buffers. This approach incurs a performance penalty.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d8.forceLegacyDiscard=", "", ";"),
@@ -274,7 +274,7 @@ def get_dxvk_settings() -> dict:
         "d3d9_max_frame_rate": {
             "label": "D3D9 Max Frame Rate",
             "description": "D3D9 variant of maxFrameRate. Same semantics as dxgi.maxFrameRate.",
-            "inputs": "0=default, n=limit to n fps, -1=always disable",
+            "inputs": "n=limit to n fps, 0=default, -1=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.maxFrameRate=", "", ";"),
         },
         "d3d9_custom_device_id": {
@@ -298,49 +298,49 @@ def get_dxvk_settings() -> dict:
         "d3d9_hide_nvidia_gpu": {
             "label": "D3D9 Hide Nvidia GPU",
             "description": "Report Nvidia GPUs as AMD GPUs for D3D8/9. Generally only done for games known to take issue with NVAPI or otherwise behave poorly on Nvidia.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideNvidiaGpu=", "", ";"),
         },
         "d3d9_hide_nvk_gpu": {
             "label": "D3D9 Hide NVK GPU",
             "description": "D3D9 variant. Report Nvidia GPUs running on NVK as AMD GPUs.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideNvkGpu=", "", ";"),
         },
         "d3d9_hide_amd_gpu": {
             "label": "D3D9 Hide AMD GPU",
             "description": "D3D9 variant. Report AMD GPUs as Nvidia GPUs for games with AMD-specific issues.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideAmdGpu=", "", ";"),
         },
         "d3d9_hide_intel_gpu": {
             "label": "D3D9 Hide Intel GPU",
             "description": "Report Intel GPUs as AMD GPUs for D3D8/9. Defaults to True to circumvent iGPU-specific restrictions affecting early Intel hardware.",
-            "inputs": "Auto=auto, True=hide (default), False=report normally",
+            "inputs": "True=on (default), False=off, Auto=auto",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideIntelGpu=", "", ";"),
         },
         "d3d9_num_back_buffers": {
             "label": "D3D9 Num Back Buffers (Low-Latency)",
             "description": "D3D9 equivalent of numBackBuffers. Low-latency fork only.",
-            "inputs": "0=no override, value>=2",
+            "inputs": "value>=2, 0=no override",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.numBackBuffers=", "", ";"),
         },
         "d3d9_present_interval": {
             "label": "D3D9 Present Interval (Vsync)",
-            "description": "D3D9 equivalent of syncInterval. 0=disable vsync, positive=repeat image, negative=app default.",
-            "inputs": "0=vsync off, n=repeat n times, -1=app default",
+            "description": "D3D9 equivalent of syncInterval. 0=off entirely, positive=repeat image, negative=app default.",
+            "inputs": "n=repeat n times, 0=off, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.presentInterval=", "", ";"),
         },
         "d3d9_tear_free": {
             "label": "D3D9 Tear Free (Low-Latency)",
-            "description": "D3D9 equivalent of dxvk.tearFree. True=mailbox present mode when vsync disabled; False=relaxed FIFO when vsync enabled. Low-latency fork only.",
-            "inputs": "Auto=default, True=mailbox, False=relaxed fifo",
+            "description": "D3D9 equivalent of dxvk.tearFree. True=mailbox present mode when vsync off; False=relaxed FIFO when vsync on. Low-latency fork only.",
+            "inputs": "True=mailbox, False=relaxed fifo, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.tearFree=", "", ";"),
         },
         "d3d9_sampler_anisotropy": {
             "label": "D3D9 Sampler Anisotropy",
             "description": "D3D9 equivalent of d3d11.samplerAnisotropy. Override AF for all samplers.",
-            "inputs": "-1=app default, 0=disable, value=0-16",
+            "inputs": "value=0-16, 0=off, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.samplerAnisotropy=", "", ";"),
         },
         "d3d9_sampler_lod_bias": {
@@ -355,8 +355,8 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.clampNegativeLodBias=", "", ";"),
         },
-        "d3d9_force_sample_rate_shading": {
-            "label": "D3D9 Force Sample Rate Shading",
+        "d3d9_sample_rate_shading": {
+            "label": "D3D9 Sample Rate Shading",
             "description": "D3D9 equivalent of forceSampleRateShading.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.forceSampleRateShading=", "", ";"),
@@ -376,7 +376,7 @@ def get_dxvk_settings() -> dict:
         "d3d9_shader_model": {
             "label": "D3D9 Shader Model",
             "description": "Shader model reported in device capabilities. Limited to 1 for D3D8 applications.",
-            "inputs": "0=fixed-function, 1=SM1, 2=SM2, 3=SM3",
+            "inputs": "3=SM3, 2=SM2, 1=SM1, 0=fixed-function",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.shaderModel=", "", ";"),
         },
         "d3d9_evict_managed_on_unlock": {
@@ -423,20 +423,20 @@ def get_dxvk_settings() -> dict:
         },
         "d3d9_float_emulation": {
             "label": "D3D9 Float Emulation",
-            "description": "Force enable/disable floating point quirk emulation (anything * 0). True=faster but less accurate (good enough for most games). False=disable entirely. Strict=slower but more correct (needed for some games). Auto=DXVK picks.",
-            "inputs": "Auto=default, True=fast, Strict=accurate, False=off",
+            "description": "Force float point quirk emulation (anything * 0). True=faster but less accurate (good enough for most games). False=off entirely. Strict=slower but more correct (needed for some games). Auto=DXVK picks.",
+            "inputs": "True=fast, Strict=accurate, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.floatEmulation=", "", ";"),
         },
-        "d3d9_enable_dialog_mode": {
-            "label": "Enable Dialog Mode (Low-Latency)",
-            "description": "Change the default state of dialog box mode. Disables exclusive fullscreen when enabled. Low-latency fork only.",
+        "d3d9_dialog_mode": {
+            "label": "Dialog Mode (Low-Latency)",
+            "description": "Change the default state of dialog box mode. Disables exclusive fullscreen when active. Low-latency fork only.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.enableDialogMode=", "", ";"),
         },
-        "d3d9_force_swapchain_msaa": {
-            "label": "Force Swapchain MSAA (Low-Latency)",
+        "d3d9_swapchain_msaa": {
+            "label": "Swapchain MSAA (Low-Latency)",
             "description": "Override the application's MSAA level on the swapchain. Low-latency fork only.",
-            "inputs": "-1=app default, value=0-16",
+            "inputs": "value=0-16, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.forceSwapchainMSAA=", "", ";"),
         },
         "d3d9_long_mad": {
@@ -457,64 +457,64 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.deviceLocalConstantBuffers=", "", ";"),
         },
-        "d3d9_no_explicit_front_buffer": {
-            "label": "No Explicit Front Buffer (Low-Latency)",
-            "description": "Disables the front buffer. Low-latency fork only.",
-            "inputs": "True=on, False=off",
+        "d3d9_explicit_front_buffer": {
+            "label": "Explicit Front Buffer (Low-Latency)",
+            "description": "Front buffer usage. Low-latency fork only.",
+            "inputs": "False=on (default), True=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.noExplicitFrontBuffer=", "", ";"),
         },
-        "d3d9_support_df_formats": {
-            "label": "Support DF Formats",
-            "description": "Support vendor extension DF floating point depth formats on AMD and Intel. Ignored and disabled on Nvidia (or when spoofing Nvidia) as it does not support these formats natively.",
+        "d3d9_df_formats": {
+            "label": "DF Formats",
+            "description": "Support vendor extension DF floating point depth formats on AMD and Intel. Ignored and off on Nvidia (or when spoofing Nvidia) as it does not support these formats natively.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.supportDFFormats=", "", ";"),
         },
-        "d3d9_use_d32_for_d24": {
-            "label": "Use D32f for D24",
+        "d3d9_d32_for_d24": {
+            "label": "D32f for D24",
             "description": "Useful for reproducing AMD issues on other hardware.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.useD32forD24=", "", ";"),
         },
-        "d3d9_support_x4r4g4b4": {
-            "label": "Support X4R4G4B4",
+        "d3d9_x4r4g4b4": {
+            "label": "X4R4G4B4",
             "description": "Support the X4R4G4B4 format. The Sims 2 is a very broken game.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.supportX4R4G4B4=", "", ";"),
         },
-        "d3d9_support_d32": {
-            "label": "Support D32 (Low-Latency)",
+        "d3d9_d32": {
+            "label": "D32 (Low-Latency)",
             "description": "Support the D32 format. Low-latency fork only.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.supportD32=", "", ";"),
         },
-        "d3d9_disable_a8rt": {
-            "label": "Disable A8 Render Target",
-            "description": "Disable support for A8 format render targets. The Sims 2 is a very broken game.",
-            "inputs": "True=disable, False=support (default)",
+        "d3d9_a8rt": {
+            "label": "A8 Render Target",
+            "description": "Support for A8 format render targets. The Sims 2 is a very broken game.",
+            "inputs": "False=on (default), True=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.disableA8RT=", "", ";"),
         },
-        "d3d9_support_vcache": {
-            "label": "Support VCache Query (Low-Latency)",
+        "d3d9_vcache": {
+            "label": "VCache Query (Low-Latency)",
             "description": "Support for the vcache query. Not very important as a user config — used internally. Defaults to True if vendorId == 0x10de. Low-latency fork only.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.supportVCache=", "", ";"),
         },
-        "d3d9_force_sampler_type_spec_constants": {
-            "label": "Force Sampler Type Spec Constants",
+        "d3d9_sampler_type_spec_constants": {
+            "label": "Sampler Type Spec Constants",
             "description": "Useful if games use the wrong image and sampler type combo (e.g. Halo: CE, Spellforce). Can fix rendering in older, broken games.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.forceSamplerTypeSpecConstants=", "", ";"),
         },
-        "d3d9_force_aspect_ratio": {
-            "label": "Force Aspect Ratio",
+        "d3d9_aspect_ratio": {
+            "label": "Aspect Ratio",
             "description": "Only expose modes with the given aspect ratio. Useful for titles that break if they see ultra-wide.",
             "inputs": "value=ratio (e.g. 16:9, 4:3)",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.forceAspectRatio=", "", ";"),
         },
-        "d3d9_force_refresh_rate": {
-            "label": "D3D9 Force Refresh Rate",
-            "description": "D3D9 equivalent of forceRefreshRate. USE WITH CAUTION. Do not report issues.",
-            "inputs": "0=disable, value=Hz",
+        "d3d9_refresh_rate": {
+            "label": "D3D9 Refresh Rate",
+            "description": "D3D9 equivalent of dxgi forceRefreshRate. USE WITH CAUTION. Do not report issues.",
+            "inputs": "value=Hz, 0=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.forceRefreshRate=", "", ";"),
         },
         "d3d9_mode_count_compatibility": {
@@ -523,14 +523,14 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.modeCountCompatibility=", "", ";"),
         },
-        "d3d9_allow_do_not_wait": {
-            "label": "Allow Do Not Wait (Low-Latency)",
+        "d3d9_do_not_wait": {
+            "label": "Do Not Wait (Low-Latency)",
             "description": "Allow the do not wait lock flag to be used. Useful if some apps use this incorrectly. Low-latency fork only.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.allowDoNotWait=", "", ";"),
         },
-        "d3d9_allow_discard": {
-            "label": "Allow Discard (Low-Latency)",
+        "d3d9_discard": {
+            "label": "Discard (Low-Latency)",
             "description": "Allow the discard lock flag to be used. Useful if some apps use this incorrectly. Low-latency fork only.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.allowDiscard=", "", ";"),
@@ -573,7 +573,7 @@ def get_dxvk_settings() -> dict:
         },
         "d3d9_count_losable_resources": {
             "label": "Count Losable Resources",
-            "description": "Reject Device::Reset if any losable resource is still alive (state blocks, additional swapchains, D3DPOOL_DEFAULT resources). Some games leak resources, leading to a hang; disable to work around that.",
+            "description": "Reject Device::Reset if any losable resource is still alive (state blocks, additional swapchains, D3DPOOL_DEFAULT resources). Some games leak resources, leading to a hang; bypassing this works around that.",
             "inputs": "True=reject (default), False=allow",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.countLosableResources=", "", ";"),
         },
@@ -586,13 +586,13 @@ def get_dxvk_settings() -> dict:
         "d3d11_max_feature_level": {
             "label": "D3D11 Max Feature Level",
             "description": "Override the maximum feature level that a D3D11 device can be created with. Setting this higher may allow some applications to run that would otherwise fail to create a D3D11 device.",
-            "inputs": "9_1, 9_2, 9_3, 10_0, 10_1, 11_0, 11_1, 12_0, 12_1",
+            "inputs": "12_1, 12_0, 11_1, 11_0, 10_1, 10_0, 9_3, 9_2, 9_1",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.maxFeatureLevel=", "", ";"),
         },
         "d3d11_max_tess_factor": {
             "label": "Max Tessellation Factor",
             "description": "Override the maximum allowed tessellation factor. Can improve performance in titles which overuse tessellation.",
-            "inputs": "value=8-64 (0=app default)",
+            "inputs": "value=8-64, 0=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.maxTessFactor=", "", ";"),
         },
         "d3d11_constant_buffer_range_check": {
@@ -603,32 +603,32 @@ def get_dxvk_settings() -> dict:
         },
         "d3d11_dc_single_use_mode": {
             "label": "DC Single Use Mode (Low-Latency)",
-            "description": "Assume single-use mode for command lists created on deferred contexts. May need to be disabled for some applications to avoid rendering issues, at a significant performance cost. Low-latency fork only.",
+            "description": "Assume single-use mode for command lists created on deferred contexts. May need to be off for some applications to avoid rendering issues, at a significant performance cost. Low-latency fork only.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.dcSingleUseMode=", "", ";"),
         },
         "d3d11_relaxed_barriers": {
             "label": "Relaxed Barriers",
-            "description": "Enable relaxed pipeline barriers around UAV writes. Ignores write-after-write hazards in compute shaders and all UAV hazards in graphics shaders. May improve performance but can introduce rendering issues. Do not report bugs with this enabled.",
+            "description": "Relaxed pipeline barriers around UAV writes. Ignores write-after-write hazards in compute shaders and all UAV hazards in graphics shaders. May improve performance but can introduce rendering issues. Do not report bugs with this active.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.relaxedBarriers=", "", ";"),
         },
         "d3d11_relaxed_graphics_barriers": {
             "label": "Relaxed Graphics Barriers",
-            "description": "Enable relaxed UAV pipeline barriers in graphics shaders only (not compute). Do not report bugs with this enabled.",
+            "description": "Relaxed UAV pipeline barriers in graphics shaders only (not compute). Do not report bugs with this active.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.relaxedGraphicsBarriers=", "", ";"),
         },
         "d3d11_ignore_graphics_barriers": {
             "label": "Ignore Graphics Barriers (Low-Latency)",
-            "description": "Ignore barriers around UAV writes from fragment shaders. May improve performance but can introduce rendering issues. Do not report bugs with this enabled. Low-latency fork only (upstream uses relaxedGraphicsBarriers).",
+            "description": "Ignore barriers around UAV writes from fragment shaders. May improve performance but can introduce rendering issues. Do not report bugs with this active. Low-latency fork only (upstream uses relaxedGraphicsBarriers).",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.ignoreGraphicsBarriers=", "", ";"),
         },
         "d3d11_sampler_anisotropy": {
             "label": "D3D11 Sampler Anisotropy",
-            "description": "Override anisotropic filtering for all samplers. Positive values enable AF for all samplers; 0 disables AF entirely; negative has no effect. Known to break passes that rely on bilinear filtering. Do not report bugs with this enabled.",
-            "inputs": "-1=app default, 0=disable, value=0-16",
+            "description": "Override anisotropic filtering for all samplers. Positive values force AF for all samplers; 0 suppresses AF entirely; negative has no effect. Known to break passes that rely on bilinear filtering. Do not report bugs with this active.",
+            "inputs": "value=0-16, 0=off, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.samplerAnisotropy=", "", ";"),
         },
         "d3d11_sampler_lod_bias": {
@@ -643,9 +643,9 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.clampNegativeLodBias=", "", ";"),
         },
-        "d3d11_force_sample_rate_shading": {
-            "label": "D3D11 Force Sample Rate Shading",
-            "description": "Force per-sample rate shading when MSAA is enabled, rather than per-pixel shading. May improve visual clarity at a significant performance cost; may also introduce visual issues in some games.",
+        "d3d11_sample_rate_shading": {
+            "label": "D3D11 Sample Rate Shading",
+            "description": "Force per-sample rate shading when MSAA is active, rather than per-pixel shading. May improve visual clarity at a significant performance cost; may also introduce visual issues in some games.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.forceSampleRateShading=", "", ";"),
         },
@@ -655,40 +655,40 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.invariantPosition=", "", ";"),
         },
-        "d3d11_disable_msaa": {
-            "label": "D3D11 Disable MSAA",
-            "description": "Force the sample count of all textures to 1, performing needed fixups in resolve operations and shaders.",
-            "inputs": "True=on, False=off",
+        "d3d11_msaa": {
+            "label": "D3D11 MSAA",
+            "description": "MSAA support. Off forces the sample count of all textures to 1, performing needed fixups in resolve operations and shaders.",
+            "inputs": "False=on, True=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.disableMsaa=", "", ";"),
         },
         "d3d11_zero_workgroup_memory": {
             "label": "Zero Workgroup Memory (Low-Latency)",
-            "description": "Clear workgroup memory in compute shaders to zero. Some games don't do this and rely on undefined behaviour. Enabling may reduce performance. Low-latency fork only.",
+            "description": "Clear workgroup memory in compute shaders to zero. Some games don't do this and rely on undefined behaviour. Active may reduce performance. Low-latency fork only.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.zeroWorkgroupMemory=", "", ";"),
         },
-        "d3d11_force_compute_lds_barriers": {
-            "label": "Force Compute LDS Barriers",
-            "description": "Force insertion of memory and control barriers after writes to group-shared memory in compute shaders. Workaround for games that don't properly synchronize access to groupshared variables. May hurt performance.",
+        "d3d11_compute_lds_barriers": {
+            "label": "Compute LDS Barriers",
+            "description": "Insertion of memory and control barriers after writes to group-shared memory in compute shaders. Workaround for games that don't properly synchronize access to groupshared variables. May hurt performance.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.forceComputeLdsBarriers=", "", ";"),
         },
-        "d3d11_force_compute_uav_barriers": {
-            "label": "Force Compute UAV Barriers",
-            "description": "Force insertion of full memory and control barriers after accessing any read-write UAV inside compute shaders. Workaround for games that don't synchronize access to coherent UAVs. Will likely hurt performance.",
+        "d3d11_compute_uav_barriers": {
+            "label": "Compute UAV Barriers",
+            "description": "Insertion of full memory and control barriers after accessing any read-write UAV inside compute shaders. Workaround for games that don't synchronize access to coherent UAVs. Will likely hurt performance.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.forceComputeUavBarriers=", "", ";"),
         },
         "d3d11_max_implicit_discard_size": {
             "label": "Max Implicit Discard Size KB (Low-Latency)",
-            "description": "Resource size limit for implicit discards, in kilobytes. For small staging resources mapped with MAP_WRITE, DXVK sometimes allocates new backing storage to avoid GPU sync. Too high may cause memory issues. -1 disables the feature. Low-latency fork only.",
-            "inputs": "value=KB (default 256), -1=disable",
+            "description": "Resource size limit for implicit discards, in kilobytes. For small staging resources mapped with MAP_WRITE, DXVK sometimes allocates new backing storage to avoid GPU sync. Too high may cause memory issues. -1 is off. Low-latency fork only.",
+            "inputs": "value=KB (default 256), -1=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.maxImplicitDiscardSize=", "", ";"),
         },
         "d3d11_max_dynamic_image_buffer_size": {
             "label": "Max Dynamic Image Buffer Size KB (Low-Latency)",
-            "description": "Resource size limit for buffer-mapped dynamic images, in kilobytes. Higher threshold may reduce memory/PCI-E bandwidth in some games but may increase GPU synchronizations. -1 disables the feature. Low-latency fork only.",
-            "inputs": "value=KB, -1=disable (default)",
+            "description": "Resource size limit for buffer-mapped dynamic images, in kilobytes. Higher threshold may reduce memory/PCI-E bandwidth in some games but may increase GPU synchronizations. -1 is off. Low-latency fork only.",
+            "inputs": "value=KB, -1=off (default)",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.maxDynamicImageBufferSize=", "", ";"),
         },
         "d3d11_cached_dynamic_resources": {
@@ -697,22 +697,22 @@ def get_dxvk_settings() -> dict:
             "inputs": "v=vertex, i=index, c=constant, r=shader resources, a=all (e.g. 'vic')",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.cachedDynamicResources=", "", ";"),
         },
-        "d3d11_disable_direct_image_mapping": {
-            "label": "Disable Direct Image Mapping",
-            "description": "Workaround for bugs where the game ignores the implementation-defined row pitch for mapped dynamic images and expects tightly packed data, which can result in visual corruption.",
-            "inputs": "True=on, False=off",
+        "d3d11_direct_image_mapping": {
+            "label": "Direct Image Mapping",
+            "description": "Direct image mapping. Suppressing acts as workaround for bugs where the game ignores the implementation-defined row pitch for mapped dynamic images and expects tightly packed data, which can result in visual corruption.",
+            "inputs": "False=on, True=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.disableDirectImageMapping=", "", ";"),
         },
-        "d3d11_enable_context_lock": {
-            "label": "D3D11 Enable Context Lock",
-            "description": "Force-enable the D3D11 context lock via the ID3D10Multithread interface. Useful to debug race conditions.",
+        "d3d11_context_lock": {
+            "label": "D3D11 Context Lock",
+            "description": "D3D11 context lock via the ID3D10Multithread interface. Useful to debug race conditions.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.enableContextLock=", "", ";"),
         },
-        "d3d11_expose_driver_command_lists": {
-            "label": "Expose Driver Command Lists",
-            "description": "Control whether DXVK reports support for driver command lists. Some games use this feature flag to decide whether to use deferred contexts. Enabled by default, but disabling may help games that misbehave when detecting an AMD GPU (where command lists are not natively supported on Windows).",
-            "inputs": "True=expose (default), False=hide",
+        "d3d11_driver_command_lists": {
+            "label": "Driver Command Lists",
+            "description": "Report support for driver command lists. Some games use this feature flag to decide whether to use deferred contexts. Disabling may help games that misbehave when detecting an AMD GPU (where command lists are not natively supported on Windows).",
+            "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.exposeDriverCommandLists=", "", ";"),
         },
         "d3d11_reproducible_command_stream": {
@@ -721,21 +721,21 @@ def get_dxvk_settings() -> dict:
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d11.reproducibleCommandStream=", "", ";"),
         },
-        "dxgi_enable_hdr": {
-            "label": "DXGI Enable HDR",
-            "description": "Expose HDR10 color space to the application by default. Shows the game that Windows 'HDR Mode' is enabled. Many broken games need this to consider exposing HDR output, as they check DXGIOutput's current ColorSpace instead of using CheckColorSpaceSupport. Defaults to the DXVK_HDR env var value.",
+        "dxgi_hdr": {
+            "label": "DXGI HDR",
+            "description": "Expose HDR10 color space to the application by default. Shows the game that Windows 'HDR Mode' is active. Many broken games need this to consider exposing HDR output, as they check DXGIOutput's current ColorSpace instead of using CheckColorSpaceSupport. Defaults to the DXVK_HDR env var value.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.enableHDR=", "", ";"),
         },
-        "dxgi_enable_dummy_composition_swapchain": {
+        "dxgi_dummy_composition_swapchain": {
             "label": "DXGI Dummy Composition Swapchain",
             "description": "Expose support for dcomp swap chains with a dummy window. This is not a valid implementation of DirectComposition swapchains, but some games rely on this functionality being present while others require swap chain creation to fail.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.enableDummyCompositionSwapchain=", "", ";"),
         },
-        "dxgi_enable_ue4_workarounds": {
+        "dxgi_ue4_workarounds": {
             "label": "UE4 HDR Workarounds",
-            "description": "Enable Unreal Engine 4 HDR workarounds for games that do not follow the standard -Win64-Shipping.exe naming scheme. May be needed to avoid crashes in D3D11 games on HDR-enabled systems due to statically linked AMDAGS.",
+            "description": "Unreal Engine 4 HDR workarounds for games that do not follow the standard -Win64-Shipping.exe naming scheme. May be needed to avoid crashes in D3D11 games on HDR systems due to statically linked AMDAGS.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.enableUe4Workarounds=", "", ";"),
         },
@@ -753,8 +753,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxgi_max_frame_rate": {
             "label": "DXGI Max Frame Rate",
-            "description": "Frame rate limiter for DXGI. 0=default (cap to refresh rate under vsync if mode mismatches); n=limit to n fps; -n=limit to n fps only if running significantly faster for a short period (useful for app profiles); -1=always disable limiter (for games locked to low refresh rates).",
-            "inputs": "0=default, n=limit to n fps, -1=always disable",
+            "description": "Frame rate limiter for DXGI. 0=default (cap to refresh rate under vsync if mode mismatches); n=limit to n fps; -n=limit to n fps only if running significantly faster for a short period (useful for app profiles); -1=always off (for games locked to low refresh rates).",
+            "inputs": "n=limit to n fps, 0=default, -1=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.maxFrameRate=", "", ";"),
         },
         "dxgi_custom_device_id": {
@@ -777,26 +777,26 @@ def get_dxvk_settings() -> dict:
         },
         "dxgi_hide_nvidia_gpu": {
             "label": "DXGI Hide Nvidia GPU",
-            "description": "Report Nvidia GPUs as AMD GPUs. By default done for DXGI unless NVAPI is explicitly enabled through Proton, to work around crashes or low performance with Nvidia-specific code paths (especially Unreal Engine).",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "description": "Report Nvidia GPUs as AMD GPUs. By default done for DXGI unless NVAPI is explicitly used through Proton, to work around crashes or low performance with Nvidia-specific code paths (especially Unreal Engine).",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideNvidiaGpu=", "", ";"),
         },
         "dxgi_hide_nvk_gpu": {
             "label": "DXGI Hide NVK GPU",
             "description": "Report Nvidia GPUs running on NVK (open source driver) as AMD GPUs.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideNvkGpu=", "", ";"),
         },
         "dxgi_hide_amd_gpu": {
             "label": "DXGI Hide AMD GPU",
             "description": "Report AMD GPUs as Nvidia GPUs. Only done for games known to have issues with AMDAGS or other AMD-specific code paths.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideAmdGpu=", "", ";"),
         },
         "dxgi_hide_intel_gpu": {
             "label": "DXGI Hide Intel GPU",
             "description": "Report Intel GPUs as AMD GPUs. Only done for games known to have issues with Intel-specific libraries such as XESS.",
-            "inputs": "Auto=default, True=hide, False=report normally",
+            "inputs": "True=on (default), False=off, Auto=auto",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideIntelGpu=", "", ";"),
         },
         "dxgi_max_device_memory": {
@@ -820,19 +820,19 @@ def get_dxvk_settings() -> dict:
         "dxgi_num_back_buffers": {
             "label": "DXGI Num Back Buffers (Low-Latency)",
             "description": "Override back buffer count for the Vulkan swap chain. Setting to 0 or less has no effect. Low-latency fork only.",
-            "inputs": "0=no override, value>=2",
+            "inputs": "value>=2, 0=no override",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.numBackBuffers=", "", ";"),
         },
         "dxgi_sync_interval": {
             "label": "DXGI Sync Interval (Vsync)",
-            "description": "Override vsync sync interval. 0=disable vsync entirely; positive n=on vsync and repeat the same image n times; negative=no effect (use app setting).",
-            "inputs": "0=vsync off, n=repeat n times, -1=app default",
+            "description": "Override vsync sync interval. 0=vsync off entirely; positive n=vsync on and repeat the same image n times; negative=no effect (use app setting).",
+            "inputs": "n=repeat n times, 0=off, -1=app default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.syncInterval=", "", ";"),
         },
-        "dxgi_force_refresh_rate": {
-            "label": "DXGI Force Refresh Rate",
+        "dxgi_refresh_rate": {
+            "label": "DXGI Refresh Rate",
             "description": "Only expose modes with the given refresh rate (Hz). Useful for titles that select the lowest supported refresh rate. Many titles break (physics, rendering, etc.) when forcing high refresh rates. Do not report issues with this option.",
-            "inputs": "0=disable, value=Hz (e.g. 60, 120)",
+            "inputs": "value=Hz (e.g. 60, 120), 0=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.forceRefreshRate=", "", ";"),
         },
         "dxvk_allow_fse": {
@@ -843,8 +843,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_latency_sleep": {
             "label": "Latency Sleep / Reflex",
-            "description": "Controls latency sleep and Nvidia Reflex support. Auto=only D3D11+Reflex games with VK_NV_low_latency2 and dxvk-nvapi in Proton. True=on built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=disable Reflex and built-in latency reduction.",
-            "inputs": "Auto=default, True=force on, False=disable",
+            "description": "Controls latency sleep and Nvidia Reflex support. Auto=only D3D11+Reflex games with VK_NV_low_latency2 and dxvk-nvapi in Proton. True=force built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=suppress Reflex and built-in latency reduction.",
+            "inputs": "True=force on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.latencySleep=", "", ";"),
         },
         "dxvk_latency_tolerance": {
@@ -853,22 +853,22 @@ def get_dxvk_settings() -> dict:
             "inputs": "value=non-negative number (default 1000)",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.latencyTolerance=", "", ";"),
         },
-        "dxvk_disable_nv_low_latency2": {
-            "label": "Disable NV_low_latency2",
-            "description": "Disables VK_NV_low_latency2 usage. Makes Reflex unavailable; if dxvk.latencySleep=True, a custom algorithm is used instead. By default the extension is not used in 32-bit applications due to driver issues.",
-            "inputs": "Auto=default, True=disable, False=force enable",
+        "dxvk_nv_low_latency2": {
+            "label": "NV_low_latency2",
+            "description": "VK_NV_low_latency2 usage. Suppressing makes Reflex unavailable; if dxvk.latencySleep=True, a custom algorithm is used instead. By default the extension is not used in 32-bit applications due to driver issues.",
+            "inputs": "False=force on, True=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.disableNvLowLatency2=", "", ";"),
         },
         "dxvk_tear_free": {
             "label": "Tear Free Mode",
-            "description": "Controls tearing behaviour. True=on mailbox present mode when vsync is disabled (eliminates tearing, may be unsupported on some systems). False=on relaxed FIFO present mode when vsync is enabled (tearing but less stutter at low FPS). Do not report issues with this option.",
-            "inputs": "Auto=default, True=mailbox, False=relaxed fifo",
+            "description": "Controls tearing behaviour. True=use mailbox present mode when vsync is off (eliminates tearing, may be unsupported on some systems). False=use relaxed FIFO present mode when vsync is on (tearing but less stutter at low FPS). Do not report issues with this option.",
+            "inputs": "True=mailbox, False=relaxed fifo, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.tearFree=", "", ";"),
         },
         "dxvk_tiler_mode": {
             "label": "Tiler Mode",
-            "description": "Controls tiler optimizations. Alters submission heuristics and enables some non-default behaviour. Only intended for performance testing and debugging.",
-            "inputs": "Auto=default, True=on, False=off",
+            "description": "Controls tiler optimizations. Alters submission heuristics and activates some non-default behaviour. Only intended for performance testing and debugging.",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.tilerMode=", "", ";"),
         },
         "dxvk_zero_mapped_memory": {
@@ -879,12 +879,12 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_num_compiler_threads": {
             "label": "Number of Compiler Threads",
-            "description": "Number of pipeline compiler threads. With graphics pipeline library enabled, these threads are used for shader compilation (some reserved for high-priority work).",
-            "inputs": "0=all CPU cores, value=explicit thread count",
+            "description": "Number of pipeline compiler threads. With graphics pipeline library active, these threads are used for shader compilation (some reserved for high-priority work).",
+            "inputs": "value=explicit thread count, 0=all CPU cores",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.numCompilerThreads=", "", ";"),
         },
-        "dxvk_enable_dyasync": {
-            "label": "Enable Dyasync (Sarek, Inline)",
+        "dxvk_dyasync": {
+            "label": "Dyasync (Sarek, Inline)",
             "description": "Toggle Dynamic Asynchronous Pipeline Compilation (Dyasync) via dxvk.conf. On first sight a shader is compiled synchronously; every subsequent variant (new fixed-function state combo) compiles in the background while DXVK uses the closest already-compiled pipeline as a placeholder. Reduces stuttering compared to fully synchronous compilation while remaining safer than traditional async patches. Use in multiplayer at your own discretion. Only applicable to DXVK-Sarek.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDyasync=", "", ";"),
@@ -892,78 +892,78 @@ def get_dxvk_settings() -> dict:
         "dxvk_num_dyasync_threads": {
             "label": "Num Dyasync Threads (Sarek)",
             "description": "Number of Dyasync compiler threads. Only applicable to DXVK-Sarek.",
-            "inputs": "0=auto, value=explicit thread count",
+            "inputs": "value=explicit thread count, 0=auto",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.numDyasyncThreads=", "", ";"),
         },
-        "dxvk_use_raw_ssbo": {
-            "label": "Use Raw SSBO",
-            "description": "Use storage buffers to implement raw and structured buffer views. Enabled by default on hardware with a 4-byte storage buffer offset alignment (e.g. AMD). May improve performance but is not safe on hardware with higher alignment requirements.",
-            "inputs": "Auto=default, True=force, False=disable",
+        "dxvk_raw_ssbo": {
+            "label": "Raw SSBO",
+            "description": "Use storage buffers to implement raw and structured buffer views. Active by default on hardware with a 4-byte storage buffer offset alignment (e.g. AMD). May improve performance but is not safe on hardware with higher alignment requirements.",
+            "inputs": "True=force on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.useRawSsbo=", "", ";"),
         },
         "dxvk_shrink_nvidia_hvv_heap": {
             "label": "Shrink Nvidia HVV Heap (Low-Latency)",
-            "description": "Controls Nvidia HVV behaviour. Disables the host-visible, device-local heap on Nvidia drivers. Used to work around NVIDIA driver bug 3114283 on affected drivers, as well as in specific games on newer drivers. Low-latency fork only.",
-            "inputs": "Auto=default, True=shrink, False=don't",
+            "description": "Controls Nvidia HVV behaviour. Suppresses the host-visible, device-local heap on Nvidia drivers. Used to work around NVIDIA driver bug 3114283 on affected drivers, as well as in specific games on newer drivers. Low-latency fork only.",
+            "inputs": "True=on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.shrinkNvidiaHvvHeap=", "", ";"),
         },
-        "dxvk_enable_graphics_pipeline_library": {
+        "dxvk_graphics_pipeline_library": {
             "label": "Graphics Pipeline Library",
-            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. Auto=on if supported and compile optimized pipelines in background. True=on but don't compile optimized pipelines. False=always disable.",
-            "inputs": "Auto=default, True=no optimized, False=disable",
+            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. Auto=on if supported and compile optimized pipelines in background. True=on but don't compile optimized pipelines. False=always off.",
+            "inputs": "True=no optimized, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableGraphicsPipelineLibrary=", "", ";"),
         },
-        "dxvk_enable_descriptor_heap": {
-            "label": "Enable Descriptor Heap",
-            "description": "Enable or disable VK_EXT_descriptor_heap usage.",
-            "inputs": "Auto=known-good drivers, True=force on, False=disable",
+        "dxvk_descriptor_heap": {
+            "label": "Descriptor Heap",
+            "description": "VK_EXT_descriptor_heap usage.",
+            "inputs": "True=force on, False=off, Auto=known-good drivers",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDescriptorHeap=", "", ";"),
         },
-        "dxvk_enable_descriptor_buffer": {
-            "label": "Enable Descriptor Buffer",
-            "description": "Enable or disable VK_EXT_descriptor_buffer usage. If descriptor heap feature is enabled and supported, it takes precedence over descriptor buffers.",
-            "inputs": "Auto=known-good drivers, True=force on, False=disable",
+        "dxvk_descriptor_buffer": {
+            "label": "Descriptor Buffer",
+            "description": "VK_EXT_descriptor_buffer usage. If descriptor heap feature is active and supported, it takes precedence over descriptor buffers.",
+            "inputs": "True=force on, False=off, Auto=known-good drivers",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDescriptorBuffer=", "", ";"),
         },
-        "dxvk_enable_unified_image_layouts": {
-            "label": "Enable Unified Image Layouts",
-            "description": "Control image layout path. Can disable VK_KHR_unified_image_layouts usage on supporting systems, as well as opportunistic paths on devices that don't support it. Only useful for debugging.",
+        "dxvk_unified_image_layouts": {
+            "label": "Unified Image Layouts",
+            "description": "Control image layout path. Can suppress VK_KHR_unified_image_layouts usage on supporting systems, as well as opportunistic paths on devices that don't support it. Only useful for debugging.",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableUnifiedImageLayouts=", "", ";"),
         },
-        "dxvk_enable_implicit_resolves": {
-            "label": "Enable Implicit Resolves",
-            "description": "Control implicit resolves. Some games sample multisampled images as regular textures (undefined behaviour in Vulkan, causes striped patterns on Nvidia). DXVK performs SAMPLE_ZERO resolves on demand as a workaround. Disable for games that don't need it (they have runtime checks inside shaders).",
+        "dxvk_implicit_resolves": {
+            "label": "Implicit Resolves",
+            "description": "Control implicit resolves. Some games sample multisampled images as regular textures (undefined behaviour in Vulkan, causes striped patterns on Nvidia). DXVK performs SAMPLE_ZERO resolves on demand as a workaround. Suppress for games that don't need it (they have runtime checks inside shaders).",
             "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableImplicitResolves=", "", ";"),
         },
         "dxvk_track_pipeline_lifetime": {
             "label": "Track Pipeline Lifetime",
-            "description": "If enabled, pipeline libraries are freed aggressively to save memory and address space. No effect if graphics pipeline libraries are not supported or disabled.",
-            "inputs": "Auto=32-bit apps only, True=always, False=never",
+            "description": "If active, pipeline libraries are freed aggressively to save memory and address space. No effect if graphics pipeline libraries are not supported or off.",
+            "inputs": "True=always, False=never, Auto=32-bit apps only",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.trackPipelineLifetime=", "", ";"),
         },
-        "dxvk_enable_memory_defrag": {
-            "label": "Enable Memory Defragmentation",
+        "dxvk_memory_defrag": {
+            "label": "Memory Defragmentation",
             "description": "Control memory defragmentation. By default, DXVK defragments video memory if significant memory is wasted or budget is exceeded. Provided solely for debug purposes.",
-            "inputs": "Auto=default, True=force on, False=disable",
+            "inputs": "True=force on, False=off, Auto=default",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableMemoryDefrag=", "", ";"),
         },
         "dxvk_hud_conf": {
             "label": "DXVK HUD (Inline)",
-            "description": "Set enabled HUD elements via dxvk.conf. Behaves like the DXVK_HUD environment variable if that is not set; otherwise ignored. Same syntax as DXVK_HUD.",
+            "description": "Set active HUD elements via dxvk.conf. Behaves like the DXVK_HUD environment variable if that is not set; otherwise ignored. Same syntax as DXVK_HUD.",
             "inputs": "value=comma-separated HUD elements",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.hud=", "", ";"),
         },
         "dxvk_lower_sin_cos": {
             "label": "Lower Sin/Cos",
-            "description": "Force enable/disable custom sine/cosine approximation. On some hardware this may be more accurate than native sin/cos but at a performance cost.",
-            "inputs": "Auto=poor-precision drivers only, True=force, False=native",
+            "description": "Force custom sine/cosine approximation. On some hardware this may be more accurate than native sin/cos but at a performance cost.",
+            "inputs": "True=force on, False=off, Auto=poor-precision drivers only",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.lowerSinCos=", "", ";"),
         },
-        "dxvk_enable_debug_utils": {
-            "label": "Enable Debug Utils (Inline)",
-            "description": "Enable debug utils for user annotations like BeginEvent()/EndEvent(). Alternative to DXVK_DEBUG=markers env var.",
+        "dxvk_debug_utils": {
+            "label": "Debug Utils (Inline)",
+            "description": "Debug utils for user annotations like BeginEvent()/EndEvent(). Alternative to DXVK_DEBUG=markers env var.",
             "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDebugUtils=", "", ";"),
         },
@@ -975,8 +975,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_max_memory_budget": {
             "label": "Max Memory Budget (MB)",
-            "description": "Limit the amount of VRAM that DXVK actually uses. Debug option only — expect severe performance degradation when enabled.",
-            "inputs": "0=disable (default), value=VRAM budget in MB",
+            "description": "Limit the amount of VRAM that DXVK actually uses. Debug option only — expect severe performance degradation when active.",
+            "inputs": "value=VRAM budget in MB, 0=off (default)",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.maxMemoryBudget=", "", ";"),
         },
         "dxvk_log_level": {
@@ -987,13 +987,13 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_log_path": {
             "label": "Log Path",
-            "description": "Write DXVK log files to the specified directory. Set to 'none' to disable log file creation without disabling stderr logging.",
-            "inputs": "value=directory path, none=disable log files",
+            "description": "Write DXVK log files to the specified directory. Set to 'none' to suppress log file creation without omitting stderr logging.",
+            "inputs": "value=directory path, none=suppress log files",
             "output": ("environment_variable", "DXVK_LOG_PATH", "", "", ""),
         },
         "dxvk_debug": {
             "label": "Debug Utils",
-            "description": "Enable VK_EXT_debug_utils. 'markers' translates Direct3D performance event markers (BeginEvent/EndEvent). 'validation' enables Vulkan validation (requires Vulkan SDK installed).",
+            "description": "VK_EXT_debug_utils. 'markers' translates Direct3D performance event markers (BeginEvent/EndEvent). 'validation' loads Vulkan validation (requires Vulkan SDK installed).",
             "inputs": "markers=performance markers, validation=vulkan validation",
             "output": ("environment_variable", "DXVK_DEBUG", "", "", ""),
         },

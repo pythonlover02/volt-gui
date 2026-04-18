@@ -1,10 +1,11 @@
 import sys, os, signal, socket, stat, configparser, requests
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QFrame, QInputDialog, QSizePolicy, QStackedWidget, QListView
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QFrame, QInputDialog, QSizePolicy, QStackedWidget, QListView, QDialogButtonBox
 from PySide6.QtCore import Qt, QProcess, QTimer, QThread
 from PySide6.QtGui import QIcon, QCursor, QAction
 from database import *
 from detection import *
 from profiles import *
+from presets import *
 from themes import *
 from ui import *
 from welcome import *
@@ -196,11 +197,23 @@ def process_new_profile_save(main_window) -> None:
     return None
 
 
+def process_yes_no_dialog(parent_widget, title: str, message: str) -> bool:
+    dialog = QMessageBox(parent_widget)
+    dialog.setWindowTitle(title)
+    dialog.setText(message)
+    dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    button_box = dialog.findChild(QDialogButtonBox)
+    if button_box is not None:
+        button_box.setCenterButtons(True)
+    return dialog.exec() == QMessageBox.Yes
+
+
 def process_current_profile_delete(main_window) -> None:
     if main_window.current_profile == "Default":
         process_notification_display(main_window, "Cannot delete Default profile.", True)
         return None
-    if QMessageBox.question(main_window, "Delete Profile", "Delete profile '" + main_window.current_profile + "'?", QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes: return None
+    if not process_yes_no_dialog(main_window, "Delete Profile", "Delete profile '" + main_window.current_profile + "'?"):
+        return None
     if not process_profile_delete(main_window.current_profile): return None
     main_window.current_profile = "Default"
     process_profile_list_update(main_window)
@@ -266,6 +279,21 @@ def process_profile_apply_from_tray(main_window, profile_name: str) -> None:
         main_window.profile_selector.blockSignals(False)
         process_profile_widget_load(main_window.all_widgets, profile_name)
     process_all_settings_apply(main_window)
+    return None
+
+
+def process_preset_combo_change(main_window, selected_text: str) -> None:
+    if selected_text == get_preset_placeholder_label(): return None
+    if not is_valid_preset_name(selected_text):
+        build_preset_combo_items(main_window.preset_selector)
+        return None
+    if not process_yes_no_dialog(main_window, "Apply Preset", "Apply '" + selected_text + "' to '" + main_window.current_profile + "'? All values will be replaced."):
+        build_preset_combo_items(main_window.preset_selector)
+        return None
+    process_preset_apply(main_window.all_widgets, selected_text)
+    process_profile_save(main_window.all_widgets, main_window.current_profile)
+    build_preset_combo_items(main_window.preset_selector)
+    process_notification_display(main_window, "Preset '" + selected_text + "' applied to profile '" + main_window.current_profile + "'.", False)
     return None
 
 
@@ -631,7 +659,13 @@ def create_main_window_widget(singleton_socket):
     bottom_bar_layout = QHBoxLayout(bottom_bar_widget)
     bottom_bar_layout.setContentsMargins(8, 8, 8, 8)
     bottom_bar_layout.setSpacing(8)
-    bottom_bar_layout.setAlignment(Qt.AlignVCenter)
+    bottom_bar_layout.setAlignment(Qt.AlignBottom)
+    preset_combo = QComboBox()
+    preset_combo.setView(QListView())
+    preset_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    preset_combo.setFocusPolicy(Qt.ClickFocus)
+    window.preset_selector = preset_combo
+    build_preset_combo_items(preset_combo)
     profile_combo = QComboBox()
     profile_combo.setView(QListView())
     profile_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
@@ -640,18 +674,32 @@ def create_main_window_widget(singleton_socket):
     apply_button = QPushButton("Apply")
     apply_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
     apply_button.clicked.connect(lambda: process_all_settings_apply(window))
-    combo_container = QWidget()
-    combo_container.setFixedWidth(get_sidebar_width() - 32)
-    combo_container_layout = QHBoxLayout(combo_container)
-    combo_container_layout.setContentsMargins(0, 0, 0, 0)
-    combo_container_layout.setSpacing(0)
-    combo_container_layout.addStretch(1)
-    combo_container_layout.addWidget(profile_combo, 0, Qt.AlignVCenter)
-    combo_container_layout.addStretch(1)
-    bottom_bar_layout.addWidget(combo_container, 0, Qt.AlignVCenter)
+    selectors_container = QWidget()
+    selectors_container.setFixedWidth(get_sidebar_width() - 32)
+    selectors_container_layout = QVBoxLayout(selectors_container)
+    selectors_container_layout.setContentsMargins(0, 0, 0, 0)
+    selectors_container_layout.setSpacing(4)
+    preset_row = QWidget()
+    preset_row_layout = QHBoxLayout(preset_row)
+    preset_row_layout.setContentsMargins(0, 0, 0, 0)
+    preset_row_layout.setSpacing(0)
+    preset_row_layout.addStretch(1)
+    preset_row_layout.addWidget(preset_combo, 0, Qt.AlignBottom)
+    preset_row_layout.addStretch(1)
+    profile_row = QWidget()
+    profile_row_layout = QHBoxLayout(profile_row)
+    profile_row_layout.setContentsMargins(0, 0, 0, 0)
+    profile_row_layout.setSpacing(0)
+    profile_row_layout.addStretch(1)
+    profile_row_layout.addWidget(profile_combo, 0, Qt.AlignBottom)
+    profile_row_layout.addStretch(1)
+    selectors_container_layout.addWidget(preset_row, 0, Qt.AlignBottom)
+    selectors_container_layout.addWidget(profile_row, 0, Qt.AlignBottom)
+    bottom_bar_layout.addWidget(selectors_container, 0, Qt.AlignBottom)
     bottom_bar_layout.addStretch(1)
-    bottom_bar_layout.addWidget(apply_button, 0, Qt.AlignVCenter)
+    bottom_bar_layout.addWidget(apply_button, 0, Qt.AlignBottom)
     bottom_bar_layout.addStretch(1)
+
     main_layout.addWidget(bottom_bar_widget)
     all_widgets["main_apply_button"] = apply_button
     window.setCentralWidget(central_widget)
@@ -661,6 +709,7 @@ def create_main_window_widget(singleton_socket):
     process_profile_list_update(window)
     window.profile_selector.setCurrentText(window.current_profile)
     window.profile_selector.currentTextChanged.connect(lambda text: process_profile_combo_change(window, text))
+    window.preset_selector.currentTextChanged.connect(lambda text: process_preset_combo_change(window, text))
     for option_key in options_widgets:
         widget = options_widgets[option_key]
         if hasattr(widget, "textChanged"):

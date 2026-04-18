@@ -4,7 +4,7 @@ def get_nvidia_settings() -> dict:
         "opengl_vertical_synchronization": {
             "label": "OpenGL VSync",
             "description": "VSync behavior for NVIDIA OpenGL drivers.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_SYNC_TO_VBLANK", "", "", ""),
         },
         "opengl_vrr_allowed": {
@@ -40,13 +40,13 @@ def get_nvidia_settings() -> dict:
         "opengl_flush_control": {
             "label": "Flush Control",
             "description": "OpenGL flush control behavior.",
-            "inputs": "0=automatic, 1=explicit",
+            "inputs": "1=explicit, 0=automatic",
             "output": ("environment_variable", "__GL_FLUSH_CONTROL", "", "", ""),
         },
         "opengl_threaded_optimization": {
             "label": "Threaded Optimization",
             "description": "Threaded OpenGL command processing.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_THREADED_OPTIMIZATIONS", "", "", ""),
         },
         "opengl_single_threaded": {
@@ -64,7 +64,7 @@ def get_nvidia_settings() -> dict:
         "opengl_thread_control": {
             "label": "Thread Control",
             "description": "OpenGL thread control mode.",
-            "inputs": "NONE=none, DRIVER=driver",
+            "inputs": "DRIVER=driver, NONE=none",
             "output": ("environment_variable", "__GL_ThreadControl", "", "", ""),
         },
         "opengl_thread_control_secondary": {
@@ -130,19 +130,19 @@ def get_nvidia_settings() -> dict:
         "opengl_forced_antialiasing": {
             "label": "Forced Antialiasing",
             "description": "Force a specific antialiasing mode.",
-            "inputs": "0=off, 1=2x-msaa, 2=2x-quincunx, 5=4x-msaa, 6=4x-gaussian, 7=8x-coverage, 8=16x-coverage, 9=8x-hybrid, 10=8x-msaa, 11=16x-hybrid, 12=16x-combined, 14=32x-combined",
+            "inputs": "1=2x-msaa, 2=2x-quincunx, 5=4x-msaa, 6=4x-gaussian, 7=8x-coverage, 8=16x-coverage, 9=8x-hybrid, 10=8x-msaa, 11=16x-hybrid, 12=16x-combined, 14=32x-combined, 0=off",
             "output": ("environment_variable", "__GL_FSAA_MODE", "", "", ""),
         },
         "opengl_fast_approximate_antialiasing": {
             "label": "Fast Approximate Antialiasing",
             "description": "FXAA post-process antialiasing.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_ALLOW_FXAA_USAGE", "", "", ""),
         },
         "opengl_forced_anisotropic_filtering": {
             "label": "Forced Aniso Filtering",
             "description": "Force a specific anisotropic filtering level.",
-            "inputs": "0=off, 1=2x, 2=4x, 3=8x, 4=16x",
+            "inputs": "1=2x, 2=4x, 3=8x, 4=16x, 0=off",
             "output": ("environment_variable", "__GL_LOG_MAX_ANISO", "", "", ""),
         },
         "opengl_cubemap_anisotropic_filtering": {
@@ -160,7 +160,7 @@ def get_nvidia_settings() -> dict:
         "opengl_s3tc_compression_quality": {
             "label": "S3TC Compression Quality",
             "description": "S3TC texture compression quality level.",
-            "inputs": "0=lowest, 1=low, 2=medium, 3=high, 4=highest",
+            "inputs": "4=highest, 3=high, 2=medium, 1=low, 0=lowest",
             "output": ("environment_variable", "__GL_S3TCQuality", "", "", ""),
         },
         "opengl_texture_level_of_detail_bias": {
@@ -172,7 +172,7 @@ def get_nvidia_settings() -> dict:
         "opengl_texture_clamp_behavior": {
             "label": "Texture Clamp Behavior",
             "description": "Texture border clamp conformance mode.",
-            "inputs": "0=permissive, 1=strict",
+            "inputs": "1=strict, 0=permissive",
             "output": ("environment_variable", "__GL_TexClampBehavior", "", "", ""),
         },
         "opengl_texture_precache": {
@@ -184,7 +184,7 @@ def get_nvidia_settings() -> dict:
         "opengl_implicit_mipmap_generation": {
             "label": "Implicit Mipmap Generation",
             "description": "Implicit mipmap generation for textures.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_IMPLICIT_GENERATE_MIPMAP", "", "", ""),
         },
         "opengl_sparse_texture": {
@@ -244,19 +244,19 @@ def get_nvidia_settings() -> dict:
         "opengl_shader_atomics": {
             "label": "Shader Atomics",
             "description": "Shader atomic operation support.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_ShaderAtomics", "", "", ""),
         },
         "opengl_next_generation_compiler": {
             "label": "Next Generation Compiler",
             "description": "Next generation shader compiler.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_NextGenCompiler", "", "", ""),
         },
         "opengl_glsl_extension_validation": {
             "label": "GLSL Extension Validation",
             "description": "GLSL extension requirement strictness.",
-            "inputs": "0=strict, 1=relaxed",
+            "inputs": "1=relaxed, 0=strict",
             "output": ("environment_variable", "__GL_IGNORE_GLSL_EXT_REQS", "", "", ""),
         },
         "opengl_extension_string_version": {
@@ -292,13 +292,13 @@ def get_nvidia_settings() -> dict:
         "opengl_conformant_blit_framebuffer_scissor": {
             "label": "Conformant Blit Framebuffer Scissor",
             "description": "Scissor test conformance during framebuffer blits.",
-            "inputs": "0=permissive, 1=conformant",
+            "inputs": "1=conformant, 0=permissive",
             "output": ("environment_variable", "__GL_ConformantBlitFramebufferScissor", "", "", ""),
         },
         "opengl_conformant_incomplete_texture": {
             "label": "Conformant Incomplete Texture",
             "description": "Incomplete texture conformance behavior.",
-            "inputs": "0=permissive, 1=conformant",
+            "inputs": "1=conformant, 0=permissive",
             "output": ("environment_variable", "__GL_ConformantIncompleteTexture", "", "", ""),
         },
         "opengl_software_fallback_restriction": {
@@ -316,7 +316,7 @@ def get_nvidia_settings() -> dict:
         "opengl_framebuffer_configuration_sorting": {
             "label": "Framebuffer Configuration Sorting",
             "description": "Framebuffer configuration sort order.",
-            "inputs": "0=server, 1=sorted",
+            "inputs": "1=sorted, 0=server",
             "output": ("environment_variable", "__GL_SORT_FBCONFIGS", "", "", ""),
         },
         "opengl_force_direct_rendering": {
@@ -364,7 +364,7 @@ def get_nvidia_settings() -> dict:
         "opengl_scalable_link_interface_control": {
             "label": "Scalable Link Interface Control",
             "description": "SLI rendering mode control.",
-            "inputs": "value=0, 1=1, 2=2, 3=3",
+            "inputs": "1=1, 2=2, 3=3, 0=off",
             "output": ("environment_variable", "__GL_SLI_DLI_CONTROL", "", "", ""),
         },
         "opengl_mosaic_clip_to_sub_device": {
@@ -388,7 +388,7 @@ def get_nvidia_settings() -> dict:
         "opengl_executable_memory_workaround": {
             "label": "Executable Memory Workaround",
             "description": "Write to text section workaround for executable memory.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_WRITE_TEXT_SECTION", "", "", ""),
         },
         "opengl_doom_3_compatibility": {
@@ -412,7 +412,7 @@ def get_nvidia_settings() -> dict:
         "opengl_at_fork_mode": {
             "label": "At Fork Mode",
             "description": "Behavior at fork for OpenGL contexts.",
-            "inputs": "value=0, 1=1, 2=2",
+            "inputs": "1=1, 2=2, 0=off",
             "output": ("environment_variable", "__GL_ATFORK_MODE", "", "", ""),
         },
         "opengl_force_exit_process_detach": {
@@ -538,7 +538,7 @@ def get_nvidia_settings() -> dict:
         "opengl_application_profile": {
             "label": "Application Profile",
             "description": "Application-specific OpenGL profile.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_APPLICATION_PROFILE", "", "", ""),
         },
         "opengl_application_profile_log": {
@@ -562,7 +562,7 @@ def get_nvidia_settings() -> dict:
         "opengl_shader_disk_cache": {
             "label": "Shader Disk Cache",
             "description": "Shader disk cache for OpenGL.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "__GL_SHADER_DISK_CACHE", "", "", ""),
         },
         "opengl_shader_disk_cache_path": {
@@ -580,7 +580,7 @@ def get_nvidia_settings() -> dict:
         "opengl_shader_disk_cache_cleanup": {
             "label": "Shader Disk Cache Cleanup",
             "description": "Automatic cleanup of the shader disk cache.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "__GL_SHADER_DISK_CACHE_SKIP_CLEANUP", "", "", ""),
         },
         "opengl_shader_disk_cache_read_only": {

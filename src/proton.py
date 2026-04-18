@@ -25,10 +25,10 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_D7VK_DDRAW", "", "", ""),
         },
-        "wine_disable_vulkan_opwr": {
-            "label": "Disable Vulkan OPWR",
-            "description": "Enable hack to disable Vulkan other process window rendering which sometimes causes issues on Wayland due to blit being one frame behind.",
-            "inputs": "1=on, 0=off",
+        "wine_vulkan_opwr": {
+            "label": "Vulkan OPWR",
+            "description": "Vulkan other process window rendering. Disabling this hack sometimes fixes issues on Wayland due to blit being one frame behind.",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "WINE_DISABLE_VULKAN_OPWR", "", "", ""),
         },
         "proton_vkreflex": {
@@ -61,10 +61,10 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_VKD3D_HEAP", "", "", ""),
         },
-        "disable_layer_mesa_anti_lag": {
-            "label": "Disable Mesa Anti-Lag Layer",
-            "description": "Disable the Mesa Anti-Lag Vulkan layer.",
-            "inputs": "1=on, 0=off",
+        "layer_mesa_anti_lag": {
+            "label": "Mesa Anti-Lag Layer",
+            "description": "Mesa Anti-Lag Vulkan layer.",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "DISABLE_LAYER_MESA_ANTI_LAG", "", "", ""),
         },
         "proton_dlss_upgrade": {
@@ -169,10 +169,10 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_USE_WOW64", "", "", ""),
         },
-        "proton_disable_hidraw": {
-            "label": "Disable Hidraw",
-            "description": "Disable hidraw input device access. Can help with controller detection issues.",
-            "inputs": "1=on, 0=off",
+        "proton_hidraw": {
+            "label": "Hidraw",
+            "description": "Hidraw input device access. Disabling can help with controller detection issues.",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "PROTON_DISABLE_HIDRAW", "", "", ""),
         },
         "proton_no_esync": {
@@ -205,10 +205,10 @@ def get_proton_settings() -> dict:
             "inputs": "1=on, 0=off",
             "output": ("environment_variable", "PROTON_USE_WRITECOPY", "", "", ""),
         },
-        "proton_disable_nvapi": {
-            "label": "Disable NVAPI",
-            "description": "Disable NVIDIA's NVAPI GPU support library.",
-            "inputs": "1=on, 0=off",
+        "proton_nvapi": {
+            "label": "NVAPI",
+            "description": "NVIDIA's NVAPI GPU support library.",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "PROTON_DISABLE_NVAPI", "", "", ""),
         },
         "proton_force_nvapi": {
@@ -333,8 +333,8 @@ def get_proton_settings() -> dict:
         },
         "wine_large_address_aware": {
             "label": "Large Address Aware (Wine)",
-            "description": "Directly control the LARGE_ADDRESS_AWARE flag in Wine. Set to 1 to allow 32-bit apps to use more than 2 GB of RAM, or 0 to disable. PROTON_FORCE_LARGE_ADDRESS_AWARE sets this automatically; use this for manual override.",
-            "inputs": "1=enable, 0=disable",
+            "description": "Directly control the LARGE_ADDRESS_AWARE flag in Wine. Set to 1 to allow 32-bit apps to use more than 2 GB of RAM, or 0 to turn off. PROTON_FORCE_LARGE_ADDRESS_AWARE sets this automatically; use this for manual override.",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "WINE_LARGE_ADDRESS_AWARE", "", "", ""),
         },
         "proton_heap_delay_free": {

@@ -34,6 +34,12 @@ def get_welcome_settings() -> dict:
                 ("text", "Create profiles to quickly switch between configurations.\n\n1. Enter a name in New Profile and click New.\n2. Configure and Apply settings.\n3. Use the System Tray icon to switch profiles."),
             )
         },
+        "Presets": {
+            "Presets": (
+                ("text", "Presets are curated starting points that populate the currently active profile with recommended values. Four presets are available:\n\n- Quality: maximum visual fidelity (forced AA/AF, full S3TC quality, FIFO vsync).\n- Balanced: a reasonable middle ground between visuals and performance.\n- Performance FPS: pure framerate focus (immediate present mode, relaxed barriers, MSAA disabled).\n- Performance Low Latency: pure latency focus (DXVK low-latency frame pacing, Reflex, reduced frame queues)."),
+                ("text", "Applying a preset wipes every value in the currently selected profile and replaces them with the preset's values. A confirmation dialog is shown before this happens.\n\nPresets do not touch the Render Selector, Gamescope, MangoHud, LSFG, or Launch Options tabs. Those remain entirely user-controlled, since they depend on what tools you have installed and your specific hardware configuration (resolutions, refresh rates, device names).\n\nAfter applying a preset, tweak anything you want and click Apply. The preset is just a starting point, not a locked configuration."),
+            )
+        },
         "Options": {
             "Options": (
                 ("text", "Changes to Options are saved automatically as you type but only take effect after restarting volt-gui. This includes the theme, scaling, tray behavior, script location, and all other preferences."),

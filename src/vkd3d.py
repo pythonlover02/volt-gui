@@ -4,7 +4,7 @@ def get_vkd3d_settings() -> dict:
         "vkd3d_frame_rate": {
             "label": "Frame Rate Limit",
             "description": "Limit the frame rate. 0 uncaps the frame rate; any positive integer limits rendering to that many frames per second. Note: starting from vkd3d-proton v2.14+, DXVK_FRAME_RATE is no longer supported for DX12 games; only VKD3D_FRAME_RATE remains.",
-            "inputs": "0=uncap, value=fps limit (e.g. 60)",
+            "inputs": "value=fps limit (e.g. 60), 0=off",
             "output": ("environment_variable", "VKD3D_FRAME_RATE", "", "", ""),
         },
         "vkd3d_vulkan_device": {
@@ -19,8 +19,8 @@ def get_vkd3d_settings() -> dict:
             "inputs": "value=device name substring",
             "output": ("environment_variable", "VKD3D_FILTER_DEVICE_NAME", "", "", ""),
         },
-        "vkd3d_disable_extensions": {
-            "label": "Disable Vulkan Extensions",
+        "vkd3d_extensions": {
+            "label": "Vulkan Extensions",
             "description": "Comma-separated list of Vulkan extensions that vkd3d-proton should not use even if available. Example: VK_KHR_present_id can fix black screens on some PRIME/Optimus setups.",
             "inputs": "value=comma-separated extension names (e.g. VK_KHR_present_id)",
             "output": ("environment_variable", "VKD3D_DISABLE_EXTENSIONS", "", "", ""),
@@ -33,7 +33,7 @@ def get_vkd3d_settings() -> dict:
         },
         "vkd3d_config_vk_debug": {
             "label": "Config: Vulkan Debug",
-            "description": "Enable Vulkan debug extensions and load the validation layer.",
+            "description": "Vulkan debug extensions and load the validation layer.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "vk_debug", ","),
         },
@@ -44,20 +44,20 @@ def get_vkd3d_settings() -> dict:
             "output": ("environment_variable", "VKD3D_CONFIG", "", "skip_application_workarounds", ","),
         },
         "vkd3d_config_nodxr": {
-            "label": "Config: Disable DXR",
-            "description": "Disable DirectX Raytracing (DXR / ray tracing) support entirely.",
+            "label": "Config: No DXR",
+            "description": "Suppress DirectX Raytracing (DXR / ray tracing) support entirely.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "nodxr", ","),
         },
         "vkd3d_config_dxr": {
-            "label": "Config: Force Enable DXR",
-            "description": "Force enable DXR even when vkd3d-proton considers it unsafe. DXR is normally enabled automatically when safe.",
+            "label": "Config: Force DXR",
+            "description": "Force DXR even when vkd3d-proton considers it unsafe. DXR is normally active automatically when safe.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "dxr", ","),
         },
         "vkd3d_config_dxr12": {
             "label": "Config: Experimental DXR 1.2",
-            "description": "Enable experimental DXR 1.2 support if VK_EXT_opacity_micromap is available on the driver.",
+            "description": "Experimental DXR 1.2 support if VK_EXT_opacity_micromap is available on the driver.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "dxr12", ","),
         },
@@ -87,38 +87,38 @@ def get_vkd3d_settings() -> dict:
         },
         "vkd3d_config_no_invariant_position": {
             "label": "Config: No Invariant Position",
-            "description": "Disable the invariant position workaround. The workaround is enabled by default to prevent Z-fighting issues.",
+            "description": "Skip the invariant position workaround. The workaround is active by default to prevent Z-fighting issues.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "no_invariant_position", ","),
         },
         "vkd3d_config_no_staggered_submit": {
             "label": "Config: No Staggered Submit",
-            "description": "Disable the staggered queue submission scheduling added in v2.14 for FSR3 frame generation compatibility. Disable this if the new submission logic causes performance regressions in a specific game.",
+            "description": "Skip the staggered queue submission scheduling added in v2.14 for FSR3 frame generation compatibility. Activate this if the new submission logic causes performance regressions in a specific game.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "no_staggered_submit", ","),
         },
         "vkd3d_config_pipeline_library_app_cache": {
             "label": "Config: Pipeline Library App Cache",
-            "description": "Enable application-managed pipeline library caching. Alternative to setting VKD3D_SHADER_CACHE_PATH=0 for applications that manage their own shader caches well.",
+            "description": "Application-managed pipeline library caching. Alternative to setting VKD3D_SHADER_CACHE_PATH=0 for applications that manage their own shader caches well.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "pipeline_library_app_cache", ","),
         },
         "vkd3d_config_breadcrumbs": {
             "label": "Config: Breadcrumbs Debug",
-            "description": "Instrument command lists with VK_AMD_buffer_marker or VK_NV_device_checkpoints for GPU hang debugging. On GPU device lost or timeout, crash dumps are written to the log. For best results on RADV, also set RADV_DEBUG=syncshaders. Requires a non-release vkd3d-proton build with trace enabled.",
+            "description": "Instrument command lists with VK_AMD_buffer_marker or VK_NV_device_checkpoints for GPU hang debugging. On GPU device lost or timeout, crash dumps are written to the log. For best results on RADV, also set RADV_DEBUG=syncshaders. Requires a non-release vkd3d-proton build with trace active.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "breadcrumbs", ","),
         },
         "vkd3d_config_descriptor_heap": {
             "label": "Config: Descriptor Heap",
-            "description": "Switch vkd3d-proton to its new VK_EXT_descriptor_heap code path. Requires VKD3D Heap (PROTON_VKD3D_HEAP=1) to be enabled.",
+            "description": "Switch vkd3d-proton to its new VK_EXT_descriptor_heap code path. Requires VKD3D Heap (PROTON_VKD3D_HEAP=1) to be active.",
             "inputs": "value=on",
             "output": ("environment_variable", "VKD3D_CONFIG", "", "descriptor_heap", ","),
         },
         "vkd3d_shader_cache_path": {
             "label": "Shader Cache Path",
-            "description": "Override the directory where vkd3d-proton.cache is stored. Set to 0 to disable the internal shader cache entirely (useful if the application manages its own pipeline cache via ID3D12PipelineLibrary).",
-            "inputs": "0=disable, value=directory path",
+            "description": "Override the directory where vkd3d-proton.cache is stored. Set to 0 to turn off the internal shader cache entirely (useful if the application manages its own pipeline cache via ID3D12PipelineLibrary).",
+            "inputs": "value=directory path, 0=off",
             "output": ("environment_variable", "VKD3D_SHADER_CACHE_PATH", "", "", ""),
         },
         "vkd3d_debug": {
@@ -153,7 +153,7 @@ def get_vkd3d_settings() -> dict:
         },
         "vkd3d_auto_capture_shader": {
             "label": "Auto Capture Shader (RenderDoc)",
-            "description": "If set to a shader hash and the RenderDoc layer is enabled, vkd3d-proton will automatically trigger a capture when that specific shader is encountered.",
+            "description": "If set to a shader hash and the RenderDoc layer is active, vkd3d-proton will automatically trigger a capture when that specific shader is encountered.",
             "inputs": "value=shader hash",
             "output": ("environment_variable", "VKD3D_AUTO_CAPTURE_SHADER", "", "", ""),
         },
@@ -165,13 +165,13 @@ def get_vkd3d_settings() -> dict:
         },
         "vkd3d_profile_path": {
             "label": "Profile Output Path",
-            "description": "If profiling is enabled in the build (-Denable_profiling=true), write profiling binary blobs to this path prefix. The output file is ${VKD3D_PROFILE_PATH}.${pid}, analyzable with programs/vkd3d-profile.py.",
+            "description": "If profiling is active in the build (-Denable_profiling=true), write profiling binary blobs to this path prefix. The output file is ${VKD3D_PROFILE_PATH}.${pid}, analyzable with programs/vkd3d-profile.py.",
             "inputs": "value=path prefix (e.g. /tmp/vkd3d-profile)",
             "output": ("environment_variable", "VKD3D_PROFILE_PATH", "", "", ""),
         },
         "vkd3d_shader_debug_ring_size_log2": {
             "label": "Shader Debug Ring Size",
-            "description": "Enable shader printf-style logging via a host-memory ring buffer. The value is the log2 of the buffer size in bytes (e.g. 28 = 256 MiB). Requires VK_KHR_buffer_device_address. Uses host memory only, not VRAM.",
+            "description": "Shader printf-style logging via a host-memory ring buffer. The value is the log2 of the buffer size in bytes (e.g. 28 = 256 MiB). Requires VK_KHR_buffer_device_address. Uses host memory only, not VRAM.",
             "inputs": "value=log2 of size (e.g. 28 for 256 MiB, 24 for 16 MiB)",
             "output": ("environment_variable", "VKD3D_SHADER_DEBUG_RING_SIZE_LOG2", "", "", ""),
         },

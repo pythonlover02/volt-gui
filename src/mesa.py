@@ -4,7 +4,7 @@ def get_mesa_settings() -> dict:
         "opengl_vertical_synchronization": {
             "label": "OpenGL VSync",
             "description": "VSync behavior for Mesa OpenGL drivers.",
-            "inputs": "0=off, 1=permissive, 2=standard, 3=on",
+            "inputs": "3=on, 0=off, 1=permissive, 2=standard",
             "output": ("environment_variable", "vblank_mode", "", "", ""),
         },
         "opengl_threaded_command_processing": {
@@ -22,25 +22,25 @@ def get_mesa_settings() -> dict:
         "opengl_texture_dithering": {
             "label": "OpenGL Texture Dithering",
             "description": "Texture dithering for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_DITHER", "", "", ""),
         },
         "opengl_multisample_antialiasing": {
             "label": "OpenGL MSAA",
             "description": "Multisample antialiasing for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "DRI_NO_MSAA", "", "", ""),
         },
         "opengl_error_checking": {
             "label": "OpenGL Error Checking",
             "description": "GL error checking for Mesa drivers.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_ERROR", "", "", ""),
         },
         "opengl_error_checking_driver_configuration": {
             "label": "OpenGL Error Checking Driver Configuration",
             "description": "GL error checking via driver configuration.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "mesa_no_error", "", "", ""),
         },
         "opengl_version_override": {
@@ -70,7 +70,7 @@ def get_mesa_settings() -> dict:
         "opengl_draw_arrays": {
             "label": "OpenGL Draw Arrays",
             "description": "Draw arrays path for Mesa OpenGL.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "LIBGL_NO_DRAWARRAYS", "", "", ""),
         },
         "opengl_frames_per_second_counter": {
@@ -94,19 +94,19 @@ def get_mesa_settings() -> dict:
         "opengl_glx_oml_synchronization_control": {
             "label": "OpenGL GLX OML Synchronization Control",
             "description": "OML synchronization control extension for GLX.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "glx_disable_oml_sync_control", "", "", ""),
         },
         "opengl_glx_buffer_age": {
             "label": "OpenGL GLX Buffer Age",
             "description": "Buffer age extension for GLX.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "glx_disable_ext_buffer_age", "", "", ""),
         },
         "opengl_glx_sgi_video_synchronization": {
             "label": "OpenGL GLX SGI Video Synchronization",
             "description": "SGI video sync extension for GLX.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "glx_disable_sgi_video_sync", "", "", ""),
         },
         "opengl_glx_extension_override": {
@@ -196,7 +196,7 @@ def get_mesa_settings() -> dict:
         "opengl_threaded_command_framebuffer_status_check": {
             "label": "OpenGL Threaded Command Framebuffer Status Check",
             "description": "Framebuffer status check in threaded GL command processing.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "glthread_nop_check_framebuffer_status", "", "", ""),
         },
         "opengl_b10x6_format_support": {
@@ -298,31 +298,31 @@ def get_mesa_settings() -> dict:
         "opengl_minimum_maximum_index_cache": {
             "label": "OpenGL Minimum Maximum Index Cache",
             "description": "Min/max index cache for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_MINMAX_CACHE", "", "", ""),
         },
         "opengl_assembly_optimizations": {
             "label": "OpenGL Assembly Optimizations",
             "description": "Assembly-level optimizations for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_ASM", "", "", ""),
         },
         "opengl_3dnow_optimizations": {
             "label": "OpenGL 3DNow Optimizations",
             "description": "3DNow CPU optimizations for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_3DNOW", "", "", ""),
         },
         "opengl_mmx_optimizations": {
             "label": "OpenGL MMX Optimizations",
             "description": "MMX CPU optimizations for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_MMX", "", "", ""),
         },
         "opengl_sse_optimizations": {
             "label": "OpenGL SSE Optimizations",
             "description": "SSE CPU optimizations for Mesa OpenGL.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "MESA_NO_SSE", "", "", ""),
         },
         "opengl_gamma_correction": {
@@ -460,31 +460,31 @@ def get_mesa_settings() -> dict:
         "opengl_arb_gpu_shader5": {
             "label": "OpenGL ARB GPU Shader5",
             "description": "ARB GPU shader 5 extension.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_arb_gpu_shader5", "", "", ""),
         },
         "opengl_blend_function_extended": {
             "label": "OpenGL Blend Function Extended",
             "description": "Extended blend function support.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_blend_func_extended", "", "", ""),
         },
         "opengl_glsl_line_continuations": {
             "label": "OpenGL GLSL Line Continuations",
             "description": "Line continuation support in GLSL.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_glsl_line_continuations", "", "", ""),
         },
         "opengl_shader_bit_encoding": {
             "label": "OpenGL Shader Bit Encoding",
             "description": "Bit encoding functions in shaders.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_shader_bit_encoding", "", "", ""),
         },
         "opengl_uniform_array_resize": {
             "label": "OpenGL Uniform Array Resize",
             "description": "Uniform array resize behavior.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_uniform_array_resize", "", "", ""),
         },
         "opengl_dead_code_elimination_before_clip_cull_analysis": {
@@ -553,9 +553,9 @@ def get_mesa_settings() -> dict:
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "force_integer_tex_nearest", "", "", ""),
         },
-        "opengl_format_l8_srgb_enable_readback": {
-            "label": "OpenGL Format L8 sRGB Enable Readback",
-            "description": "Enable readback for L8 sRGB format.",
+        "opengl_format_l8_srgb_readback": {
+            "label": "OpenGL Format L8 sRGB Readback",
+            "description": "Readback for L8 sRGB format.",
             "inputs": "true=on, false=off",
             "output": ("environment_variable", "format_l8_srgb_enable_readback", "", "", ""),
         },
@@ -640,7 +640,7 @@ def get_mesa_settings() -> dict:
         "opengl_postprocessing_cell_shading": {
             "label": "OpenGL Post-Processing Cell Shading",
             "description": "Cell shading post-processing filter.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "pp_celshade", "", "", ""),
         },
         "opengl_postprocessing_jimenez_mlaa": {
@@ -658,25 +658,25 @@ def get_mesa_settings() -> dict:
         "opengl_postprocessing_no_blue": {
             "label": "OpenGL Post-Processing No Blue",
             "description": "Remove blue channel in post-processing.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "pp_noblue", "", "", ""),
         },
         "opengl_postprocessing_no_green": {
             "label": "OpenGL Post-Processing No Green",
             "description": "Remove green channel in post-processing.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "pp_nogreen", "", "", ""),
         },
         "opengl_postprocessing_no_red": {
             "label": "OpenGL Post-Processing No Red",
             "description": "Remove red channel in post-processing.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "pp_nored", "", "", ""),
         },
         "opengl_glsl_cache": {
             "label": "OpenGL GLSL Cache",
             "description": "GLSL shader disk cache.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "MESA_GLSL_CACHE_DISABLE", "", "", ""),
         },
         "opengl_glsl_cache_maximum_size": {
@@ -694,7 +694,7 @@ def get_mesa_settings() -> dict:
         "opengl_argb_visuals": {
             "label": "OpenGL ARGB Visuals",
             "description": "ARGB visual selection in Xlib.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "XLIB_SKIP_ARGB_VISUALS", "", "", ""),
         },
         "opengl_mesa_ci_visual": {
@@ -841,15 +841,15 @@ def get_mesa_settings() -> dict:
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_INSTANCE_LAYERS", "", "", ":"),
         },
-        "vulkan_layer_disables": {
-            "label": "Vulkan Layer Disables",
+        "vulkan_layer_suppressed": {
+            "label": "Vulkan Layer Suppressed",
             "description": "Vulkan layers to suppress.",
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LAYER_DISABLES", "", "", ":"),
         },
-        "vulkan_layer_enables": {
-            "label": "Vulkan Layer Enables",
-            "description": "Vulkan layers to force-enable.",
+        "vulkan_layer_forced": {
+            "label": "Vulkan Layer Forced",
+            "description": "Vulkan layers to force.",
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LAYER_ENABLES", "", "", ":"),
         },
@@ -931,28 +931,28 @@ def get_mesa_settings() -> dict:
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LOADER_LAYERS_ALLOW", "", "", ":"),
         },
-        "vulkan_loader_layers_disable": {
-            "label": "Vulkan Loader Layers Disable",
+        "vulkan_loader_layers_suppressed": {
+            "label": "Vulkan Loader Layers Suppressed",
             "description": "Suppress specific layers in the Vulkan loader.",
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LOADER_LAYERS_DISABLE", "", "", ":"),
         },
-        "vulkan_loader_layers_enable": {
-            "label": "Vulkan Loader Layers Enable",
-            "description": "Force-enable specific layers in the Vulkan loader.",
+        "vulkan_loader_layers_forced": {
+            "label": "Vulkan Loader Layers Forced",
+            "description": "Force specific layers in the Vulkan loader.",
             "inputs": "value=layer name",
             "output": ("environment_variable", "VK_LOADER_LAYERS_ENABLE", "", "", ":"),
         },
         "vulkan_loader_dynamic_library_unloading": {
             "label": "Vulkan Loader Dynamic Library Unloading",
             "description": "Dynamic library unloading in the Vulkan loader.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING", "", "", ""),
         },
         "vulkan_loader_instance_extension_filter": {
             "label": "Vulkan Loader Instance Extension Filter",
             "description": "Instance extension filter in the Vulkan loader.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "VK_LOADER_DISABLE_INST_EXT_FILTER", "", "", ""),
         },
         "vulkan_screenshot_directory": {
@@ -976,7 +976,7 @@ def get_mesa_settings() -> dict:
         "vulkan_layer_fine_grained_locking": {
             "label": "Vulkan Layer Fine-Grained Locking",
             "description": "Fine-grained locking for Vulkan layers.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "VK_LAYER_FINE_GRAINED_LOCKING", "", "", ""),
         },
         "vulkan_layer_settings_debug": {
@@ -1024,7 +1024,7 @@ def get_mesa_settings() -> dict:
         "vulkan_protected_content_check": {
             "label": "Vulkan Protected Content Check",
             "description": "Protected content check for Vulkan.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_protected_content_check", "", "", ""),
         },
         "vulkan_force_protected_content_check": {
@@ -1066,7 +1066,7 @@ def get_mesa_settings() -> dict:
         "vulkan_wsi_unordered_submits": {
             "label": "Vulkan WSI Unordered Submits",
             "description": "Unordered queue submits for WSI.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "vk_wsi_disable_unordered_submits", "", "", ""),
         },
         "vulkan_wsi_force_bgra8_unorm_first": {
@@ -1168,13 +1168,13 @@ def get_mesa_settings() -> dict:
         "throttling": {
             "label": "Throttling",
             "description": "GPU throttling behavior.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_throttling", "", "", ""),
         },
         "explicit_synchronization_heuristic": {
             "label": "Explicit Synchronization Heuristic",
             "description": "Heuristic for explicit synchronization detection.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_explicit_sync_heuristic", "", "", ""),
         },
         "compression_control": {
@@ -1312,13 +1312,13 @@ def get_mesa_settings() -> dict:
         "shader_disk_cache": {
             "label": "Shader Disk Cache",
             "description": "Mesa shader disk cache.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "MESA_SHADER_CACHE_DISABLE", "", "", ""),
         },
         "shader_disk_cache_maximum_size": {
             "label": "Shader Disk Cache Maximum Size",
             "description": "Maximum size for the Mesa shader disk cache.",
-            "inputs": "size=100M, 256M=256M, 512M=512M, 1G=1G, 2G=2G, 5G=5G, 10G=10G",
+            "inputs": "100M=100M, 256M=256M, 512M=512M, 1G=1G, 2G=2G, 5G=5G, 10G=10G",
             "output": ("environment_variable", "MESA_SHADER_CACHE_MAX_SIZE", "", "", ""),
         },
         "shader_disk_cache_directory": {
@@ -1336,19 +1336,19 @@ def get_mesa_settings() -> dict:
         "disk_cache_fossilize_format": {
             "label": "Disk Cache Fossilize Format",
             "description": "Use single-file Fossilize format for disk cache.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "MESA_DISK_CACHE_SINGLE_FILE", "", "", ""),
         },
         "disk_cache_multi_file": {
             "label": "Disk Cache Multi File",
             "description": "Use multi-file format for disk cache.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "MESA_DISK_CACHE_MULTI_FILE", "", "", ""),
         },
         "disk_cache_mesa_database": {
             "label": "Disk Cache Mesa Database",
             "description": "Use Mesa database format for disk cache.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "MESA_DISK_CACHE_DATABASE", "", "", ""),
         },
         "disk_cache_database_partitions": {
@@ -1378,7 +1378,7 @@ def get_mesa_settings() -> dict:
         "disk_cache_combine_readwrite_with_readonly_fossilize": {
             "label": "Disk Cache Combine Read-Write with Read-Only Fossilize",
             "description": "Combine read-write and read-only Fossilize databases.",
-            "inputs": "0=off, 1=on",
+            "inputs": "1=on, 0=off",
             "output": ("environment_variable", "MESA_DISK_CACHE_COMBINE_RW_WITH_RO_FOZ", "", "", ""),
         },
         "shader_capture_path": {
@@ -1618,19 +1618,19 @@ def get_mesa_settings() -> dict:
         "gallium_no_lazy_evaluation": {
             "label": "Gallium No Lazy Evaluation",
             "description": "Suppress lazy evaluation in Gallium.",
-            "inputs": "1=on, 0=off",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "GALLIUM_NOLAZY", "", "", ""),
         },
         "gallium_no_powerpc_optimizations": {
             "label": "Gallium No PowerPC Optimizations",
             "description": "Suppress PowerPC-specific optimizations.",
-            "inputs": "1=on, 0=off",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "GALLIUM_NOPPC", "", "", ""),
         },
         "gallium_no_sse": {
             "label": "Gallium No SSE",
             "description": "Suppress SSE optimizations in Gallium.",
-            "inputs": "1=on, 0=off",
+            "inputs": "1=off, 0=on",
             "output": ("environment_variable", "GALLIUM_NOSSE", "", "", ""),
         },
         "amd_force_variable_rate_shading": {
@@ -2056,61 +2056,61 @@ def get_mesa_settings() -> dict:
         "radv_delta_color_compression": {
             "label": "RADV DCC",
             "description": "Delta color compression for RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_dcc", "", "", ""),
         },
         "radv_delta_color_compression_mipmaps": {
             "label": "RADV DCC Mipmaps",
             "description": "DCC for mipmapped textures in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_dcc_mips", "", "", ""),
         },
         "radv_delta_color_compression_stores": {
             "label": "RADV DCC Stores",
             "description": "DCC for store operations in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_dcc_stores", "", "", ""),
         },
         "radv_depth_storage": {
             "label": "RADV Depth Storage",
             "description": "Depth storage compression in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_depth_storage", "", "", ""),
         },
         "radv_ngg_geometry_shader": {
             "label": "RADV NGG Geometry Shader",
             "description": "NGG geometry shader path in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_ngg_gs", "", "", ""),
         },
         "radv_aniso_single_level": {
             "label": "RADV Aniso Single Level",
             "description": "Single-level anisotropic filtering in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_aniso_single_level", "", "", ""),
         },
         "radv_shrink_image_store": {
             "label": "RADV Shrink Image Store",
             "description": "Shrink image store operations in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_shrink_image_store", "", "", ""),
         },
         "radv_sinking_load_input_fragment_shader": {
             "label": "RADV Sinking Load Input Fragment Shader",
             "description": "Sink load input instructions in RADV fragment shaders.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_sinking_load_input_fs", "", "", ""),
         },
         "radv_tc_compatible_htile_general": {
             "label": "RADV TC-Compatible HTILE General",
             "description": "TC-compatible HTILE in general layout for RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_tc_compat_htile_general", "", "", ""),
         },
         "radv_truncated_coordinate": {
             "label": "RADV Truncated Coordinate",
             "description": "Truncated texture coordinate mode in RADV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "radv_disable_trunc_coord", "", "", ""),
         },
         "radv_no_dynamic_bounds": {
@@ -2674,7 +2674,7 @@ def get_mesa_settings() -> dict:
         "intel_threaded_context": {
             "label": "Intel Threaded Context",
             "description": "Threaded context for Intel drivers.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "intel_disable_threaded_context", "", "", ""),
         },
         "intel_workaround_14018912822": {
@@ -2710,13 +2710,13 @@ def get_mesa_settings() -> dict:
         "anv_sparse_memory_resources": {
             "label": "ANV Sparse Memory",
             "description": "Sparse memory resource support for ANV.",
-            "inputs": "false=off, true=on",
+            "inputs": "true=on, false=off",
             "output": ("environment_variable", "ANV_SPARSE", "", "", ""),
         },
         "anv_sparse_memory_translation_table": {
             "label": "ANV Sparse TRTT",
             "description": "Translation table type for ANV sparse memory.",
-            "inputs": "false=standard, true=trtt",
+            "inputs": "true=trtt, false=standard",
             "output": ("environment_variable", "ANV_SPARSE_USE_TRTT", "", "", ""),
         },
         "anv_mesh_shader": {
@@ -2740,7 +2740,7 @@ def get_mesa_settings() -> dict:
         "anv_secondary_command_buffer_calls": {
             "label": "ANV Secondary Command Buffer Calls",
             "description": "Secondary command buffer call mode for ANV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "ANV_DISABLE_SECONDARY_CMD_BUFFER_CALLS", "", "", ""),
         },
         "anv_queue_override": {
@@ -2848,13 +2848,13 @@ def get_mesa_settings() -> dict:
         "anv_drm_ccs_modifiers": {
             "label": "ANV DRM CCS Modifiers",
             "description": "DRM CCS modifiers for ANV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "anv_disable_drm_ccs_modifiers", "", "", ""),
         },
         "anv_fast_clear_value": {
             "label": "ANV Fast Clear Value",
             "description": "Fast clear value optimization in ANV.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "anv_disable_fcv", "", "", ""),
         },
         "anv_assume_full_subgroups": {
@@ -2902,7 +2902,7 @@ def get_mesa_settings() -> dict:
         "hasvk_secondary_command_buffer_calls": {
             "label": "HASVK Secondary Command Buffer Calls",
             "description": "Secondary command buffer call mode for HASVK.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "HASVK_DISABLE_SECONDARY_CMD_BUFFER_CALLS", "", "", ""),
         },
         "hasvk_queue_override": {
@@ -2938,7 +2938,7 @@ def get_mesa_settings() -> dict:
         "hasvk_border_emulation": {
             "label": "HASVK Border Emulation",
             "description": "Border color emulation in HASVK.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "hk_disable_border_emulation", "", "", ""),
         },
         "i915_no_hardware": {
@@ -3250,7 +3250,7 @@ def get_mesa_settings() -> dict:
         "llvmpipe_rasterization": {
             "label": "LLVMpipe Rasterization",
             "description": "Rasterization for LLVMpipe.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "LP_NO_RAST", "", "", ""),
         },
         "llvmpipe_force_sse2": {
@@ -3496,19 +3496,19 @@ def get_mesa_settings() -> dict:
         "turnip_d24s8_border_color_workaround": {
             "label": "Turnip D24S8 Border Color Workaround",
             "description": "D24S8 border color workaround for Turnip.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "tu_disable_d24s8_border_color_workaround", "", "", ""),
         },
         "turnip_reserve_descriptor_set": {
             "label": "Turnip Reserve Descriptor Set",
             "description": "Reserve a descriptor set for Turnip internal use.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "tu_dont_reserve_descriptor_set", "", "", ""),
         },
         "turnip_fragment_depth_direction": {
             "label": "Turnip Fragment Depth Direction",
             "description": "Fragment depth direction optimization for Turnip.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "tu_ignore_frag_depth_direction", "", "", ""),
         },
         "turnip_texture_coordinate_round_nearest_even": {
@@ -3520,7 +3520,7 @@ def get_mesa_settings() -> dict:
         "conservative_low_resolution_z": {
             "label": "Conservative Low Resolution Z",
             "description": "Conservative low resolution Z for Turnip.",
-            "inputs": "true=off, false=on",
+            "inputs": "false=on, true=off",
             "output": ("environment_variable", "disable_conservative_lrz", "", "", ""),
         },
         "panfrost_debug_shaders": {
@@ -3832,13 +3832,13 @@ def get_mesa_settings() -> dict:
         "powervr_rogue_color_output": {
             "label": "PowerVR Rogue Color Output",
             "description": "Color output mode for PowerVR Rogue.",
-            "inputs": "auto=auto, off=off, on=on",
+            "inputs": "on=on, off=off, auto=auto",
             "output": ("environment_variable", "ROGUE_COLOR", "", "", ""),
         },
         "powervr_pco_color_output": {
             "label": "PowerVR PCO Color Output",
             "description": "Color output mode for PowerVR PCO.",
-            "inputs": "auto=auto, off=off, on=on",
+            "inputs": "on=on, off=off, auto=auto",
             "output": ("environment_variable", "PCO_COLOR", "", "", ""),
         },
         "pvr_shim_enhancements": {
@@ -3958,7 +3958,7 @@ def get_mesa_settings() -> dict:
         "d3d12_gpu_preference": {
             "label": "D3D12 GPU Preference",
             "description": "GPU selection preference for D3D12.",
-            "inputs": "unspecified=default, minimum=low-power, high_performance=high-performance",
+            "inputs": "high_performance=high-performance, minimum=low-power, unspecified=default",
             "output": ("environment_variable", "D3D12_GPU_PREFERENCE", "", "", ""),
         },
         "d3d_always_software": {
@@ -4078,7 +4078,7 @@ def get_mesa_settings() -> dict:
         "vdpau_trace": {
             "label": "VDPAU Trace",
             "description": "VDPAU API trace verbosity.",
-            "inputs": "0=off, 1=calls, 2=detailed",
+            "inputs": "1=calls, 2=detailed, 0=off",
             "output": ("environment_variable", "VDPAU_TRACE", "", "", ""),
         },
         "vdpau_trace_file": {
@@ -4108,7 +4108,7 @@ def get_mesa_settings() -> dict:
         "vdpau_g2d": {
             "label": "VDPAU G2D",
             "description": "G2D hardware acceleration for VDPAU.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "VDPAU_DISABLE_G2D", "", "", ""),
         },
         "vaapi_mpeg4": {
@@ -4132,7 +4132,7 @@ def get_mesa_settings() -> dict:
         "libva_messaging_level": {
             "label": "VA-API Messaging Level",
             "description": "VA-API message verbosity level.",
-            "inputs": "value=0, 1=1, 2=2",
+            "inputs": "value=1, 2=2, 0=off",
             "output": ("environment_variable", "LIBVA_MESSAGING_LEVEL", "", "", ""),
         },
         "libva_trace": {
@@ -4168,7 +4168,7 @@ def get_mesa_settings() -> dict:
         "libva_dri3": {
             "label": "VA-API DRI3",
             "description": "DRI3 support for VA-API.",
-            "inputs": "1=off, 0=on",
+            "inputs": "0=on, 1=off",
             "output": ("environment_variable", "LIBVA_DRI3_DISABLE", "", "", ""),
         },
         "nine_fixed_function_dump": {
