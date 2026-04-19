@@ -341,17 +341,20 @@ def process_vulkan_render_into_environment(combo_widget, selected_value: str, en
     return None
 
 
-def build_gamescope_command_string(argument_collection: list) -> str:
-    gamescope_parts = tuple(value for tab, value in argument_collection if tab == "Gamescope")
-    other_parts = tuple(value for tab, value in argument_collection if tab != "Gamescope")
-    if len(other_parts) == 0: return " ".join(gamescope_parts)
-    return " ".join(gamescope_parts) + " -- " + " ".join(other_parts)
 
-
-def build_launch_command_string(argument_collection: tuple) -> str:
-    if len(argument_collection) == 0: return ""
-    if argument_collection[0][1] == "gamescope": return build_gamescope_command_string(argument_collection)
-    return " ".join(value for tab, value in argument_collection)
+def build_launch_command_string(argument_collection: list) -> str:
+    has_gamescope = any(tab == "Gamescope" and value == "gamescope" for tab, value in argument_collection)
+    gamescope_parts = []
+    other_parts = []
+    for tab, value in argument_collection:
+        if tab == "Gamescope":
+            if has_gamescope: gamescope_parts.append(value)
+        else:
+            other_parts.append(value)
+    if has_gamescope:
+        if len(other_parts) == 0: return " ".join(gamescope_parts)
+        return " ".join(gamescope_parts) + " -- " + " ".join(other_parts)
+    return " ".join(other_parts)
 
 
 def is_grouped_target_overridden(environment_key: str, grouped_environment_collection: dict) -> bool:
