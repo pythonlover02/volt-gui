@@ -1673,7 +1673,6 @@ def get_reality_vkd3d_section() -> dict:
 
 def get_reality_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "3",
         "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
@@ -1932,7 +1931,6 @@ def get_quality_vkd3d_section() -> dict:
 
 def get_quality_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "3",
         "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
@@ -2159,7 +2157,6 @@ def get_balanced_vkd3d_section() -> dict:
 
 def get_balanced_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "2",
         "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
@@ -2369,7 +2366,6 @@ def get_performance_fps_vkd3d_section() -> dict:
 
 def get_performance_fps_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "2",
         "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
@@ -2578,7 +2574,6 @@ def get_performance_low_latency_vkd3d_section() -> dict:
 
 def get_performance_low_latency_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "2",
         "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
@@ -2820,7 +2815,6 @@ def get_potato_fps_vkd3d_section() -> dict:
 
 def get_potato_fps_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "2",
         "gamescope_fullscreen": "on",
         "scaler_backend": "integer",
@@ -3067,7 +3061,6 @@ def get_potato_low_latency_vkd3d_section() -> dict:
 
 def get_potato_low_latency_gamescope_section() -> dict:
     return {
-        "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "2",
         "gamescope_fullscreen": "on",
         "scaler_backend": "integer",
