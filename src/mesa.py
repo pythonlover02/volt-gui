@@ -3166,7 +3166,7 @@ def get_mesa_settings() -> dict:
         "zink_descriptor_management_mode": {
             "label": "Zink Descriptor Management Mode",
             "description": "Descriptor management mode for Zink.",
-            "inputs": "auto=auto, lazy=lazy, db=database",
+            "inputs": "lazy=lazy, db=database",
             "output": ("environment_variable", "ZINK_DESCRIPTORS", "", "", ""),
         },
         "zink_inline_uniforms": {
@@ -3832,13 +3832,13 @@ def get_mesa_settings() -> dict:
         "powervr_rogue_color_output": {
             "label": "PowerVR Rogue Color Output",
             "description": "Color output mode for PowerVR Rogue.",
-            "inputs": "on=on, off=off, auto=auto",
+            "inputs": "on=on, off=off",
             "output": ("environment_variable", "ROGUE_COLOR", "", "", ""),
         },
         "powervr_pco_color_output": {
             "label": "PowerVR PCO Color Output",
             "description": "Color output mode for PowerVR PCO.",
-            "inputs": "on=on, off=off, auto=auto",
+            "inputs": "on=on, off=off",
             "output": ("environment_variable", "PCO_COLOR", "", "", ""),
         },
         "pvr_shim_enhancements": {

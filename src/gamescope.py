@@ -112,7 +112,7 @@ def get_gamescope_settings() -> dict:
         "scaler_backend": {
             "label": "Scaler Backend",
             "description": "Scaling mode.",
-            "inputs": "auto=auto, integer=integer, fit=fit, fill=fill, stretch=stretch",
+            "inputs": "integer=integer, fit=fit, fill=fill, stretch=stretch",
             "output": ("argument", "--scaler=", "", "", ""),
         },
         "gamescope_upscale_filter": {
@@ -172,7 +172,7 @@ def get_gamescope_settings() -> dict:
         "rendering_backend": {
             "label": "Rendering Backend",
             "description": "Compositor backend.",
-            "inputs": "auto=auto, drm=drm, sdl=sdl, openvr=openvr, headless=headless, wayland=wayland",
+            "inputs": "drm=drm, sdl=sdl, openvr=openvr, headless=headless, wayland=wayland",
             "output": ("argument", "--backend=", "", "", ""),
         },
         "expose_wayland": {

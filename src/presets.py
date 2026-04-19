@@ -1464,102 +1464,6 @@ def get_default_preset() -> dict:
     }
 
 
-def get_reality_dxvk_section() -> dict:
-    return {
-        "dxvk_hdr": "1",
-        "dxvk_frame_pace": "max-frame-latency",
-        "dxvk_shader_cache": "1",
-        "ddraw_multi_threaded": "True",
-        "ddraw_d16": "True",
-        "ddraw_back_buffer_resize": "True",
-        "ddraw_back_buffer_write_back": "True",
-        "ddraw_depth_write_back": "True",
-        "ddraw_upload_depth_stencils": "True",
-        "ddraw_auto_gen_mip_maps": "True",
-        "ddraw_emulate_fsaa": "forced",
-        "d3d9_defer_surface_creation": "True",
-        "d3d9_max_frame_latency": "16",
-        "d3d9_sampler_anisotropy": "16",
-        "d3d9_clamp_negative_lod_bias": "False",
-        "d3d9_sample_rate_shading": "True",
-        "d3d9_invariant_position": "True",
-        "d3d9_shader_model": "3",
-        "d3d9_dpi_aware": "True",
-        "d3d9_strict_pow": "True",
-        "d3d9_float_emulation": "Strict",
-        "d3d9_df_formats": "True",
-        "d3d9_x4r4g4b4": "True",
-        "d3d9_d32": "True",
-        "d3d9_a8rt": "False",
-        "d3d9_seamless_cubes": "True",
-        "d3d11_max_feature_level": "12_1",
-        "d3d11_sampler_anisotropy": "16",
-        "d3d11_clamp_negative_lod_bias": "False",
-        "d3d11_sample_rate_shading": "True",
-        "d3d11_invariant_position": "True",
-        "d3d11_msaa": "False",
-        "d3d11_direct_image_mapping": "False",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_hdr": "True",
-        "dxgi_defer_surface_creation": "True",
-        "dxgi_max_frame_latency": "16",
-        "dxvk_allow_fse": "True",
-        "dxvk_tear_free": "True",
-        "dxvk_unified_image_layouts": "True",
-        "dxvk_implicit_resolves": "True",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_reality_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "3",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "fit",
-        "gamescope_upscale_filter": "fsr",
-        "upscaler_sharpness": "5",
-        "rendering_backend": "auto",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "high_dynamic_range_output": "value=on",
-        "standard_dynamic_range_gamut_wideness": "0.5",
-        "high_dynamic_range_standard_dynamic_range_content_nits": "400",
-        "high_dynamic_range_inverse_tone_mapping": "value=on",
-        "high_dynamic_range_inverse_tone_mapping_standard_dynamic_range_nits": "400",
-        "high_dynamic_range_inverse_tone_mapping_target_nits": "1000",
-        "color_management": "value=off",
-        "steam_integration": "value=on",
-        "realtime_scheduling": "value=on",
-    }
-
-
-def get_reality_launch_section() -> dict:
-    return {}
-
-
-def get_reality_lsfg_section() -> dict:
-    return {
-        "vulkan_frames_per_second_multiplier": "4",
-        "vulkan_motion_estimation_quality": "1.0",
-        "vulkan_performance_mode": "0",
-        "vulkan_high_dynamic_range_mode": "1",
-        "vulkan_experimental_present_mode_override": "fifo",
-    }
-
-
-def get_reality_mangohud_section() -> dict:
-    return {
-        "opengl_vertical_synchronization": "1",
-        "vulkan_vertical_synchronization": "3",
-        "anisotropic_filtering": "16",
-        "mipmap_level_of_detail_bias": "-16",
-        "bicubic_filtering": "value=on",
-        "trilinear_filtering": "value=on",
-    }
-
-
 def get_reality_mesa_section() -> dict:
     return {
         "opengl_vertical_synchronization": "3",
@@ -1570,29 +1474,45 @@ def get_reality_mesa_section() -> dict:
         "opengl_error_checking": "0",
         "opengl_error_checking_driver_configuration": "false",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "10G",
+        "opengl_glsl_cache_maximum_size": "20G",
         "vulkan_presentation_mode": "fifo",
         "vulkan_submission_thread": "1",
         "vulkan_shader_binary_validation": "1",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "10G",
-        "shader_cache_statistics": "true",
+        "shader_disk_cache_maximum_size": "20G",
         "disk_cache_mesa_database": "1",
-        "throttling": "false",
         "compression_control": "true",
         "gallium_multisample_antialiasing": "16",
         "amd_texture_anisotropy": "16",
         "radeonsi_infinite_interpolation_fix": "true",
         "radeonsi_clamp_division_by_zero": "true",
+        "radeonsi_force_fma32": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radeonsi_clear_video_memory": "true",
+        "radeonsi_clear_depth_buffer_cache_before_clear": "true",
         "radv_forced_anisotropic_filtering": "16",
         "radv_performance_power_state": "peak",
         "radv_mrt_output_nan_fixup": "true",
+        "radv_invariant_geometry": "true",
+        "radv_lower_discard_to_demote": "true",
+        "radv_split_fused_multiply_add": "false",
+        "radv_clear_local_data_share": "true",
+        "radv_zero_vram": "true",
         "intel_force_multisample_antialiasing": "8",
         "intel_precise_trigonometry": "1",
+        "intel_threaded_context": "false",
+        "intel_force_guc_low_latency": "true",
+        "intel_sampler_route_to_lsc": "true",
         "opengl_precise_trigonometry": "true",
+        "opengl_shader_optimization_level": "3",
+        "opengl_always_have_depth_buffer": "true",
         "vertex_shader_position_always_invariant": "true",
         "vertex_shader_position_always_precise": "true",
+        "opengl_force_glsl_absolute_square_root": "true",
+        "opengl_limit_trigonometric_input_range": "true",
     }
 
 
@@ -1602,9 +1522,11 @@ def get_reality_nvidia_section() -> dict:
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
         "opengl_tearing_free_swap_present": "1",
+        "opengl_constant_frame_rate_hint": "1",
         "opengl_flush_control": "1",
         "opengl_threaded_optimization": "1",
-        "opengl_maximum_prerendered_frames": "4",
+        "opengl_wait_behavior": "USLEEP",
+        "opengl_maximum_prerendered_frames": "3",
         "opengl_texture_quality": "1",
         "opengl_forced_antialiasing": "14",
         "opengl_fast_approximate_antialiasing": "0",
@@ -1618,8 +1540,10 @@ def get_reality_nvidia_section() -> dict:
         "opengl_sparse_texture": "1",
         "opengl_skip_texture_host_copies": "1",
         "opengl_early_texture_hardware_allocation": "1",
+        "opengl_framebuffer_blit_ignore_standard_rgb": "0",
         "opengl_image_sharpening": "1",
         "opengl_image_sharpening_intensity": "25",
+        "opengl_image_denoising_intensity": "17",
         "opengl_fast_geometry_shader": "1",
         "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
@@ -1627,22 +1551,23 @@ def get_reality_nvidia_section() -> dict:
         "opengl_conformant_incomplete_texture": "1",
         "opengl_software_fallback_restriction": "1",
         "opengl_software_fallback_restriction_gl": "1",
+        "opengl_strict_draw_range_elements": "1",
+        "opengl_hardware_state_per_context": "1",
+        "opengl_system_memory_texture_promotion": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "5368709120",
+        "opengl_shader_disk_cache_maximum_size": "21474836480",
         "opengl_shader_disk_cache_cleanup": "0",
         "vulkan_smooth_motion_frame_generation": "1",
     }
 
 
+def get_reality_render_section() -> dict:
+    return {}
+
+
 def get_reality_proton_section() -> dict:
     return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_d7vk_ddraw": "1",
-        "wine_vulkan_opwr": "0",
         "proton_vkreflex": "1",
-        "proton_dxvk_lowlatency": "0",
-        "proton_vkd3d_bratan": "1",
         "proton_vkd3d_heap": "1",
         "layer_mesa_anti_lag": "0",
         "proton_dlss_upgrade": "1",
@@ -1656,12 +1581,10 @@ def get_reality_proton_section() -> dict:
         "proton_no_d3d11": "0",
         "proton_no_d3d10": "0",
         "wine_fullscreen_integer_scaling": "1",
-        "proton_use_wow64": "0",
         "proton_no_esync": "0",
         "proton_no_fsync": "0",
         "proton_use_ntsync": "1",
         "proton_nvapi": "0",
-        "proton_force_nvapi": "1",
         "proton_nvidia_libs": "1",
         "proton_native_ags": "1",
         "proton_enable_wayland": "1",
@@ -1671,20 +1594,126 @@ def get_reality_proton_section() -> dict:
         "proton_set_game_drive": "1",
         "proton_set_steam_drive": "1",
         "proton_local_shader_cache": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
     }
 
 
-def get_reality_render_section() -> dict:
-    return {}
+def get_reality_dxvk_section() -> dict:
+    return {
+        "dxvk_hdr": "1",
+        "dxvk_frame_pace": "max-frame-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "ddraw_d16": "True",
+        "ddraw_back_buffer_resize": "True",
+        "ddraw_back_buffer_write_back": "True",
+        "ddraw_depth_write_back": "True",
+        "ddraw_upload_depth_stencils": "True",
+        "ddraw_auto_gen_mip_maps": "True",
+        "ddraw_emulate_fsaa": "forced",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "3",
+        "d3d9_num_back_buffers": "3",
+        "d3d9_sampler_anisotropy": "16",
+        "d3d9_sampler_lod_bias": "-0.5",
+        "d3d9_clamp_negative_lod_bias": "False",
+        "d3d9_sample_rate_shading": "True",
+        "d3d9_invariant_position": "True",
+        "d3d9_shader_model": "3",
+        "d3d9_dpi_aware": "True",
+        "d3d9_strict_constant_copies": "True",
+        "d3d9_strict_pow": "True",
+        "d3d9_float_emulation": "Strict",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d9_a8rt": "False",
+        "d3d9_seamless_cubes": "True",
+        "d3d11_sampler_anisotropy": "16",
+        "d3d11_sampler_lod_bias": "-0.5",
+        "d3d11_clamp_negative_lod_bias": "False",
+        "d3d11_sample_rate_shading": "True",
+        "d3d11_invariant_position": "True",
+        "d3d11_msaa": "False",
+        "d3d11_direct_image_mapping": "False",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_hdr": "True",
+        "dxgi_ue4_workarounds": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "3",
+        "dxgi_num_back_buffers": "3",
+        "dxvk_allow_fse": "True",
+        "dxvk_tear_free": "True",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_implicit_resolves": "True",
+        "dxvk_memory_defrag": "True",
+        "dxvk_lower_sin_cos": "True",
+    }
 
 
 def get_reality_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "FIFO",
-        "vkd3d_config_dxr": "value=on",
-        "vkd3d_config_dxr12": "value=on",
-        "vkd3d_config_descriptor_heap": "value=on",
+        "vkd3d_config_dxr12": "on",
+        "vkd3d_config_force_host_cached": "on",
+        "vkd3d_config_descriptor_heap": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_reality_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "3",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "fit",
+        "gamescope_upscale_filter": "fsr",
+        "upscaler_sharpness": "5",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "high_dynamic_range_output": "on",
+        "standard_dynamic_range_gamut_wideness": "0.5",
+        "high_dynamic_range_standard_dynamic_range_content_nits": "400",
+        "high_dynamic_range_inverse_tone_mapping": "on",
+        "high_dynamic_range_inverse_tone_mapping_standard_dynamic_range_nits": "400",
+        "high_dynamic_range_inverse_tone_mapping_target_nits": "1000",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
+    }
+
+
+def get_reality_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "1",
+        "vulkan_vertical_synchronization": "3",
+        "anisotropic_filtering": "16",
+        "mipmap_level_of_detail_bias": "-1",
+        "trilinear_filtering": "on",
+    }
+
+
+def get_reality_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "4",
+        "vulkan_motion_estimation_quality": "1.0",
+        "vulkan_performance_mode": "0",
+        "vulkan_high_dynamic_range_mode": "1",
+        "vulkan_experimental_present_mode_override": "fifo",
+    }
+
+
+def get_reality_launch_section() -> dict:
+    return {}
 
 
 def get_reality_overrides() -> dict:
@@ -1702,11 +1731,140 @@ def get_reality_overrides() -> dict:
     }
 
 
+def get_quality_mesa_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "3",
+        "opengl_threaded_command_processing": "true",
+        "opengl_adaptive_synchronization": "true",
+        "opengl_texture_dithering": "0",
+        "opengl_multisample_antialiasing": "0",
+        "opengl_glsl_cache": "false",
+        "opengl_glsl_cache_maximum_size": "15G",
+        "vulkan_presentation_mode": "fifo",
+        "vulkan_submission_thread": "1",
+        "shader_precompile": "true",
+        "shader_disk_cache": "false",
+        "shader_disk_cache_maximum_size": "15G",
+        "disk_cache_mesa_database": "1",
+        "compression_control": "true",
+        "gallium_multisample_antialiasing": "8",
+        "amd_texture_anisotropy": "8",
+        "radeonsi_infinite_interpolation_fix": "true",
+        "radeonsi_clamp_division_by_zero": "true",
+        "radeonsi_force_fma32": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radeonsi_clear_video_memory": "true",
+        "radeonsi_clear_depth_buffer_cache_before_clear": "true",
+        "radv_forced_anisotropic_filtering": "8",
+        "radv_performance_power_state": "peak",
+        "radv_mrt_output_nan_fixup": "true",
+        "radv_invariant_geometry": "true",
+        "radv_lower_discard_to_demote": "true",
+        "radv_split_fused_multiply_add": "false",
+        "radv_clear_local_data_share": "true",
+        "intel_force_multisample_antialiasing": "8",
+        "intel_precise_trigonometry": "1",
+        "intel_threaded_context": "false",
+        "intel_force_guc_low_latency": "true",
+        "intel_sampler_route_to_lsc": "true",
+        "opengl_precise_trigonometry": "true",
+        "opengl_shader_optimization_level": "3",
+        "opengl_always_have_depth_buffer": "true",
+        "vertex_shader_position_always_invariant": "true",
+        "vertex_shader_position_always_precise": "true",
+        "opengl_force_glsl_absolute_square_root": "true",
+        "opengl_limit_trigonometric_input_range": "true",
+    }
+
+
+def get_quality_nvidia_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "1",
+        "opengl_vrr_allowed": "1",
+        "opengl_gsync_allowed": "1",
+        "opengl_tearing_free_swap_present": "1",
+        "opengl_constant_frame_rate_hint": "1",
+        "opengl_flush_control": "1",
+        "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
+        "opengl_maximum_prerendered_frames": "2",
+        "opengl_texture_quality": "1",
+        "opengl_forced_antialiasing": "10",
+        "opengl_fast_approximate_antialiasing": "0",
+        "opengl_forced_anisotropic_filtering": "3",
+        "opengl_cubemap_anisotropic_filtering": "1",
+        "opengl_cubemap_filtering": "1",
+        "opengl_s3tc_compression_quality": "4",
+        "opengl_texture_clamp_behavior": "1",
+        "opengl_texture_precache": "1",
+        "opengl_implicit_mipmap_generation": "1",
+        "opengl_sparse_texture": "1",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
+        "opengl_image_sharpening": "1",
+        "opengl_image_sharpening_intensity": "10",
+        "opengl_image_denoising_intensity": "17",
+        "opengl_fast_geometry_shader": "1",
+        "opengl_shader_atomics": "1",
+        "opengl_next_generation_compiler": "1",
+        "opengl_conformant_blit_framebuffer_scissor": "1",
+        "opengl_conformant_incomplete_texture": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
+        "opengl_strict_draw_range_elements": "1",
+        "opengl_hardware_state_per_context": "1",
+        "opengl_system_memory_texture_promotion": "1",
+        "opengl_shader_disk_cache": "1",
+        "opengl_shader_disk_cache_maximum_size": "16106127360",
+        "opengl_shader_disk_cache_cleanup": "0",
+    }
+
+
+def get_quality_render_section() -> dict:
+    return {}
+
+
+def get_quality_proton_section() -> dict:
+    return {
+        "proton_vkreflex": "1",
+        "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
+        "proton_dlss_upgrade": "1",
+        "proton_xess_upgrade": "1",
+        "proton_fsr3_upgrade": "1",
+        "proton_fsr4_upgrade": "1",
+        "proton_fsr4_rdna3_upgrade": "1",
+        "proton_mlfg_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
+        "proton_use_ntsync": "1",
+        "proton_nvapi": "0",
+        "proton_nvidia_libs": "1",
+        "proton_native_ags": "1",
+        "proton_enable_wayland": "1",
+        "proton_enable_hdr": "1",
+        "proton_force_large_address_aware": "1",
+        "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
+        "proton_local_shader_cache": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
+    }
+
+
 def get_quality_dxvk_section() -> dict:
     return {
         "dxvk_hdr": "1",
         "dxvk_frame_pace": "low-latency",
         "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
         "ddraw_multi_threaded": "True",
         "ddraw_d16": "True",
         "ddraw_back_buffer_resize": "True",
@@ -1715,63 +1873,91 @@ def get_quality_dxvk_section() -> dict:
         "ddraw_upload_depth_stencils": "True",
         "ddraw_auto_gen_mip_maps": "True",
         "ddraw_emulate_fsaa": "true",
+        "d3d8_shadow_perspective_divide": "True",
         "d3d9_defer_surface_creation": "True",
         "d3d9_max_frame_latency": "2",
-        "d3d9_sampler_anisotropy": "16",
+        "d3d9_num_back_buffers": "3",
+        "d3d9_sampler_anisotropy": "8",
+        "d3d9_sampler_lod_bias": "-0.25",
         "d3d9_clamp_negative_lod_bias": "False",
         "d3d9_sample_rate_shading": "True",
         "d3d9_invariant_position": "True",
         "d3d9_shader_model": "3",
         "d3d9_dpi_aware": "True",
+        "d3d9_strict_constant_copies": "True",
         "d3d9_strict_pow": "True",
         "d3d9_float_emulation": "True",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
         "d3d9_df_formats": "True",
         "d3d9_x4r4g4b4": "True",
         "d3d9_d32": "True",
         "d3d9_a8rt": "False",
         "d3d9_seamless_cubes": "True",
-        "d3d11_max_feature_level": "12_1",
-        "d3d11_sampler_anisotropy": "16",
+        "d3d11_sampler_anisotropy": "8",
+        "d3d11_sampler_lod_bias": "-0.25",
         "d3d11_clamp_negative_lod_bias": "False",
         "d3d11_sample_rate_shading": "True",
         "d3d11_invariant_position": "True",
         "d3d11_msaa": "False",
+        "d3d11_direct_image_mapping": "False",
+        "d3d11_dc_single_use_mode": "True",
         "d3d11_driver_command_lists": "True",
         "dxgi_hdr": "True",
+        "dxgi_ue4_workarounds": "True",
         "dxgi_defer_surface_creation": "True",
         "dxgi_max_frame_latency": "2",
+        "dxgi_num_back_buffers": "3",
         "dxvk_allow_fse": "True",
         "dxvk_tear_free": "True",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
         "dxvk_unified_image_layouts": "True",
         "dxvk_implicit_resolves": "True",
         "dxvk_memory_defrag": "True",
+        "dxvk_lower_sin_cos": "True",
+    }
+
+
+def get_quality_vkd3d_section() -> dict:
+    return {
+        "vkd3d_swapchain_present_mode": "FIFO",
+        "vkd3d_config_dxr12": "on",
+        "vkd3d_config_force_host_cached": "on",
+        "vkd3d_config_descriptor_heap": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
 
 
 def get_quality_gamescope_section() -> dict:
     return {
-        "gamescope": "value=on",
         "gamescope_wsi_layer": "1",
         "vulkan_wsi_minimum_image_count": "3",
-        "gamescope_fullscreen": "value=on",
+        "gamescope_fullscreen": "on",
         "scaler_backend": "fit",
         "gamescope_upscale_filter": "fsr",
         "upscaler_sharpness": "3",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "high_dynamic_range_output": "value=on",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "high_dynamic_range_output": "on",
         "standard_dynamic_range_gamut_wideness": "0.25",
         "high_dynamic_range_standard_dynamic_range_content_nits": "400",
-        "high_dynamic_range_inverse_tone_mapping": "value=on",
+        "high_dynamic_range_inverse_tone_mapping": "on",
         "high_dynamic_range_inverse_tone_mapping_standard_dynamic_range_nits": "400",
         "high_dynamic_range_inverse_tone_mapping_target_nits": "1000",
-        "steam_integration": "value=on",
-        "realtime_scheduling": "value=on",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
     }
 
 
-def get_quality_launch_section() -> dict:
-    return {}
+def get_quality_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "1",
+        "vulkan_vertical_synchronization": "3",
+        "anisotropic_filtering": "8",
+        "trilinear_filtering": "on",
+    }
 
 
 def get_quality_lsfg_section() -> dict:
@@ -1784,115 +1970,8 @@ def get_quality_lsfg_section() -> dict:
     }
 
 
-def get_quality_mangohud_section() -> dict:
-    return {
-        "opengl_vertical_synchronization": "1",
-        "vulkan_vertical_synchronization": "3",
-        "anisotropic_filtering": "16",
-        "trilinear_filtering": "value=on",
-    }
-
-
-def get_quality_mesa_section() -> dict:
-    return {
-        "opengl_vertical_synchronization": "3",
-        "opengl_threaded_command_processing": "true",
-        "opengl_adaptive_synchronization": "true",
-        "opengl_texture_dithering": "0",
-        "opengl_multisample_antialiasing": "0",
-        "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "5G",
-        "vulkan_presentation_mode": "fifo",
-        "vulkan_submission_thread": "1",
-        "shader_precompile": "true",
-        "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "5G",
-        "disk_cache_mesa_database": "1",
-        "compression_control": "true",
-        "gallium_multisample_antialiasing": "8",
-        "amd_texture_anisotropy": "16",
-        "radeonsi_infinite_interpolation_fix": "true",
-        "radeonsi_clamp_division_by_zero": "true",
-        "radv_forced_anisotropic_filtering": "16",
-        "radv_performance_power_state": "peak",
-        "radv_mrt_output_nan_fixup": "true",
-        "intel_force_multisample_antialiasing": "8",
-        "intel_precise_trigonometry": "1",
-        "opengl_precise_trigonometry": "true",
-        "vertex_shader_position_always_invariant": "true",
-    }
-
-
-def get_quality_nvidia_section() -> dict:
-    return {
-        "opengl_vertical_synchronization": "1",
-        "opengl_vrr_allowed": "1",
-        "opengl_gsync_allowed": "1",
-        "opengl_tearing_free_swap_present": "1",
-        "opengl_threaded_optimization": "1",
-        "opengl_maximum_prerendered_frames": "2",
-        "opengl_texture_quality": "1",
-        "opengl_forced_antialiasing": "10",
-        "opengl_fast_approximate_antialiasing": "0",
-        "opengl_forced_anisotropic_filtering": "4",
-        "opengl_cubemap_anisotropic_filtering": "1",
-        "opengl_cubemap_filtering": "1",
-        "opengl_s3tc_compression_quality": "4",
-        "opengl_texture_clamp_behavior": "1",
-        "opengl_texture_precache": "1",
-        "opengl_implicit_mipmap_generation": "1",
-        "opengl_sparse_texture": "1",
-        "opengl_skip_texture_host_copies": "1",
-        "opengl_image_sharpening": "1",
-        "opengl_image_sharpening_intensity": "10",
-        "opengl_fast_geometry_shader": "1",
-        "opengl_shader_atomics": "1",
-        "opengl_next_generation_compiler": "1",
-        "opengl_conformant_blit_framebuffer_scissor": "1",
-        "opengl_conformant_incomplete_texture": "1",
-        "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "2147483648",
-        "opengl_shader_disk_cache_cleanup": "0",
-    }
-
-
-def get_quality_proton_section() -> dict:
-    return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_d7vk_ddraw": "1",
-        "proton_vkreflex": "1",
-        "proton_vkd3d_bratan": "1",
-        "proton_vkd3d_heap": "1",
-        "proton_dlss_upgrade": "1",
-        "proton_xess_upgrade": "1",
-        "proton_fsr3_upgrade": "1",
-        "proton_fsr4_upgrade": "1",
-        "proton_fsr4_rdna3_upgrade": "1",
-        "proton_mlfg_upgrade": "1",
-        "wine_fullscreen_integer_scaling": "1",
-        "proton_use_ntsync": "1",
-        "proton_nvapi": "0",
-        "proton_nvidia_libs": "1",
-        "proton_native_ags": "1",
-        "proton_enable_wayland": "1",
-        "proton_enable_hdr": "1",
-        "proton_force_large_address_aware": "1",
-        "wine_large_address_aware": "1",
-        "proton_local_shader_cache": "1",
-    }
-
-
-def get_quality_render_section() -> dict:
+def get_quality_launch_section() -> dict:
     return {}
-
-
-def get_quality_vkd3d_section() -> dict:
-    return {
-        "vkd3d_swapchain_present_mode": "FIFO",
-        "vkd3d_config_dxr": "value=on",
-        "vkd3d_config_descriptor_heap": "value=on",
-    }
 
 
 def get_quality_overrides() -> dict:
@@ -1910,75 +1989,6 @@ def get_quality_overrides() -> dict:
     }
 
 
-def get_balanced_dxvk_section() -> dict:
-    return {
-        "dxvk_hdr": "1",
-        "dxvk_frame_pace": "low-latency",
-        "dxvk_shader_cache": "1",
-        "ddraw_multi_threaded": "True",
-        "ddraw_d16": "True",
-        "ddraw_back_buffer_resize": "True",
-        "ddraw_upload_depth_stencils": "True",
-        "d3d9_defer_surface_creation": "True",
-        "d3d9_max_frame_latency": "1",
-        "d3d9_sampler_anisotropy": "8",
-        "d3d9_shader_model": "3",
-        "d3d9_dpi_aware": "True",
-        "d3d9_float_emulation": "True",
-        "d3d9_df_formats": "True",
-        "d3d9_x4r4g4b4": "True",
-        "d3d9_d32": "True",
-        "d3d11_max_feature_level": "12_1",
-        "d3d11_sampler_anisotropy": "8",
-        "d3d11_msaa": "False",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_hdr": "True",
-        "dxgi_defer_surface_creation": "True",
-        "dxgi_max_frame_latency": "1",
-        "dxvk_allow_fse": "True",
-        "dxvk_tear_free": "True",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_balanced_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "2",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "fit",
-        "gamescope_upscale_filter": "fsr",
-        "upscaler_sharpness": "2",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "high_dynamic_range_output": "value=on",
-        "high_dynamic_range_standard_dynamic_range_content_nits": "400",
-        "steam_integration": "value=on",
-    }
-
-
-def get_balanced_launch_section() -> dict:
-    return {}
-
-
-def get_balanced_lsfg_section() -> dict:
-    return {
-        "vulkan_frames_per_second_multiplier": "2",
-        "vulkan_motion_estimation_quality": "0.75",
-        "vulkan_performance_mode": "0",
-        "vulkan_experimental_present_mode_override": "mailbox",
-    }
-
-
-def get_balanced_mangohud_section() -> dict:
-    return {
-        "vulkan_vertical_synchronization": "2",
-        "anisotropic_filtering": "8",
-        "trilinear_filtering": "value=on",
-    }
-
-
 def get_balanced_mesa_section() -> dict:
     return {
         "opengl_vertical_synchronization": "1",
@@ -1986,18 +1996,35 @@ def get_balanced_mesa_section() -> dict:
         "opengl_adaptive_synchronization": "true",
         "opengl_texture_dithering": "0",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "2G",
+        "opengl_glsl_cache_maximum_size": "10G",
         "vulkan_presentation_mode": "mailbox",
         "vulkan_submission_thread": "1",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "2G",
+        "shader_disk_cache_maximum_size": "10G",
         "disk_cache_mesa_database": "1",
+        "compression_control": "true",
         "gallium_multisample_antialiasing": "4",
-        "amd_texture_anisotropy": "8",
-        "radv_forced_anisotropic_filtering": "8",
+        "amd_texture_anisotropy": "4",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radv_forced_anisotropic_filtering": "4",
         "radv_performance_power_state": "peak",
+        "radv_mrt_output_nan_fixup": "true",
+        "radv_invariant_geometry": "true",
+        "radv_lower_discard_to_demote": "true",
         "intel_force_multisample_antialiasing": "4",
+        "intel_threaded_context": "false",
+        "intel_force_guc_low_latency": "true",
+        "intel_sampler_route_to_lsc": "true",
+        "opengl_precise_trigonometry": "true",
+        "opengl_shader_optimization_level": "3",
+        "opengl_always_have_depth_buffer": "true",
+        "opengl_force_glsl_absolute_square_root": "true",
+        "opengl_limit_trigonometric_input_range": "true",
+        "vertex_shader_position_always_invariant": "true",
+        "vertex_shader_position_always_precise": "true",
     }
 
 
@@ -2005,39 +2032,58 @@ def get_balanced_nvidia_section() -> dict:
     return {
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
+        "opengl_tearing_free_swap_present": "1",
+        "opengl_flush_control": "1",
         "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
         "opengl_maximum_prerendered_frames": "1",
         "opengl_texture_quality": "2",
         "opengl_forced_antialiasing": "5",
-        "opengl_forced_anisotropic_filtering": "3",
+        "opengl_forced_anisotropic_filtering": "2",
         "opengl_cubemap_anisotropic_filtering": "1",
         "opengl_cubemap_filtering": "1",
         "opengl_s3tc_compression_quality": "3",
+        "opengl_texture_clamp_behavior": "1",
         "opengl_texture_precache": "1",
         "opengl_implicit_mipmap_generation": "1",
+        "opengl_sparse_texture": "1",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
+        "opengl_image_sharpening": "1",
+        "opengl_image_sharpening_intensity": "5",
         "opengl_fast_geometry_shader": "1",
         "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
+        "opengl_hardware_state_per_context": "1",
+        "opengl_system_memory_texture_promotion": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "1073741824",
+        "opengl_shader_disk_cache_maximum_size": "10737418240",
         "opengl_shader_disk_cache_cleanup": "0",
     }
 
 
+def get_balanced_render_section() -> dict:
+    return {}
+
+
 def get_balanced_proton_section() -> dict:
     return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_d7vk_ddraw": "1",
         "proton_vkreflex": "1",
-        "proton_dxvk_lowlatency": "1",
         "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
         "proton_dlss_upgrade": "1",
         "proton_xess_upgrade": "1",
         "proton_fsr3_upgrade": "1",
         "proton_fsr4_upgrade": "1",
         "proton_fsr4_rdna3_upgrade": "1",
         "proton_mlfg_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
         "proton_use_ntsync": "1",
         "proton_nvapi": "0",
         "proton_nvidia_libs": "1",
@@ -2046,20 +2092,109 @@ def get_balanced_proton_section() -> dict:
         "proton_enable_hdr": "1",
         "proton_force_large_address_aware": "1",
         "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
         "proton_local_shader_cache": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
     }
 
 
-def get_balanced_render_section() -> dict:
-    return {}
+def get_balanced_dxvk_section() -> dict:
+    return {
+        "dxvk_hdr": "1",
+        "dxvk_frame_pace": "low-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "ddraw_d16": "True",
+        "ddraw_back_buffer_resize": "True",
+        "ddraw_upload_depth_stencils": "True",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "1",
+        "d3d9_sampler_anisotropy": "4",
+        "d3d9_invariant_position": "True",
+        "d3d9_shader_model": "3",
+        "d3d9_dpi_aware": "True",
+        "d3d9_strict_pow": "True",
+        "d3d9_float_emulation": "True",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d9_a8rt": "False",
+        "d3d9_seamless_cubes": "True",
+        "d3d11_sampler_anisotropy": "4",
+        "d3d11_invariant_position": "True",
+        "d3d11_msaa": "False",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_hdr": "True",
+        "dxgi_ue4_workarounds": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "1",
+        "dxvk_allow_fse": "True",
+        "dxvk_tear_free": "True",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_implicit_resolves": "True",
+        "dxvk_memory_defrag": "True",
+    }
 
 
 def get_balanced_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "MAILBOX",
-        "vkd3d_config_dxr": "value=on",
-        "vkd3d_config_descriptor_heap": "value=on",
+        "vkd3d_config_dxr12": "on",
+        "vkd3d_config_force_host_cached": "on",
+        "vkd3d_config_descriptor_heap": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_balanced_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "2",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "fit",
+        "gamescope_upscale_filter": "fsr",
+        "upscaler_sharpness": "2",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "high_dynamic_range_output": "on",
+        "high_dynamic_range_standard_dynamic_range_content_nits": "400",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
+    }
+
+
+def get_balanced_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "-1",
+        "vulkan_vertical_synchronization": "2",
+        "anisotropic_filtering": "4",
+        "trilinear_filtering": "on",
+    }
+
+
+def get_balanced_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "2",
+        "vulkan_motion_estimation_quality": "0.75",
+        "vulkan_performance_mode": "0",
+        "vulkan_high_dynamic_range_mode": "1",
+        "vulkan_experimental_present_mode_override": "mailbox",
+    }
+
+
+def get_balanced_launch_section() -> dict:
+    return {}
 
 
 def get_balanced_overrides() -> dict:
@@ -2077,65 +2212,9 @@ def get_balanced_overrides() -> dict:
     }
 
 
-def get_performance_fps_dxvk_section() -> dict:
-    return {
-        "dxvk_frame_pace": "low-latency",
-        "dxvk_shader_cache": "1",
-        "d3d9_max_frame_latency": "1",
-        "d3d9_sampler_anisotropy": "4",
-        "d3d9_float_emulation": "True",
-        "d3d9_lenient_clear": "True",
-        "d3d11_sampler_anisotropy": "4",
-        "d3d11_msaa": "True",
-        "d3d11_max_tess_factor": "8",
-        "d3d11_relaxed_barriers": "True",
-        "d3d11_relaxed_graphics_barriers": "True",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_max_frame_latency": "1",
-        "dxvk_tear_free": "True",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_performance_fps_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "2",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "fit",
-        "gamescope_upscale_filter": "fsr",
-        "upscaler_sharpness": "2",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "steam_integration": "value=on",
-    }
-
-
-def get_performance_fps_launch_section() -> dict:
-    return {}
-
-
-def get_performance_fps_lsfg_section() -> dict:
-    return {
-        "vulkan_frames_per_second_multiplier": "3",
-        "vulkan_motion_estimation_quality": "0.50",
-        "vulkan_performance_mode": "1",
-        "vulkan_experimental_present_mode_override": "mailbox",
-    }
-
-
-def get_performance_fps_mangohud_section() -> dict:
-    return {
-        "vulkan_vertical_synchronization": "2",
-        "anisotropic_filtering": "4",
-        "trilinear_filtering": "value=on",
-    }
-
-
 def get_performance_fps_mesa_section() -> dict:
     return {
-        "opengl_vertical_synchronization": "1",
+        "opengl_vertical_synchronization": "0",
         "opengl_threaded_command_processing": "true",
         "opengl_adaptive_synchronization": "true",
         "opengl_texture_dithering": "1",
@@ -2143,61 +2222,56 @@ def get_performance_fps_mesa_section() -> dict:
         "opengl_error_checking": "1",
         "opengl_error_checking_driver_configuration": "true",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "2G",
+        "opengl_glsl_cache_maximum_size": "10G",
         "vulkan_presentation_mode": "mailbox",
         "vulkan_submission_thread": "1",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "2G",
+        "shader_disk_cache_maximum_size": "10G",
         "disk_cache_mesa_database": "1",
-        "amd_texture_anisotropy": "4",
-        "radv_forced_anisotropic_filtering": "4",
+        "amd_texture_anisotropy": "1",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radv_forced_anisotropic_filtering": "1",
         "radv_performance_power_state": "peak",
-        "opengl_shader_optimization_level": "3",
+        "radv_mrt_output_nan_fixup": "true",
+        "radv_invariant_geometry": "true",
+        "radv_lower_discard_to_demote": "true",
         "intel_threaded_context": "false",
         "intel_force_guc_low_latency": "true",
+        "intel_sampler_route_to_lsc": "true",
+        "opengl_shader_optimization_level": "3",
+        "opengl_allow_draw_out_of_order": "true",
+        "vertex_shader_position_always_invariant": "true",
     }
 
 
 def get_performance_fps_nvidia_section() -> dict:
     return {
+        "opengl_vertical_synchronization": "0",
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
+        "opengl_flush_control": "1",
         "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
         "opengl_maximum_prerendered_frames": "1",
         "opengl_texture_quality": "3",
         "opengl_fast_approximate_antialiasing": "0",
-        "opengl_forced_anisotropic_filtering": "2",
+        "opengl_forced_anisotropic_filtering": "0",
         "opengl_cubemap_filtering": "1",
         "opengl_s3tc_compression_quality": "2",
         "opengl_texture_precache": "1",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
         "opengl_fast_geometry_shader": "1",
+        "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "1073741824",
+        "opengl_shader_disk_cache_maximum_size": "10737418240",
         "opengl_shader_disk_cache_cleanup": "0",
-    }
-
-
-def get_performance_fps_proton_section() -> dict:
-    return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_dxvk_lowlatency": "1",
-        "proton_vkreflex": "1",
-        "proton_vkd3d_heap": "1",
-        "proton_dlss_upgrade": "1",
-        "proton_xess_upgrade": "1",
-        "proton_fsr3_upgrade": "1",
-        "proton_fsr4_upgrade": "1",
-        "proton_fsr4_rdna3_upgrade": "1",
-        "proton_mlfg_upgrade": "1",
-        "proton_use_ntsync": "1",
-        "proton_nvapi": "0",
-        "proton_nvidia_libs": "1",
-        "proton_force_large_address_aware": "1",
-        "wine_large_address_aware": "1",
-        "proton_local_shader_cache": "1",
     }
 
 
@@ -2205,12 +2279,132 @@ def get_performance_fps_render_section() -> dict:
     return {}
 
 
+def get_performance_fps_proton_section() -> dict:
+    return {
+        "proton_vkreflex": "1",
+        "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
+        "proton_dlss_upgrade": "1",
+        "proton_xess_upgrade": "1",
+        "proton_fsr3_upgrade": "1",
+        "proton_fsr4_upgrade": "1",
+        "proton_fsr4_rdna3_upgrade": "1",
+        "proton_mlfg_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
+        "proton_use_ntsync": "1",
+        "proton_nvapi": "0",
+        "proton_nvidia_libs": "1",
+        "proton_native_ags": "1",
+        "proton_enable_wayland": "1",
+        "proton_enable_hdr": "1",
+        "proton_force_large_address_aware": "1",
+        "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
+        "proton_local_shader_cache": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
+    }
+
+
+def get_performance_fps_dxvk_section() -> dict:
+    return {
+        "dxvk_hdr": "1",
+        "dxgi_hdr": "True",
+        "dxvk_frame_pace": "low-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "1",
+        "d3d9_present_interval": "0",
+        "d3d9_sampler_anisotropy": "0",
+        "d3d9_shader_model": "3",
+        "d3d9_float_emulation": "True",
+        "d3d9_lenient_clear": "True",
+        "d3d9_dpi_aware": "True",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d11_sampler_anisotropy": "0",
+        "d3d11_msaa": "True",
+        "d3d11_max_tess_factor": "8",
+        "d3d11_relaxed_barriers": "True",
+        "d3d11_relaxed_graphics_barriers": "True",
+        "d3d11_ignore_graphics_barriers": "True",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_ue4_workarounds": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "1",
+        "dxgi_sync_interval": "0",
+        "dxvk_allow_fse": "True",
+        "dxvk_tear_free": "True",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_memory_defrag": "True",
+    }
+
+
 def get_performance_fps_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "MAILBOX",
-        "vkd3d_config_force_static_cbv": "value=on",
-        "vkd3d_config_descriptor_heap": "value=on",
+        "vkd3d_config_force_static_cbv": "on",
+        "vkd3d_config_no_upload_hvv": "on",
+        "vkd3d_config_force_host_cached": "on",
+        "vkd3d_config_descriptor_heap": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_performance_fps_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "2",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "fit",
+        "gamescope_upscale_filter": "fsr",
+        "upscaler_sharpness": "2",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "high_dynamic_range_output": "on",
+        "high_dynamic_range_standard_dynamic_range_content_nits": "400",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
+    }
+
+
+def get_performance_fps_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "0",
+        "vulkan_vertical_synchronization": "2",
+        "anisotropic_filtering": "0",
+        "trilinear_filtering": "on",
+    }
+
+
+def get_performance_fps_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "3",
+        "vulkan_motion_estimation_quality": "0.50",
+        "vulkan_performance_mode": "1",
+        "vulkan_high_dynamic_range_mode": "1",
+        "vulkan_experimental_present_mode_override": "mailbox",
+    }
+
+
+def get_performance_fps_launch_section() -> dict:
+    return {}
 
 
 def get_performance_fps_overrides() -> dict:
@@ -2228,63 +2422,6 @@ def get_performance_fps_overrides() -> dict:
     }
 
 
-def get_performance_low_latency_dxvk_section() -> dict:
-    return {
-        "dxvk_frame_pace": "min-latency",
-        "dxvk_shader_cache": "1",
-        "d3d9_max_frame_latency": "1",
-        "d3d9_sampler_anisotropy": "4",
-        "d3d9_float_emulation": "True",
-        "d3d9_lenient_clear": "True",
-        "d3d11_sampler_anisotropy": "4",
-        "d3d11_msaa": "True",
-        "d3d11_max_tess_factor": "8",
-        "d3d11_relaxed_barriers": "True",
-        "d3d11_relaxed_graphics_barriers": "True",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_max_frame_latency": "1",
-        "dxvk_tear_free": "True",
-        "dxvk_latency_sleep": "True",
-        "dxvk_latency_tolerance": "250",
-        "dxvk_nv_low_latency2": "False",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_performance_low_latency_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "2",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "fit",
-        "gamescope_upscale_filter": "fsr",
-        "upscaler_sharpness": "2",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "steam_integration": "value=on",
-        "realtime_scheduling": "value=on",
-    }
-
-
-def get_performance_low_latency_launch_section() -> dict:
-    return {}
-
-
-def get_performance_low_latency_lsfg_section() -> dict:
-    return {
-        "vulkan_experimental_present_mode_override": "mailbox",
-    }
-
-
-def get_performance_low_latency_mangohud_section() -> dict:
-    return {
-        "vulkan_vertical_synchronization": "1",
-        "anisotropic_filtering": "4",
-        "trilinear_filtering": "value=on",
-    }
-
-
 def get_performance_low_latency_mesa_section() -> dict:
     return {
         "opengl_vertical_synchronization": "0",
@@ -2295,18 +2432,29 @@ def get_performance_low_latency_mesa_section() -> dict:
         "opengl_error_checking": "1",
         "opengl_error_checking_driver_configuration": "true",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "2G",
-        "vulkan_presentation_mode": "mailbox",
+        "opengl_glsl_cache_maximum_size": "10G",
+        "vulkan_presentation_mode": "immediate",
         "vulkan_submission_thread": "1",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "2G",
+        "shader_disk_cache_maximum_size": "10G",
         "disk_cache_mesa_database": "1",
-        "amd_texture_anisotropy": "4",
-        "radv_forced_anisotropic_filtering": "4",
+        "amd_texture_anisotropy": "1",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radv_forced_anisotropic_filtering": "1",
         "radv_performance_power_state": "peak",
-        "opengl_shader_optimization_level": "3",
+        "radv_mrt_output_nan_fixup": "true",
+        "radv_invariant_geometry": "true",
+        "radv_lower_discard_to_demote": "true",
+        "vulkan_khr_present_wait": "true",
+        "intel_threaded_context": "false",
         "intel_force_guc_low_latency": "true",
+        "intel_sampler_route_to_lsc": "true",
+        "opengl_shader_optimization_level": "3",
+        "opengl_allow_draw_out_of_order": "true",
+        "vertex_shader_position_always_invariant": "true",
     }
 
 
@@ -2315,40 +2463,26 @@ def get_performance_low_latency_nvidia_section() -> dict:
         "opengl_vertical_synchronization": "0",
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
-        "opengl_threaded_optimization": "1",
-        "opengl_maximum_prerendered_frames": "1",
         "opengl_flush_control": "1",
+        "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
+        "opengl_maximum_prerendered_frames": "1",
         "opengl_texture_quality": "3",
         "opengl_fast_approximate_antialiasing": "0",
-        "opengl_forced_anisotropic_filtering": "2",
+        "opengl_forced_anisotropic_filtering": "0",
         "opengl_cubemap_filtering": "1",
         "opengl_s3tc_compression_quality": "2",
         "opengl_texture_precache": "1",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
         "opengl_fast_geometry_shader": "1",
+        "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "1073741824",
+        "opengl_shader_disk_cache_maximum_size": "10737418240",
         "opengl_shader_disk_cache_cleanup": "0",
-    }
-
-
-def get_performance_low_latency_proton_section() -> dict:
-    return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_dxvk_lowlatency": "1",
-        "proton_vkreflex": "1",
-        "proton_vkd3d_heap": "1",
-        "proton_dlss_upgrade": "1",
-        "proton_xess_upgrade": "1",
-        "proton_use_ntsync": "1",
-        "proton_nvapi": "0",
-        "proton_nvidia_libs": "1",
-        "proton_force_large_address_aware": "1",
-        "wine_large_address_aware": "1",
-        "proton_local_shader_cache": "1",
-        "proton_no_steaminput": "0",
-        "proton_prefer_sdl": "1",
     }
 
 
@@ -2356,13 +2490,128 @@ def get_performance_low_latency_render_section() -> dict:
     return {}
 
 
+def get_performance_low_latency_proton_section() -> dict:
+    return {
+        "proton_vkreflex": "1",
+        "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
+        "proton_dlss_upgrade": "1",
+        "proton_xess_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
+        "proton_use_ntsync": "1",
+        "proton_nvapi": "0",
+        "proton_nvidia_libs": "1",
+        "proton_native_ags": "1",
+        "proton_enable_wayland": "1",
+        "proton_force_large_address_aware": "1",
+        "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
+        "proton_local_shader_cache": "1",
+        "proton_prefer_sdl": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
+    }
+
+
+def get_performance_low_latency_dxvk_section() -> dict:
+    return {
+        "dxvk_frame_pace": "min-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "1",
+        "d3d9_num_back_buffers": "2",
+        "d3d9_sampler_anisotropy": "0",
+        "d3d9_shader_model": "3",
+        "d3d9_present_interval": "0",
+        "d3d9_float_emulation": "True",
+        "d3d9_lenient_clear": "True",
+        "d3d9_dpi_aware": "True",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d11_sampler_anisotropy": "0",
+        "d3d11_msaa": "True",
+        "d3d11_max_tess_factor": "8",
+        "d3d11_relaxed_barriers": "True",
+        "d3d11_relaxed_graphics_barriers": "True",
+        "d3d11_ignore_graphics_barriers": "True",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "1",
+        "dxgi_num_back_buffers": "2",
+        "dxgi_sync_interval": "0",
+        "dxvk_allow_fse": "True",
+        "dxvk_latency_sleep": "True",
+        "dxvk_latency_tolerance": "250",
+        "dxvk_nv_low_latency2": "False",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_memory_defrag": "True",
+    }
+
+
 def get_performance_low_latency_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "IMMEDIATE",
-        "vkd3d_config_force_static_cbv": "value=on",
-        "vkd3d_config_descriptor_heap": "value=on",
-        "vkd3d_config_no_staggered_submit": "value=on",
+        "vkd3d_config_force_static_cbv": "on",
+        "vkd3d_config_no_upload_hvv": "on",
+        "vkd3d_config_force_host_cached": "on",
+        "vkd3d_config_descriptor_heap": "on",
+        "vkd3d_config_no_staggered_submit": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_performance_low_latency_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "2",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "fit",
+        "gamescope_upscale_filter": "fsr",
+        "upscaler_sharpness": "2",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
+    }
+
+
+def get_performance_low_latency_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "0",
+        "vulkan_vertical_synchronization": "1",
+        "anisotropic_filtering": "0",
+        "trilinear_filtering": "on",
+    }
+
+
+def get_performance_low_latency_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "2",
+        "vulkan_motion_estimation_quality": "0.25",
+        "vulkan_performance_mode": "1",
+        "vulkan_high_dynamic_range_mode": "1",
+        "vulkan_experimental_present_mode_override": "immediate",
+    }
+
+
+def get_performance_low_latency_launch_section() -> dict:
+    return {}
 
 
 def get_performance_low_latency_overrides() -> dict:
@@ -2380,75 +2629,9 @@ def get_performance_low_latency_overrides() -> dict:
     }
 
 
-def get_potato_fps_dxvk_section() -> dict:
-    return {
-        "dxvk_frame_pace": "low-latency",
-        "dxvk_shader_cache": "1",
-        "ddraw_multi_threaded": "True",
-        "ddraw_mask_8bit_modes": "True",
-        "ddraw_pow2_textures": "True",
-        "ddraw_single_back_buffer": "True",
-        "ddraw_max_available_memory": "512",
-        "d3d9_max_frame_latency": "1",
-        "d3d9_sampler_anisotropy": "1",
-        "d3d9_sampler_lod_bias": "1.0",
-        "d3d9_float_emulation": "True",
-        "d3d9_lenient_clear": "True",
-        "d3d9_max_available_memory": "2048",
-        "d3d11_max_feature_level": "11_0",
-        "d3d11_sampler_anisotropy": "1",
-        "d3d11_sampler_lod_bias": "1.0",
-        "d3d11_msaa": "True",
-        "d3d11_max_tess_factor": "8",
-        "d3d11_relaxed_barriers": "True",
-        "d3d11_relaxed_graphics_barriers": "True",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_max_frame_latency": "1",
-        "dxvk_tear_free": "True",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_potato_fps_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "2",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "integer",
-        "gamescope_upscale_filter": "pixel",
-        "maximum_scale_factor": "3",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "steam_integration": "value=on",
-    }
-
-
-def get_potato_fps_launch_section() -> dict:
-    return {}
-
-
-def get_potato_fps_lsfg_section() -> dict:
-    return {
-        "vulkan_frames_per_second_multiplier": "2",
-        "vulkan_motion_estimation_quality": "0.25",
-        "vulkan_performance_mode": "1",
-        "vulkan_experimental_present_mode_override": "mailbox",
-    }
-
-
-def get_potato_fps_mangohud_section() -> dict:
-    return {
-        "vulkan_vertical_synchronization": "2",
-        "anisotropic_filtering": "1",
-        "mipmap_level_of_detail_bias": "16",
-        "retro_filtering": "value=on",
-    }
-
-
 def get_potato_fps_mesa_section() -> dict:
     return {
-        "opengl_vertical_synchronization": "1",
+        "opengl_vertical_synchronization": "0",
         "opengl_threaded_command_processing": "true",
         "opengl_adaptive_synchronization": "true",
         "opengl_texture_dithering": "1",
@@ -2456,65 +2639,80 @@ def get_potato_fps_mesa_section() -> dict:
         "opengl_error_checking": "1",
         "opengl_error_checking_driver_configuration": "true",
         "opengl_minimum_maximum_index_cache": "0",
-        "opengl_postprocessing_jimenez_mlaa": "0",
-        "opengl_postprocessing_jimenez_mlaa_color": "0",
+        "opengl_assembly_optimizations": "0",
+        "opengl_mmx_optimizations": "0",
+        "opengl_sse_optimizations": "0",
+        "opengl_allow_draw_out_of_order": "true",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "1G",
+        "opengl_glsl_cache_maximum_size": "10G",
+        "opengl_shader_optimization_level": "3",
+        "opengl_no_16bit": "false",
+        "opengl_no_fp16": "false",
         "vulkan_presentation_mode": "mailbox",
         "vulkan_submission_thread": "1",
+        "vulkan_x11_override_minimum_image_count": "2",
+        "vulkan_wsi_force_bgra8_unorm_first": "true",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "1G",
+        "shader_disk_cache_maximum_size": "10G",
         "disk_cache_mesa_database": "1",
+        "compression_control": "true",
+        "gallium_multisample_antialiasing": "0",
         "amd_texture_anisotropy": "1",
+        "amd_force_variable_rate_shading": "2x2",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radeonsi_force_fma32": "true",
         "radv_forced_anisotropic_filtering": "1",
         "radv_performance_power_state": "peak",
-        "opengl_shader_optimization_level": "3",
+        "radv_variable_rate_shading": "2x2",
+        "radv_lower_discard_to_demote": "true",
+        "radv_mrt_output_nan_fixup": "false",
+        "radv_split_fused_multiply_add": "true",
+        "radv_no_dynamic_bounds": "true",
+        "radv_aniso_single_level": "true",
+        "radv_shrink_image_store": "true",
+        "radv_sinking_load_input_fragment_shader": "true",
+        "radv_truncated_coordinate": "true",
+        "intel_threaded_context": "false",
         "intel_force_guc_low_latency": "true",
-        "vulkan_x11_override_minimum_image_count": "2",
+        "intel_sampler_route_to_lsc": "true",
+        "intel_tile_based_image_memory_rendering": "true",
     }
 
 
 def get_potato_fps_nvidia_section() -> dict:
     return {
+        "opengl_vertical_synchronization": "0",
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
         "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
         "opengl_maximum_prerendered_frames": "1",
         "opengl_texture_quality": "3",
         "opengl_fast_approximate_antialiasing": "0",
         "opengl_forced_anisotropic_filtering": "0",
+        "opengl_cubemap_anisotropic_filtering": "0",
         "opengl_s3tc_compression_quality": "0",
-        "opengl_texture_level_of_detail_bias": "1.0",
+        "opengl_texture_clamp_behavior": "0",
         "opengl_texture_precache": "0",
+        "opengl_sparse_texture": "0",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
+        "opengl_framebuffer_blit_ignore_standard_rgb": "1",
         "opengl_fast_geometry_shader": "1",
+        "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
+        "opengl_glsl_extension_validation": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
+        "opengl_z16_depth_restriction": "0",
+        "opengl_hardware_state_per_context": "1",
+        "opengl_system_memory_texture_promotion": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "536870912",
+        "opengl_shader_disk_cache_maximum_size": "10737418240",
         "opengl_shader_disk_cache_cleanup": "0",
-        "opengl_heap_allocation_limit": "200MB",
-    }
-
-
-def get_potato_fps_proton_section() -> dict:
-    return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_d7vk_ddraw": "1",
-        "proton_dxvk_sarek": "1",
-        "proton_dxvk_lowlatency": "1",
-        "proton_vkd3d_heap": "1",
-        "proton_xess_upgrade": "1",
-        "proton_fsr3_upgrade": "1",
-        "proton_use_ntsync": "1",
-        "proton_nvapi": "0",
-        "proton_force_large_address_aware": "1",
-        "wine_large_address_aware": "1",
-        "proton_limit_resolutions": "32",
-        "proton_local_shader_cache": "1",
-        "proton_old_gl_string": "1",
-        "proton_no_esync": "0",
-        "proton_no_fsync": "0",
     }
 
 
@@ -2522,13 +2720,141 @@ def get_potato_fps_render_section() -> dict:
     return {}
 
 
+def get_potato_fps_proton_section() -> dict:
+    return {
+        "proton_old_gl_string": "1",
+        "proton_vkreflex": "1",
+        "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
+        "proton_dlss_upgrade": "1",
+        "proton_xess_upgrade": "1",
+        "proton_fsr3_upgrade": "1",
+        "proton_fsr4_upgrade": "1",
+        "proton_fsr4_rdna3_upgrade": "1",
+        "proton_mlfg_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
+        "proton_use_ntsync": "1",
+        "proton_nvapi": "0",
+        "proton_nvidia_libs": "1",
+        "proton_native_ags": "1",
+        "proton_enable_wayland": "1",
+        "proton_force_large_address_aware": "1",
+        "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
+        "proton_local_shader_cache": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
+    }
+
+
+def get_potato_fps_dxvk_section() -> dict:
+    return {
+        "dxvk_frame_pace": "low-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "ddraw_mask_8bit_modes": "True",
+        "ddraw_pow2_textures": "True",
+        "ddraw_single_back_buffer": "True",
+        "ddraw_legacy_discard": "True",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d8_batching": "True",
+        "d3d8_legacy_discard": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "1",
+        "d3d9_present_interval": "0",
+        "d3d9_sampler_anisotropy": "0",
+        "d3d9_sampler_lod_bias": "1.0",
+        "d3d9_shader_model": "3",
+        "d3d9_float_emulation": "False",
+        "d3d9_lenient_clear": "True",
+        "d3d9_dpi_aware": "True",
+        "d3d9_evict_managed_on_unlock": "True",
+        "d3d9_long_mad": "False",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d11_sampler_anisotropy": "0",
+        "d3d11_sampler_lod_bias": "1.0",
+        "d3d11_msaa": "True",
+        "d3d11_max_tess_factor": "8",
+        "d3d11_relaxed_barriers": "True",
+        "d3d11_relaxed_graphics_barriers": "True",
+        "d3d11_ignore_graphics_barriers": "True",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "1",
+        "dxgi_sync_interval": "0",
+        "dxvk_allow_fse": "True",
+        "dxvk_tear_free": "True",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_track_pipeline_lifetime": "True",
+        "dxvk_memory_defrag": "True",
+        "dxvk_raw_ssbo": "True",
+    }
+
+
 def get_potato_fps_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "MAILBOX",
-        "vkd3d_config_force_static_cbv": "value=on",
-        "vkd3d_config_single_queue": "value=on",
-        "vkd3d_config_no_upload_hvv": "value=on",
+        "vkd3d_config_nodxr": "on",
+        "vkd3d_config_force_static_cbv": "on",
+        "vkd3d_config_single_queue": "on",
+        "vkd3d_config_no_upload_hvv": "on",
+        "vkd3d_config_no_invariant_position": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_potato_fps_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "2",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "integer",
+        "gamescope_upscale_filter": "pixel",
+        "maximum_scale_factor": "3",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "steam_integration": "on",
+        "color_management": "off",
+        "realtime_scheduling": "on",
+    }
+
+
+def get_potato_fps_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "0",
+        "vulkan_vertical_synchronization": "2",
+        "anisotropic_filtering": "0",
+        "mipmap_level_of_detail_bias": "4",
+        "retro_filtering": "on",
+    }
+
+
+def get_potato_fps_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "4",
+        "vulkan_motion_estimation_quality": "0.25",
+        "vulkan_performance_mode": "1",
+        "vulkan_experimental_present_mode_override": "mailbox",
+    }
+
+
+def get_potato_fps_launch_section() -> dict:
+    return {}
 
 
 def get_potato_fps_overrides() -> dict:
@@ -2546,73 +2872,6 @@ def get_potato_fps_overrides() -> dict:
     }
 
 
-def get_potato_low_latency_dxvk_section() -> dict:
-    return {
-        "dxvk_frame_pace": "min-latency",
-        "dxvk_shader_cache": "1",
-        "ddraw_multi_threaded": "True",
-        "ddraw_mask_8bit_modes": "True",
-        "ddraw_pow2_textures": "True",
-        "ddraw_single_back_buffer": "True",
-        "ddraw_max_available_memory": "512",
-        "d3d9_max_frame_latency": "1",
-        "d3d9_sampler_anisotropy": "1",
-        "d3d9_sampler_lod_bias": "1.0",
-        "d3d9_float_emulation": "True",
-        "d3d9_lenient_clear": "True",
-        "d3d9_max_available_memory": "2048",
-        "d3d11_max_feature_level": "11_0",
-        "d3d11_sampler_anisotropy": "1",
-        "d3d11_sampler_lod_bias": "1.0",
-        "d3d11_msaa": "True",
-        "d3d11_max_tess_factor": "8",
-        "d3d11_relaxed_barriers": "True",
-        "d3d11_relaxed_graphics_barriers": "True",
-        "d3d11_driver_command_lists": "True",
-        "dxgi_max_frame_latency": "1",
-        "dxvk_tear_free": "True",
-        "dxvk_latency_sleep": "True",
-        "dxvk_latency_tolerance": "250",
-        "dxvk_nv_low_latency2": "False",
-        "dxvk_memory_defrag": "True",
-    }
-
-
-def get_potato_low_latency_gamescope_section() -> dict:
-    return {
-        "gamescope": "value=on",
-        "gamescope_wsi_layer": "1",
-        "vulkan_wsi_minimum_image_count": "2",
-        "gamescope_fullscreen": "value=on",
-        "scaler_backend": "integer",
-        "gamescope_upscale_filter": "pixel",
-        "maximum_scale_factor": "3",
-        "adaptive_sync": "value=on",
-        "immediate_flips": "value=on",
-        "steam_integration": "value=on",
-        "realtime_scheduling": "value=on",
-    }
-
-
-def get_potato_low_latency_launch_section() -> dict:
-    return {}
-
-
-def get_potato_low_latency_lsfg_section() -> dict:
-    return {
-        "vulkan_experimental_present_mode_override": "immediate",
-    }
-
-
-def get_potato_low_latency_mangohud_section() -> dict:
-    return {
-        "vulkan_vertical_synchronization": "1",
-        "anisotropic_filtering": "1",
-        "mipmap_level_of_detail_bias": "16",
-        "retro_filtering": "value=on",
-    }
-
-
 def get_potato_low_latency_mesa_section() -> dict:
     return {
         "opengl_vertical_synchronization": "0",
@@ -2622,22 +2881,48 @@ def get_potato_low_latency_mesa_section() -> dict:
         "opengl_multisample_antialiasing": "1",
         "opengl_error_checking": "1",
         "opengl_error_checking_driver_configuration": "true",
-        "opengl_postprocessing_jimenez_mlaa": "0",
-        "opengl_postprocessing_jimenez_mlaa_color": "0",
+        "opengl_minimum_maximum_index_cache": "0",
+        "opengl_assembly_optimizations": "0",
+        "opengl_mmx_optimizations": "0",
+        "opengl_sse_optimizations": "0",
+        "opengl_allow_draw_out_of_order": "true",
         "opengl_glsl_cache": "false",
-        "opengl_glsl_cache_maximum_size": "1G",
+        "opengl_glsl_cache_maximum_size": "10G",
+        "opengl_shader_optimization_level": "3",
+        "opengl_no_16bit": "false",
+        "opengl_no_fp16": "false",
         "vulkan_presentation_mode": "immediate",
         "vulkan_submission_thread": "1",
+        "vulkan_khr_present_wait": "true",
+        "vulkan_x11_override_minimum_image_count": "2",
+        "vulkan_wsi_force_bgra8_unorm_first": "true",
         "shader_precompile": "true",
         "shader_disk_cache": "false",
-        "shader_disk_cache_maximum_size": "1G",
+        "shader_disk_cache_maximum_size": "10G",
         "disk_cache_mesa_database": "1",
+        "compression_control": "true",
+        "gallium_multisample_antialiasing": "0",
         "amd_texture_anisotropy": "1",
+        "amd_force_variable_rate_shading": "2x2",
+        "radeonsi_commutative_blend_add": "true",
+        "radeonsi_assume_no_z_fighting": "true",
+        "radeonsi_synchronous_compile": "false",
+        "radeonsi_force_fma32": "true",
         "radv_forced_anisotropic_filtering": "1",
         "radv_performance_power_state": "peak",
-        "opengl_shader_optimization_level": "3",
+        "radv_variable_rate_shading": "2x2",
+        "radv_lower_discard_to_demote": "true",
+        "radv_mrt_output_nan_fixup": "false",
+        "radv_split_fused_multiply_add": "true",
+        "radv_no_dynamic_bounds": "true",
+        "radv_aniso_single_level": "true",
+        "radv_shrink_image_store": "true",
+        "radv_sinking_load_input_fragment_shader": "true",
+        "radv_truncated_coordinate": "true",
+        "intel_threaded_context": "false",
         "intel_force_guc_low_latency": "true",
-        "vulkan_x11_override_minimum_image_count": "2",
+        "intel_sampler_route_to_lsc": "true",
+        "intel_tile_based_image_memory_rendering": "true",
     }
 
 
@@ -2646,43 +2931,33 @@ def get_potato_low_latency_nvidia_section() -> dict:
         "opengl_vertical_synchronization": "0",
         "opengl_vrr_allowed": "1",
         "opengl_gsync_allowed": "1",
-        "opengl_threaded_optimization": "1",
-        "opengl_maximum_prerendered_frames": "1",
         "opengl_flush_control": "1",
+        "opengl_threaded_optimization": "1",
+        "opengl_wait_behavior": "USLEEP",
+        "opengl_maximum_prerendered_frames": "1",
         "opengl_texture_quality": "3",
         "opengl_fast_approximate_antialiasing": "0",
         "opengl_forced_anisotropic_filtering": "0",
+        "opengl_cubemap_anisotropic_filtering": "0",
         "opengl_s3tc_compression_quality": "0",
-        "opengl_texture_level_of_detail_bias": "1.0",
+        "opengl_texture_clamp_behavior": "0",
         "opengl_texture_precache": "0",
+        "opengl_sparse_texture": "0",
+        "opengl_skip_texture_host_copies": "1",
+        "opengl_early_texture_hardware_allocation": "1",
+        "opengl_framebuffer_blit_ignore_standard_rgb": "1",
         "opengl_fast_geometry_shader": "1",
+        "opengl_shader_atomics": "1",
         "opengl_next_generation_compiler": "1",
+        "opengl_glsl_extension_validation": "1",
+        "opengl_software_fallback_restriction": "1",
+        "opengl_software_fallback_restriction_gl": "1",
+        "opengl_z16_depth_restriction": "0",
+        "opengl_hardware_state_per_context": "1",
+        "opengl_system_memory_texture_promotion": "1",
         "opengl_shader_disk_cache": "1",
-        "opengl_shader_disk_cache_maximum_size": "536870912",
+        "opengl_shader_disk_cache_maximum_size": "10737418240",
         "opengl_shader_disk_cache_cleanup": "0",
-        "opengl_heap_allocation_limit": "200MB",
-    }
-
-
-def get_potato_low_latency_proton_section() -> dict:
-    return {
-        "proton_use_wined3d": "0",
-        "proton_dxvk_d3d8": "1",
-        "proton_d7vk_ddraw": "1",
-        "proton_dxvk_sarek": "1",
-        "proton_dxvk_lowlatency": "1",
-        "proton_vkreflex": "1",
-        "proton_vkd3d_heap": "1",
-        "proton_xess_upgrade": "1",
-        "proton_use_ntsync": "1",
-        "proton_nvapi": "0",
-        "proton_force_large_address_aware": "1",
-        "wine_large_address_aware": "1",
-        "proton_limit_resolutions": "32",
-        "proton_local_shader_cache": "1",
-        "proton_old_gl_string": "1",
-        "proton_prefer_sdl": "1",
-        "proton_no_steaminput": "0",
     }
 
 
@@ -2690,14 +2965,143 @@ def get_potato_low_latency_render_section() -> dict:
     return {}
 
 
+def get_potato_low_latency_proton_section() -> dict:
+    return {
+        "proton_old_gl_string": "1",
+        "proton_vkreflex": "1",
+        "proton_vkd3d_heap": "1",
+        "layer_mesa_anti_lag": "0",
+        "proton_dlss_upgrade": "1",
+        "proton_xess_upgrade": "1",
+        "proton_no_d3d11": "0",
+        "proton_no_d3d10": "0",
+        "wine_fullscreen_integer_scaling": "1",
+        "proton_no_esync": "0",
+        "proton_no_fsync": "0",
+        "proton_use_ntsync": "1",
+        "proton_nvapi": "0",
+        "proton_nvidia_libs": "1",
+        "proton_native_ags": "1",
+        "proton_enable_wayland": "1",
+        "proton_force_large_address_aware": "1",
+        "wine_large_address_aware": "1",
+        "proton_set_game_drive": "1",
+        "proton_set_steam_drive": "1",
+        "proton_local_shader_cache": "1",
+        "proton_prefer_sdl": "1",
+        "proton_no_xim": "1",
+        "winepulse_fast_polling": "1",
+    }
+
+
+def get_potato_low_latency_dxvk_section() -> dict:
+    return {
+        "dxvk_frame_pace": "min-latency",
+        "dxvk_shader_cache": "1",
+        "dxvk_state_cache": "1",
+        "dxvk_all_cores": "1",
+        "ddraw_multi_threaded": "True",
+        "ddraw_mask_8bit_modes": "True",
+        "ddraw_pow2_textures": "True",
+        "ddraw_single_back_buffer": "True",
+        "ddraw_legacy_discard": "True",
+        "d3d8_shadow_perspective_divide": "True",
+        "d3d8_batching": "True",
+        "d3d8_legacy_discard": "True",
+        "d3d9_defer_surface_creation": "True",
+        "d3d9_max_frame_latency": "1",
+        "d3d9_num_back_buffers": "2",
+        "d3d9_sampler_anisotropy": "0",
+        "d3d9_sampler_lod_bias": "1.0",
+        "d3d9_shader_model": "3",
+        "d3d9_present_interval": "0",
+        "d3d9_float_emulation": "False",
+        "d3d9_lenient_clear": "True",
+        "d3d9_dpi_aware": "True",
+        "d3d9_evict_managed_on_unlock": "True",
+        "d3d9_long_mad": "False",
+        "d3d9_do_not_wait": "True",
+        "d3d9_discard": "True",
+        "d3d9_df_formats": "True",
+        "d3d9_x4r4g4b4": "True",
+        "d3d9_d32": "True",
+        "d3d11_sampler_anisotropy": "0",
+        "d3d11_sampler_lod_bias": "1.0",
+        "d3d11_msaa": "True",
+        "d3d11_max_tess_factor": "8",
+        "d3d11_relaxed_barriers": "True",
+        "d3d11_relaxed_graphics_barriers": "True",
+        "d3d11_ignore_graphics_barriers": "True",
+        "d3d11_dc_single_use_mode": "True",
+        "d3d11_driver_command_lists": "True",
+        "dxgi_defer_surface_creation": "True",
+        "dxgi_max_frame_latency": "1",
+        "dxgi_num_back_buffers": "2",
+        "dxgi_sync_interval": "0",
+        "dxvk_allow_fse": "True",
+        "dxvk_latency_sleep": "True",
+        "dxvk_latency_tolerance": "500",
+        "dxvk_nv_low_latency2": "False",
+        "dxvk_num_compiler_threads": "0",
+        "dxvk_dyasync_sarek": "0",
+        "dxvk_dyasync": "True",
+        "dxvk_unified_image_layouts": "True",
+        "dxvk_track_pipeline_lifetime": "True",
+        "dxvk_memory_defrag": "True",
+        "dxvk_raw_ssbo": "True",
+    }
+
+
 def get_potato_low_latency_vkd3d_section() -> dict:
     return {
         "vkd3d_swapchain_present_mode": "IMMEDIATE",
-        "vkd3d_config_force_static_cbv": "value=on",
-        "vkd3d_config_single_queue": "value=on",
-        "vkd3d_config_no_upload_hvv": "value=on",
-        "vkd3d_config_no_staggered_submit": "value=on",
+        "vkd3d_config_nodxr": "on",
+        "vkd3d_config_force_static_cbv": "on",
+        "vkd3d_config_single_queue": "on",
+        "vkd3d_config_no_upload_hvv": "on",
+        "vkd3d_config_no_invariant_position": "on",
+        "vkd3d_config_no_staggered_submit": "on",
+        "vkd3d_config_pipeline_library_app_cache": "on",
     }
+
+
+def get_potato_low_latency_gamescope_section() -> dict:
+    return {
+        "gamescope_wsi_layer": "1",
+        "vulkan_wsi_minimum_image_count": "2",
+        "gamescope_fullscreen": "on",
+        "scaler_backend": "integer",
+        "gamescope_upscale_filter": "pixel",
+        "maximum_scale_factor": "3",
+        "adaptive_sync": "on",
+        "immediate_flips": "on",
+        "steam_integration": "on",
+        "realtime_scheduling": "on",
+        "color_management": "off",
+    }
+
+
+def get_potato_low_latency_mangohud_section() -> dict:
+    return {
+        "opengl_vertical_synchronization": "0",
+        "vulkan_vertical_synchronization": "1",
+        "anisotropic_filtering": "0",
+        "mipmap_level_of_detail_bias": "4",
+        "retro_filtering": "on",
+    }
+
+
+def get_potato_low_latency_lsfg_section() -> dict:
+    return {
+        "vulkan_frames_per_second_multiplier": "4",
+        "vulkan_motion_estimation_quality": "0.25",
+        "vulkan_performance_mode": "1",
+        "vulkan_experimental_present_mode_override": "immediate",
+    }
+
+
+def get_potato_low_latency_launch_section() -> dict:
+    return {}
 
 
 def get_potato_low_latency_overrides() -> dict:

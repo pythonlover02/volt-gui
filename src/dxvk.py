@@ -202,13 +202,13 @@ def get_dxvk_settings() -> dict:
         "ddraw_emulate_fsaa": {
             "label": "DDraw Emulate FSAA",
             "description": "Use supported MSAA up to 4x to emulate FSAA on the DDraw/D3D7 path. 'true' applies emulation when the app requests FSAA; 'forced' applies it unconditionally; 'auto' (default) is off.",
-            "inputs": "true=on, forced=force on, auto=off (default)",
+            "inputs": "true=on, forced=force on",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.emulateFSAA=", "", ";"),
         },
         "ddraw_back_buffer_guard": {
             "label": "DDraw Back Buffer Guard",
             "description": "Determines how uploads for back buffer blits are handled. 'auto' (default) uses the standard guard path; 'strict' is a stricter path for games that read back the back buffer aggressively; 'disabled' turns the guard off.",
-            "inputs": "auto=on (default), disabled=off, strict=strict path",
+            "inputs": "disabled=off, strict=strict path",
             "output": ("environment_variable", "DXVK_CONFIG", "ddraw.backBufferGuard=", "", ";"),
         },
         "ddraw_max_available_memory": {
@@ -298,25 +298,25 @@ def get_dxvk_settings() -> dict:
         "d3d9_hide_nvidia_gpu": {
             "label": "D3D9 Hide Nvidia GPU",
             "description": "Report Nvidia GPUs as AMD GPUs for D3D8/9. Generally only done for games known to take issue with NVAPI or otherwise behave poorly on Nvidia.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideNvidiaGpu=", "", ";"),
         },
         "d3d9_hide_nvk_gpu": {
             "label": "D3D9 Hide NVK GPU",
             "description": "D3D9 variant. Report Nvidia GPUs running on NVK as AMD GPUs.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideNvkGpu=", "", ";"),
         },
         "d3d9_hide_amd_gpu": {
             "label": "D3D9 Hide AMD GPU",
             "description": "D3D9 variant. Report AMD GPUs as Nvidia GPUs for games with AMD-specific issues.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideAmdGpu=", "", ";"),
         },
         "d3d9_hide_intel_gpu": {
             "label": "D3D9 Hide Intel GPU",
             "description": "Report Intel GPUs as AMD GPUs for D3D8/9. Defaults to True to circumvent iGPU-specific restrictions affecting early Intel hardware.",
-            "inputs": "True=on (default), False=off, Auto=auto",
+            "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.hideIntelGpu=", "", ";"),
         },
         "d3d9_num_back_buffers": {
@@ -334,7 +334,7 @@ def get_dxvk_settings() -> dict:
         "d3d9_tear_free": {
             "label": "D3D9 Tear Free (Low-Latency)",
             "description": "D3D9 equivalent of dxvk.tearFree. True=mailbox present mode when vsync off; False=relaxed FIFO when vsync on. Low-latency fork only.",
-            "inputs": "True=mailbox, False=relaxed fifo, Auto=default",
+            "inputs": "True=mailbox, False=relaxed fifo",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.tearFree=", "", ";"),
         },
         "d3d9_sampler_anisotropy": {
@@ -423,8 +423,8 @@ def get_dxvk_settings() -> dict:
         },
         "d3d9_float_emulation": {
             "label": "D3D9 Float Emulation",
-            "description": "Force float point quirk emulation (anything * 0). True=faster but less accurate (good enough for most games). False=off entirely. Strict=slower but more correct (needed for some games). Auto=DXVK picks.",
-            "inputs": "True=fast, Strict=accurate, False=off, Auto=default",
+            "description": "Force float point quirk emulation (anything * 0). True=faster but less accurate (good enough for most games). False=off entirely. Strict=slower but more correct (needed for some games).",
+            "inputs": "True=fast, Strict=accurate, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "d3d9.floatEmulation=", "", ";"),
         },
         "d3d9_dialog_mode": {
@@ -778,25 +778,25 @@ def get_dxvk_settings() -> dict:
         "dxgi_hide_nvidia_gpu": {
             "label": "DXGI Hide Nvidia GPU",
             "description": "Report Nvidia GPUs as AMD GPUs. By default done for DXGI unless NVAPI is explicitly used through Proton, to work around crashes or low performance with Nvidia-specific code paths (especially Unreal Engine).",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideNvidiaGpu=", "", ";"),
         },
         "dxgi_hide_nvk_gpu": {
             "label": "DXGI Hide NVK GPU",
             "description": "Report Nvidia GPUs running on NVK (open source driver) as AMD GPUs.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideNvkGpu=", "", ";"),
         },
         "dxgi_hide_amd_gpu": {
             "label": "DXGI Hide AMD GPU",
             "description": "Report AMD GPUs as Nvidia GPUs. Only done for games known to have issues with AMDAGS or other AMD-specific code paths.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideAmdGpu=", "", ";"),
         },
         "dxgi_hide_intel_gpu": {
             "label": "DXGI Hide Intel GPU",
             "description": "Report Intel GPUs as AMD GPUs. Only done for games known to have issues with Intel-specific libraries such as XESS.",
-            "inputs": "True=on (default), False=off, Auto=auto",
+            "inputs": "True=on (default), False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxgi.hideIntelGpu=", "", ";"),
         },
         "dxgi_max_device_memory": {
@@ -843,8 +843,8 @@ def get_dxvk_settings() -> dict:
         },
         "dxvk_latency_sleep": {
             "label": "Latency Sleep / Reflex",
-            "description": "Controls latency sleep and Nvidia Reflex support. Auto=only D3D11+Reflex games with VK_NV_low_latency2 and dxvk-nvapi in Proton. True=force built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=suppress Reflex and built-in latency reduction.",
-            "inputs": "True=force on, False=off, Auto=default",
+            "description": "Controls latency sleep and Nvidia Reflex support. True=force built-in latency reduction based on internal timings (assumes input sampling happens after Present returns; won't work with async-rendering games or external/in-game limiters; may reduce performance or hurt frame pacing). False=suppress Reflex and built-in latency reduction.",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.latencySleep=", "", ";"),
         },
         "dxvk_latency_tolerance": {
@@ -856,19 +856,19 @@ def get_dxvk_settings() -> dict:
         "dxvk_nv_low_latency2": {
             "label": "NV_low_latency2",
             "description": "VK_NV_low_latency2 usage. Suppressing makes Reflex unavailable; if dxvk.latencySleep=True, a custom algorithm is used instead. By default the extension is not used in 32-bit applications due to driver issues.",
-            "inputs": "False=force on, True=off, Auto=default",
+            "inputs": "False=force on, True=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.disableNvLowLatency2=", "", ";"),
         },
         "dxvk_tear_free": {
             "label": "Tear Free Mode",
             "description": "Controls tearing behaviour. True=use mailbox present mode when vsync is off (eliminates tearing, may be unsupported on some systems). False=use relaxed FIFO present mode when vsync is on (tearing but less stutter at low FPS). Do not report issues with this option.",
-            "inputs": "True=mailbox, False=relaxed fifo, Auto=default",
+            "inputs": "True=mailbox, False=relaxed fifo",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.tearFree=", "", ";"),
         },
         "dxvk_tiler_mode": {
             "label": "Tiler Mode",
             "description": "Controls tiler optimizations. Alters submission heuristics and activates some non-default behaviour. Only intended for performance testing and debugging.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.tilerMode=", "", ";"),
         },
         "dxvk_zero_mapped_memory": {
@@ -898,31 +898,31 @@ def get_dxvk_settings() -> dict:
         "dxvk_raw_ssbo": {
             "label": "Raw SSBO",
             "description": "Use storage buffers to implement raw and structured buffer views. Active by default on hardware with a 4-byte storage buffer offset alignment (e.g. AMD). May improve performance but is not safe on hardware with higher alignment requirements.",
-            "inputs": "True=force on, False=off, Auto=default",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.useRawSsbo=", "", ";"),
         },
         "dxvk_shrink_nvidia_hvv_heap": {
             "label": "Shrink Nvidia HVV Heap (Low-Latency)",
             "description": "Controls Nvidia HVV behaviour. Suppresses the host-visible, device-local heap on Nvidia drivers. Used to work around NVIDIA driver bug 3114283 on affected drivers, as well as in specific games on newer drivers. Low-latency fork only.",
-            "inputs": "True=on, False=off, Auto=default",
+            "inputs": "True=on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.shrinkNvidiaHvvHeap=", "", ";"),
         },
         "dxvk_graphics_pipeline_library": {
             "label": "Graphics Pipeline Library",
-            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. Auto=on if supported and compile optimized pipelines in background. True=on but don't compile optimized pipelines. False=always off.",
-            "inputs": "True=no optimized, False=off, Auto=default",
+            "description": "Control VK_EXT_graphics_pipeline_library usage. Changing will likely result in increased stutter or degraded performance. True=on but don't compile optimized pipelines. False=always off.",
+            "inputs": "True=no optimized, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableGraphicsPipelineLibrary=", "", ";"),
         },
         "dxvk_descriptor_heap": {
             "label": "Descriptor Heap",
             "description": "VK_EXT_descriptor_heap usage.",
-            "inputs": "True=force on, False=off, Auto=known-good drivers",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDescriptorHeap=", "", ";"),
         },
         "dxvk_descriptor_buffer": {
             "label": "Descriptor Buffer",
             "description": "VK_EXT_descriptor_buffer usage. If descriptor heap feature is active and supported, it takes precedence over descriptor buffers.",
-            "inputs": "True=force on, False=off, Auto=known-good drivers",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableDescriptorBuffer=", "", ";"),
         },
         "dxvk_unified_image_layouts": {
@@ -940,13 +940,13 @@ def get_dxvk_settings() -> dict:
         "dxvk_track_pipeline_lifetime": {
             "label": "Track Pipeline Lifetime",
             "description": "If active, pipeline libraries are freed aggressively to save memory and address space. No effect if graphics pipeline libraries are not supported or off.",
-            "inputs": "True=always, False=never, Auto=32-bit apps only",
+            "inputs": "True=always, False=never",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.trackPipelineLifetime=", "", ";"),
         },
         "dxvk_memory_defrag": {
             "label": "Memory Defragmentation",
             "description": "Control memory defragmentation. By default, DXVK defragments video memory if significant memory is wasted or budget is exceeded. Provided solely for debug purposes.",
-            "inputs": "True=force on, False=off, Auto=default",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.enableMemoryDefrag=", "", ";"),
         },
         "dxvk_hud_conf": {
@@ -958,7 +958,7 @@ def get_dxvk_settings() -> dict:
         "dxvk_lower_sin_cos": {
             "label": "Lower Sin/Cos",
             "description": "Force custom sine/cosine approximation. On some hardware this may be more accurate than native sin/cos but at a performance cost.",
-            "inputs": "True=force on, False=off, Auto=poor-precision drivers only",
+            "inputs": "True=force on, False=off",
             "output": ("environment_variable", "DXVK_CONFIG", "dxvk.lowerSinCos=", "", ";"),
         },
         "dxvk_debug_utils": {
