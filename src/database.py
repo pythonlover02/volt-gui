@@ -310,16 +310,14 @@ def process_render_selector_into_environment(tab_name: str, setting_key: str, se
 def resolve_render_selector_value(combo_widget, selected_value: str) -> str:
     index_map = getattr(combo_widget, "index_map", {})
     if selected_value in index_map: return index_map[selected_value]
-    if "=" in selected_value: return selected_value.split("=", 1)[1]
-    return selected_value
+    return ""
 
 
 def process_opengl_render_into_environment(combo_widget, selected_value: str, environment_keys: tuple, environment_collection: dict) -> None:
     resolved_value = resolve_render_selector_value(combo_widget, selected_value)
+    if resolved_value == "": return None
     device_map = getattr(combo_widget, "device_map", {})
-    if resolved_value not in device_map:
-        for environment_key in environment_keys: environment_collection[environment_key] = resolved_value
-        return None
+    if resolved_value not in device_map: return None
     used_keys = set()
     for environment_key, environment_value in device_map[resolved_value].items():
         environment_collection[environment_key] = environment_value
@@ -331,11 +329,11 @@ def process_opengl_render_into_environment(combo_widget, selected_value: str, en
 
 def process_vulkan_render_into_environment(combo_widget, selected_value: str, environment_keys: tuple, environment_collection: dict) -> None:
     resolved_value = resolve_render_selector_value(combo_widget, selected_value)
+    if resolved_value == "": return None
     device_map = getattr(combo_widget, "device_map", {})
-    if resolved_value in device_map and device_map[resolved_value] != "":
-        environment_collection["MESA_VK_DEVICE_SELECT"] = device_map[resolved_value] + "!"
-    else:
-        environment_collection["MESA_VK_DEVICE_SELECT"] = resolved_value
+    if resolved_value not in device_map: return None
+    if device_map[resolved_value] == "": return None
+    environment_collection["MESA_VK_DEVICE_SELECT"] = device_map[resolved_value] + "!"
     for environment_key in environment_keys:
         if environment_key != "MESA_VK_DEVICE_SELECT": environment_collection[environment_key] = ""
     return None
