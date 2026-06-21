@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project its currently unsupported, sadly im burn out of GUI and Env Var related development, all of its its tiring, it will be left Open Source in the case anyone wants to fork it and keep working on it, be free to. I will keep working where i feel more at home, GPU related code, like DXVK-Sarek or bones.
+
 # volt-gui
 
 > **My AMD Adrenaline / NVIDIA Settings Linux Alternative**
