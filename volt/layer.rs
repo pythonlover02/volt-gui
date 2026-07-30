@@ -31,6 +31,7 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_graphics_pipelines;
+use crate::present::call_present_with_modes;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
@@ -129,7 +130,7 @@ fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::In
 
 fn call_forward_present(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     match queue_owner(queue) {
-        Some(d) => unsafe { (d.swap_fp.queue_present_khr)(queue, info) },
+        Some(d) => call_present_with_modes(&d, queue, info),
         None => call_fallback_present(queue, info),
     }
 }
