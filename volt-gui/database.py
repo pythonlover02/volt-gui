@@ -18,6 +18,13 @@ COUNT_STEPS: Final[tuple] = ("2", "3", "4")
 
 SETTINGS_DB: Final[dict] = {
     "Display": {
+        "gpu": {
+            "section": "display",
+            "label": "GPU",
+            "description": "Which physical device the game is allowed to see, by index in the order the driver reports them. The layer filters device enumeration itself, so this works on every Vulkan driver. Out of range indices keep all devices and log a warning.",
+            "options": (DEFAULT_VALUE, "1", "2", "3", "4"),
+            "editable": False,
+        },
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
@@ -31,6 +38,13 @@ SETTINGS_DB: Final[dict] = {
             "description": "Cap the frame rate at present time. Pick a common cap or type any FPS value. Lower caps reduce power draw and can stabilize frametimes.",
             "options": (DEFAULT_VALUE, "30", "40", "48", "60", "75", "90", "120", "144", "165", "240"),
             "editable": True,
+        },
+        "frame_pacing": {
+            "section": "display",
+            "label": "Frame Pacing",
+            "description": "How the frame limiter waits. sleep is CPU friendly, precise sleeps most of the interval then busy waits the remainder for tighter frametimes at a small CPU cost. Only applies when Frame Limit is set.",
+            "options": (DEFAULT_VALUE, "sleep", "precise"),
+            "editable": False,
         },
         "image_count": {
             "section": "display",
@@ -51,6 +65,13 @@ SETTINGS_DB: Final[dict] = {
             "label": "Swapchain Images Maximum",
             "description": "Upper clamp applied to the application's own swapchain image request when Swapchain Images is default. Lower values reduce latency.",
             "options": (DEFAULT_VALUE,) + COUNT_STEPS,
+            "editable": False,
+        },
+        "color_depth": {
+            "section": "display",
+            "label": "Color Depth",
+            "description": "Prefer 10-bit surface formats by reordering what the game sees when it queries the surface. Games that pick the first supported format get 10-bit output; games with a hardcoded format keep their own choice.",
+            "options": (DEFAULT_VALUE, "10bit"),
             "editable": False,
         },
     },
