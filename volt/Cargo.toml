@@ -1,0 +1,25 @@
+[package]
+name = "volt"
+version = "2.0.0"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "volt"
+crate-type = ["cdylib", "rlib"]
+path = "lib.rs"
+
+[[bin]]
+name = "volt"
+path = "main.rs"
+
+[dependencies]
+libc = "0.2"
+toml = "0.8"
+ash = "0.37"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+panic = "abort"
+strip = true
