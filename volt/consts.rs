@@ -42,6 +42,8 @@ pub(crate) const NULL_OK: [&str; 4] = [
 
 pub(crate) const USAGE: &str = "usage: volt [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD             run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD        run CMD with profile ~/.config/volt-gui/NAME.toml\n";
 
+pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
+
 pub(crate) const SECTION_DISPLAY: &str = "display";
 pub(crate) const SECTION_TEXTURES: &str = "textures";
 pub(crate) const SECTION_ADVANCED: &str = "advanced";

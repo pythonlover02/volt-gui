@@ -5,3 +5,5 @@ mod logging;
 mod env;
 mod config;
 mod watch;
+mod instance;
+mod device;
