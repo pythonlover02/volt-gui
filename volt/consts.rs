@@ -27,7 +27,6 @@ pub(crate) const LOG_LEVEL_INFO: i32 = 3;
 pub(crate) const DEFAULT_LOG_LEVEL: i32 = 2;
 
 pub(crate) const US_PER_S: f32 = 1_000_000.0;
-pub(crate) const NS_PER_S: u64 = 1_000_000_000;
 pub(crate) const SPIN_MARGIN_US: u64 = 500;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const ANISO_MIN: f32 = 1.0;

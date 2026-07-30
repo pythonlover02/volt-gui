@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Mutex;
-use std::sync::OnceLock;
 use std::thread;
 use std::time::Duration;
 
@@ -19,10 +18,14 @@ use crate::consts::POLL_INTERVAL_MS;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-static NOTIFY_FD: OnceLock<i32> = OnceLock::new();
+struct Watcher {
+    fd: i32,
+    handle: thread::JoinHandle<()>,
+}
+
 static DIRTY: AtomicBool = AtomicBool::new(false);
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
-static WATCHER: Mutex<Option<thread::JoinHandle<()>>> = Mutex::new(None);
+static WATCHER: Mutex<Option<Watcher>> = Mutex::new(None);
 
 fn call_inotify_init() -> i32 {
     unsafe { libc::inotify_init1(libc::IN_NONBLOCK) }
@@ -89,67 +92,62 @@ fn watch_loop(fd: i32) {
         .for_each(|_| watch_step(fd));
 }
 
-fn store_handle(h: thread::JoinHandle<()>) {
-    match WATCHER.lock() {
-        Ok(mut g) => *g = Some(h),
-        Err(_) => (),
-    }
-}
-
-fn take_handle() -> Option<thread::JoinHandle<()>> {
-    WATCHER.lock().ok().and_then(|mut g| g.take())
-}
-
-fn join_handle(h: thread::JoinHandle<()>) {
-    let _ = h.join();
-}
-
-fn start_watcher(fd: i32) {
-    match fd_is_valid(call_inotify_watch(fd, &config_dir())) {
-        true => store_handle(thread::spawn(move || watch_loop(fd))),
-        false => log_at(LogLevel::Warn, "inotify add watch failed, hot reload disabled"),
-    }
-}
-
-fn init_inotify() {
-    NOTIFY_FD.get_or_init(|| {
-        let fd = call_inotify_init();
-        match fd_is_valid(fd) {
-            true => {
-                start_watcher(fd);
-                fd
-            }
-            false => fd,
-        }
-    });
-}
-
 fn call_close_fd(fd: i32) {
     unsafe { libc::close(fd) };
 }
 
-fn close_notify_fd() {
-    NOTIFY_FD
-        .get()
-        .copied()
-        .filter(|fd| fd_is_valid(*fd))
-        .into_iter()
-        .for_each(call_close_fd);
+fn watcher_for_fd(fd: i32) -> Option<Watcher> {
+    match fd_is_valid(call_inotify_watch(fd, &config_dir())) {
+        true => {
+            SHUTDOWN.store(false, Ordering::Relaxed);
+            DIRTY.store(true, Ordering::Relaxed);
+            Some(Watcher { fd, handle: thread::spawn(move || watch_loop(fd)) })
+        }
+        false => {
+            log_at(LogLevel::Warn, "inotify add watch failed, hot reload disabled");
+            call_close_fd(fd);
+            None
+        }
+    }
+}
+
+fn spawn_watcher() -> Option<Watcher> {
+    let fd = call_inotify_init();
+    match fd_is_valid(fd) {
+        true => watcher_for_fd(fd),
+        false => {
+            log_at(LogLevel::Warn, "inotify init failed, hot reload disabled");
+            None
+        }
+    }
+}
+
+fn stop_watcher(w: Watcher) {
+    SHUTDOWN.store(true, Ordering::Relaxed);
+    let _ = w.handle.join();
+    call_close_fd(w.fd);
+    DIRTY.store(false, Ordering::Relaxed);
+    log_at(LogLevel::Info, "config watcher stopped");
 }
 
 pub(crate) fn maybe_shutdown_watch(last_instance: bool) {
     match last_instance {
-        true => {
-            SHUTDOWN.store(true, Ordering::Relaxed);
-            take_handle().into_iter().for_each(join_handle);
-            close_notify_fd();
-        }
+        true => match WATCHER.lock() {
+            Ok(mut g) => g.take().into_iter().for_each(stop_watcher),
+            Err(_) => (),
+        },
         false => (),
     }
 }
 
 pub(crate) fn setup_watch() {
-    init_inotify();
+    match WATCHER.lock() {
+        Ok(mut g) => match g.is_none() {
+            true => *g = spawn_watcher(),
+            false => (),
+        },
+        Err(_) => (),
+    }
 }
 
 pub(crate) fn maybe_reload() {

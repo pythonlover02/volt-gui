@@ -3,6 +3,7 @@ use std::ffi::c_void;
 use std::ffi::CStr;
 use std::mem;
 use std::ptr;
+use std::sync::Arc;
 
 use ash::vk;
 use ash::vk::Handle;
@@ -19,6 +20,7 @@ use crate::device::devs_get;
 use crate::device::inherit_device_dispatch;
 use crate::device::queue_dev_put;
 use crate::device::queue_owner;
+use crate::device::VkDevState;
 use crate::instance::call_advance_chain;
 use crate::instance::call_filtered_enumerate;
 use crate::instance::call_next_gdpa;
@@ -40,6 +42,7 @@ use crate::swapchain::swaps_del;
 use crate::view::call_create_image_view;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
+use crate::watch::setup_watch;
 
 #[repr(C)]
 struct VkNegotiateLayerInterface {
@@ -130,8 +133,12 @@ fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::In
     }
 }
 
-fn call_forward_present(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
-    match queue_owner(queue) {
+fn call_forward_present(
+    owner: Option<Arc<VkDevState>>,
+    queue: vk::Queue,
+    info: *const vk::PresentInfoKHR,
+) -> vk::Result {
+    match owner {
         Some(d) => call_present_with_modes(&d, queue, info),
         None => call_fallback_present(queue, info),
     }
@@ -240,7 +247,13 @@ unsafe extern "system" fn vkCreateInstance(
 ) -> vk::Result {
     init_log_level();
     let link = call_advance_chain(chain_link_info((*ci).p_next, vk::StructureType::LOADER_INSTANCE_CREATE_INFO));
-    call_real_create_instance(link, ci, alloc, out)
+    match call_real_create_instance(link, ci, alloc, out) {
+        vk::Result::SUCCESS => {
+            setup_watch();
+            vk::Result::SUCCESS
+        }
+        e => e,
+    }
 }
 
 unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
@@ -351,8 +364,9 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     maybe_reload();
-    maybe_limit_frame();
-    call_forward_present(queue, info)
+    let owner = queue_owner(queue);
+    maybe_limit_frame(owner.as_ref().map(|d| d.caps));
+    call_forward_present(owner, queue, info)
 }
 
 #[no_mangle]

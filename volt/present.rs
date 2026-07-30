@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicI32;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -16,6 +17,7 @@ use crate::consts::LatencyChoice;
 use crate::consts::PacingChoice;
 use crate::consts::SPIN_MARGIN_US;
 use crate::consts::US_PER_S;
+use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::ext::st;
 use crate::ext::AntiLagDataAmd;
@@ -41,6 +43,7 @@ const LATENCY_BOOST: i32 = 2;
 static EPOCH: OnceLock<Instant> = OnceLock::new();
 static LAST_US: AtomicU64 = AtomicU64::new(0);
 static LATENCY_STATE: AtomicI32 = AtomicI32::new(LATENCY_UNSET);
+static DISPLAY_TIMING_WARNED: AtomicBool = AtomicBool::new(false);
 
 fn call_now_us() -> u64 {
     EPOCH.get_or_init(Instant::now).elapsed().as_micros() as u64
@@ -81,6 +84,31 @@ fn call_wait_until(target: u64, precise: bool) {
     }
 }
 
+fn display_timing_missing(pacing: Option<PacingChoice>, caps: Option<DeviceCaps>) -> bool {
+    match (pacing, caps.map(|c| c.display_timing)) {
+        (Some(PacingChoice::DisplayTiming), Some(true)) => false,
+        (Some(PacingChoice::DisplayTiming), _) => true,
+        (_, _) => false,
+    }
+}
+
+fn warn_display_timing_once() {
+    match DISPLAY_TIMING_WARNED.swap(true, Ordering::Relaxed) {
+        true => (),
+        false => log_at(
+            LogLevel::Warn,
+            "frame_pacing display_timing requested but VK_GOOGLE_display_timing is unavailable, falling back to precise pacing",
+        ),
+    }
+}
+
+fn maybe_warn_display_timing(pacing: Option<PacingChoice>, caps: Option<DeviceCaps>) {
+    match display_timing_missing(pacing, caps) {
+        true => warn_display_timing_once(),
+        false => (),
+    }
+}
+
 fn pacing_is_precise(pacing: Option<PacingChoice>) -> bool {
     match pacing {
         Some(PacingChoice::Precise) | Some(PacingChoice::DisplayTiming) => true,
@@ -96,10 +124,13 @@ fn call_limit_to(fps: f32, precise: bool) {
     LAST_US.store(call_now_us(), Ordering::Relaxed);
 }
 
-pub(crate) fn maybe_limit_frame() {
+pub(crate) fn maybe_limit_frame(caps: Option<DeviceCaps>) {
     let s = ensure_settings();
     match s.frame_limit {
-        Some(fps) => call_limit_to(fps, pacing_is_precise(s.pacing)),
+        Some(fps) => {
+            maybe_warn_display_timing(s.pacing, caps);
+            call_limit_to(fps, pacing_is_precise(s.pacing));
+        }
         None => (),
     }
 }
