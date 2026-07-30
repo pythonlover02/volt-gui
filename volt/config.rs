@@ -19,6 +19,7 @@ use crate::env::env_home;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::watch::setup_watch;
 
 #[derive(Clone, Default)]
 pub(crate) struct Settings {
@@ -221,6 +222,7 @@ pub(crate) fn load_settings() -> Settings {
     init_log_level();
     let s = read_config(&config_path(&profile_name()));
     store_settings(s.clone());
+    setup_watch();
     log_at(LogLevel::Info, "settings loaded");
     s
 }

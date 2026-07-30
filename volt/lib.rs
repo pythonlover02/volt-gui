@@ -4,3 +4,4 @@ mod consts;
 mod logging;
 mod env;
 mod config;
+mod watch;
