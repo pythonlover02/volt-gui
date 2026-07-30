@@ -1,0 +1,20 @@
+{
+    "file_format_version": "1.2.0",
+    "layer": {
+        "name": "VK_LAYER_VOLT_settings",
+        "type": "GLOBAL",
+        "library_path": "libvolt.so",
+        "api_version": "1.0.0",
+        "implementation_version": "1",
+        "description": "Driver style Vulkan settings layer for Linux.",
+        "functions": {
+            "vkNegotiateLoaderLayerInterfaceVersion": "vkNegotiateLoaderLayerInterfaceVersion"
+        },
+        "enable_environment": {
+            "VOLT_ENABLE": "1"
+        },
+        "disable_environment": {
+            "VOLT_DISABLE": "1"
+        }
+    }
+}
