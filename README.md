@@ -32,20 +32,24 @@ variables, no per vendor exceptions, one panel for everything.
 Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
-### Display
+### GPU
 - **GPU**: pick which physical device the game sees, by index. The layer
   filters device enumeration itself, so it works on every Vulkan driver.
+
+### Display
 - **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate. Unsupported
   modes fall back to the game's own choice.
-- **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value.
-- **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
-  for tighter frametimes.
 - **Swapchain Images**: request a specific image count, or clamp the game's
   request with independent minimum and maximum bounds. Fewer images lower
   display latency.
 - **Color Depth**: prefer 10-bit surface formats. Games that pick the first
   supported format get 10-bit output; hardcoded choices are respected.
+
+### Framerate
+- **Frame Limit**: cap the frame rate at present time, pick a common cap or
+  type any value.
+- **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
+  for tighter frametimes.
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear.
@@ -54,7 +58,7 @@ value and the game keeps its own choice. A profile with everything on default do
   only bound what the game asks for.
 - **Minimum / Maximum LOD**: bound the mip levels samplers may use.
 
-### Advanced
+### Rendering
 - **Wireframe**: render polygons as lines (needs the fillModeNonSolid device
   feature).
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
