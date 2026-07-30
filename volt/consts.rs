@@ -27,6 +27,7 @@ pub(crate) const LOG_LEVEL_INFO: i32 = 3;
 pub(crate) const DEFAULT_LOG_LEVEL: i32 = 2;
 
 pub(crate) const US_PER_S: f32 = 1_000_000.0;
+pub(crate) const SPIN_MARGIN_US: u64 = 500;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const ANISO_MIN: f32 = 1.0;
 pub(crate) const SHADING_MAX: f32 = 1.0;
@@ -82,6 +83,7 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 gpu = "default"
 present_mode = "default"
 frame_limit = "default"
+frame_pacing = "default"
 image_count = "default"
 image_count_min = "default"
 image_count_max = "default"
