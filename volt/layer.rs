@@ -29,6 +29,7 @@ use crate::instance::insts_get;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::present::maybe_limit_frame;
 use crate::swapchain::call_create_swapchain;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
@@ -270,6 +271,7 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     maybe_reload();
+    maybe_limit_frame();
     call_forward_present(queue, info)
 }
 
