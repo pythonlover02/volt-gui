@@ -12,6 +12,7 @@ mod layer;
 mod swapchain;
 mod present;
 mod sampler;
+mod view;
 mod pipeline;
 mod launcher;
 

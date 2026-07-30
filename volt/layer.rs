@@ -37,6 +37,7 @@ use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_formats;
 use crate::swapchain::swaps_del;
+use crate::view::call_create_image_view;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
 
@@ -71,6 +72,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
+        "vkCreateImageView" => Some(vkCreateImageView as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
         "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
@@ -287,6 +289,18 @@ unsafe extern "system" fn vkCreateGraphicsPipelines(
     match devs_get(dev.as_raw()) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_graphics_pipelines(&d, cache, count, cis, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkCreateImageView(
+    dev: vk::Device,
+    ci: *const vk::ImageViewCreateInfo,
+    alloc: *const vk::AllocationCallbacks,
+    out: *mut vk::ImageView,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_create_image_view(&d, ci, alloc, out),
     }
 }
 
