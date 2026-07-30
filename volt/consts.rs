@@ -79,6 +79,7 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every value accepts "default" to keep the application's own choice
 
 [display]
+gpu = "default"
 present_mode = "default"
 frame_limit = "default"
 image_count = "default"

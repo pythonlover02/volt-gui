@@ -25,6 +25,7 @@ use crate::watch::setup_watch;
 pub(crate) struct Settings {
     pub(crate) present_mode: Option<PresentChoice>,
     pub(crate) frame_limit: Option<f32>,
+    pub(crate) gpu: Option<u32>,
     pub(crate) image_count: Option<u32>,
     pub(crate) image_count_min: Option<u32>,
     pub(crate) image_count_max: Option<u32>,
@@ -114,6 +115,10 @@ fn parse_limit(text: &str) -> Option<f32> {
     parse_float(text).filter(|v| *v >= FRAME_LIMIT_MIN)
 }
 
+fn parse_gpu(text: &str) -> Option<u32> {
+    parse_uint(text).filter(|v| *v >= 1)
+}
+
 fn checked<T>(section: &str, key: &str, value: Option<T>) -> Option<T> {
     match value {
         Some(v) => Some(v),
@@ -155,6 +160,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
     Settings {
         present_mode: field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
         frame_limit: field(&doc, SECTION_DISPLAY, "frame_limit", parse_limit),
+        gpu: field(&doc, SECTION_DISPLAY, "gpu", parse_gpu),
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         image_count_min: field(&doc, SECTION_DISPLAY, "image_count_min", parse_uint),
         image_count_max: field(&doc, SECTION_DISPLAY, "image_count_max", parse_uint),

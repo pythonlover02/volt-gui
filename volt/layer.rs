@@ -20,6 +20,7 @@ use crate::device::inherit_device_dispatch;
 use crate::device::queue_dev_put;
 use crate::device::queue_owner;
 use crate::instance::call_advance_chain;
+use crate::instance::call_filtered_enumerate;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::chain_link_info;
@@ -65,6 +66,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
         "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
+        "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
@@ -242,6 +244,14 @@ unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk
         Some(s) => call_chain_destroy_instance(s.gipa, inst, alloc),
         None => (),
     }
+}
+
+unsafe extern "system" fn vkEnumeratePhysicalDevices(
+    inst: vk::Instance,
+    count: *mut u32,
+    devices: *mut vk::PhysicalDevice,
+) -> vk::Result {
+    call_filtered_enumerate(inst, count, devices)
 }
 
 unsafe extern "system" fn vkCreateDevice(
