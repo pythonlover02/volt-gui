@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::ffi::c_char;
 use std::ffi::c_void;
+use std::ffi::CStr;
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
@@ -9,6 +11,7 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::INSTANCE_OPT_EXTS;
 use crate::consts::LAYER_LINK_INFO;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -230,6 +233,82 @@ fn invoke_create_instance(
     }
 }
 
+struct MergedInstanceCi {
+    ci: vk::InstanceCreateInfo,
+    _ext_cstrings: Vec<CString>,
+    _ext_ptrs: Vec<*const c_char>,
+}
+
+type PfnEnumInstExts =
+    unsafe extern "system" fn(*const c_char, *mut u32, *mut vk::ExtensionProperties) -> vk::Result;
+
+fn call_enum_instance_exts(f: PfnEnumInstExts) -> Vec<String> {
+    let mut n: u32 = 0;
+    let _ = unsafe { f(ptr::null(), &mut n, ptr::null_mut()) };
+    let mut v = vec![vk::ExtensionProperties::default(); n as usize];
+    let _ = unsafe { f(ptr::null(), &mut n, v.as_mut_ptr()) };
+    v.into_iter()
+        .map(|p| unsafe { CStr::from_ptr(p.extension_name.as_ptr()) }
+            .to_string_lossy()
+            .into_owned())
+        .collect()
+}
+
+fn call_supported_instance_exts(gipa: vk::PFN_vkGetInstanceProcAddr) -> Vec<String> {
+    match call_next_gipa(gipa, vk::Instance::null(), "vkEnumerateInstanceExtensionProperties") {
+        None => Vec::new(),
+        Some(f) => call_enum_instance_exts(unsafe { mem::transmute::<_, PfnEnumInstExts>(f) }),
+    }
+}
+
+fn instance_ext_cstrings(ci: &vk::InstanceCreateInfo) -> Vec<CString> {
+    (0..ci.enabled_extension_count as usize)
+        .map(|i| unsafe { CStr::from_ptr(*ci.pp_enabled_extension_names.add(i)) }.to_owned())
+        .collect()
+}
+
+fn instance_ext_present(exts: &[CString], name: &str) -> bool {
+    exts.contains(&CString::new(name).unwrap_or_default())
+}
+
+fn instance_push_missing(mut acc: Vec<CString>, name: &str) -> Vec<CString> {
+    match instance_ext_present(&acc, name) {
+        true => acc,
+        false => {
+            acc.push(CString::new(name).unwrap_or_default());
+            acc
+        }
+    }
+}
+
+fn appended_instance_exts(original: Vec<CString>, supported: &[String]) -> Vec<CString> {
+    INSTANCE_OPT_EXTS
+        .iter()
+        .filter(|n| supported.iter().any(|s| s == *n))
+        .fold(original, |acc, n| instance_push_missing(acc, n))
+}
+
+fn build_instance_merged(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    ci: *const vk::InstanceCreateInfo,
+) -> MergedInstanceCi {
+    let original = unsafe { &*ci };
+    let exts = appended_instance_exts(
+        instance_ext_cstrings(original),
+        &call_supported_instance_exts(gipa),
+    );
+    let ext_ptrs: Vec<*const c_char> = exts.iter().map(|c| c.as_ptr()).collect();
+    MergedInstanceCi {
+        ci: vk::InstanceCreateInfo {
+            enabled_extension_count: ext_ptrs.len() as u32,
+            pp_enabled_extension_names: ext_ptrs.as_ptr(),
+            ..*original
+        },
+        _ext_cstrings: exts,
+        _ext_ptrs: ext_ptrs,
+    }
+}
+
 pub(crate) fn call_real_create_instance(
     link: Option<VkLayerLinkInfo>,
     ci: *const vk::InstanceCreateInfo,
@@ -238,8 +317,11 @@ pub(crate) fn call_real_create_instance(
 ) -> vk::Result {
     match link {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), "vkCreateInstance")
-            .map(|f| invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
-            .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
+        Some(l) => {
+            let merged = build_instance_merged(l.pfn_next_get_instance_proc_addr, ci);
+            call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), "vkCreateInstance")
+                .map(|f| invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, &merged.ci, alloc, out))
+                .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED)
+        }
     }
 }
