@@ -17,20 +17,20 @@ PRESET_OVERRIDES: Final[dict] = {
         "Textures:filtering": "trilinear",
         "Textures:anisotropy": "16",
         "Textures:lod_bias": "-0.5",
-        "Advanced:sample_shading": "1.0",
+        "Rendering:sample_shading": "1.0",
     },
     "Balanced": {
         "Display:present_mode": "mailbox",
         "Textures:filtering": "trilinear",
         "Textures:anisotropy": "8",
-        "Advanced:sample_shading": "0.5",
+        "Rendering:sample_shading": "0.5",
     },
     "Performance FPS": {
         "Display:present_mode": "mailbox",
         "Display:image_count_max": "3",
         "Textures:anisotropy": "4",
         "Textures:lod_bias": "0.5",
-        "Advanced:sample_shading": "off",
+        "Rendering:sample_shading": "off",
     },
     "Performance Low Latency": {
         "Display:present_mode": "immediate",
@@ -38,7 +38,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Display:image_count_max": "2",
         "Textures:anisotropy": "4",
         "Textures:lod_bias": "0.5",
-        "Advanced:sample_shading": "off",
+        "Rendering:sample_shading": "off",
     },
     "Potato FPS": {
         "Display:present_mode": "mailbox",
@@ -46,7 +46,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Textures:filtering": "bilinear",
         "Textures:anisotropy": "off",
         "Textures:lod_bias": "1.0",
-        "Advanced:sample_shading": "off",
+        "Rendering:sample_shading": "off",
     },
     "Potato Low Latency": {
         "Display:present_mode": "immediate",
@@ -55,7 +55,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Textures:filtering": "bilinear",
         "Textures:anisotropy": "off",
         "Textures:lod_bias": "1.0",
-        "Advanced:sample_shading": "off",
+        "Rendering:sample_shading": "off",
     },
 }
 

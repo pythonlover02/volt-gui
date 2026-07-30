@@ -6,6 +6,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use crate::config::ensure_settings;
+use crate::consts::SPIN_MARGIN_US;
 use crate::consts::US_PER_S;
 
 static EPOCH: OnceLock<Instant> = OnceLock::new();
@@ -19,8 +20,12 @@ fn target_interval_us(fps: f32) -> u64 {
     (US_PER_S / fps) as u64
 }
 
-fn sleep_deficit_us(now: u64, last: u64, interval: u64) -> u64 {
-    (last + interval).saturating_sub(now)
+fn frame_target_us(last: u64, interval: u64) -> u64 {
+    last + interval
+}
+
+fn wait_deficit_us(now: u64, target: u64) -> u64 {
+    target.saturating_sub(now)
 }
 
 fn call_sleep_us(us: u64) {
@@ -30,16 +35,34 @@ fn call_sleep_us(us: u64) {
     }
 }
 
-fn call_limit_to(fps: f32) {
-    let interval = target_interval_us(fps);
-    let last = LAST_US.load(Ordering::Relaxed);
-    call_sleep_us(sleep_deficit_us(call_now_us(), last, interval));
+fn call_spin_until(target: u64) {
+    std::iter::repeat(())
+        .take_while(|_| call_now_us() < target)
+        .for_each(|_| std::hint::spin_loop());
+}
+
+fn call_wait_until(target: u64, precise: bool) {
+    match precise {
+        true => {
+            call_sleep_us(wait_deficit_us(call_now_us(), target.saturating_sub(SPIN_MARGIN_US)));
+            call_spin_until(target);
+        }
+        false => call_sleep_us(wait_deficit_us(call_now_us(), target)),
+    }
+}
+
+fn call_limit_to(fps: f32, precise: bool) {
+    call_wait_until(
+        frame_target_us(LAST_US.load(Ordering::Relaxed), target_interval_us(fps)),
+        precise,
+    );
     LAST_US.store(call_now_us(), Ordering::Relaxed);
 }
 
 pub(crate) fn maybe_limit_frame() {
-    match ensure_settings().frame_limit {
-        Some(fps) => call_limit_to(fps),
+    let s = ensure_settings();
+    match s.frame_limit {
+        Some(fps) => call_limit_to(fps, s.precise_pacing.unwrap_or(false)),
         None => (),
     }
 }

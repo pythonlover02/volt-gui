@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ffi::c_char;
 use std::ffi::c_void;
 use std::ffi::CString;
 use std::mem;
@@ -9,6 +8,7 @@ use std::sync::RwLock;
 use ash::vk;
 use ash::vk::Handle;
 
+use crate::config::ensure_settings;
 use crate::consts::LAYER_LINK_INFO;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -88,6 +88,34 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
         .find(|(_, st)| instance_lists_phys(st, phys))
 }
 
+fn gpu_slice(devices: Vec<vk::PhysicalDevice>, index: u32) -> Vec<vk::PhysicalDevice> {
+    match devices.get(index as usize - 1) {
+        Some(d) => vec![*d],
+        None => {
+            log_at(LogLevel::Warn, "gpu index out of range, keeping all devices");
+            devices
+        }
+    }
+}
+
+fn gpu_filtered(devices: Vec<vk::PhysicalDevice>, index: Option<u32>) -> Vec<vk::PhysicalDevice> {
+    match index {
+        None => devices,
+        Some(i) => gpu_slice(devices, i),
+    }
+}
+
+fn copy_count(requested: u32, available: usize) -> usize {
+    (requested as usize).min(available)
+}
+
+fn completeness(written: usize, available: usize) -> vk::Result {
+    match written == available {
+        true => vk::Result::SUCCESS,
+        false => vk::Result::INCOMPLETE,
+    }
+}
+
 fn non_null_ci(p: *const VkLayerCreateInfo) -> Option<*const VkLayerCreateInfo> {
     match p.is_null() {
         true => None,
@@ -127,6 +155,47 @@ pub(crate) fn call_next_gipa(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Inst
 pub(crate) fn call_next_gdpa(gdpa: vk::PFN_vkGetDeviceProcAddr, dev: vk::Device, name: &str) -> vk::PFN_vkVoidFunction {
     let c = CString::new(name).unwrap_or_default();
     unsafe { gdpa(dev, c.as_ptr()) }
+}
+
+pub(crate) fn call_write_count<T>(list: &[T], count: *mut u32) -> vk::Result {
+    unsafe { *count = list.len() as u32 };
+    vk::Result::SUCCESS
+}
+
+pub(crate) fn call_write_items<T: Copy>(list: &[T], count: *mut u32, out: *mut T) -> vk::Result {
+    let n = copy_count(unsafe { *count }, list.len());
+    (0..n).for_each(|i| unsafe { *out.add(i) = list[i] });
+    unsafe { *count = n as u32 };
+    completeness(n, list.len())
+}
+
+pub(crate) fn call_write_list<T: Copy>(list: &[T], count: *mut u32, out: *mut T) -> vk::Result {
+    match out.is_null() {
+        true => call_write_count(list, count),
+        false => call_write_items(list, count, out),
+    }
+}
+
+fn call_enumerate_through(
+    st: &VkInstState,
+    count: *mut u32,
+    devices: *mut vk::PhysicalDevice,
+) -> vk::Result {
+    match unsafe { st.instance.enumerate_physical_devices() } {
+        Ok(all) => call_write_list(&gpu_filtered(all, ensure_settings().gpu), count, devices),
+        Err(e) => e,
+    }
+}
+
+pub(crate) fn call_filtered_enumerate(
+    inst: vk::Instance,
+    count: *mut u32,
+    devices: *mut vk::PhysicalDevice,
+) -> vk::Result {
+    match insts_get(inst.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(st) => call_enumerate_through(&st, count, devices),
+    }
 }
 
 fn load_surface_fp(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) -> vk::KhrSurfaceFn {

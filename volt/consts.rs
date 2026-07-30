@@ -27,6 +27,7 @@ pub(crate) const LOG_LEVEL_INFO: i32 = 3;
 pub(crate) const DEFAULT_LOG_LEVEL: i32 = 2;
 
 pub(crate) const US_PER_S: f32 = 1_000_000.0;
+pub(crate) const SPIN_MARGIN_US: u64 = 500;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const ANISO_MIN: f32 = 1.0;
 pub(crate) const SHADING_MAX: f32 = 1.0;
@@ -44,9 +45,11 @@ pub(crate) const USAGE: &str = "usage: volt [PROFILE] -- COMMAND [ARGS...]\n  vo
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
 
+pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";
+pub(crate) const SECTION_FRAMERATE: &str = "framerate";
 pub(crate) const SECTION_TEXTURES: &str = "textures";
-pub(crate) const SECTION_ADVANCED: &str = "advanced";
+pub(crate) const SECTION_RENDERING: &str = "rendering";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PresentChoice {
@@ -78,12 +81,19 @@ pub(crate) enum ShadingChoice {
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every value accepts "default" to keep the application's own choice
 
+[gpu]
+device = "default"
+
 [display]
 present_mode = "default"
-frame_limit = "default"
 image_count = "default"
 image_count_min = "default"
 image_count_max = "default"
+color_depth = "default"
+
+[framerate]
+frame_limit = "default"
+frame_pacing = "default"
 
 [textures]
 filtering = "default"
@@ -94,7 +104,7 @@ lod_bias_max = "default"
 lod_min = "default"
 lod_max = "default"
 
-[advanced]
+[rendering]
 wireframe = "default"
 sample_shading = "default"
 "#;

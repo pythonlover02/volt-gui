@@ -1,15 +1,15 @@
+> [!NOTE]
+> Bug reports and pull requests are welcome, but please understand that development happens in my free time and progress may be slow at times. The project is still maintained even if the last commit was made a while ago.
+
 # volt-gui
 
 > **My AMD Adrenaline / NVIDIA Settings Linux Alternative**
 
 volt-gui is a graphical control panel for Vulkan games on Linux. Settings are
 applied by **volt**, a Vulkan implicit layer written in Rust, so they work on
-every Vulkan driver — RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver —
-on anything that speaks **Vulkan 1.0**. No driver specific environment
+every Vulkan driver RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver
+on anything that supports **Vulkan 1.0**. No driver specific environment
 variables, no per vendor exceptions, one panel for everything.
-
-![Badge Language](https://img.shields.io/github/languages/top/pythonlover02/volt-gui)
-[![Stars](https://img.shields.io/github/stars/pythonlover02/volt-gui?style=social)](https://github.com/pythonlover02/volt-gui/stargazers)
 
 ![](/images/1.png)
 ![](/images/2.png)
@@ -24,22 +24,32 @@ variables, no per vendor exceptions, one panel for everything.
 - [Usage](#usage)
 - [Flatpak](#flatpak)
 - [Profiles & Presets](#profiles--presets)
+- [What volt will never do](#what-volt-will-never-do)
 - [Contributing](#contributing)
 
 ## What you can do?
 
 Every setting defaults to **default**, meaning the layer does not touch that
-value and the game keeps its own choice. A profile with everything on default
-is a true passthrough.
+value and the game keeps its own choice. A profile with everything on default does nothing.
+
+### GPU
+- **GPU**: pick which physical device the game sees, by index. The layer
+  filters device enumeration itself, so it works on every Vulkan driver.
 
 ### Display
 - **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate. Unsupported
   modes fall back to the game's own choice.
-- **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value.
 - **Swapchain Images**: request a specific image count, or clamp the game's
   request with independent minimum and maximum bounds. Fewer images lower
   display latency.
+- **Color Depth**: prefer 10-bit surface formats. Games that pick the first
+  supported format get 10-bit output; hardcoded choices are respected.
+
+### Framerate
+- **Frame Limit**: cap the frame rate at present time, pick a common cap or
+  type any value.
+- **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
+  for tighter frametimes.
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear.
@@ -48,7 +58,7 @@ is a true passthrough.
   only bound what the game asks for.
 - **Minimum / Maximum LOD**: bound the mip levels samplers may use.
 
-### Advanced
+### Rendering
 - **Wireframe**: render polygons as lines (needs the fillModeNonSolid device
   feature).
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
@@ -59,16 +69,18 @@ is a true passthrough.
 volt registers as an implicit Vulkan layer, gated by `VOLT_ENABLE=1` which the
 `volt` launcher sets on the target process only. The layer reads the selected
 profile from `~/.config/volt-gui/<profile>.toml` and rewrites the Vulkan calls
-the game makes: `vkCreateSampler` for texture settings, `vkCreateSwapchainKHR`
-for present mode and image count, `vkQueuePresentKHR` for the frame limiter,
-and `vkCreateGraphicsPipelines` for the advanced toggles. Optional device
+the game makes: `vkEnumeratePhysicalDevices` for GPU selection,
+`vkCreateSampler` for texture settings, `vkCreateSwapchainKHR` for present
+mode and image count, `vkGetPhysicalDeviceSurfaceFormatsKHR` for the 10-bit
+preference, `vkQueuePresentKHR` for the frame limiter, and
+`vkCreateGraphicsPipelines` for the advanced toggles. Optional device
 features are enabled at device creation only when the hardware supports them.
 
 The layer watches the config directory with inotify: press Apply in volt-gui
 while a game is running and the new values take effect live.
 
 volt-gui is the PySide6 front end. It edits the same profile files the layer
-reads — Apply just saves the profile, no elevated permissions, no scripts.
+reads Apply just saves the profile, no elevated permissions, no scripts.
 
 ## Requirements
 
@@ -140,11 +152,29 @@ with `volt <name> -- ...`.
 Presets populate the active profile with curated values, from **Quality**
 (trilinear, 16x anisotropy, full sample shading) down to **Potato Low
 Latency** (bilinear, anisotropy off, immediate present, 2 image swapchain).
-Presets never touch the frame limit — caps are display specific, so that
+Presets never touch the frame limit caps are display specific, so that
 choice stays yours.
+
+## What volt will never do
+
+volt changes what the game asks Vulkan for; it never draws. Anything that
+requires injecting shaders or processing the image is permanently out of
+scope:
+
+- Sharpening, FSR or any upscaling, frame generation, post processing of any
+  kind.
+- Forced MSAA or SSAA. Render passes belong to the game; Sample Shading is
+  the entire Vulkan 1.0 legal surface of that idea, and volt has it.
+- Overlays and HUDs. volt pairs well with MangoHud instead.
+- Overclocking, fan curves, power limits. That is sysfs territory, not the
+  Vulkan API; volt pairs well with CoreCtrl.
+- Reflex style latency modes, VRR control, HDR metadata. Extension or display
+  server territory, above the Vulkan 1.0 floor this project is built on.
+- OpenGL. The per driver environment variable maze that OpenGL support
+  requires is exactly what this rewrite retired.
 
 ## Contributing
 
 Contributions are welcome. The layer is plain Rust with no build scripts; the
-GUI is PySide6 only. Please keep changes working on Vulkan 1.0 — that floor is
+GUI is PySide6 only. Please keep changes working on Vulkan 1.0 that floor is
 the point of the project.

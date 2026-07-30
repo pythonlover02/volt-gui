@@ -9,8 +9,10 @@ use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FilterChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::PresentChoice;
-use crate::consts::SECTION_ADVANCED;
 use crate::consts::SECTION_DISPLAY;
+use crate::consts::SECTION_FRAMERATE;
+use crate::consts::SECTION_GPU;
+use crate::consts::SECTION_RENDERING;
 use crate::consts::SECTION_TEXTURES;
 use crate::consts::ShadingChoice;
 use crate::consts::SHADING_MAX;
@@ -25,6 +27,9 @@ use crate::watch::setup_watch;
 pub(crate) struct Settings {
     pub(crate) present_mode: Option<PresentChoice>,
     pub(crate) frame_limit: Option<f32>,
+    pub(crate) gpu: Option<u32>,
+    pub(crate) precise_pacing: Option<bool>,
+    pub(crate) ten_bit: Option<bool>,
     pub(crate) image_count: Option<u32>,
     pub(crate) image_count_min: Option<u32>,
     pub(crate) image_count_max: Option<u32>,
@@ -114,6 +119,25 @@ fn parse_limit(text: &str) -> Option<f32> {
     parse_float(text).filter(|v| *v >= FRAME_LIMIT_MIN)
 }
 
+fn parse_gpu(text: &str) -> Option<u32> {
+    parse_uint(text).filter(|v| *v >= 1)
+}
+
+fn parse_pacing(text: &str) -> Option<bool> {
+    match text {
+        "sleep" => Some(false),
+        "precise" => Some(true),
+        _ => None,
+    }
+}
+
+fn parse_depth(text: &str) -> Option<bool> {
+    match text {
+        "10bit" => Some(true),
+        _ => None,
+    }
+}
+
 fn checked<T>(section: &str, key: &str, value: Option<T>) -> Option<T> {
     match value {
         Some(v) => Some(v),
@@ -154,7 +178,10 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
     let doc = parse_doc(text);
     Settings {
         present_mode: field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
-        frame_limit: field(&doc, SECTION_DISPLAY, "frame_limit", parse_limit),
+        frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
+        gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
+        precise_pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
+        ten_bit: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         image_count_min: field(&doc, SECTION_DISPLAY, "image_count_min", parse_uint),
         image_count_max: field(&doc, SECTION_DISPLAY, "image_count_max", parse_uint),
@@ -165,8 +192,8 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         lod_bias_max: field(&doc, SECTION_TEXTURES, "lod_bias_max", parse_float),
         lod_min: field(&doc, SECTION_TEXTURES, "lod_min", parse_float),
         lod_max: field(&doc, SECTION_TEXTURES, "lod_max", parse_float),
-        wireframe: field(&doc, SECTION_ADVANCED, "wireframe", parse_wireframe),
-        sample_shading: field(&doc, SECTION_ADVANCED, "sample_shading", parse_shading),
+        wireframe: field(&doc, SECTION_RENDERING, "wireframe", parse_wireframe),
+        sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
     }
 }
 

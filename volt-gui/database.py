@@ -9,14 +9,23 @@ APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alterna
 DEFAULT_VALUE: Final[str] = "default"
 DEFAULT_PROFILE: Final[str] = "default"
 
-PROFILE_TABS: Final[tuple] = ("Display", "Textures", "Advanced")
-ALL_TABS: Final[tuple] = ("Display", "Textures", "Advanced", "Options", "About")
+PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Framerate", "Textures", "Rendering")
+ALL_TABS: Final[tuple] = ("GPU", "Display", "Framerate", "Textures", "Rendering", "Options", "About")
 
 LOD_STEPS: Final[tuple] = ("-3.0", "-2.5", "-2.0", "-1.5", "-1.0", "-0.5", "0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0")
 LOD_LEVELS: Final[tuple] = ("0.0", "1.0", "2.0", "3.0", "4.0", "6.0", "8.0", "12.0")
 COUNT_STEPS: Final[tuple] = ("2", "3", "4")
 
 SETTINGS_DB: Final[dict] = {
+    "GPU": {
+        "device": {
+            "section": "gpu",
+            "label": "GPU",
+            "description": "Which physical device the game is allowed to see, by index in the order the driver reports them. The layer filters device enumeration itself, so this works on every Vulkan driver. Out of range indices keep all devices and log a warning.",
+            "options": (DEFAULT_VALUE, "1", "2", "3", "4"),
+            "editable": False,
+        },
+    },
     "Display": {
         "present_mode": {
             "section": "display",
@@ -24,13 +33,6 @@ SETTINGS_DB: Final[dict] = {
             "description": "How finished frames reach the screen. fifo is classic vsync, fifo_relaxed tears only below refresh, mailbox is low latency vsync, immediate disables vsync entirely. Unsupported modes on your surface fall back to the application's own choice.",
             "options": (DEFAULT_VALUE, "fifo", "fifo_relaxed", "mailbox", "immediate"),
             "editable": False,
-        },
-        "frame_limit": {
-            "section": "display",
-            "label": "Frame Limit",
-            "description": "Cap the frame rate at present time. Pick a common cap or type any FPS value. Lower caps reduce power draw and can stabilize frametimes.",
-            "options": (DEFAULT_VALUE, "30", "40", "48", "60", "75", "90", "120", "144", "165", "240"),
-            "editable": True,
         },
         "image_count": {
             "section": "display",
@@ -51,6 +53,29 @@ SETTINGS_DB: Final[dict] = {
             "label": "Swapchain Images Maximum",
             "description": "Upper clamp applied to the application's own swapchain image request when Swapchain Images is default. Lower values reduce latency.",
             "options": (DEFAULT_VALUE,) + COUNT_STEPS,
+            "editable": False,
+        },
+        "color_depth": {
+            "section": "display",
+            "label": "Color Depth",
+            "description": "Prefer 10-bit surface formats by reordering what the game sees when it queries the surface. Games that pick the first supported format get 10-bit output; games with a hardcoded format keep their own choice.",
+            "options": (DEFAULT_VALUE, "10bit"),
+            "editable": False,
+        },
+    },
+    "Framerate": {
+        "frame_limit": {
+            "section": "framerate",
+            "label": "Frame Limit",
+            "description": "Cap the frame rate at present time. Pick a common cap or type any FPS value. Lower caps reduce power draw and can stabilize frametimes.",
+            "options": (DEFAULT_VALUE, "30", "40", "48", "60", "75", "90", "120", "144", "165", "240"),
+            "editable": True,
+        },
+        "frame_pacing": {
+            "section": "framerate",
+            "label": "Frame Pacing",
+            "description": "How the frame limiter waits. sleep is CPU friendly, precise sleeps most of the interval then busy waits the remainder for tighter frametimes at a small CPU cost. Only applies when Frame Limit is set.",
+            "options": (DEFAULT_VALUE, "sleep", "precise"),
             "editable": False,
         },
     },
@@ -105,16 +130,16 @@ SETTINGS_DB: Final[dict] = {
             "editable": False,
         },
     },
-    "Advanced": {
+    "Rendering": {
         "wireframe": {
-            "section": "advanced",
+            "section": "rendering",
             "label": "Wireframe",
             "description": "Render polygons as lines instead of filled triangles. Requires the fillModeNonSolid device feature; silently ignored without it.",
             "options": (DEFAULT_VALUE, "on", "off"),
             "editable": False,
         },
         "sample_shading": {
-            "section": "advanced",
+            "section": "rendering",
             "label": "Sample Shading",
             "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the minimum fraction of samples shaded. Requires the sampleRateShading device feature; only affects applications already using MSAA.",
             "options": (DEFAULT_VALUE, "off", "0.25", "0.5", "1.0"),
