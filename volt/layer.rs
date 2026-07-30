@@ -34,6 +34,7 @@ use crate::pipeline::call_create_graphics_pipelines;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
+use crate::swapchain::call_surface_formats;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
 
@@ -70,6 +71,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
         "vkGetDeviceQueue2" => Some(volt_GetDeviceQueue2 as *mut c_void),
@@ -307,6 +309,15 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_swapchain(&d, dev, ci, alloc, out),
     }
+}
+
+unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
+    phys: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
+    count: *mut u32,
+    formats: *mut vk::SurfaceFormatKHR,
+) -> vk::Result {
+    call_surface_formats(phys, surface, count, formats)
 }
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {

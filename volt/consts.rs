@@ -87,6 +87,7 @@ frame_pacing = "default"
 image_count = "default"
 image_count_min = "default"
 image_count_max = "default"
+color_depth = "default"
 
 [textures]
 filtering = "default"
