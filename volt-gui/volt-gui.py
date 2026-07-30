@@ -51,12 +51,10 @@ from themes import get_standard_button_height
 from themes import get_standard_button_width
 from themes import process_theme_application
 from ui import create_code_block_widget
-from ui import create_info_card_widget
 from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
 from ui import build_sidebar_container_widget
 from ui import get_header_vertical_margin
-from ui import get_sidebar_width
 from welcome import create_welcome_window_widget
 
 UPDATE_URL: Final[str] = "https://api.github.com/repos/pythonlover02/volt-gui/releases/latest"
@@ -662,15 +660,9 @@ def create_main_window_widget(singleton_socket):
     apply_button = QPushButton("Apply")
     apply_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
     apply_button.clicked.connect(lambda: process_all_settings_apply(window))
-    selectors_container = QWidget()
-    selectors_container.setFixedWidth(get_sidebar_width() - 32)
-    selectors_container_layout = QVBoxLayout(selectors_container)
-    selectors_container_layout.setContentsMargins(0, 0, 0, 0)
-    selectors_container_layout.setSpacing(4)
-    selectors_container_layout.addWidget(preset_combo, 0, Qt.AlignHCenter | Qt.AlignBottom)
-    selectors_container_layout.addWidget(profile_combo, 0, Qt.AlignHCenter | Qt.AlignBottom)
-    bottom_bar_layout.addWidget(selectors_container, 0, Qt.AlignBottom)
     bottom_bar_layout.addStretch(1)
+    bottom_bar_layout.addWidget(preset_combo, 0, Qt.AlignBottom)
+    bottom_bar_layout.addWidget(profile_combo, 0, Qt.AlignBottom)
     bottom_bar_layout.addWidget(apply_button, 0, Qt.AlignBottom)
     bottom_bar_layout.addStretch(1)
     main_layout.addWidget(bottom_bar_widget)
