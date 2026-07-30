@@ -35,6 +35,7 @@ use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_formats;
+use crate::swapchain::swaps_del;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
 
@@ -71,6 +72,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
+        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
@@ -308,6 +310,18 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
     match devs_get(dev.as_raw()) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_swapchain(&d, dev, ci, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkDestroySwapchainKHR(
+    dev: vk::Device,
+    sc: vk::SwapchainKHR,
+    alloc: *const vk::AllocationCallbacks,
+) {
+    swaps_del(sc.as_raw());
+    match devs_get(dev.as_raw()) {
+        Some(d) => (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc),
+        None => (),
     }
 }
 
