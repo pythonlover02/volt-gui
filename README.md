@@ -35,10 +35,6 @@ is used; when it does not, the setting is skipped and the rest keeps working.
 Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
-### GPU
-- **GPU**: pick which physical device the game sees, by index. The layer
-  filters device enumeration itself, so it works on every Vulkan driver.
-
 ### Display
 - **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate. Unsupported
   modes fall back to the game's own choice.
@@ -77,6 +73,10 @@ value and the game keeps its own choice. A profile with everything on default do
   feature).
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
   shimmer (needs the sampleRateShading device feature).
+
+### GPU
+- **Physical Device**: pick which GPU the game sees, by index. The layer
+  filters device enumeration itself, so it works on every Vulkan driver.
 
 ## How It Works
 

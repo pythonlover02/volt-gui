@@ -11,7 +11,7 @@ from database import PROFILE_TABS
 from database import find_settings_for_tab
 from database import get_setting_section
 
-SECTION_ORDER: Final[tuple] = ("gpu", "display", "framerate", "textures", "rendering")
+SECTION_ORDER: Final[tuple] = ("display", "framerate", "textures", "rendering", "gpu")
 OPTIONS_FILE: Final[str] = "options.toml"
 PROFILE_SUFFIX: Final[str] = ".toml"
 PAIR_SEP: Final[str] = " = "

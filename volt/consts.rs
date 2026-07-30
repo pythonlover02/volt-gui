@@ -114,9 +114,6 @@ pub(crate) enum LatencyChoice {
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every value accepts "default" to keep the application's own choice
 
-[gpu]
-device = "default"
-
 [display]
 present_mode = "default"
 image_count = "default"
@@ -142,4 +139,7 @@ lod_max = "default"
 [rendering]
 wireframe = "default"
 sample_shading = "default"
+
+[gpu]
+device = "default"
 "#;

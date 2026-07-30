@@ -9,8 +9,8 @@ APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alterna
 DEFAULT_VALUE: Final[str] = "default"
 DEFAULT_PROFILE: Final[str] = "default"
 
-PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Framerate", "Textures", "Rendering")
-ALL_TABS: Final[tuple] = ("GPU", "Display", "Framerate", "Textures", "Rendering", "Options", "About")
+PROFILE_TABS: Final[tuple] = ("Display", "Framerate", "Textures", "Rendering", "GPU")
+ALL_TABS: Final[tuple] = ("Display", "Framerate", "Textures", "Rendering", "GPU", "Options", "About")
 
 LOD_STEPS: Final[tuple] = ("-3.0", "-2.5", "-2.0", "-1.5", "-1.0", "-0.5", "0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0")
 LOD_LEVELS: Final[tuple] = ("0.0", "1.0", "2.0", "3.0", "4.0", "6.0", "8.0", "12.0")
@@ -20,7 +20,7 @@ SETTINGS_DB: Final[dict] = {
     "GPU": {
         "device": {
             "section": "gpu",
-            "label": "GPU",
+            "label": "Physical Device",
             "description": "Which physical device the game is allowed to see, by index in the order the driver reports them. The layer filters device enumeration itself, so this works on every Vulkan driver. Out of range indices keep all devices and log a warning.",
             "options": (DEFAULT_VALUE, "1", "2", "3", "4"),
             "editable": True,
