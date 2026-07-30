@@ -30,6 +30,7 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::present::maybe_limit_frame;
+use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
@@ -63,6 +64,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
         "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
+        "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
@@ -254,6 +256,18 @@ unsafe extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::All
     match devs_del(dev.as_raw()) {
         Some(d) => d.device.destroy_device(alloc.as_ref()),
         None => (),
+    }
+}
+
+unsafe extern "system" fn vkCreateSampler(
+    dev: vk::Device,
+    ci: *const vk::SamplerCreateInfo,
+    alloc: *const vk::AllocationCallbacks,
+    out: *mut vk::Sampler,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_create_sampler(&d, ci, alloc, out),
     }
 }
 
