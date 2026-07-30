@@ -91,6 +91,26 @@ pub(crate) enum ShadingChoice {
     Rate(f32),
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PacingChoice {
+    Sleep,
+    Precise,
+    DisplayTiming,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DepthChoice {
+    TenBit,
+    Hdr10,
+    Scrgb,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LatencyChoice {
+    On,
+    Boost,
+}
+
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every value accepts "default" to keep the application's own choice
 
@@ -107,6 +127,8 @@ color_depth = "default"
 [framerate]
 frame_limit = "default"
 frame_pacing = "default"
+anti_lag = "default"
+low_latency = "default"
 
 [textures]
 filtering = "default"

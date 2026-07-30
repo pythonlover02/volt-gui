@@ -6,6 +6,9 @@ use std::sync::RwLock;
 use crate::consts::AnisoChoice;
 use crate::consts::ANISO_MIN;
 use crate::consts::DEFAULT_PROFILE;
+use crate::consts::DepthChoice;
+use crate::consts::LatencyChoice;
+use crate::consts::PacingChoice;
 use crate::consts::FilterChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::PresentChoice;
@@ -28,8 +31,10 @@ pub(crate) struct Settings {
     pub(crate) present_mode: Option<PresentChoice>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) gpu: Option<u32>,
-    pub(crate) precise_pacing: Option<bool>,
-    pub(crate) ten_bit: Option<bool>,
+    pub(crate) pacing: Option<PacingChoice>,
+    pub(crate) depth: Option<DepthChoice>,
+    pub(crate) anti_lag: Option<bool>,
+    pub(crate) low_latency: Option<LatencyChoice>,
     pub(crate) image_count: Option<u32>,
     pub(crate) image_count_min: Option<u32>,
     pub(crate) image_count_max: Option<u32>,
@@ -123,17 +128,28 @@ fn parse_gpu(text: &str) -> Option<u32> {
     parse_uint(text).filter(|v| *v >= 1)
 }
 
-fn parse_pacing(text: &str) -> Option<bool> {
+fn parse_pacing(text: &str) -> Option<PacingChoice> {
     match text {
-        "sleep" => Some(false),
-        "precise" => Some(true),
+        "sleep" => Some(PacingChoice::Sleep),
+        "precise" => Some(PacingChoice::Precise),
+        "display_timing" => Some(PacingChoice::DisplayTiming),
         _ => None,
     }
 }
 
-fn parse_depth(text: &str) -> Option<bool> {
+fn parse_depth(text: &str) -> Option<DepthChoice> {
     match text {
-        "10bit" => Some(true),
+        "10bit" => Some(DepthChoice::TenBit),
+        "hdr10" => Some(DepthChoice::Hdr10),
+        "scrgb" => Some(DepthChoice::Scrgb),
+        _ => None,
+    }
+}
+
+fn parse_latency(text: &str) -> Option<LatencyChoice> {
+    match text {
+        "on" => Some(LatencyChoice::On),
+        "boost" => Some(LatencyChoice::Boost),
         _ => None,
     }
 }
@@ -180,8 +196,10 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         present_mode: field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
-        precise_pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
-        ten_bit: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
+        pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
+        depth: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
+        anti_lag: field(&doc, SECTION_FRAMERATE, "anti_lag", parse_wireframe),
+        low_latency: field(&doc, SECTION_FRAMERATE, "low_latency", parse_latency),
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         image_count_min: field(&doc, SECTION_DISPLAY, "image_count_min", parse_uint),
         image_count_max: field(&doc, SECTION_DISPLAY, "image_count_max", parse_uint),
