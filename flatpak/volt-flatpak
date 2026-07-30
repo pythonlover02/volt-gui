@@ -1,0 +1,14 @@
+#!/bin/sh
+BASE="/usr/lib/extensions/vulkan/volt"
+export VOLT_ENABLE=1
+export VK_ADD_LAYER_PATH="${BASE}/share/vulkan/implicit_layer.d${VK_ADD_LAYER_PATH:+:$VK_ADD_LAYER_PATH}"
+LIB="${BASE}/lib/x86_64-linux-gnu"
+[ -d "${BASE}/lib/i386-linux-gnu" ] && LIB="${LIB}:${BASE}/lib/i386-linux-gnu"
+export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+if [ $# -eq 0 ] && [ -r /app/manifest.json ]; then
+    APP_CMD=$(sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /app/manifest.json | head -n1)
+    [ -n "$APP_CMD" ] && set -- "$APP_CMD"
+fi
+
+exec "$@"
