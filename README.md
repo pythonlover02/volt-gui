@@ -7,9 +7,12 @@
 
 volt-gui is a graphical control panel for Vulkan games on Linux. Settings are
 applied by **volt**, a Vulkan implicit layer written in Rust, so they work on
-every Vulkan driver RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver
-on anything that supports **Vulkan 1.0**. No driver specific environment
-variables, no per vendor exceptions, one panel for everything.
+every Vulkan driver: RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver.
+
+The floor is **Vulkan 1.0**: every core setting works there. Some settings use
+optional extensions on top of that floor. When the driver has the extension it
+is used; when it does not, the setting is skipped and the rest keeps working.
+`VOLT_LOG=info` shows what was enabled.
 
 ![](/images/1.png)
 ![](/images/2.png)
@@ -42,21 +45,32 @@ value and the game keeps its own choice. A profile with everything on default do
 - **Swapchain Images**: request a specific image count, or clamp the game's
   request with independent minimum and maximum bounds. Fewer images lower
   display latency.
-- **Color Depth**: prefer 10-bit surface formats. Games that pick the first
-  supported format get 10-bit output; hardcoded choices are respected.
+- **Color Depth**: prefer 10-bit, HDR10 or scRGB surface formats. Games that
+  pick the first supported format follow the preference; hardcoded choices
+  are respected. HDR values need driver and compositor support
+  (`VK_EXT_swapchain_colorspace`, `VK_EXT_hdr_metadata`).
+- On drivers with `VK_EXT_swapchain_maintenance1`, changing the present mode
+  in a saved profile takes effect in a running game without swapchain
+  recreation.
 
 ### Framerate
 - **Frame Limit**: cap the frame rate at present time, pick a common cap or
   type any value.
 - **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
   for tighter frametimes.
+- **AMD Anti-Lag**: driver side input latency reduction
+  (`VK_AMD_anti_lag`).
+- **NVIDIA Low Latency**: driver side input latency reduction with an
+  optional boost mode (`VK_NV_low_latency2`).
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear.
 - **Anisotropic Filtering**: off to 16x, clamped to what your GPU reports.
 - **LOD Bias** with independent minimum and maximum clamps: force a bias, or
   only bound what the game asks for.
-- **Minimum / Maximum LOD**: bound the mip levels samplers may use.
+- **Minimum / Maximum LOD**: bound the mip levels samplers may use. On
+  drivers with `VK_EXT_image_view_min_lod` the minimum also applies at the
+  image view level.
 
 ### Rendering
 - **Wireframe**: render polygons as lines (needs the fillModeNonSolid device
@@ -158,18 +172,14 @@ choice stays yours.
 ## What volt will never do
 
 volt changes what the game asks Vulkan for; it never draws. Anything that
-requires injecting shaders or processing the image is permanently out of
-scope:
+requires injecting shaders or processing the image is out of scope:
 
-- Sharpening, FSR or any upscaling, frame generation, post processing of any
-  kind.
-- Forced MSAA or SSAA. Render passes belong to the game; Sample Shading is
-  the entire Vulkan 1.0 legal surface of that idea, and volt has it.
-- Overlays and HUDs. volt pairs well with MangoHud instead.
+- Sharpening, FSR or any upscaling, frame generation, post processing.
+- Forced MSAA or SSAA. Render passes belong to the game. Sample Shading is
+  as far as this can go without breaking games.
+- Overlays and HUDs. Use MangoHud for that.
 - Overclocking, fan curves, power limits. That is sysfs territory, not the
-  Vulkan API; volt pairs well with CoreCtrl.
-- Reflex style latency modes, VRR control, HDR metadata. Extension or display
-  server territory, above the Vulkan 1.0 floor this project is built on.
+  Vulkan API. Use CoreCtrl for that.
 - OpenGL. The per driver environment variable maze that OpenGL support
   requires is exactly what this rewrite retired.
 
