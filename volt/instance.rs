@@ -8,7 +8,12 @@ use std::sync::RwLock;
 use ash::vk;
 use ash::vk::Handle;
 
+use crate::bounds::accepts;
+use crate::bounds::bounds_set;
+use crate::bounds::kept;
+use crate::bounds::Bounds;
 use crate::config::ensure_settings;
+use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::LAYER_LINK_INFO;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -133,36 +138,26 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
     }
 }
 
-pub(crate) fn promoted<T, F>(items: Vec<T>, predicate: F) -> Vec<T>
-where
-    T: Clone,
-    F: Fn(&T) -> bool,
-{
-    let (preferred, rest): (Vec<T>, Vec<T>) = items.into_iter().partition(|item| predicate(item));
-    [preferred, rest].concat()
+fn indexed(devices: Vec<vk::PhysicalDevice>) -> Vec<(usize, vk::PhysicalDevice)> {
+    devices.into_iter().enumerate().collect()
 }
 
-fn selected_device(devices: &[vk::PhysicalDevice], index: u32) -> Option<vk::PhysicalDevice> {
-    devices.get(index as usize - 1).copied()
+fn plain(pairs: Vec<(usize, vk::PhysicalDevice)>) -> Vec<vk::PhysicalDevice> {
+    pairs.into_iter().map(|(_, device)| device).collect()
 }
 
-fn gpu_promoted(devices: Vec<vk::PhysicalDevice>, index: u32) -> Vec<vk::PhysicalDevice> {
-    match selected_device(&devices, index) {
-        Some(chosen) => promoted(devices, |device| *device == chosen),
-        None => {
-            log_at(
-                LogLevel::Warn,
-                "gpu index out of range, keeping the reported device order",
-            );
-            devices
-        }
-    }
+fn device_position(pair: &(usize, vk::PhysicalDevice)) -> u32 {
+    pair.0 as u32 + 1
 }
 
-fn gpu_ordered(devices: Vec<vk::PhysicalDevice>, index: Option<u32>) -> Vec<vk::PhysicalDevice> {
-    match index {
-        None => devices,
-        Some(i) => gpu_promoted(devices, i),
+fn gpu_filtered(devices: Vec<vk::PhysicalDevice>, b: Bounds<u32>) -> Vec<vk::PhysicalDevice> {
+    match bounds_set(&b) {
+        true => plain(kept(
+            indexed(devices),
+            |pair| accepts(b, device_position(pair)),
+            GPU_EMPTY_WARN,
+        )),
+        false => devices,
     }
 }
 
@@ -243,12 +238,12 @@ fn call_enumerate_through(
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
     match unsafe { st.instance.enumerate_physical_devices() } {
-        Ok(all) => call_write_list(&gpu_ordered(all, ensure_settings().gpu), count, devices),
+        Ok(all) => call_write_list(&gpu_filtered(all, ensure_settings().gpu), count, devices),
         Err(e) => e,
     }
 }
 
-pub(crate) fn call_ordered_enumerate(
+pub(crate) fn call_filtered_enumerate(
     inst: vk::Instance,
     count: *mut u32,
     devices: *mut vk::PhysicalDevice,
