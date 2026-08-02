@@ -29,10 +29,35 @@ pub(crate) const DEFAULT_LOG_LEVEL: i32 = 2;
 pub(crate) const US_PER_S: f32 = 1_000_000.0;
 pub(crate) const SPIN_MARGIN_US: u64 = 500;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
-pub(crate) const ANISO_MIN: f32 = 1.0;
+pub(crate) const ANISO_OFF: f32 = 1.0;
+pub(crate) const SHADING_OFF: f32 = 0.0;
 pub(crate) const SHADING_MAX: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
+
+pub(crate) const SUFFIX_MIN: &str = "_min";
+pub(crate) const SUFFIX_MAX: &str = "_max";
+
+pub(crate) const PRESENT_FIFO: u32 = 0;
+pub(crate) const PRESENT_FIFO_RELAXED: u32 = 1;
+pub(crate) const PRESENT_MAILBOX: u32 = 2;
+pub(crate) const PRESENT_IMMEDIATE: u32 = 3;
+
+pub(crate) const DEPTH_EIGHT_BIT: u32 = 0;
+pub(crate) const DEPTH_TEN_BIT: u32 = 1;
+
+pub(crate) const FILTER_RETRO: u32 = 0;
+pub(crate) const FILTER_BILINEAR: u32 = 1;
+pub(crate) const FILTER_TRILINEAR: u32 = 2;
+
+pub(crate) const MIPMAP_NEAREST: u32 = 0;
+pub(crate) const MIPMAP_LINEAR: u32 = 1;
+
+pub(crate) const TOGGLE_OFF: u32 = 0;
+pub(crate) const TOGGLE_ON: u32 = 1;
+
+pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
+pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
 
 pub(crate) const NULL_OK: [&str; 4] = [
     "vkCreateInstance",
@@ -52,39 +77,6 @@ pub(crate) const SECTION_TEXTURES: &str = "textures";
 pub(crate) const SECTION_RENDERING: &str = "rendering";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum PresentChoice {
-    Fifo,
-    FifoRelaxed,
-    Mailbox,
-    Immediate,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub(crate) enum AnisoChoice {
-    Off,
-    Level(f32),
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum FilterChoice {
-    Retro,
-    Bilinear,
-    Trilinear,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MipmapChoice {
-    Nearest,
-    Linear,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub(crate) enum ShadingChoice {
-    Off,
-    Rate(f32),
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PacingChoice {
     Sleep,
     Precise,
@@ -102,20 +94,28 @@ pub(crate) enum LimitStage {
     After,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum DepthChoice {
-    TenBit,
-}
-
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every value accepts "default" to keep the application's own choice
+#
+# each setting carries three values: the bare key forces a value, the _min and
+# _max keys bound the value the application asked for without replacing it.
+# a force wins over the bounds when both are set. a minimum above its maximum
+# is a mistake: both are ignored and a warning is logged
+#
+# frame_limit, frame_limit_method and frame_pacing carry no bounds: a game
+# never asks vulkan for a frame rate, so there is nothing to bound. they
+# configure how the layer itself waits instead
 
 [display]
 present_mode = "default"
+present_mode_min = "default"
+present_mode_max = "default"
 image_count = "default"
 image_count_min = "default"
 image_count_max = "default"
 color_depth = "default"
+color_depth_min = "default"
+color_depth_max = "default"
 
 [framerate]
 frame_limit = "default"
@@ -124,18 +124,34 @@ frame_pacing = "default"
 
 [textures]
 filtering = "default"
+filtering_min = "default"
+filtering_max = "default"
 mipmap_mode = "default"
+mipmap_mode_min = "default"
+mipmap_mode_max = "default"
 anisotropy = "default"
+anisotropy_min = "default"
+anisotropy_max = "default"
 lod_bias = "default"
 lod_bias_min = "default"
 lod_bias_max = "default"
-lod_min = "default"
-lod_max = "default"
+mip_floor = "default"
+mip_floor_min = "default"
+mip_floor_max = "default"
+mip_ceiling = "default"
+mip_ceiling_min = "default"
+mip_ceiling_max = "default"
 
 [rendering]
 sample_shading = "default"
+sample_shading_min = "default"
+sample_shading_max = "default"
 alpha_to_coverage = "default"
+alpha_to_coverage_min = "default"
+alpha_to_coverage_max = "default"
 
 [gpu]
 device = "default"
+device_min = "default"
+device_max = "default"
 "#;
