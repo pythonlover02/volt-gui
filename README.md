@@ -34,21 +34,40 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
+Every setting carries three values:
+
+- **Force**: the layer replaces whatever the game asked for.
+- **Minimum** and **Maximum**: the layer leaves the game's own value alone
+  unless it falls outside the range, and pulls it back to the nearest bound
+  when it does.
+
+Force wins over the bounds when both are set. Bounds are how you rule out the
+extremes you do not want while leaving the game room to make its own choice.
+A minimum above its own maximum is a mistake: both are ignored and a warning
+is logged.
+
+A setting carries bounds when the game supplies a value to bound. That is
+every setting but the three under **Framerate**: a game never asks Vulkan for
+a frame rate, so there is nothing to bound. Those three configure the layer's
+own wait instead, and volt-gui groups them into one **Frame Limiter** card.
+
 ### Display
-- **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate. Unsupported
-  modes fall back to the game's own choice.
-- **Swapchain Images**: request a specific image count, or clamp the game's
-  request with independent minimum and maximum bounds. Fewer images lower
-  display latency.
-- **Color Depth**: prefer 10-bit surface formats. Games that pick the first
-  supported format follow the preference; hardcoded choices are respected.
-  The layer only reorders what the surface already reports.
+- **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate. The bounds
+  run along that same order, from most latency to least, so a maximum of
+  mailbox never lets a game tear and a minimum of mailbox never lets it sit
+  on classic vsync. Unsupported modes fall back to the game's own choice.
+- **Swapchain Images**: how many images the swapchain holds. Fewer images
+  lower display latency, more images smooth frame delivery.
+- **Color Depth**: which surface formats the game is allowed to see, 8-bit or
+  10-bit. The layer filters the format list, so games that pick the first
+  supported format follow the choice. A selection that matches no format is
+  ignored and logged, so the game always sees at least the full list.
 
 ### Framerate
-- **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value. Deadlines follow a fixed target timeline rather than the
-  last present, so scheduler jitter does not accumulate into a drift below
-  the requested rate.
+- **Frame Limit**, **Frame Limit Method** and **Frame Pacing**: cap the frame
+  rate at present time, and choose when and how the limiter waits. Deadlines
+  follow a fixed target timeline rather than the last present, so scheduler
+  jitter does not accumulate into a drift below the requested rate.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
   game starts its next frame later and samples input closer to display time.
@@ -56,27 +75,31 @@ value and the game keeps its own choice. A profile with everything on default do
   for tighter frametimes.
 
 ### Textures
-- **Texture Filtering**: retro (sharp pixels), bilinear, trilinear.
-- **Mipmap Mode**: force a hard cut between mip levels, or a blend across
-  them, independently of the filter choice.
-- **Anisotropic Filtering**: off to 16x, clamped to what your GPU reports.
-- **LOD Bias** with independent minimum and maximum clamps: force a bias, or
-  only bound what the game asks for.
-- **Minimum / Maximum LOD**: bound the mip levels samplers may use.
+- **Texture Filtering**: retro (sharp pixels), bilinear, trilinear. Samplers
+  that match none of the three exactly are ranked down to the closest one
+  below them before the bounds apply.
+- **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
+  independently of the filter choice.
+- **Anisotropic Filtering**: off to 16x. off counts as the lowest value, so a
+  minimum of 4x raises a game that asked for less and leaves a game that
+  asked for more alone. Clamped to what your GPU reports.
+- **LOD Bias**: shift mipmap selection, sharper or blurrier.
+- **Mip Floor** and **Mip Ceiling**: bound the mip levels samplers may use,
+  the minimum and maximum LOD in Vulkan terms.
 
 ### Rendering
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
   shimmer (needs the sampleRateShading device feature).
-- **Alpha To Coverage**: force alpha to coverage on or off. Softens cutout
+- **Alpha To Coverage**: turn fragment alpha into coverage. Softens cutout
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.
 
 ### GPU
-- **Physical Device**: promote one GPU to the front of the list the game
-  sees, by index. The layer reorders device enumeration itself, so it works
-  on every Vulkan driver. Games that take the first device follow the
-  preference and every other device stays available; an out of range index
-  leaves the order untouched and logs a warning.
+- **Physical Device**: pick which GPU the game sees, by index in the order
+  the driver reports them. The layer filters device enumeration itself, so it
+  works on every Vulkan driver. The bounds keep a range of indices instead of
+  a single one. A selection that matches no device is ignored and logged, so
+  the game always sees at least the full list.
 
 ## How It Works
 
@@ -86,7 +109,7 @@ profile from `~/.config/volt-gui/<profile>.toml` and rewrites the Vulkan calls
 the game makes: `vkEnumeratePhysicalDevices` for GPU selection,
 `vkCreateSampler` for texture settings, `vkCreateSwapchainKHR` for present
 mode and image count, `vkGetPhysicalDeviceSurfaceFormatsKHR` for the 10-bit
-preference, `vkQueuePresentKHR` for the frame limiter, and
+filter, `vkQueuePresentKHR` for the frame limiter, and
 `vkCreateGraphicsPipelines` for the rendering toggles. Core device features
 are enabled at device creation only when the hardware reports them.
 
@@ -166,8 +189,8 @@ with `volt <name> -- ...`.
 Presets populate the active profile with curated values, from **Quality**
 (trilinear, 16x anisotropy, full sample shading) down to **Potato Low
 Latency** (bilinear, anisotropy off, immediate present, 2 image swapchain).
-Presets never touch the frame limit caps are display specific, so that
-choice stays yours.
+A preset writes every value in the profile, so anything a preset does not
+name goes back to default.
 
 ## What volt will never do
 
