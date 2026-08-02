@@ -85,6 +85,18 @@ pub(crate) enum PacingChoice {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MethodChoice {
+    Early,
+    Late,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LimitStage {
+    Before,
+    After,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DepthChoice {
     TenBit,
 }
@@ -101,6 +113,7 @@ color_depth = "default"
 
 [framerate]
 frame_limit = "default"
+frame_limit_method = "default"
 frame_pacing = "default"
 
 [textures]

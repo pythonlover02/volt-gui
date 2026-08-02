@@ -8,6 +8,9 @@ use std::time::Instant;
 use ash::vk;
 
 use crate::config::ensure_settings;
+use crate::config::Settings;
+use crate::consts::LimitStage;
+use crate::consts::MethodChoice;
 use crate::consts::PacingChoice;
 use crate::consts::SPIN_MARGIN_US;
 use crate::consts::US_PER_S;
@@ -89,9 +92,20 @@ fn call_limit_to(fps: f32, precise: bool) {
     call_wait_until(call_frame_target(target_interval_us(fps)), precise);
 }
 
-pub(crate) fn maybe_limit_frame() {
+fn stage_wanted(method: Option<MethodChoice>) -> LimitStage {
+    match method {
+        Some(MethodChoice::Late) => LimitStage::After,
+        Some(MethodChoice::Early) | None => LimitStage::Before,
+    }
+}
+
+fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
+    s.frame_limit.filter(|_| stage_wanted(s.limit_method) == stage)
+}
+
+pub(crate) fn maybe_limit_frame(stage: LimitStage) {
     let s = ensure_settings();
-    match s.frame_limit {
+    match limit_fps(&s, stage) {
         Some(fps) => call_limit_to(fps, pacing_is_precise(s.pacing)),
         None => (),
     }

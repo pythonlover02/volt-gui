@@ -11,6 +11,7 @@ use ash::vk::Handle;
 use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_NAME;
+use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::device::call_real_create_device;
 use crate::device::devs_any;
@@ -151,6 +152,20 @@ fn call_forward_present(
         Some(d) => call_present_frame(&d, queue, info),
         None => call_fallback_present(queue, info),
     }
+}
+
+fn call_after_present(presented: vk::Result) -> vk::Result {
+    maybe_limit_frame(LimitStage::After);
+    presented
+}
+
+fn call_limited_present(
+    owner: Option<Arc<VkDevState>>,
+    queue: vk::Queue,
+    info: *const vk::PresentInfoKHR,
+) -> vk::Result {
+    maybe_limit_frame(LimitStage::Before);
+    call_after_present(call_forward_present(owner, queue, info))
 }
 
 unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(
@@ -335,9 +350,7 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     maybe_reload();
-    let owner = queue_owner(queue);
-    maybe_limit_frame();
-    call_forward_present(owner, queue, info)
+    call_limited_present(queue_owner(queue), queue, info)
 }
 
 #[no_mangle]

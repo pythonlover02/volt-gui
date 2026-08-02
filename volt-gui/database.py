@@ -71,6 +71,13 @@ SETTINGS_DB: Final[dict] = {
             "options": (DEFAULT_VALUE, "30", "40", "48", "60", "75", "90", "120", "144", "165", "240"),
             "editable": True,
         },
+        "frame_limit_method": {
+            "section": "framerate",
+            "label": "Frame Limit Method",
+            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence, late lets the present through immediately and waits before returning to the application, which starts its next frame later and samples input closer to display time. Only applies when Frame Limit is set.",
+            "options": (DEFAULT_VALUE, "early", "late"),
+            "editable": False,
+        },
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",

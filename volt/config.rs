@@ -9,6 +9,7 @@ use crate::consts::DEFAULT_PROFILE;
 use crate::consts::DepthChoice;
 use crate::consts::FilterChoice;
 use crate::consts::FRAME_LIMIT_MIN;
+use crate::consts::MethodChoice;
 use crate::consts::PresentChoice;
 use crate::consts::PacingChoice;
 use crate::consts::SECTION_DISPLAY;
@@ -30,6 +31,7 @@ pub(crate) struct Settings {
     pub(crate) present_mode: Option<PresentChoice>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) gpu: Option<u32>,
+    pub(crate) limit_method: Option<MethodChoice>,
     pub(crate) pacing: Option<PacingChoice>,
     pub(crate) depth: Option<DepthChoice>,
     pub(crate) image_count: Option<u32>,
@@ -116,6 +118,14 @@ fn parse_gpu(text: &str) -> Option<u32> {
     parse_uint(text).filter(|v| *v >= 1)
 }
 
+fn parse_method(text: &str) -> Option<MethodChoice> {
+    match text {
+        "early" => Some(MethodChoice::Early),
+        "late" => Some(MethodChoice::Late),
+        _ => None,
+    }
+}
+
 fn parse_pacing(text: &str) -> Option<PacingChoice> {
     match text {
         "sleep" => Some(PacingChoice::Sleep),
@@ -173,6 +183,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         present_mode: field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
+        limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
         pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
         depth: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
