@@ -2,25 +2,43 @@ use std::ptr;
 
 use ash::vk;
 
+use crate::bounds::accepts;
+use crate::bounds::bounds_set;
+use crate::bounds::kept;
+use crate::bounds::resolved;
+use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::DepthChoice;
-use crate::consts::PresentChoice;
+use crate::consts::DEPTH_EIGHT_BIT;
+use crate::consts::DEPTH_EMPTY_WARN;
+use crate::consts::DEPTH_TEN_BIT;
+use crate::consts::PRESENT_FIFO_RELAXED;
+use crate::consts::PRESENT_IMMEDIATE;
+use crate::consts::PRESENT_MAILBOX;
 use crate::device::VkDevState;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
-use crate::instance::promoted;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-fn present_vk(choice: PresentChoice) -> vk::PresentModeKHR {
-    match choice {
-        PresentChoice::Fifo => vk::PresentModeKHR::FIFO,
-        PresentChoice::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
-        PresentChoice::Mailbox => vk::PresentModeKHR::MAILBOX,
-        PresentChoice::Immediate => vk::PresentModeKHR::IMMEDIATE,
+fn present_rank(mode: vk::PresentModeKHR) -> Option<u32> {
+    match mode {
+        vk::PresentModeKHR::FIFO => Some(crate::consts::PRESENT_FIFO),
+        vk::PresentModeKHR::FIFO_RELAXED => Some(PRESENT_FIFO_RELAXED),
+        vk::PresentModeKHR::MAILBOX => Some(PRESENT_MAILBOX),
+        vk::PresentModeKHR::IMMEDIATE => Some(PRESENT_IMMEDIATE),
+        _ => None,
+    }
+}
+
+fn present_vk(rank: u32) -> vk::PresentModeKHR {
+    match rank {
+        PRESENT_FIFO_RELAXED => vk::PresentModeKHR::FIFO_RELAXED,
+        PRESENT_MAILBOX => vk::PresentModeKHR::MAILBOX,
+        PRESENT_IMMEDIATE => vk::PresentModeKHR::IMMEDIATE,
+        _ => vk::PresentModeKHR::FIFO,
     }
 }
 
@@ -34,23 +52,45 @@ fn present_label(mode: vk::PresentModeKHR) -> &'static str {
     }
 }
 
-fn pick_present_mode(
-    wanted: Option<PresentChoice>,
+fn wanted_rank(b: Bounds<u32>, original: vk::PresentModeKHR) -> Option<u32> {
+    match present_rank(original) {
+        Some(rank) => Some(resolved(b, rank)),
+        None => b.force,
+    }
+}
+
+fn target_mode(b: Bounds<u32>, original: vk::PresentModeKHR) -> Option<vk::PresentModeKHR> {
+    match bounds_set(&b) {
+        true => wanted_rank(b, original).map(present_vk),
+        false => None,
+    }
+}
+
+fn supported_mode(
+    mode: vk::PresentModeKHR,
     supported: &[vk::PresentModeKHR],
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match wanted.map(present_vk) {
+    match supported.contains(&mode) {
+        true => mode,
+        false => {
+            log_at(
+                LogLevel::Warn,
+                &format!("present mode {} unsupported by surface, keeping application choice", present_label(mode)),
+            );
+            original
+        }
+    }
+}
+
+fn pick_present_mode(
+    b: Bounds<u32>,
+    supported: &[vk::PresentModeKHR],
+    original: vk::PresentModeKHR,
+) -> vk::PresentModeKHR {
+    match target_mode(b, original) {
+        Some(mode) => supported_mode(mode, supported, original),
         None => original,
-        Some(mode) => match supported.contains(&mode) {
-            true => mode,
-            false => {
-                log_at(
-                    LogLevel::Warn,
-                    &format!("present mode {} unsupported by surface, keeping application choice", present_label(mode)),
-                );
-                original
-            }
-        },
     }
 }
 
@@ -61,33 +101,37 @@ fn caps_upper(caps_max: u32) -> u32 {
     }
 }
 
-fn pick_image_count(s: &Settings, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
-    let lower = s.image_count_min.unwrap_or(0).max(caps.min_image_count);
-    let upper = s.image_count_max.unwrap_or(u32::MAX).min(caps_upper(caps.max_image_count));
-    s.image_count
-        .unwrap_or(original)
-        .clamp(lower.min(upper), upper.max(lower))
+fn pick_image_count(b: Bounds<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
+    resolved(b, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
 }
 
-fn is_preferred_format(f: &vk::SurfaceFormatKHR, depth: DepthChoice) -> bool {
-    match depth {
-        DepthChoice::TenBit => (f.format == vk::Format::A2B10G10R10_UNORM_PACK32
-            || f.format == vk::Format::A2R10G10B10_UNORM_PACK32)
-            && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR,
+fn is_ten_bit(f: &vk::SurfaceFormatKHR) -> bool {
+    (f.format == vk::Format::A2B10G10R10_UNORM_PACK32
+        || f.format == vk::Format::A2R10G10B10_UNORM_PACK32)
+        && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR
+}
+
+fn depth_rank(f: &vk::SurfaceFormatKHR) -> u32 {
+    match is_ten_bit(f) {
+        true => DEPTH_TEN_BIT,
+        false => DEPTH_EIGHT_BIT,
     }
 }
 
-fn depth_first(formats: Vec<vk::SurfaceFormatKHR>, depth: Option<DepthChoice>) -> Vec<vk::SurfaceFormatKHR> {
-    match depth {
-        Some(d) => promoted(formats, |f| is_preferred_format(f, d)),
-        None => formats,
+fn depth_filtered(
+    formats: Vec<vk::SurfaceFormatKHR>,
+    b: Bounds<u32>,
+) -> Vec<vk::SurfaceFormatKHR> {
+    match bounds_set(&b) {
+        true => kept(formats, |f| accepts(b, depth_rank(f)), DEPTH_EMPTY_WARN),
+        false => formats,
     }
 }
 
-fn maybe_log_depth(depth: Option<DepthChoice>) {
-    match depth {
-        Some(_) => log_at(LogLevel::Info, "surface formats reordered for the color depth preference"),
-        None => (),
+fn maybe_log_depth(b: &Bounds<u32>) {
+    match bounds_set(b) {
+        true => log_at(LogLevel::Info, "surface formats filtered for the color depth setting"),
+        false => (),
     }
 }
 
@@ -157,9 +201,9 @@ pub(crate) fn call_surface_formats(
     match owning_instance(phys) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some((_, inst)) => {
-            maybe_log_depth(s.depth);
+            maybe_log_depth(&s.depth);
             call_write_list(
-                &depth_first(call_query_surface_formats_all(&inst, phys, surface), s.depth),
+                &depth_filtered(call_query_surface_formats_all(&inst, phys, surface), s.depth),
                 count,
                 formats,
             )
@@ -179,7 +223,7 @@ fn call_create_with(
 ) -> vk::Result {
     let patched = vk::SwapchainCreateInfoKHR {
         present_mode: chosen,
-        min_image_count: pick_image_count(s, caps, original.min_image_count),
+        min_image_count: pick_image_count(s.image_count, caps, original.min_image_count),
         ..*original
     };
     unsafe { (dev.swap_fp.create_swapchain_khr)(handle, &patched, alloc, out) }
