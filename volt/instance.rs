@@ -41,6 +41,32 @@ pub(crate) struct VkInstState {
 }
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
+static PHYS_OWNER: RwLock<Option<HashMap<u64, u64>>> = RwLock::new(None);
+
+fn phys_owner_get(phys: u64) -> Option<u64> {
+    PHYS_OWNER
+        .read()
+        .ok()
+        .and_then(|g| g.as_ref().and_then(|m| m.get(&phys).copied()))
+}
+
+fn phys_owner_put(phys: u64, inst: u64) {
+    match PHYS_OWNER.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).insert(phys, inst);
+        }
+        Err(_) => (),
+    }
+}
+
+fn phys_owner_forget(inst: u64) {
+    match PHYS_OWNER.write() {
+        Ok(mut g) => g
+            .iter_mut()
+            .for_each(|m| m.retain(|_, owner| *owner != inst)),
+        Err(_) => (),
+    }
+}
 
 pub(crate) fn insts_get(h: u64) -> Option<VkInstState> {
     INSTS.read().ok().and_then(|g| g.as_ref().and_then(|m| m.get(&h).cloned()))
@@ -56,6 +82,7 @@ pub(crate) fn insts_put(h: u64, v: VkInstState) {
 }
 
 pub(crate) fn insts_del(h: u64) -> bool {
+    phys_owner_forget(h);
     INSTS
         .write()
         .ok()
@@ -82,10 +109,28 @@ fn instance_lists_phys(st: &VkInstState, phys: vk::PhysicalDevice) -> bool {
         .unwrap_or(false)
 }
 
-pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
+fn scan_owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
     insts_all()
         .into_iter()
         .find(|(_, st)| instance_lists_phys(st, phys))
+}
+
+fn cached_owner(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
+    phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
+}
+
+fn scanned_owner(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
+    scan_owning_instance(phys).map(|(h, st)| {
+        phys_owner_put(phys.as_raw(), h);
+        (h, st)
+    })
+}
+
+pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
+    match cached_owner(phys) {
+        Some(found) => Some(found),
+        None => scanned_owner(phys),
+    }
 }
 
 pub(crate) fn promoted<T, F>(items: Vec<T>, predicate: F) -> Vec<T>
