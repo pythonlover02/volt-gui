@@ -14,7 +14,8 @@ use crate::consts::US_PER_S;
 use crate::device::VkDevState;
 
 static EPOCH: OnceLock<Instant> = OnceLock::new();
-static LAST_US: AtomicU64 = AtomicU64::new(0);
+static TARGET_US: AtomicU64 = AtomicU64::new(0);
+static INTERVAL_US: AtomicU64 = AtomicU64::new(0);
 
 fn call_now_us() -> u64 {
     EPOCH.get_or_init(Instant::now).elapsed().as_micros() as u64
@@ -24,8 +25,15 @@ fn target_interval_us(fps: f32) -> u64 {
     (US_PER_S / fps) as u64
 }
 
-fn frame_target_us(last: u64, interval: u64) -> u64 {
-    last + interval
+fn overshoot_us(now: u64, target: u64) -> u64 {
+    now.saturating_sub(target)
+}
+
+fn next_target_us(now: u64, previous: u64, interval: u64, fresh: bool) -> u64 {
+    match (fresh, overshoot_us(now, previous) >= interval) {
+        (false, false) => previous + interval,
+        (_, _) => now + interval,
+    }
 }
 
 fn wait_deficit_us(now: u64, target: u64) -> u64 {
@@ -62,12 +70,23 @@ fn pacing_is_precise(pacing: Option<PacingChoice>) -> bool {
     }
 }
 
-fn call_limit_to(fps: f32, precise: bool) {
-    call_wait_until(
-        frame_target_us(LAST_US.load(Ordering::Relaxed), target_interval_us(fps)),
-        precise,
+fn call_swap_interval(interval: u64) -> u64 {
+    INTERVAL_US.swap(interval, Ordering::Relaxed)
+}
+
+fn call_frame_target(interval: u64) -> u64 {
+    let target = next_target_us(
+        call_now_us(),
+        TARGET_US.load(Ordering::Relaxed),
+        interval,
+        call_swap_interval(interval) != interval,
     );
-    LAST_US.store(call_now_us(), Ordering::Relaxed);
+    TARGET_US.store(target, Ordering::Relaxed);
+    target
+}
+
+fn call_limit_to(fps: f32, precise: bool) {
+    call_wait_until(call_frame_target(target_interval_us(fps)), precise);
 }
 
 pub(crate) fn maybe_limit_frame() {
