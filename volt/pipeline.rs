@@ -19,6 +19,14 @@ fn pick_shading(
     }
 }
 
+fn pick_coverage(wanted: Option<bool>, original: vk::Bool32) -> vk::Bool32 {
+    match wanted {
+        Some(true) => vk::TRUE,
+        Some(false) => vk::FALSE,
+        None => original,
+    }
+}
+
 fn patched_multisample(
     s: &Settings,
     caps: &DeviceCaps,
@@ -35,6 +43,9 @@ fn patched_multisample(
             Some(vk::PipelineMultisampleStateCreateInfo {
                 sample_shading_enable: enable,
                 min_sample_shading: rate,
+                alpha_to_coverage_enable: pick_coverage(s.alpha_coverage, unsafe {
+                    (*p).alpha_to_coverage_enable
+                }),
                 ..unsafe { *p }
             })
         }

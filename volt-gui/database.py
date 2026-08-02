@@ -152,6 +152,13 @@ SETTINGS_DB: Final[dict] = {
             "options": (DEFAULT_VALUE, "off", "0.25", "0.5", "1.0"),
             "editable": True,
         },
+        "alpha_to_coverage": {
+            "section": "rendering",
+            "label": "Alpha To Coverage",
+            "description": "Force alpha to coverage on or off for the pipelines the application creates. on turns fragment alpha into coverage, which softens cutout edges on foliage and fences; off disables it where the application asked for it. Only has an effect where the application already renders to an MSAA target.",
+            "options": (DEFAULT_VALUE, "on", "off"),
+            "editable": False,
+        },
     },
 }
 

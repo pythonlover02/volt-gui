@@ -134,6 +134,7 @@ lod_max = "default"
 
 [rendering]
 sample_shading = "default"
+alpha_to_coverage = "default"
 
 [gpu]
 device = "default"
