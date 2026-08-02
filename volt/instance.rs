@@ -88,20 +88,36 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
         .find(|(_, st)| instance_lists_phys(st, phys))
 }
 
-fn gpu_slice(devices: Vec<vk::PhysicalDevice>, index: u32) -> Vec<vk::PhysicalDevice> {
-    match devices.get(index as usize - 1) {
-        Some(d) => vec![*d],
+pub(crate) fn promoted<T, F>(items: Vec<T>, predicate: F) -> Vec<T>
+where
+    T: Clone,
+    F: Fn(&T) -> bool,
+{
+    let (preferred, rest): (Vec<T>, Vec<T>) = items.into_iter().partition(|item| predicate(item));
+    [preferred, rest].concat()
+}
+
+fn selected_device(devices: &[vk::PhysicalDevice], index: u32) -> Option<vk::PhysicalDevice> {
+    devices.get(index as usize - 1).copied()
+}
+
+fn gpu_promoted(devices: Vec<vk::PhysicalDevice>, index: u32) -> Vec<vk::PhysicalDevice> {
+    match selected_device(&devices, index) {
+        Some(chosen) => promoted(devices, |device| *device == chosen),
         None => {
-            log_at(LogLevel::Warn, "gpu index out of range, keeping all devices");
+            log_at(
+                LogLevel::Warn,
+                "gpu index out of range, keeping the reported device order",
+            );
             devices
         }
     }
 }
 
-fn gpu_filtered(devices: Vec<vk::PhysicalDevice>, index: Option<u32>) -> Vec<vk::PhysicalDevice> {
+fn gpu_ordered(devices: Vec<vk::PhysicalDevice>, index: Option<u32>) -> Vec<vk::PhysicalDevice> {
     match index {
         None => devices,
-        Some(i) => gpu_slice(devices, i),
+        Some(i) => gpu_promoted(devices, i),
     }
 }
 
@@ -182,12 +198,12 @@ fn call_enumerate_through(
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
     match unsafe { st.instance.enumerate_physical_devices() } {
-        Ok(all) => call_write_list(&gpu_filtered(all, ensure_settings().gpu), count, devices),
+        Ok(all) => call_write_list(&gpu_ordered(all, ensure_settings().gpu), count, devices),
         Err(e) => e,
     }
 }
 
-pub(crate) fn call_filtered_enumerate(
+pub(crate) fn call_ordered_enumerate(
     inst: vk::Instance,
     count: *mut u32,
     devices: *mut vk::PhysicalDevice,

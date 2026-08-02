@@ -10,6 +10,7 @@ use crate::device::VkDevState;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
+use crate::instance::promoted;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -76,15 +77,9 @@ fn is_preferred_format(f: &vk::SurfaceFormatKHR, depth: DepthChoice) -> bool {
     }
 }
 
-fn reordered_formats(formats: Vec<vk::SurfaceFormatKHR>, depth: DepthChoice) -> Vec<vk::SurfaceFormatKHR> {
-    let (preferred, rest): (Vec<vk::SurfaceFormatKHR>, Vec<vk::SurfaceFormatKHR>) =
-        formats.into_iter().partition(|f| is_preferred_format(f, depth));
-    [preferred, rest].concat()
-}
-
 fn depth_first(formats: Vec<vk::SurfaceFormatKHR>, depth: Option<DepthChoice>) -> Vec<vk::SurfaceFormatKHR> {
     match depth {
-        Some(d) => reordered_formats(formats, d),
+        Some(d) => promoted(formats, |f| is_preferred_format(f, d)),
         None => formats,
     }
 }

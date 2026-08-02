@@ -22,9 +22,9 @@ use crate::device::queue_dev_put;
 use crate::device::queue_owner;
 use crate::device::VkDevState;
 use crate::instance::call_advance_chain;
-use crate::instance::call_filtered_enumerate;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
+use crate::instance::call_ordered_enumerate;
 use crate::instance::call_real_create_instance;
 use crate::instance::chain_link_info;
 use crate::instance::insts_del;
@@ -266,7 +266,7 @@ unsafe extern "system" fn vkEnumeratePhysicalDevices(
     count: *mut u32,
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
-    call_filtered_enumerate(inst, count, devices)
+    call_ordered_enumerate(inst, count, devices)
 }
 
 unsafe extern "system" fn vkCreateDevice(

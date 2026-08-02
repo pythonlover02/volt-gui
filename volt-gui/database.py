@@ -21,7 +21,7 @@ SETTINGS_DB: Final[dict] = {
         "device": {
             "section": "gpu",
             "label": "Physical Device",
-            "description": "Which physical device the game is allowed to see, by index in the order the driver reports them. The layer filters device enumeration itself, so this works on every Vulkan driver. Out of range indices keep all devices and log a warning.",
+            "description": "Which physical device the game is offered first, by index in the order the driver reports them. The layer reorders device enumeration itself, so this works on every Vulkan driver. Games that take the first device follow the preference and every other device stays available. Out of range indices leave the order untouched and log a warning.",
             "options": (DEFAULT_VALUE, "1", "2", "3", "4"),
             "editable": True,
         },
