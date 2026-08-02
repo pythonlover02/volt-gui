@@ -45,18 +45,6 @@ pub(crate) const USAGE: &str = "usage: volt [PROFILE] -- COMMAND [ARGS...]\n  vo
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
 
-pub(crate) const EXT_ANTI_LAG: &str = "VK_AMD_anti_lag";
-pub(crate) const EXT_LOW_LATENCY: &str = "VK_NV_low_latency2";
-pub(crate) const EXT_SWAP_MAINT: &str = "VK_EXT_swapchain_maintenance1";
-pub(crate) const EXT_DISPLAY_TIMING: &str = "VK_GOOGLE_display_timing";
-pub(crate) const EXT_HDR_METADATA: &str = "VK_EXT_hdr_metadata";
-pub(crate) const EXT_VIEW_MIN_LOD: &str = "VK_EXT_image_view_min_lod";
-pub(crate) const EXT_COLORSPACE: &str = "VK_EXT_swapchain_colorspace";
-pub(crate) const EXT_SURFACE_MAINT: &str = "VK_EXT_surface_maintenance1";
-pub(crate) const EXT_SURFACE_CAPS2: &str = "VK_KHR_get_surface_capabilities2";
-
-pub(crate) const INSTANCE_OPT_EXTS: [&str; 3] = [EXT_COLORSPACE, EXT_SURFACE_MAINT, EXT_SURFACE_CAPS2];
-
 pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";
 pub(crate) const SECTION_FRAMERATE: &str = "framerate";
@@ -94,20 +82,11 @@ pub(crate) enum ShadingChoice {
 pub(crate) enum PacingChoice {
     Sleep,
     Precise,
-    DisplayTiming,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DepthChoice {
     TenBit,
-    Hdr10,
-    Scrgb,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum LatencyChoice {
-    On,
-    Boost,
 }
 
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
@@ -123,8 +102,6 @@ color_depth = "default"
 [framerate]
 frame_limit = "default"
 frame_pacing = "default"
-anti_lag = "default"
-low_latency = "default"
 
 [textures]
 filtering = "default"

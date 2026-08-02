@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 mod consts;
-mod ext;
 mod logging;
 mod env;
 mod config;
@@ -12,7 +11,6 @@ mod layer;
 mod swapchain;
 mod present;
 mod sampler;
-mod view;
 mod pipeline;
 mod launcher;
 

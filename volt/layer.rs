@@ -25,21 +25,19 @@ use crate::instance::call_advance_chain;
 use crate::instance::call_filtered_enumerate;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
-use crate::instance::chain_link_info;
 use crate::instance::call_real_create_instance;
+use crate::instance::chain_link_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_graphics_pipelines;
-use crate::present::call_present_with_modes;
+use crate::present::call_present_frame;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_formats;
-use crate::swapchain::swaps_del;
-use crate::view::call_create_image_view;
 use crate::watch::maybe_reload;
 use crate::watch::maybe_shutdown_watch;
 use crate::watch::setup_watch;
@@ -54,7 +52,7 @@ struct VkNegotiateLayerInterface {
     pfn_get_physical_device_proc_addr: Option<vk::PFN_vkVoidFunction>,
 }
 
-pub(crate) fn cstr_to_str<'a>(p: *const c_char) -> &'a str {
+fn cstr_to_str<'a>(p: *const c_char) -> &'a str {
     match p.is_null() {
         true => "",
         false => unsafe { CStr::from_ptr(p).to_str().unwrap_or("") },
@@ -75,10 +73,8 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
-        "vkCreateImageView" => Some(vkCreateImageView as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
-        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
@@ -133,17 +129,6 @@ fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::In
     }
 }
 
-fn call_forward_present(
-    owner: Option<Arc<VkDevState>>,
-    queue: vk::Queue,
-    info: *const vk::PresentInfoKHR,
-) -> vk::Result {
-    match owner {
-        Some(d) => call_present_with_modes(&d, queue, info),
-        None => call_fallback_present(queue, info),
-    }
-}
-
 fn call_fallback_present(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     match devs_any() {
         Some(d) => {
@@ -154,6 +139,17 @@ fn call_fallback_present(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> v
             log_at(LogLevel::Error, "present with no registered device, dropping frame");
             vk::Result::SUCCESS
         }
+    }
+}
+
+fn call_forward_present(
+    owner: Option<Arc<VkDevState>>,
+    queue: vk::Queue,
+    info: *const vk::PresentInfoKHR,
+) -> vk::Result {
+    match owner {
+        Some(d) => call_present_frame(&d, queue, info),
+        None => call_fallback_present(queue, info),
     }
 }
 
@@ -258,8 +254,7 @@ unsafe extern "system" fn vkCreateInstance(
 
 unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
     let st = insts_get(inst.as_raw());
-    let last = insts_del(inst.as_raw());
-    maybe_shutdown_watch(last);
+    maybe_shutdown_watch(insts_del(inst.as_raw()));
     match st {
         Some(s) => call_chain_destroy_instance(s.gipa, inst, alloc),
         None => (),
@@ -305,18 +300,6 @@ unsafe extern "system" fn vkCreateGraphicsPipelines(
     }
 }
 
-unsafe extern "system" fn vkCreateImageView(
-    dev: vk::Device,
-    ci: *const vk::ImageViewCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
-    out: *mut vk::ImageView,
-) -> vk::Result {
-    match devs_get(dev.as_raw()) {
-        None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(d) => call_create_image_view(&d, ci, alloc, out),
-    }
-}
-
 unsafe extern "system" fn vkCreateSampler(
     dev: vk::Device,
     ci: *const vk::SamplerCreateInfo,
@@ -341,18 +324,6 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
     }
 }
 
-unsafe extern "system" fn vkDestroySwapchainKHR(
-    dev: vk::Device,
-    sc: vk::SwapchainKHR,
-    alloc: *const vk::AllocationCallbacks,
-) {
-    swaps_del(sc.as_raw());
-    match devs_get(dev.as_raw()) {
-        Some(d) => (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc),
-        None => (),
-    }
-}
-
 unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
@@ -365,7 +336,7 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
     maybe_reload();
     let owner = queue_owner(queue);
-    maybe_limit_frame(owner.as_ref().map(|d| d.caps));
+    maybe_limit_frame();
     call_forward_present(owner, queue, info)
 }
 
