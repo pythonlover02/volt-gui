@@ -21,11 +21,7 @@ from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
 
 from database import APP_VERSION
-from database import find_settings_for_tab
-from database import get_setting_description
-from database import get_setting_label
-from database import get_setting_options
-from database import is_setting_editable
+from database import find_cards_for_tab
 from themes import get_standard_button_height
 
 
@@ -54,28 +50,84 @@ def create_combo_widget(options: tuple, editable: bool) -> QComboBox:
     return combo
 
 
-def create_setting_card_widget(tab_name: str, setting_key: str) -> dict:
+def create_divider_widget() -> QFrame:
+    divider = QFrame()
+    divider.setFrameShape(QFrame.HLine)
+    divider.setFrameShadow(QFrame.Plain)
+    divider.setFixedHeight(1)
+    divider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    divider.setStyleSheet("QFrame { background-color: #262626; border: none; }")
+    return divider
+
+
+def _add_caption_label(layout, caption_text: str) -> None:
+    match caption_text == "":
+        case True:
+            pass
+        case False:
+            caption_label = QLabel(caption_text)
+            caption_label.setWordWrap(False)
+            caption_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+            caption_label.setStyleSheet("color: #9A9A9A; font-size: 9pt;")
+            layout.addWidget(caption_label)
+    return None
+
+
+def get_combo_minimum_width() -> int:
+    return 104
+
+
+def _create_input_column(column: tuple) -> dict:
+    column_widget = QWidget()
+    column_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+    column_layout = QVBoxLayout(column_widget)
+    column_layout.setContentsMargins(0, 0, 0, 0)
+    column_layout.setSpacing(2)
+    _add_caption_label(column_layout, column[1])
+    input_widget = create_combo_widget(column[2], column[3])
+    input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    input_widget.setMinimumWidth(get_combo_minimum_width())
+    column_layout.addWidget(input_widget)
+    return {"column": column_widget, "widget": input_widget}
+
+
+def _build_input_row(columns: tuple) -> dict:
+    row = QWidget()
+    row.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
+    row_layout = QHBoxLayout(row)
+    row_layout.setContentsMargins(0, 0, 0, 0)
+    row_layout.setSpacing(6)
+    results = tuple(_create_input_column(column) for column in columns)
+    for column_result in results:
+        row_layout.addWidget(column_result["column"], 1)
+    return {
+        "row": row,
+        "widgets": dict(zip(
+            tuple(column[0] for column in columns),
+            tuple(entry["widget"] for entry in results)))}
+
+
+def create_setting_card_widget(label_text: str, description_text: str, columns: tuple) -> dict:
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
-    card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+    card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
     card_layout = QVBoxLayout(card)
     card_layout.setContentsMargins(14, 10, 14, 10)
     card_layout.setSpacing(4)
-    title_label = QLabel(get_setting_label(tab_name, setting_key))
+    title_label = QLabel(label_text)
+    title_label.setWordWrap(False)
     title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
-    title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    title_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
     card_layout.addWidget(title_label)
-    input_widget = create_combo_widget(
-        get_setting_options(tab_name, setting_key),
-        is_setting_editable(tab_name, setting_key))
-    card_layout.addWidget(input_widget)
-    description_label = QLabel(get_setting_description(tab_name, setting_key))
+    row_result = _build_input_row(columns)
+    card_layout.addWidget(row_result["row"])
+    description_label = QLabel(description_text)
     description_label.setWordWrap(True)
-    description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    description_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
     description_label.setStyleSheet("color: #585858; font-size: 9pt;")
     card_layout.addWidget(description_label)
-    return {"card": card, "widget": input_widget}
+    return {"card": card, "widgets": row_result["widgets"]}
 
 
 def build_monospace_font() -> QFont:
@@ -241,11 +293,12 @@ def create_tab_content_widget(tab_name: str, info_items) -> dict:
     container_widget = _build_content_container(info_items)
     match info_items is None:
         case True:
-            for setting_key in find_settings_for_tab(tab_name):
-                card_result = create_setting_card_widget(tab_name, setting_key)
+            for card_key, label_text, description_text, columns in find_cards_for_tab(tab_name):
+                card_result = create_setting_card_widget(label_text, description_text, columns)
                 container_widget.layout().addWidget(card_result["card"])
-                all_widgets[tab_name + ":" + setting_key] = card_result["widget"]
-                all_cards[tab_name + ":" + setting_key] = card_result["card"]
+                container_widget.layout().addWidget(create_divider_widget())
+                all_widgets.update(card_result["widgets"])
+                all_cards[card_key] = card_result["card"]
         case False:
             pass
     main_layout.addWidget(create_scrollable_content_area(container_widget), 1)

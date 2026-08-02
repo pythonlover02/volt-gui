@@ -608,7 +608,7 @@ def create_main_window_widget(singleton_socket):
     window.current_profile = DEFAULT_PROFILE
     window.welcome_window = None
     window.setWindowTitle("volt-gui")
-    window.setMinimumSize(540, 380)
+    window.setMinimumSize(620, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
     process_theme_application(QApplication.instance(), get_persisted_option_value("application_theme"))
     central_widget = QWidget()
