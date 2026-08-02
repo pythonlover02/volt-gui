@@ -7,9 +7,7 @@ from typing import Optional
 
 from database import DEFAULT_PROFILE
 from database import DEFAULT_VALUE
-from database import PROFILE_TABS
-from database import find_settings_for_tab
-from database import get_setting_section
+from database import find_profile_fields
 
 SECTION_ORDER: Final[tuple] = ("display", "framerate", "textures", "rendering", "gpu")
 OPTIONS_FILE: Final[str] = "options.toml"
@@ -58,10 +56,9 @@ def _section_lines(section: str, pairs: tuple) -> tuple:
 
 def _pairs_for_section(values: dict, section: str) -> tuple:
     return tuple(
-        (setting_key, values.get(tab_name + ":" + setting_key, DEFAULT_VALUE))
-        for tab_name in PROFILE_TABS
-        for setting_key in find_settings_for_tab(tab_name)
-        if get_setting_section(tab_name, setting_key) == section)
+        (config_key, values.get(widget_key, DEFAULT_VALUE))
+        for widget_key, field_section, config_key in find_profile_fields()
+        if field_section == section)
 
 
 def serialize_profile(values: dict) -> str:
@@ -99,10 +96,9 @@ def parse_profile_text(text: str) -> dict:
 
 def _widget_key_for(section_key: str) -> Optional[str]:
     return next(
-        (tab_name + ":" + setting_key
-         for tab_name in PROFILE_TABS
-         for setting_key in find_settings_for_tab(tab_name)
-         if get_setting_section(tab_name, setting_key) + "." + setting_key == section_key),
+        (widget_key
+         for widget_key, section, config_key in find_profile_fields()
+         if section + "." + config_key == section_key),
         None)
 
 
@@ -112,33 +108,30 @@ def process_widget_value_update(widget, display_value: str) -> None:
 
 
 def process_profile_widgets_block_signals(widget_collection: dict, should_block: bool) -> None:
-    for tab_name in PROFILE_TABS:
-        for setting_key in find_settings_for_tab(tab_name):
-            match widget_collection.get(tab_name + ":" + setting_key):
-                case None:
-                    continue
-                case widget:
-                    widget.blockSignals(should_block)
+    for widget_key, _, _ in find_profile_fields():
+        match widget_collection.get(widget_key):
+            case None:
+                continue
+            case widget:
+                widget.blockSignals(should_block)
     return None
 
 
 def process_profile_widgets_reset(widget_collection: dict) -> None:
-    for tab_name in PROFILE_TABS:
-        for setting_key in find_settings_for_tab(tab_name):
-            match widget_collection.get(tab_name + ":" + setting_key):
-                case None:
-                    continue
-                case widget:
-                    widget.setCurrentText(DEFAULT_VALUE)
+    for widget_key, _, _ in find_profile_fields():
+        match widget_collection.get(widget_key):
+            case None:
+                continue
+            case widget:
+                widget.setCurrentText(DEFAULT_VALUE)
     return None
 
 
 def collect_widget_values(widget_collection: dict) -> dict:
     return {
-        tab_name + ":" + setting_key: widget_collection[tab_name + ":" + setting_key].currentText().strip()
-        for tab_name in PROFILE_TABS
-        for setting_key in find_settings_for_tab(tab_name)
-        if widget_collection.get(tab_name + ":" + setting_key) is not None}
+        widget_key: widget_collection[widget_key].currentText().strip()
+        for widget_key, _, _ in find_profile_fields()
+        if widget_collection.get(widget_key) is not None}
 
 
 def call_read_profile(profile_name: str) -> dict:

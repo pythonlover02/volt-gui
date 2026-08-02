@@ -1,8 +1,7 @@
 from typing import Final
 
 from database import DEFAULT_VALUE
-from database import PROFILE_TABS
-from database import find_settings_for_tab
+from database import find_profile_fields
 from profiles import process_profile_widgets_block_signals
 from profiles import process_profile_widgets_reset
 from profiles import process_widget_value_update
@@ -74,10 +73,7 @@ def is_valid_preset_name(preset_name: str) -> bool:
 
 def build_preset_values(preset_name: str) -> dict:
     return {
-        **{
-            tab_name + ":" + setting_key: DEFAULT_VALUE
-            for tab_name in PROFILE_TABS
-            for setting_key in find_settings_for_tab(tab_name)},
+        **{widget_key: DEFAULT_VALUE for widget_key, _, _ in find_profile_fields()},
         **PRESET_OVERRIDES.get(preset_name, {})}
 
 
