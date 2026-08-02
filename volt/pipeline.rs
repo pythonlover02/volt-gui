@@ -1,29 +1,77 @@
 use ash::vk;
 
+use crate::bounds::bounds_set;
+use crate::bounds::resolved;
+use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::ShadingChoice;
+use crate::consts::SHADING_OFF;
+use crate::consts::TOGGLE_OFF;
+use crate::consts::TOGGLE_ON;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 
-fn pick_shading(
-    wanted: Option<ShadingChoice>,
-    caps: &DeviceCaps,
-    original: (vk::Bool32, f32),
-) -> (vk::Bool32, f32) {
-    match (wanted, caps.sample_rate_shading) {
-        (Some(ShadingChoice::Off), _) => (vk::FALSE, original.1),
-        (Some(ShadingChoice::Rate(r)), true) => (vk::TRUE, r),
-        (Some(ShadingChoice::Rate(_)), false) => original,
-        (None, _) => original,
+fn toggle_rank(flag: vk::Bool32) -> u32 {
+    match flag {
+        vk::TRUE => TOGGLE_ON,
+        _ => TOGGLE_OFF,
     }
 }
 
-fn pick_coverage(wanted: Option<bool>, original: vk::Bool32) -> vk::Bool32 {
-    match wanted {
-        Some(true) => vk::TRUE,
-        Some(false) => vk::FALSE,
-        None => original,
+fn toggle_vk(rank: u32) -> vk::Bool32 {
+    match rank {
+        TOGGLE_ON => vk::TRUE,
+        _ => vk::FALSE,
+    }
+}
+
+fn shading_level(enable: vk::Bool32, rate: f32) -> f32 {
+    match enable {
+        vk::TRUE => rate,
+        _ => SHADING_OFF,
+    }
+}
+
+fn shading_pair(level: f32, caps: &DeviceCaps) -> (vk::Bool32, f32) {
+    match level > SHADING_OFF && caps.sample_rate_shading {
+        true => (vk::TRUE, level),
+        false => (vk::FALSE, level),
+    }
+}
+
+fn pick_shading(
+    b: Bounds<f32>,
+    caps: &DeviceCaps,
+    original: (vk::Bool32, f32),
+) -> (vk::Bool32, f32) {
+    match bounds_set(&b) {
+        true => shading_pair(resolved(b, shading_level(original.0, original.1)), caps),
+        false => original,
+    }
+}
+
+fn pick_coverage(b: Bounds<u32>, original: vk::Bool32) -> vk::Bool32 {
+    match bounds_set(&b) {
+        true => toggle_vk(resolved(b, toggle_rank(original))),
+        false => original,
+    }
+}
+
+fn rebuilt_multisample(
+    s: &Settings,
+    caps: &DeviceCaps,
+    original: &vk::PipelineMultisampleStateCreateInfo,
+) -> vk::PipelineMultisampleStateCreateInfo {
+    let (enable, rate) = pick_shading(
+        s.sample_shading,
+        caps,
+        (original.sample_shading_enable, original.min_sample_shading),
+    );
+    vk::PipelineMultisampleStateCreateInfo {
+        sample_shading_enable: enable,
+        min_sample_shading: rate,
+        alpha_to_coverage_enable: pick_coverage(s.alpha_coverage, original.alpha_to_coverage_enable),
+        ..*original
     }
 }
 
@@ -34,21 +82,7 @@ fn patched_multisample(
 ) -> Option<vk::PipelineMultisampleStateCreateInfo> {
     match p.is_null() {
         true => None,
-        false => {
-            let (enable, rate) = pick_shading(
-                s.sample_shading,
-                caps,
-                unsafe { ((*p).sample_shading_enable, (*p).min_sample_shading) },
-            );
-            Some(vk::PipelineMultisampleStateCreateInfo {
-                sample_shading_enable: enable,
-                min_sample_shading: rate,
-                alpha_to_coverage_enable: pick_coverage(s.alpha_coverage, unsafe {
-                    (*p).alpha_to_coverage_enable
-                }),
-                ..unsafe { *p }
-            })
-        }
+        false => Some(rebuilt_multisample(s, caps, unsafe { &*p })),
     }
 }
 

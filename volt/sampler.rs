@@ -1,81 +1,114 @@
 use ash::vk;
 
+use crate::bounds::bounds_set;
+use crate::bounds::resolved;
+use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::AnisoChoice;
-use crate::consts::FilterChoice;
-use crate::consts::MipmapChoice;
+use crate::consts::ANISO_OFF;
+use crate::consts::FILTER_BILINEAR;
+use crate::consts::FILTER_RETRO;
+use crate::consts::FILTER_TRILINEAR;
+use crate::consts::MIPMAP_LINEAR;
+use crate::consts::MIPMAP_NEAREST;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 
-fn filter_triple(choice: FilterChoice) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
-    match choice {
-        FilterChoice::Retro => (vk::Filter::NEAREST, vk::Filter::NEAREST, vk::SamplerMipmapMode::NEAREST),
-        FilterChoice::Bilinear => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::NEAREST),
-        FilterChoice::Trilinear => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
+fn filter_rank(mag: vk::Filter, min: vk::Filter, mip: vk::SamplerMipmapMode) -> u32 {
+    match (
+        mag == vk::Filter::NEAREST && min == vk::Filter::NEAREST,
+        mip == vk::SamplerMipmapMode::NEAREST,
+    ) {
+        (true, _) => FILTER_RETRO,
+        (false, true) => FILTER_BILINEAR,
+        (false, false) => FILTER_TRILINEAR,
+    }
+}
+
+fn filter_triple(rank: u32) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
+    match rank {
+        FILTER_RETRO => (vk::Filter::NEAREST, vk::Filter::NEAREST, vk::SamplerMipmapMode::NEAREST),
+        FILTER_BILINEAR => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::NEAREST),
+        _ => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
     }
 }
 
 fn pick_filters(
-    wanted: Option<FilterChoice>,
+    b: Bounds<u32>,
     original: (vk::Filter, vk::Filter, vk::SamplerMipmapMode),
 ) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
-    match wanted {
-        Some(choice) => filter_triple(choice),
-        None => original,
+    match bounds_set(&b) {
+        true => filter_triple(resolved(b, filter_rank(original.0, original.1, original.2))),
+        false => original,
     }
 }
 
-fn mipmap_vk(choice: MipmapChoice) -> vk::SamplerMipmapMode {
-    match choice {
-        MipmapChoice::Nearest => vk::SamplerMipmapMode::NEAREST,
-        MipmapChoice::Linear => vk::SamplerMipmapMode::LINEAR,
+fn mipmap_rank(mode: vk::SamplerMipmapMode) -> u32 {
+    match mode {
+        vk::SamplerMipmapMode::LINEAR => MIPMAP_LINEAR,
+        _ => MIPMAP_NEAREST,
     }
 }
 
-fn pick_mipmap(
-    wanted: Option<MipmapChoice>,
-    original: vk::SamplerMipmapMode,
-) -> vk::SamplerMipmapMode {
-    match wanted {
-        Some(choice) => mipmap_vk(choice),
-        None => original,
+fn mipmap_vk(rank: u32) -> vk::SamplerMipmapMode {
+    match rank {
+        MIPMAP_LINEAR => vk::SamplerMipmapMode::LINEAR,
+        _ => vk::SamplerMipmapMode::NEAREST,
+    }
+}
+
+fn pick_mipmap(b: Bounds<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMipmapMode {
+    match bounds_set(&b) {
+        true => mipmap_vk(resolved(b, mipmap_rank(original))),
+        false => original,
+    }
+}
+
+fn aniso_level(enable: vk::Bool32, level: f32) -> f32 {
+    match enable {
+        vk::TRUE => level,
+        _ => ANISO_OFF,
+    }
+}
+
+fn aniso_pair(level: f32, caps: &DeviceCaps) -> (vk::Bool32, f32) {
+    match level > ANISO_OFF && caps.sampler_anisotropy {
+        true => (vk::TRUE, level.min(caps.max_anisotropy)),
+        false => (vk::FALSE, level),
     }
 }
 
 fn pick_aniso(
-    wanted: Option<AnisoChoice>,
+    b: Bounds<f32>,
     caps: &DeviceCaps,
     original: (vk::Bool32, f32),
 ) -> (vk::Bool32, f32) {
-    match (wanted, caps.sampler_anisotropy) {
-        (Some(AnisoChoice::Off), _) => (vk::FALSE, original.1),
-        (Some(AnisoChoice::Level(v)), true) => (vk::TRUE, v.min(caps.max_anisotropy)),
-        (Some(AnisoChoice::Level(_)), false) => original,
-        (None, _) => original,
+    match bounds_set(&b) {
+        true => aniso_pair(resolved(b, aniso_level(original.0, original.1)), caps),
+        false => original,
     }
 }
 
-fn clamp_between(value: f32, lower: Option<f32>, upper: Option<f32>) -> f32 {
-    value
-        .max(lower.unwrap_or(f32::MIN))
-        .min(upper.unwrap_or(f32::MAX))
-}
-
-fn pick_lod_bias(s: &Settings, caps: &DeviceCaps, original: f32) -> f32 {
-    clamp_between(s.lod_bias.unwrap_or(original), s.lod_bias_min, s.lod_bias_max)
-        .clamp(-caps.max_lod_bias, caps.max_lod_bias)
+fn pick_lod_bias(b: Bounds<f32>, caps: &DeviceCaps, original: f32) -> f32 {
+    resolved(b, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
 }
 
 fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
-    let low = s.lod_min.unwrap_or(original.0);
-    let high = s.lod_max.unwrap_or(original.1);
+    let low = resolved(s.mip_floor, original.0);
+    let high = resolved(s.mip_ceiling, original.1);
     (low.min(high), high.max(low))
 }
 
 fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo) -> vk::SamplerCreateInfo {
-    let (mag, min, mip) = pick_filters(s.filtering, (original.mag_filter, original.min_filter, original.mipmap_mode));
-    let (aniso_enable, aniso_max) = pick_aniso(s.anisotropy, caps, (original.anisotropy_enable, original.max_anisotropy));
+    let (mag, min, mip) = pick_filters(
+        s.filtering,
+        (original.mag_filter, original.min_filter, original.mipmap_mode),
+    );
+    let (aniso_enable, aniso_max) = pick_aniso(
+        s.anisotropy,
+        caps,
+        (original.anisotropy_enable, original.max_anisotropy),
+    );
     let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
         mag_filter: mag,
@@ -83,7 +116,7 @@ fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo)
         mipmap_mode: pick_mipmap(s.mipmap, mip),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
-        mip_lod_bias: pick_lod_bias(s, caps, original.mip_lod_bias),
+        mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
         min_lod: lod_low,
         max_lod: lod_high,
         ..*original
