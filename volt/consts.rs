@@ -72,6 +72,12 @@ pub(crate) enum FilterChoice {
     Trilinear,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MipmapChoice {
+    Nearest,
+    Linear,
+}
+
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum ShadingChoice {
     Off,
@@ -118,6 +124,7 @@ frame_pacing = "default"
 
 [textures]
 filtering = "default"
+mipmap_mode = "default"
 anisotropy = "default"
 lod_bias = "default"
 lod_bias_min = "default"

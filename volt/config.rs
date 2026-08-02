@@ -10,6 +10,7 @@ use crate::consts::DepthChoice;
 use crate::consts::FilterChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
+use crate::consts::MipmapChoice;
 use crate::consts::PresentChoice;
 use crate::consts::PacingChoice;
 use crate::consts::SECTION_DISPLAY;
@@ -38,6 +39,7 @@ pub(crate) struct Settings {
     pub(crate) image_count_min: Option<u32>,
     pub(crate) image_count_max: Option<u32>,
     pub(crate) filtering: Option<FilterChoice>,
+    pub(crate) mipmap: Option<MipmapChoice>,
     pub(crate) anisotropy: Option<AnisoChoice>,
     pub(crate) lod_bias: Option<f32>,
     pub(crate) lod_bias_min: Option<f32>,
@@ -88,6 +90,14 @@ fn parse_filter(text: &str) -> Option<FilterChoice> {
         "retro" => Some(FilterChoice::Retro),
         "bilinear" => Some(FilterChoice::Bilinear),
         "trilinear" => Some(FilterChoice::Trilinear),
+        _ => None,
+    }
+}
+
+fn parse_mipmap(text: &str) -> Option<MipmapChoice> {
+    match text {
+        "nearest" => Some(MipmapChoice::Nearest),
+        "linear" => Some(MipmapChoice::Linear),
         _ => None,
     }
 }
@@ -190,6 +200,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         image_count_min: field(&doc, SECTION_DISPLAY, "image_count_min", parse_uint),
         image_count_max: field(&doc, SECTION_DISPLAY, "image_count_max", parse_uint),
         filtering: field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
+        mipmap: field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
         anisotropy: field(&doc, SECTION_TEXTURES, "anisotropy", parse_aniso),
         lod_bias: field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
         lod_bias_min: field(&doc, SECTION_TEXTURES, "lod_bias_min", parse_float),

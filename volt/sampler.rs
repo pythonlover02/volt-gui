@@ -4,6 +4,7 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::AnisoChoice;
 use crate::consts::FilterChoice;
+use crate::consts::MipmapChoice;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 
@@ -21,6 +22,23 @@ fn pick_filters(
 ) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
     match wanted {
         Some(choice) => filter_triple(choice),
+        None => original,
+    }
+}
+
+fn mipmap_vk(choice: MipmapChoice) -> vk::SamplerMipmapMode {
+    match choice {
+        MipmapChoice::Nearest => vk::SamplerMipmapMode::NEAREST,
+        MipmapChoice::Linear => vk::SamplerMipmapMode::LINEAR,
+    }
+}
+
+fn pick_mipmap(
+    wanted: Option<MipmapChoice>,
+    original: vk::SamplerMipmapMode,
+) -> vk::SamplerMipmapMode {
+    match wanted {
+        Some(choice) => mipmap_vk(choice),
         None => original,
     }
 }
@@ -62,7 +80,7 @@ fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo)
     vk::SamplerCreateInfo {
         mag_filter: mag,
         min_filter: min,
-        mipmap_mode: mip,
+        mipmap_mode: pick_mipmap(s.mipmap, mip),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s, caps, original.mip_lod_bias),

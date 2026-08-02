@@ -94,6 +94,13 @@ SETTINGS_DB: Final[dict] = {
             "options": (DEFAULT_VALUE, "retro", "bilinear", "trilinear"),
             "editable": False,
         },
+        "mipmap_mode": {
+            "section": "textures",
+            "label": "Mipmap Mode",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that carry mips.",
+            "options": (DEFAULT_VALUE, "nearest", "linear"),
+            "editable": False,
+        },
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
