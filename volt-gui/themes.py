@@ -46,7 +46,7 @@ QWidget {{ background-color: {background}; color: {text_primary}; font-size: 10p
 QLabel {{ color: {text_primary}; background-color: transparent; border: none; qproperty-wordWrap: true; }}
 QScrollArea {{ background-color: transparent; border: none; }}
 QScrollArea > QWidget > QWidget {{ background-color: transparent; }}
-QWidget[scrollContainer="true"], QWidget[buttonContainer="true"] {{ background-color: transparent; border: none; }}
+QWidget[scrollContainer="true"], QWidget[buttonContainer="true"], QWidget[cardRow="true"] {{ background-color: transparent; border: none; }}
 QWidget[buttonContainer="true"] {{ background-color: {background}; }}
 QMainWindow {{ background-color: {background}; border: none; }}
 QScrollBar:vertical {{ background-color: {background}; width: 6px; margin: 0px; border: none; }}

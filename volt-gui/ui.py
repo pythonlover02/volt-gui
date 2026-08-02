@@ -79,6 +79,7 @@ def get_combo_minimum_width() -> int:
 
 def _create_input_column(column: tuple) -> dict:
     column_widget = QWidget()
+    column_widget.setProperty("cardRow", True)
     column_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
     column_layout = QVBoxLayout(column_widget)
     column_layout.setContentsMargins(0, 0, 0, 0)
@@ -93,7 +94,8 @@ def _create_input_column(column: tuple) -> dict:
 
 def _build_input_row(columns: tuple) -> dict:
     row = QWidget()
-    row.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
+    row.setProperty("cardRow", True)
+    row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
     row_layout = QHBoxLayout(row)
     row_layout.setContentsMargins(0, 0, 0, 0)
     row_layout.setSpacing(6)
