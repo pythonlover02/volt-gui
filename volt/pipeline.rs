@@ -6,15 +6,6 @@ use crate::consts::ShadingChoice;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 
-fn pick_polygon_mode(wanted: Option<bool>, caps: &DeviceCaps, original: vk::PolygonMode) -> vk::PolygonMode {
-    match (wanted, caps.fill_mode_non_solid) {
-        (Some(true), true) => vk::PolygonMode::LINE,
-        (Some(false), _) => vk::PolygonMode::FILL,
-        (Some(true), false) => original,
-        (None, _) => original,
-    }
-}
-
 fn pick_shading(
     wanted: Option<ShadingChoice>,
     caps: &DeviceCaps,
@@ -25,20 +16,6 @@ fn pick_shading(
         (Some(ShadingChoice::Rate(r)), true) => (vk::TRUE, r),
         (Some(ShadingChoice::Rate(_)), false) => original,
         (None, _) => original,
-    }
-}
-
-fn patched_raster(
-    s: &Settings,
-    caps: &DeviceCaps,
-    p: *const vk::PipelineRasterizationStateCreateInfo,
-) -> Option<vk::PipelineRasterizationStateCreateInfo> {
-    match p.is_null() {
-        true => None,
-        false => Some(vk::PipelineRasterizationStateCreateInfo {
-            polygon_mode: pick_polygon_mode(s.wireframe, caps, unsafe { (*p).polygon_mode }),
-            ..unsafe { *p }
-        }),
     }
 }
 
@@ -72,15 +49,10 @@ fn state_ptr<T>(owned: &Option<T>, original: *const T) -> *const T {
 }
 
 fn patched_ci(
-    s: &Settings,
-    caps: &DeviceCaps,
     original: &vk::GraphicsPipelineCreateInfo,
-    raster: &Option<vk::PipelineRasterizationStateCreateInfo>,
     multisample: &Option<vk::PipelineMultisampleStateCreateInfo>,
 ) -> vk::GraphicsPipelineCreateInfo {
-    let _ = (s, caps);
     vk::GraphicsPipelineCreateInfo {
-        p_rasterization_state: state_ptr(raster, original.p_rasterization_state),
         p_multisample_state: state_ptr(multisample, original.p_multisample_state),
         ..*original
     }
@@ -97,21 +69,16 @@ pub(crate) fn call_create_graphics_pipelines(
     let s = ensure_settings();
     let originals: Vec<vk::GraphicsPipelineCreateInfo> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
-    let rasters: Vec<Option<vk::PipelineRasterizationStateCreateInfo>> = originals
-        .iter()
-        .map(|ci| patched_raster(&s, &dev.caps, ci.p_rasterization_state))
-        .collect();
     let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo>> = originals
         .iter()
         .map(|ci| patched_multisample(&s, &dev.caps, ci.p_multisample_state))
         .collect();
     let patched: Vec<vk::GraphicsPipelineCreateInfo> = originals
         .iter()
-        .zip(rasters.iter())
         .zip(multisamples.iter())
-        .map(|((ci, r), m)| patched_ci(&s, &dev.caps, ci, r, m))
+        .map(|(ci, m)| patched_ci(ci, m))
         .collect();
-    let r = unsafe {
+    unsafe {
         (dev.device.fp_v1_0().create_graphics_pipelines)(
             dev.device.handle(),
             cache,
@@ -120,6 +87,5 @@ pub(crate) fn call_create_graphics_pipelines(
             alloc,
             out,
         )
-    };
-    r
+    }
 }

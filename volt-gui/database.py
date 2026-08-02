@@ -131,13 +131,6 @@ SETTINGS_DB: Final[dict] = {
         },
     },
     "Rendering": {
-        "wireframe": {
-            "section": "rendering",
-            "label": "Wireframe",
-            "description": "Render polygons as lines instead of filled triangles. Requires the fillModeNonSolid device feature; silently ignored without it.",
-            "options": (DEFAULT_VALUE, "on", "off"),
-            "editable": False,
-        },
         "sample_shading": {
             "section": "rendering",
             "label": "Sample Shading",

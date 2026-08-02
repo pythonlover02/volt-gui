@@ -19,7 +19,6 @@ use crate::logging::LogLevel;
 #[derive(Clone, Copy, Default)]
 pub(crate) struct DeviceCaps {
     pub(crate) sampler_anisotropy: bool,
-    pub(crate) fill_mode_non_solid: bool,
     pub(crate) sample_rate_shading: bool,
     pub(crate) max_anisotropy: f32,
     pub(crate) max_lod_bias: f32,
@@ -110,7 +109,6 @@ fn merged_features(
     let base = original.copied().unwrap_or_default();
     vk::PhysicalDeviceFeatures {
         sampler_anisotropy: enable_flag(base.sampler_anisotropy, supported.sampler_anisotropy),
-        fill_mode_non_solid: enable_flag(base.fill_mode_non_solid, supported.fill_mode_non_solid),
         sample_rate_shading: enable_flag(base.sample_rate_shading, supported.sample_rate_shading),
         ..base
     }
@@ -168,7 +166,6 @@ fn build_caps(
 ) -> DeviceCaps {
     DeviceCaps {
         sampler_anisotropy: supported.sampler_anisotropy == vk::TRUE,
-        fill_mode_non_solid: supported.fill_mode_non_solid == vk::TRUE,
         sample_rate_shading: supported.sample_rate_shading == vk::TRUE,
         max_anisotropy: limits.max_sampler_anisotropy,
         max_lod_bias: limits.max_sampler_lod_bias,

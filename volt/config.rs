@@ -42,7 +42,6 @@ pub(crate) struct Settings {
     pub(crate) lod_bias_max: Option<f32>,
     pub(crate) lod_min: Option<f32>,
     pub(crate) lod_max: Option<f32>,
-    pub(crate) wireframe: Option<bool>,
     pub(crate) sample_shading: Option<ShadingChoice>,
 }
 
@@ -106,14 +105,6 @@ fn parse_shading(text: &str) -> Option<ShadingChoice> {
         other => parse_float(other)
             .filter(|v| (0.0..=SHADING_MAX).contains(v))
             .map(ShadingChoice::Rate),
-    }
-}
-
-fn parse_wireframe(text: &str) -> Option<bool> {
-    match text {
-        "on" => Some(true),
-        "off" => Some(false),
-        _ => None,
     }
 }
 
@@ -194,7 +185,6 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         lod_bias_max: field(&doc, SECTION_TEXTURES, "lod_bias_max", parse_float),
         lod_min: field(&doc, SECTION_TEXTURES, "lod_min", parse_float),
         lod_max: field(&doc, SECTION_TEXTURES, "lod_max", parse_float),
-        wireframe: field(&doc, SECTION_RENDERING, "wireframe", parse_wireframe),
         sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
     }
 }

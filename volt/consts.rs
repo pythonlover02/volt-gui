@@ -113,7 +113,6 @@ lod_min = "default"
 lod_max = "default"
 
 [rendering]
-wireframe = "default"
 sample_shading = "default"
 
 [gpu]
