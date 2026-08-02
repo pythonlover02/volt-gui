@@ -37,6 +37,7 @@ from database import get_option_default_value
 from database import get_option_description
 from database import get_option_label
 from database import get_option_options
+from database import is_option_editable
 from presets import build_preset_combo_items
 from presets import get_preset_placeholder_label
 from presets import is_valid_preset_name
@@ -63,6 +64,9 @@ SINGLETON_PORT: Final[int] = 47832
 OPTIONS_SAVE_DEBOUNCE_MS: Final[int] = 500
 NEW_PROFILE_LABEL: Final[str] = "New Profile..."
 DELETE_PROFILE_LABEL: Final[str] = "Delete Current"
+SCALE_MIN: Final[float] = 0.5
+SCALE_MAX: Final[float] = 3.0
+DEFAULT_SCALE: Final[str] = "1.0"
 
 
 def build_launch_command(profile_name: str) -> str:
@@ -88,13 +92,21 @@ def get_persisted_option_value(option_key: str) -> str:
                     return saved
 
 
-def calculate_initial_scale() -> None:
-    raw = get_persisted_option_value("interface_scale_factor")
-    match raw.replace(".", "", 1).isdigit():
+def is_scale_text(raw: str) -> bool:
+    return raw.replace(".", "", 1).isdigit()
+
+
+def resolve_scale_factor(raw: str) -> str:
+    match is_scale_text(raw) and SCALE_MIN <= float(raw) <= SCALE_MAX:
         case True:
-            os.environ["QT_SCALE_FACTOR"] = raw
+            return raw
         case False:
-            os.environ["QT_SCALE_FACTOR"] = "1.0"
+            return DEFAULT_SCALE
+
+
+def calculate_initial_scale() -> None:
+    os.environ["QT_SCALE_FACTOR"] = resolve_scale_factor(
+        get_persisted_option_value("interface_scale_factor"))
     return None
 
 
@@ -140,7 +152,7 @@ def create_options_tab_widget() -> dict:
         title_label = QLabel(get_option_label(option_key))
         title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
         card_layout.addWidget(title_label)
-        combo = create_combo_widget(get_option_options(option_key), False)
+        combo = create_combo_widget(get_option_options(option_key), is_option_editable(option_key))
         card_layout.addWidget(combo)
         description_label = QLabel(get_option_description(option_key))
         description_label.setWordWrap(True)

@@ -177,9 +177,9 @@ OPTIONS_DB: Final[dict] = {
     },
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
-        "description": "UI scaling multiplier. Takes effect on program restart.",
+        "description": "UI scaling multiplier. Pick a step or type any value between 0.5 and 3.0. Anything outside that range falls back to 1.0. Takes effect on program restart.",
         "options": ("1.0", "0.25", "0.5", "0.75", "1.25", "1.5", "1.75", "2.0"),
-        "editable": False,
+        "editable": True,
     },
     "start_window_maximized": {
         "label": "Start Window Maximized",
@@ -346,6 +346,10 @@ def get_option_description(option_key: str) -> str:
 
 def get_option_options(option_key: str) -> tuple:
     return OPTIONS_DB[option_key]["options"]
+
+
+def is_option_editable(option_key: str) -> bool:
+    return OPTIONS_DB[option_key]["editable"]
 
 
 def get_option_default_value(option_key: str) -> str:
