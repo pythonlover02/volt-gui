@@ -21,7 +21,7 @@ def get_welcome_settings() -> dict:
         },
         "How it Works": {
             "The volt Layer": (
-                ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering, the swapchain for vsync and latency, presents for the frame limiter, and pipelines for the rendering toggles."),
+                ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering, the swapchain for vsync and image count, presents for the frame limiter, and pipelines for the rendering toggles."),
                 ("text", "The layer watches the profile for changes. Press Apply while a game is running and the new values take effect live, without restarting the game."),
             )
         },
