@@ -9,10 +9,9 @@ volt-gui is a graphical control panel for Vulkan games on Linux. Settings are
 applied by **volt**, a Vulkan implicit layer written in Rust, so they work on
 every Vulkan driver: RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver.
 
-The floor is **Vulkan 1.0**: every core setting works there. Some settings use
-optional extensions on top of that floor. When the driver has the extension it
-is used; when it does not, the setting is skipped and the rest keeps working.
-`VOLT_LOG=info` shows what was enabled.
+The floor is **Vulkan 1.0**, and so is the ceiling: the layer requests no
+extension beyond `VK_KHR_swapchain`, so every setting behaves the same on
+every conformant driver. `VOLT_LOG=info` shows what was applied.
 
 ![](/images/1.png)
 ![](/images/2.png)
@@ -41,42 +40,43 @@ value and the game keeps its own choice. A profile with everything on default do
 - **Swapchain Images**: request a specific image count, or clamp the game's
   request with independent minimum and maximum bounds. Fewer images lower
   display latency.
-- **Color Depth**: prefer 10-bit, HDR10 or scRGB surface formats. Games that
-  pick the first supported format follow the preference; hardcoded choices
-  are respected. HDR values need driver and compositor support
-  (`VK_EXT_swapchain_colorspace`, `VK_EXT_hdr_metadata`).
-- On drivers with `VK_EXT_swapchain_maintenance1`, changing the present mode
-  in a saved profile takes effect in a running game without swapchain
-  recreation.
+- **Color Depth**: prefer 10-bit surface formats. Games that pick the first
+  supported format follow the preference; hardcoded choices are respected.
+  The layer only reorders what the surface already reports.
 
 ### Framerate
 - **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value.
+  type any value. Deadlines follow a fixed target timeline rather than the
+  last present, so scheduler jitter does not accumulate into a drift below
+  the requested rate.
+- **Frame Limit Method**: early holds the frame back so presents leave on a
+  fixed cadence; late lets the present through and waits afterwards, so the
+  game starts its next frame later and samples input closer to display time.
 - **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
   for tighter frametimes.
-- **AMD Anti-Lag**: driver side input latency reduction
-  (`VK_AMD_anti_lag`).
-- **NVIDIA Low Latency**: driver side input latency reduction with an
-  optional boost mode (`VK_NV_low_latency2`).
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear.
+- **Mipmap Mode**: force a hard cut between mip levels, or a blend across
+  them, independently of the filter choice.
 - **Anisotropic Filtering**: off to 16x, clamped to what your GPU reports.
 - **LOD Bias** with independent minimum and maximum clamps: force a bias, or
   only bound what the game asks for.
-- **Minimum / Maximum LOD**: bound the mip levels samplers may use. On
-  drivers with `VK_EXT_image_view_min_lod` the minimum also applies at the
-  image view level.
+- **Minimum / Maximum LOD**: bound the mip levels samplers may use.
 
 ### Rendering
-- **Wireframe**: render polygons as lines (needs the fillModeNonSolid device
-  feature).
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
   shimmer (needs the sampleRateShading device feature).
+- **Alpha To Coverage**: force alpha to coverage on or off. Softens cutout
+  edges on foliage and fences, and only does anything where the game already
+  renders to an MSAA target.
 
 ### GPU
-- **Physical Device**: pick which GPU the game sees, by index. The layer
-  filters device enumeration itself, so it works on every Vulkan driver.
+- **Physical Device**: promote one GPU to the front of the list the game
+  sees, by index. The layer reorders device enumeration itself, so it works
+  on every Vulkan driver. Games that take the first device follow the
+  preference and every other device stays available; an out of range index
+  leaves the order untouched and logs a warning.
 
 ## How It Works
 
@@ -87,8 +87,8 @@ the game makes: `vkEnumeratePhysicalDevices` for GPU selection,
 `vkCreateSampler` for texture settings, `vkCreateSwapchainKHR` for present
 mode and image count, `vkGetPhysicalDeviceSurfaceFormatsKHR` for the 10-bit
 preference, `vkQueuePresentKHR` for the frame limiter, and
-`vkCreateGraphicsPipelines` for the advanced toggles. Optional device
-features are enabled at device creation only when the hardware supports them.
+`vkCreateGraphicsPipelines` for the rendering toggles. Core device features
+are enabled at device creation only when the hardware reports them.
 
 The layer watches the config directory with inotify: press Apply in volt-gui
 while a game is running and the new values take effect live.
@@ -182,9 +182,11 @@ requires injecting shaders or processing the image is out of scope:
   Vulkan API. Use CoreCtrl for that.
 - OpenGL. The per driver environment variable maze that OpenGL support
   requires is exactly what this rewrite retired.
+- Any Vulkan extension. Core 1.0 is the whole surface the layer touches, so
+  behaviour never splits between drivers.
 
 ## Contributing
 
 Contributions are welcome. The layer is plain Rust with no build scripts; the
-GUI is PySide6 only. Please keep changes working on Vulkan 1.0 that floor is
-the point of the project.
+GUI is PySide6 only. Please keep changes working on core Vulkan 1.0 with no
+extensions that floor is the point of the project.
