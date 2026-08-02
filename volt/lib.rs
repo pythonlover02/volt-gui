@@ -2,6 +2,7 @@
 
 mod consts;
 mod logging;
+mod bounds;
 mod env;
 mod config;
 mod watch;
