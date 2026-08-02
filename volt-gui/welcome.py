@@ -35,6 +35,10 @@ def get_welcome_settings() -> dict:
             ),
             "Default Behavior": (
                 ("text", "Every setting defaults to \"default\", which means the layer does not touch that value and the application keeps its own choice. A profile with everything on default is a true passthrough."),
+            ),
+            "Force, Minimum and Maximum": (
+                ("text", "Most settings carry three values. Force replaces whatever the application asked for. Minimum and Maximum leave that value alone unless it falls outside the range, and pull it back to the nearest bound when it does. Force wins when both are set."),
+                ("text", "Bounds are how you give an application room to make its own choice while ruling out the extremes you do not want. A setting carries bounds when the application supplies a value to bound, which is every setting but the three under Framerate: an application never asks Vulkan for a frame rate, so there is nothing to bound. Those three configure the layer's own wait and share a single Frame Limiter card."),
             )
         },
         "Profiles": {
