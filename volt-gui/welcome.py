@@ -16,13 +16,31 @@ def get_welcome_settings() -> dict:
     return {
         "Welcome": {
             "Welcome to volt gui": (
-                ("text", "volt-gui is my AMD Adrenaline / NVIDIA Settings Linux Alternative.\n\nSettings are applied by volt, a Vulkan implicit layer, so they work on every Vulkan driver: RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver, and anything else that speaks Vulkan 1.0."),
+                ("text", "volt-gui is my AMD Adrenaline / NVIDIA Settings Linux Alternative.\n\nSettings are applied by volt, a Vulkan implicit layer, so they work on every Vulkan driver: RADV, ANV, NVK, AMDVLK, the NVIDIA proprietary driver, and anything else that supports Vulkan 1.0."),
+                ("text", "The layer sticks to core Vulkan 1.0 and the swapchain extension, so nothing here behaves differently from one driver to the next."),
             )
         },
         "How it Works": {
             "The volt Layer": (
-                ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering, the swapchain for vsync and image count, presents for the frame limiter, and pipelines for the rendering toggles."),
+                ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering and mip selection, the swapchain for vsync and image count, the surface format list for color depth, device enumeration for GPU selection, presents for the frame limiter, and pipelines for the rendering toggles."),
                 ("text", "The layer watches the profile for changes. Press Apply while a game is running and the new values take effect live, without restarting the game."),
+            ),
+            "What it Will Not Do": (
+                ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and CoreCtrl for clocks and fan curves."),
+            )
+        },
+        "Settings": {
+            "Force, Minimum and Maximum": (
+                ("text", "Most settings have three boxes. Force replaces whatever the game asked for. Minimum and Maximum leave the game's own value alone while it stays inside the range, and pull it back to the nearest end when it does not. Set Force and a bound together and Force wins."),
+                ("text", "Use the bounds when you want to rule out the extremes but still let the game pick. On a setting with only two values there is nothing in between, so a Minimum or a Maximum ends up doing the same job as Force."),
+                ("text", "A Minimum set above its own Maximum does nothing. Both are dropped, a warning is logged, and the game keeps its own value."),
+            ),
+            "Settings Without Bounds": (
+                ("text", "The three Framerate settings have no bounds, because a game never tells Vulkan what frame rate it wants. There is no value to bound, so those three only decide how the layer itself waits, and they share one Frame Limiter card."),
+            ),
+            "Settings That Hide a List": (
+                ("text", "Color Depth and Physical Device work differently. Instead of changing a value they hide entries from the list the game is shown, so a game that takes the first surface format or the first device gets the one you picked."),
+                ("text", "If your choice leaves nothing behind, the layer puts the whole list back and logs a warning. The game always has at least one format and one device to work with."),
             )
         },
         "Usage": {
@@ -36,9 +54,9 @@ def get_welcome_settings() -> dict:
             "Default Behavior": (
                 ("text", "Every setting defaults to \"default\", which means the layer does not touch that value and the application keeps its own choice. A profile with everything on default is a true passthrough."),
             ),
-            "Force, Minimum and Maximum": (
-                ("text", "Most settings carry three values. Force replaces whatever the application asked for. Minimum and Maximum leave that value alone unless it falls outside the range, and pull it back to the nearest bound when it does. Force wins when both are set."),
-                ("text", "Bounds are how you give an application room to make its own choice while ruling out the extremes you do not want. A setting carries bounds when the application supplies a value to bound, which is every setting but the three under Framerate: an application never asks Vulkan for a frame rate, so there is nothing to bound. Those three configure the layer's own wait and share a single Frame Limiter card."),
+            "Seeing What Applied": (
+                ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
+                ("code", "VOLT_LOG=info volt -- ./game", ""),
             )
         },
         "Profiles": {
@@ -50,7 +68,7 @@ def get_welcome_settings() -> dict:
         "Presets": {
             "Presets": (
                 ("text", "Presets are curated starting points that populate the currently active profile, arranged as a ladder from maximum fidelity to maximum frames:\n\n- Quality: trilinear filtering, 16x anisotropy, sharpening bias, full sample shading, classic vsync.\n- Balanced: trilinear, 8x anisotropy, mailbox present for low latency vsync.\n- Performance FPS: 4x anisotropy, softer mips, mailbox present, capped swapchain depth.\n- Performance Low Latency: the same stance biased for input latency with immediate present and a 2 image swapchain.\n- Potato FPS and Potato Low Latency: bilinear filtering, anisotropy off, blurrier mips, frames above all."),
-                ("text", "Applying a preset replaces every value in the selected profile after a confirmation dialog. Presets never touch the frame limit: caps are display and preference specific, so that choice stays yours."),
+                ("text", "Presets mostly set Force values, and use a Maximum where a cap is the point, as with the swapchain image counts. Applying one replaces every value in the profile after a confirmation, so anything the preset does not set goes back to default. That includes the frame limit: the right cap depends on your display, so that choice stays yours."),
             )
         },
         "Options": {
@@ -64,7 +82,7 @@ def get_welcome_settings() -> dict:
 def create_welcome_window_widget() -> QMainWindow:
     window = QMainWindow()
     window.setWindowTitle("volt-gui Welcome")
-    window.setMinimumSize(540, 380)
+    window.setMinimumSize(620, 380)
     central_widget = QWidget()
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)
