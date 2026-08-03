@@ -78,7 +78,7 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
-            "description": "Method sets when the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time.",
+            "description": "Method sets when the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. Volt's own setting, so the list is fixed.",
             "options": (DEFAULT_VALUE, "early", "late"),
             "editable": False,
             "bounded": False,
@@ -96,7 +96,7 @@ SETTINGS_DB: Final[dict] = {
         "filtering": {
             "section": "textures",
             "label": "Texture Filtering",
-            "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. A sampler that matches none of the three exactly counts as the closest one below it.",
+            "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. All three are core Vulkan, so the list never changes. A sampler that matches none of them exactly counts as the closest one below it.",
             "options": (DEFAULT_VALUE, "retro", "bilinear", "trilinear"),
             "editable": False,
             "bounded": True,
@@ -104,7 +104,7 @@ SETTINGS_DB: Final[dict] = {
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
-            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. With only two values there is nothing in between, so a Minimum of linear or a Maximum of nearest does the same job as Force. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Both are core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of linear or a Maximum of nearest does the same job as Force. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
             "editable": False,
             "bounded": True,
@@ -154,7 +154,7 @@ SETTINGS_DB: Final[dict] = {
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
-            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force. Only does something where the game already renders to an MSAA target.",
+            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force. Only does something where the game already renders to an MSAA target.",
             "options": (DEFAULT_VALUE, "off", "on"),
             "editable": False,
             "bounded": True,
