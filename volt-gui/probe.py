@@ -95,8 +95,12 @@ def plain_pairs(values: tuple) -> tuple:
     return tuple((v, v) for v in values)
 
 
+def _first_step(low: int) -> int:
+    return low + (low % WHOLE_STEP)
+
+
 def _whole_values(low: int, high: int) -> tuple:
-    return tuple(str(v) for v in range(low, high + 1, WHOLE_STEP))
+    return tuple(str(v) for v in range(_first_step(low), high + 1, WHOLE_STEP))
 
 
 def _fraction_values(low: int, high: int) -> tuple:
@@ -154,10 +158,19 @@ def _count_ceiling(low: int, high: int) -> int:
             return high
 
 
+def _low_entry(low: int) -> tuple:
+    match low % WHOLE_STEP:
+        case 0:
+            return ()
+        case _:
+            return (str(low),)
+
+
 def image_count_options(data: dict) -> tuple:
     low = int(probe_number(data, "min_image_count", MIN_COUNT_FALLBACK))
     high = int(probe_number(data, "max_image_count", MAX_COUNT_FALLBACK))
-    return plain_pairs(_whole_values(low, _count_ceiling(low, high)))
+    return plain_pairs(
+        _low_entry(low) + _whole_values(low, _count_ceiling(low, high)))
 
 
 def mip_options(data: dict) -> tuple:
