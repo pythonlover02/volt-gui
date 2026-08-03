@@ -44,8 +44,8 @@ def create_combo_widget(options: tuple, editable: bool) -> QComboBox:
     combo.setFixedHeight(get_standard_button_height())
     combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     combo.setFocusPolicy(Qt.ClickFocus)
-    for option in options:
-        combo.addItem(option)
+    for value, label in options:
+        combo.addItem(label, value)
     combo.setCurrentIndex(0)
     return combo
 

@@ -1,5 +1,16 @@
 from typing import Final
 
+from probe import aniso_options
+from probe import call_read_probe
+from probe import depth_options
+from probe import gpu_options
+from probe import image_count_options
+from probe import lod_bias_options
+from probe import mip_options
+from probe import plain_pairs
+from probe import present_options
+from probe import shading_options
+
 
 APP_VERSION: Final[str] = "2.0.0"
 APP_AUTHOR: Final[str] = "pythonlover02"
@@ -26,9 +37,9 @@ SETTINGS_DB: Final[dict] = {
         "device": {
             "section": "gpu",
             "label": "Physical Device",
-            "description": "Which GPU the game sees, by index in the order the driver reports them. Force hides every other device, and the bounds keep a range of indices. If nothing matches, the full list comes back and a warning is logged.",
-            "options": (DEFAULT_VALUE, "1", "2", "3", "4"),
-            "editable": True,
+            "description": "Which GPU the game sees. The list is what this machine reports, in the order the driver gives them. Force hides every other device, and the bounds keep a range. If nothing matches, the full list comes back and a warning is logged.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
     },
@@ -36,24 +47,24 @@ SETTINGS_DB: Final[dict] = {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. fifo is classic vsync, fifo_relaxed tears only below refresh, mailbox is low latency vsync, immediate turns vsync off. Those run from most latency to least, so a Maximum of mailbox keeps a game from tearing and a Minimum of mailbox keeps it off classic vsync. Modes your surface does not support fall back to the game's own choice.",
-            "options": (DEFAULT_VALUE, "fifo", "fifo_relaxed", "mailbox", "immediate"),
+            "description": "How finished frames reach the screen. The list is what this surface supports, ordered from most latency to least, so a Maximum of mailbox keeps a game from tearing and a Minimum of mailbox keeps it off classic vsync. fifo is classic vsync, fifo_relaxed tears only below refresh, mailbox is low latency vsync, immediate turns vsync off. A mode the surface turns down falls back to the game's own choice with a warning.",
+            "options": (DEFAULT_VALUE,),
             "editable": False,
             "bounded": True,
         },
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
-            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. Whatever you set is clamped to what the surface supports.",
-            "options": (DEFAULT_VALUE,) + COUNT_STEPS,
-            "editable": True,
+            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list runs across what this surface allows, in steps of two.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
         "color_depth": {
             "section": "display",
             "label": "Color Depth",
-            "description": "Which surface formats the game is allowed to see. The layer hides the ones you did not pick, so a game that takes the first supported format ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
-            "options": (DEFAULT_VALUE, "8bit", "10bit"),
+            "description": "Which surface formats the game is allowed to see, grouped by bits per colour channel. The list is the depths this surface actually offers. The layer hides the ones you did not pick, so a game that takes the first supported format ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
+            "options": (DEFAULT_VALUE,),
             "editable": False,
             "bounded": True,
         },
@@ -62,9 +73,9 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit": {
             "section": "framerate",
             "label": "Frame Limit",
-            "description": "Cap the frame rate at present time. Pick a common cap or type any FPS value.",
-            "options": (DEFAULT_VALUE, "30", "40", "48", "60", "75", "90", "120", "144", "165", "240"),
-            "editable": True,
+            "description": "Cap the frame rate at present time. This one is volt's own, so the list is fixed rather than read from the device.",
+            "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540"),
+            "editable": False,
             "bounded": False,
         },
         "frame_limit_method": {
@@ -104,33 +115,33 @@ SETTINGS_DB: Final[dict] = {
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
-            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. off counts as the lowest setting, so a Minimum of 4 raises a game that asked for less and leaves a game that asked for more alone. Clamped to what your GPU reports, and ignored if the device lacks the feature.",
-            "options": (DEFAULT_VALUE, "off", "2", "4", "8", "16"),
-            "editable": True,
+            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. off counts as the lowest setting, so a Minimum of 4 raises a game that asked for less and leaves a game that asked for more alone. The list runs in steps of two up to what your GPU reports, and holds only default on a device without the feature.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. Clamped to the range your GPU reports.",
-            "options": (DEFAULT_VALUE,) + LOD_STEPS,
-            "editable": True,
+            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. The list runs in steps of 0.2 across the range your GPU reports.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
         "mip_floor": {
             "section": "textures",
             "label": "Mip Floor",
-            "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed.",
-            "options": (DEFAULT_VALUE,) + LOD_LEVELS,
-            "editable": True,
+            "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs in steps of two up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
         "mip_ceiling": {
             "section": "textures",
             "label": "Mip Ceiling",
-            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended.",
-            "options": (DEFAULT_VALUE,) + LOD_LEVELS,
-            "editable": True,
+            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor, and a ceiling that lands below the floor is swapped with it rather than dropped.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
     },
@@ -138,9 +149,9 @@ SETTINGS_DB: Final[dict] = {
         "sample_shading": {
             "section": "rendering",
             "label": "Sample Shading",
-            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. Needs the sampleRateShading device feature, and only does something in a game already using MSAA.",
-            "options": (DEFAULT_VALUE, "off", "0.25", "0.5", "1.0"),
-            "editable": True,
+            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2, and holds only default on a device without the sampleRateShading feature. Only does something in a game already using MSAA.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
             "bounded": True,
         },
         "alpha_to_coverage": {
@@ -177,9 +188,9 @@ OPTIONS_DB: Final[dict] = {
     },
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
-        "description": "UI scaling multiplier. Pick a step or type any value between 0.5 and 3.0. Anything outside that range falls back to 1.0. Takes effect on program restart.",
-        "options": ("1.0", "0.25", "0.5", "0.75", "1.25", "1.5", "1.75", "2.0"),
-        "editable": True,
+        "description": "UI scaling multiplier. A hand written value outside 0.5 to 3.0 falls back to 1.0. Takes effect on program restart.",
+        "options": ("1.0", "0.5", "0.75", "1.25", "1.5", "1.75", "2.0", "2.5", "3.0"),
+        "editable": False,
     },
     "start_window_maximized": {
         "label": "Start Window Maximized",
@@ -226,8 +237,33 @@ def get_setting_description(tab_name: str, setting_key: str) -> str:
     return SETTINGS_DB[tab_name][setting_key]["description"]
 
 
+OPTION_BUILDERS: Final[dict] = {
+    "device": gpu_options,
+    "present_mode": present_options,
+    "image_count": image_count_options,
+    "color_depth": depth_options,
+    "anisotropy": aniso_options,
+    "lod_bias": lod_bias_options,
+    "mip_floor": mip_options,
+    "mip_ceiling": mip_options,
+    "sample_shading": shading_options,
+}
+
+
+def _static_options(tab_name: str, setting_key: str) -> tuple:
+    return plain_pairs(SETTINGS_DB[tab_name][setting_key]["options"])
+
+
+def find_setting_options(tab_name: str, setting_key: str, data: dict) -> tuple:
+    match OPTION_BUILDERS.get(setting_key):
+        case None:
+            return _static_options(tab_name, setting_key)
+        case builder:
+            return ((DEFAULT_VALUE, DEFAULT_VALUE),) + builder(data)
+
+
 def get_setting_options(tab_name: str, setting_key: str) -> tuple:
-    return SETTINGS_DB[tab_name][setting_key]["options"]
+    return find_setting_options(tab_name, setting_key, call_read_probe())
 
 
 def is_setting_editable(tab_name: str, setting_key: str) -> bool:
@@ -328,6 +364,21 @@ def find_cards_for_tab(tab_name: str) -> tuple:
             return find_setting_cards(tab_name)
 
 
+def _tab_option_sources(tab_name: str, data: dict) -> tuple:
+    return tuple(
+        (widget_key, find_setting_options(tab_name, setting_key, data))
+        for setting_key in find_settings_for_tab(tab_name)
+        for widget_key in find_setting_widget_keys(tab_name, setting_key))
+
+
+def find_option_sources() -> tuple:
+    data = call_read_probe()
+    return tuple(
+        entry
+        for tab_name in PROFILE_TABS
+        for entry in _tab_option_sources(tab_name, data))
+
+
 def find_profile_fields() -> tuple:
     return tuple(
         (widget_key, get_setting_section(tab_name, setting_key), config_key)
@@ -345,7 +396,7 @@ def get_option_description(option_key: str) -> str:
 
 
 def get_option_options(option_key: str) -> tuple:
-    return OPTIONS_DB[option_key]["options"]
+    return plain_pairs(OPTIONS_DB[option_key]["options"])
 
 
 def is_option_editable(option_key: str) -> bool:
