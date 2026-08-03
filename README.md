@@ -87,8 +87,12 @@ Limiter** card.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
   game starts its next frame later and samples input closer to display time.
-- **Frame Pacing**: sleep for CPU friendly limiting, or precise busy waiting
-  for tighter frametimes.
+- **Frame Pacing**: how the limiter kills time, from cheapest to tightest.
+  `sleep` hands the whole wait to the kernel. `sliced` sleeps in short steps
+  and rechecks the clock, correcting for the kernel waking late. `precise`
+  sleeps most of the interval then busy waits half a millisecond. `spin`
+  busy waits the whole interval, the steadiest option and the only one that
+  keeps a core awake.
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear. A sampler
