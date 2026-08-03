@@ -39,6 +39,8 @@ pub(crate) const DEFAULT_LOG_LEVEL: i32 = 2;
 
 pub(crate) const US_PER_S: f32 = 1_000_000.0;
 pub(crate) const SPIN_MARGIN_US: u64 = 500;
+pub(crate) const SLICE_MARGIN_US: u64 = 150;
+pub(crate) const SLICE_STEP_US: u64 = 1000;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const ANISO_OFF: f32 = 1.0;
 pub(crate) const SHADING_OFF: f32 = 0.0;
@@ -97,7 +99,9 @@ pub(crate) const SECTION_RENDERING: &str = "rendering";
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PacingChoice {
     Sleep,
+    Sliced,
     Precise,
+    Spin,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

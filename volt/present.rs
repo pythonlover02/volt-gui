@@ -12,6 +12,8 @@ use crate::config::Settings;
 use crate::consts::LimitStage;
 use crate::consts::MethodChoice;
 use crate::consts::PacingChoice;
+use crate::consts::SLICE_MARGIN_US;
+use crate::consts::SLICE_STEP_US;
 use crate::consts::SPIN_MARGIN_US;
 use crate::consts::US_PER_S;
 use crate::device::VkDevState;
@@ -43,6 +45,10 @@ fn wait_deficit_us(now: u64, target: u64) -> u64 {
     target.saturating_sub(now)
 }
 
+fn slice_length_us(remaining: u64) -> u64 {
+    remaining.saturating_sub(SLICE_MARGIN_US).min(SLICE_STEP_US)
+}
+
 fn call_sleep_us(us: u64) {
     match us {
         0 => (),
@@ -56,20 +62,28 @@ fn call_spin_until(target: u64) {
         .for_each(|_| std::hint::spin_loop());
 }
 
-fn call_wait_until(target: u64, precise: bool) {
-    match precise {
-        true => {
-            call_sleep_us(wait_deficit_us(call_now_us(), target.saturating_sub(SPIN_MARGIN_US)));
-            call_spin_until(target);
-        }
-        false => call_sleep_us(wait_deficit_us(call_now_us(), target)),
-    }
+fn call_sleep_until(target: u64) {
+    call_sleep_us(wait_deficit_us(call_now_us(), target));
 }
 
-fn pacing_is_precise(pacing: Option<PacingChoice>) -> bool {
+fn call_precise_until(target: u64) {
+    call_sleep_us(wait_deficit_us(call_now_us(), target.saturating_sub(SPIN_MARGIN_US)));
+    call_spin_until(target);
+}
+
+fn call_slice_until(target: u64) {
+    std::iter::repeat(())
+        .take_while(|_| call_now_us() + SLICE_MARGIN_US < target)
+        .for_each(|_| call_sleep_us(slice_length_us(wait_deficit_us(call_now_us(), target))));
+    call_spin_until(target);
+}
+
+fn call_wait_until(target: u64, pacing: PacingChoice) {
     match pacing {
-        Some(PacingChoice::Precise) => true,
-        Some(PacingChoice::Sleep) | None => false,
+        PacingChoice::Sleep => call_sleep_until(target),
+        PacingChoice::Sliced => call_slice_until(target),
+        PacingChoice::Precise => call_precise_until(target),
+        PacingChoice::Spin => call_spin_until(target),
     }
 }
 
@@ -88,8 +102,15 @@ fn call_frame_target(interval: u64) -> u64 {
     target
 }
 
-fn call_limit_to(fps: f32, precise: bool) {
-    call_wait_until(call_frame_target(target_interval_us(fps)), precise);
+fn call_limit_to(fps: f32, pacing: PacingChoice) {
+    call_wait_until(call_frame_target(target_interval_us(fps)), pacing);
+}
+
+fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
+    match pacing {
+        Some(choice) => choice,
+        None => PacingChoice::Sleep,
+    }
 }
 
 fn stage_wanted(method: Option<MethodChoice>) -> LimitStage {
@@ -106,7 +127,7 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
 pub(crate) fn maybe_limit_frame(stage: LimitStage) {
     let s = ensure_settings();
     match limit_fps(&s, stage) {
-        Some(fps) => call_limit_to(fps, pacing_is_precise(s.pacing)),
+        Some(fps) => call_limit_to(fps, pacing_or_default(s.pacing)),
         None => (),
     }
 }

@@ -146,7 +146,9 @@ fn parse_method(text: &str) -> Option<MethodChoice> {
 fn parse_pacing(text: &str) -> Option<PacingChoice> {
     match text {
         "sleep" => Some(PacingChoice::Sleep),
+        "sliced" => Some(PacingChoice::Sliced),
         "precise" => Some(PacingChoice::Precise),
+        "spin" => Some(PacingChoice::Spin),
         _ => None,
     }
 }
