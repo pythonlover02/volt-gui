@@ -28,9 +28,6 @@ BOUND_CAPTIONS: Final[tuple] = ("Force", "Minimum", "Maximum")
 SINGLE_SUFFIXES: Final[tuple] = ("",)
 SINGLE_CAPTIONS: Final[tuple] = ("",)
 
-LOD_STEPS: Final[tuple] = ("-3.0", "-2.5", "-2.0", "-1.5", "-1.0", "-0.5", "0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0")
-LOD_LEVELS: Final[tuple] = ("0.0", "1.0", "2.0", "3.0", "4.0", "6.0", "8.0", "12.0")
-COUNT_STEPS: Final[tuple] = ("2", "3", "4")
 
 SETTINGS_DB: Final[dict] = {
     "GPU": {
