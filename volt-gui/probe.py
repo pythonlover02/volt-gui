@@ -7,6 +7,8 @@ PROBE_FILE: Final[str] = "probe.toml"
 PROBE_SEP: Final[str] = ";"
 PROBE_ON: Final[str] = "on"
 
+MS_PER_S: Final[float] = 1000.0
+FRAMETIME_DIGITS: Final[int] = 1
 WHOLE_STEP: Final[int] = 2
 FRACTION_STEP: Final[float] = 0.20
 FRACTION_DIGITS: Final[int] = 2
@@ -93,6 +95,14 @@ def probe_list(data: dict, key: str, fallback: tuple) -> tuple:
 
 def plain_pairs(values: tuple) -> tuple:
     return tuple((v, v) for v in values)
+
+
+def _frametime_label(fps: str) -> str:
+    return fps + " (" + str(round(MS_PER_S / float(fps), FRAMETIME_DIGITS)) + "ms)"
+
+
+def frametime_pairs(values: tuple) -> tuple:
+    return tuple((v, _frametime_label(v)) for v in values)
 
 
 def _first_step(low: int) -> int:

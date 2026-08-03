@@ -3,6 +3,7 @@ from typing import Final
 from probe import aniso_options
 from probe import call_read_probe
 from probe import depth_options
+from probe import frametime_pairs
 from probe import gpu_options
 from probe import image_count_options
 from probe import lod_bias_options
@@ -70,7 +71,7 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit": {
             "section": "framerate",
             "label": "Frame Limit",
-            "description": "Cap the frame rate at present time. This one is volt's own, so the list is fixed rather than read from the device.",
+            "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device.",
             "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540"),
             "editable": False,
             "bounded": False,
@@ -244,6 +245,8 @@ OPTION_BUILDERS: Final[dict] = {
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,
     "sample_shading": shading_options,
+    "frame_limit": lambda _: frametime_pairs(
+        SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
 }
 
 
