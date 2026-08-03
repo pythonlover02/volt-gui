@@ -8,6 +8,7 @@ import urllib.request
 
 from typing import Final
 
+from PySide6.QtCore import QProcess
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QThread
 from PySide6.QtCore import QTimer
@@ -42,10 +43,12 @@ from presets import build_preset_combo_items
 from presets import get_preset_placeholder_label
 from presets import is_valid_preset_name
 from presets import process_preset_apply
+from probe import call_probe_stamp
 from profiles import build_config_dir
 from profiles import build_options_path
 from profiles import find_all_profiles
 from profiles import process_profile_delete
+from profiles import process_profile_options_rebuild
 from profiles import process_profile_save
 from profiles import process_profile_widget_load
 from themes import get_standard_button_height
@@ -67,6 +70,15 @@ DELETE_PROFILE_LABEL: Final[str] = "Delete Current"
 SCALE_MIN: Final[float] = 0.5
 SCALE_MAX: Final[float] = 3.0
 DEFAULT_SCALE: Final[str] = "1.0"
+PREVIEW_BIN: Final[str] = "volt"
+PREVIEW_TARGET: Final[str] = "vkgears"
+PREVIEW_POLL_MS: Final[int] = 750
+PREVIEW_START_MS: Final[int] = 300
+PREVIEW_STOP_MS: Final[int] = 1500
+
+
+def build_preview_args(profile_name: str) -> list:
+    return ["--probe", profile_name, "--", PREVIEW_TARGET]
 
 
 def build_launch_command(profile_name: str) -> str:
@@ -195,9 +207,12 @@ def process_profile_change(main_window, profile_name: str) -> None:
         case True:
             process_profile_save(main_window.all_widgets, main_window.current_profile)
             main_window.current_profile = profile_name
-            process_profile_widget_load(main_window.all_widgets, profile_name)
+            process_dropped_notice(
+                main_window,
+                process_profile_widget_load(main_window.all_widgets, profile_name))
             process_launch_line_update(main_window)
             process_tray_menu_update(main_window)
+            process_preview_start(main_window)
             return None
 
 
@@ -287,9 +302,10 @@ def process_preset_combo_change(main_window, selected_text: str) -> None:
         case (False, True):
             match process_yes_no_dialog(main_window, "Apply Preset", "Apply '" + selected_text + "' to '" + main_window.current_profile + "'? All values will be replaced."):
                 case True:
-                    process_preset_apply(main_window.all_widgets, selected_text)
+                    dropped = process_preset_apply(main_window.all_widgets, selected_text)
                     process_profile_save(main_window.all_widgets, main_window.current_profile)
                     process_notification_display(main_window, "Preset '" + selected_text + "' applied to profile '" + main_window.current_profile + "'.", False)
+                    process_dropped_notice(main_window, dropped)
                 case False:
                     pass
             build_preset_combo_items(main_window.preset_selector)
@@ -479,6 +495,57 @@ def process_application_options_load(main_window) -> None:
     return None
 
 
+def process_preview_stop(main_window) -> None:
+    match getattr(main_window, "preview_process", None):
+        case None:
+            return None
+        case worker:
+            worker.kill()
+            worker.waitForFinished(PREVIEW_STOP_MS)
+            main_window.preview_process = None
+            return None
+
+
+def process_preview_start(main_window) -> None:
+    process_preview_stop(main_window)
+    worker = QProcess(main_window)
+    worker.start(PREVIEW_BIN, build_preview_args(main_window.current_profile))
+    main_window.preview_process = worker
+    return None
+
+
+def process_dropped_notice(main_window, dropped: tuple) -> None:
+    match len(dropped):
+        case 0:
+            return None
+        case _:
+            process_notification_display(
+                main_window,
+                "This device cannot provide "
+                + ", ".join(key.split(":")[-1].split(".")[-1] for key in dropped)
+                + ", reset to default.",
+                True)
+            return None
+
+
+def process_probe_rebuild(main_window) -> None:
+    process_profile_options_rebuild(main_window.all_widgets)
+    process_dropped_notice(
+        main_window,
+        process_profile_widget_load(main_window.all_widgets, main_window.current_profile))
+    return None
+
+
+def process_probe_poll(main_window) -> None:
+    match call_probe_stamp():
+        case stamp if stamp == main_window.probe_stamp:
+            return None
+        case stamp:
+            main_window.probe_stamp = stamp
+            process_probe_rebuild(main_window)
+            return None
+
+
 def process_all_settings_apply(main_window) -> None:
     process_application_options_save(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
@@ -505,6 +572,7 @@ def process_cleanup(main_window, singleton_socket) -> None:
             pass
         case timer:
             timer.stop()
+    process_preview_stop(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
     process_application_options_save(main_window)
     match singleton_socket is None:
@@ -619,6 +687,8 @@ def create_main_window_widget(singleton_socket):
     window.use_system_tray = False
     window.current_profile = DEFAULT_PROFILE
     window.welcome_window = None
+    window.preview_process = None
+    window.probe_stamp = call_probe_stamp()
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(620, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
@@ -688,7 +758,9 @@ def create_main_window_widget(singleton_socket):
     for option_key in options_widgets:
         options_widgets[option_key].currentTextChanged.connect(lambda text, bound_window=window: process_option_change(bound_window))
     process_application_options_load(window)
-    process_profile_widget_load(window.all_widgets, window.current_profile)
+    process_dropped_notice(
+        window,
+        process_profile_widget_load(window.all_widgets, window.current_profile))
     process_launch_line_update(window)
     window.initial_setup_complete = True
     window.setAttribute(Qt.WA_DontShowOnScreen, False)
@@ -712,6 +784,10 @@ def create_main_window_widget(singleton_socket):
             QTimer.singleShot(0, lambda: process_window_show(window))
         case True:
             pass
+    window.probe_timer = QTimer(window)
+    window.probe_timer.timeout.connect(lambda: process_probe_poll(window))
+    window.probe_timer.start(PREVIEW_POLL_MS)
+    QTimer.singleShot(PREVIEW_START_MS, lambda: process_preview_start(window))
     window.closeEvent = lambda close_event: process_window_close(window, singleton_socket, close_event)
     return window
 
