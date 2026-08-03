@@ -87,8 +87,8 @@ SETTINGS_DB: Final[dict] = {
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
-            "description": "Pacing sets how the limiter waits. sleep is easier on the CPU. precise sleeps most of the interval then busy waits the rest, for tighter frametimes at a small CPU cost. Method and Pacing only do something when Limit is set. These three have no bounds, because a game never tells Vulkan what frame rate it wants.",
-            "options": (DEFAULT_VALUE, "sleep", "precise"),
+            "description": "Pacing sets how the limiter waits, running from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and re-checks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole thing, which is the steadiest and the only one that keeps a core awake. Method and Pacing only do something when Limit is set. These three have no bounds, because a game never tells Vulkan what frame rate it wants.",
+            "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
             "editable": False,
             "bounded": False,
         },

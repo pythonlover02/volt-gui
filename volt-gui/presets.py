@@ -27,7 +27,7 @@ PRESET_OVERRIDES: Final[dict] = {
     "Balanced": {
         "Display:present_mode": "mailbox",
         "Framerate:frame_limit_method": "early",
-        "Framerate:frame_pacing": "precise",
+        "Framerate:frame_pacing": "sliced",
         "Textures:filtering": "trilinear",
         "Textures:anisotropy": "8",
         "Textures:mipmap_mode": "linear",
@@ -52,7 +52,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Display:image_count_max": "2",
         "Display:color_depth_max": "8bit",
         "Framerate:frame_limit_method": "late",
-        "Framerate:frame_pacing": "precise",
+        "Framerate:frame_pacing": "spin",
         "Textures:filtering": "bilinear",
         "Textures:mipmap_mode": "linear",
         "Textures:anisotropy": "4",
