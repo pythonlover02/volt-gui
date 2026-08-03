@@ -10,6 +10,17 @@ pub(crate) const EXIT_OK: i32 = 0;
 pub(crate) const ENV_CONFIG_NAME: &str = "VOLT_CONFIG_NAME";
 pub(crate) const ENV_LOG: &str = "VOLT_LOG";
 pub(crate) const ENV_ENABLE: &str = "VOLT_ENABLE";
+pub(crate) const ENV_PROBE: &str = "VOLT_PROBE";
+
+pub(crate) const PROBE_FLAG: &str = "--probe";
+pub(crate) const PROBE_FILE: &str = "probe.toml";
+pub(crate) const PROBE_SECTION: &str = "[probe]";
+pub(crate) const PROBE_SEP: &str = ";";
+pub(crate) const PROBE_ON: &str = "on";
+pub(crate) const PROBE_OFF: &str = "off";
+pub(crate) const PROBE_UNSET: &str = "";
+pub(crate) const PROBE_WRITE_INFO: &str = "probe written to the config directory";
+pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps its built in lists";
 
 pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
@@ -73,7 +84,7 @@ pub(crate) const NULL_OK: [&str; 4] = [
     "vkEnumerateInstanceLayerProperties",
 ];
 
-pub(crate) const USAGE: &str = "usage: volt [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD             run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD        run CMD with profile ~/.config/volt-gui/NAME.toml\n";
+pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n";
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
 

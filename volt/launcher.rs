@@ -16,7 +16,10 @@ use crate::consts::EXIT_OK;
 use crate::consts::EXIT_USAGE;
 use crate::consts::FLATPAK_CMD;
 use crate::consts::FLATPAK_INJECT;
+use crate::consts::ENV_PROBE;
 use crate::consts::FLATPAK_RUN;
+use crate::consts::PROBE_FLAG;
+use crate::consts::PROBE_UNSET;
 use crate::consts::USAGE;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
@@ -28,6 +31,34 @@ fn is_help_flag(a: &str) -> bool {
 
 fn wants_help(args: &[String]) -> bool {
     args.iter().take_while(|a| **a != "--").any(|a| is_help_flag(a))
+}
+
+fn is_probe_flag(a: &str) -> bool {
+    a == PROBE_FLAG
+}
+
+fn wants_probe(head: &[String]) -> bool {
+    head.iter().any(|a| is_probe_flag(a))
+}
+
+fn is_flag(a: &str) -> bool {
+    a.starts_with('-')
+}
+
+fn head_profile(head: &[String]) -> String {
+    sanitize_name(
+        head.iter()
+            .find(|a| !is_flag(a))
+            .map(String::as_str)
+            .unwrap_or(DEFAULT_PROFILE),
+    )
+}
+
+fn probe_value(probe: bool) -> &'static str {
+    match probe {
+        true => ENABLE_VALUE,
+        false => PROBE_UNSET,
+    }
 }
 
 fn split_args(args: &[String]) -> (Vec<String>, Vec<String>) {
@@ -85,6 +116,7 @@ fn flatpak_trailing(cmd: &[String]) -> Vec<String> {
 fn build_flatpak_args(
     profile: &str,
     app_id: &str,
+    probe: bool,
     flags: &[String],
     trailing: &[String],
 ) -> Vec<String> {
@@ -93,6 +125,7 @@ fn build_flatpak_args(
             FLATPAK_RUN.to_string(),
             format!("--command={}", FLATPAK_INJECT),
             format!("--env={}={}", ENV_CONFIG_NAME, profile),
+            format!("--env={}={}", ENV_PROBE, probe_value(probe)),
         ],
         flags.to_vec(),
         vec![app_id.to_string()],
@@ -111,17 +144,18 @@ fn write_default_config(path: &PathBuf) {
     }
 }
 
-fn exec_native(cmd: &[String], profile: &str) -> i32 {
+fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
     let err = Command::new(&cmd[0])
         .args(&cmd[1..])
         .env(ENV_ENABLE, ENABLE_VALUE)
         .env(ENV_CONFIG_NAME, profile)
+        .env(ENV_PROBE, probe_value(probe))
         .exec();
     log_at(LogLevel::Error, &format!("exec failed: {}", err));
     EXIT_EXEC_FAILED
 }
 
-fn exec_flatpak(cmd: &[String], profile: &str) -> i32 {
+fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     match flatpak_app_id(cmd) {
         None => {
             log_at(LogLevel::Error, "flatpak run: no app id found");
@@ -131,6 +165,7 @@ fn exec_flatpak(cmd: &[String], profile: &str) -> i32 {
             let args = build_flatpak_args(
                 profile,
                 &app_id,
+                probe,
                 &flatpak_user_flags(cmd),
                 &flatpak_trailing(cmd),
             );
@@ -142,11 +177,11 @@ fn exec_flatpak(cmd: &[String], profile: &str) -> i32 {
 }
 
 fn launch_cmd(head: &[String], cmd: &[String]) -> i32 {
-    let profile = sanitize_name(head.first().map(String::as_str).unwrap_or(DEFAULT_PROFILE));
+    let profile = head_profile(head);
     write_default_config(&config_path(&profile));
     match is_flatpak_run(cmd) {
-        true => exec_flatpak(cmd, &profile),
-        false => exec_native(cmd, &profile),
+        true => exec_flatpak(cmd, &profile, wants_probe(head)),
+        false => exec_native(cmd, &profile, wants_probe(head)),
     }
 }
 
