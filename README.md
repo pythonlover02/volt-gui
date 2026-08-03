@@ -34,6 +34,21 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
+The values each setting offers come from your own hardware, not from a list
+built into volt-gui. Present modes and colour depths come from what the
+surface reports, the GPU list from what the driver enumerates, and
+anisotropy, mip levels and LOD bias run up to the limits the device gives. A
+setting whose feature the device lacks holds nothing but `default`. Only the
+three **Framerate** settings have a fixed list, since they are volt's own.
+
+volt-gui learns this by keeping a small `vkgears` window running under the
+profile you are editing, which also serves as a live preview. Close it and
+volt-gui carries on with what it learned last time.
+
+```
+volt --probe myprofile -- vkgears
+```
+
 Most settings have three boxes:
 
 - **Force**: replaces whatever the game asked for.
@@ -51,15 +66,18 @@ only decide how the layer waits, and volt-gui shows them in one **Frame
 Limiter** card.
 
 ### Display
-- **VSync / Present Mode**: fifo, fifo_relaxed, mailbox, immediate, in that
-  order from most latency to least. A maximum of mailbox keeps a game from
-  tearing, a minimum of mailbox keeps it off classic vsync. Modes the surface
-  does not support fall back to the game's own choice.
+- **VSync / Present Mode**: whatever the surface supports, ordered from most
+  latency to least: fifo, fifo_relaxed, mailbox, immediate, then anything
+  newer. A maximum of mailbox keeps a game from tearing, a minimum of mailbox
+  keeps it off classic vsync. A mode the surface turns down falls back to the
+  game's own choice with a warning.
 - **Swapchain Images**: how many images the swapchain holds. Fewer images
-  lower display latency, more images smooth frame delivery.
-- **Color Depth**: 8-bit or 10-bit. The layer hides the formats you did not
-  pick, so a game that takes the first supported format ends up with yours.
-  If nothing matches, the full list comes back and a warning is logged.
+  lower display latency, more images smooth frame delivery. The list runs
+  across what the surface allows.
+- **Color Depth**: the bits per colour channel this surface offers, usually
+  8-bit and 10-bit. The layer hides the formats you did not pick, so a game
+  that takes the first supported format ends up with yours. If nothing
+  matches, the full list comes back and a warning is logged.
 
 ### Framerate
 - **Frame Limit**: cap the frame rate at present time, pick a common cap or
@@ -77,10 +95,11 @@ Limiter** card.
   that matches none of the three exactly counts as the closest one below it.
 - **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
   independently of the filter choice.
-- **Anisotropic Filtering**: off to 16x, where off counts as the lowest
-  setting. A minimum of 4x raises a game that asked for less and leaves a
-  game that asked for more alone. Clamped to what your GPU reports.
-- **LOD Bias**: shift mipmap selection, sharper or blurrier.
+- **Anisotropic Filtering**: off up to whatever your GPU reports, where off
+  counts as the lowest setting. A minimum of 4x raises a game that asked for
+  less and leaves a game that asked for more alone.
+- **LOD Bias**: shift mipmap selection, sharper or blurrier, across the range
+  the device allows.
 - **Mip Floor** and **Mip Ceiling**: the lowest and highest mip levels
   samplers may use, called minimum and maximum LOD in Vulkan.
 
@@ -92,10 +111,10 @@ Limiter** card.
   renders to an MSAA target.
 
 ### GPU
-- **Physical Device**: pick which GPU the game sees, by index in the order
-  the driver reports them. The layer hides the rest during device
+- **Physical Device**: pick which GPU the game sees, listed by name in the
+  order the driver reports them. The layer hides the rest during device
   enumeration, so it works on every Vulkan driver. The bounds keep a range of
-  indices instead of one. If nothing matches, the full list comes back and a
+  devices instead of one. If nothing matches, the full list comes back and a
   warning is logged.
 
 ## How It Works
