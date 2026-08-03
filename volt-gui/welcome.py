@@ -35,6 +35,11 @@ def get_welcome_settings() -> dict:
                 ("text", "Use the bounds when you want to rule out the extremes but still let the game pick. On a setting with only two values there is nothing in between, so a Minimum or a Maximum ends up doing the same job as Force."),
                 ("text", "A Minimum set above its own Maximum does nothing. Both are dropped, a warning is logged, and the game keeps its own value."),
             ),
+            "Where the Lists Come From": (
+                ("text", "Most of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes and colour depths come from what the surface reports, the GPU list comes from what the driver enumerates, and anisotropy, mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default."),
+                ("text", "That means a mode or a format volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
+                ("text", "The three Framerate settings are the exception. They are volt's own, so their list is fixed."),
+            ),
             "Settings Without Bounds": (
                 ("text", "The three Framerate settings have no bounds, because a game never tells Vulkan what frame rate it wants. There is no value to bound, so those three only decide how the layer itself waits, and they share one Frame Limiter card."),
             ),
@@ -57,6 +62,11 @@ def get_welcome_settings() -> dict:
             "Seeing What Applied": (
                 ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
+            ),
+            "The Preview Window": (
+                ("text", "volt-gui keeps a small vkgears window running under the profile you are editing. It is what fills the setting lists with your hardware, and it doubles as a live look at the profile, since the layer picks up an Apply without a restart. Switching profiles restarts it."),
+                ("text", "Close it whenever you like. volt-gui carries on with what it learned the last time it ran, and starts a fresh one when you change profile. If vkgears is not installed the lists fall back to sensible defaults, so nothing breaks."),
+                ("code", "volt --probe myprofile -- vkgears", "Run it yourself:"),
             )
         },
         "Profiles": {
