@@ -11,6 +11,7 @@ mod instance;
 mod device;
 mod layer;
 mod swapchain;
+mod probe;
 mod present;
 mod sampler;
 mod pipeline;

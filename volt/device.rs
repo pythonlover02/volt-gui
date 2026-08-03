@@ -22,6 +22,7 @@ pub(crate) struct DeviceCaps {
     pub(crate) sample_rate_shading: bool,
     pub(crate) max_anisotropy: f32,
     pub(crate) max_lod_bias: f32,
+    pub(crate) max_lod_level: f32,
 }
 
 pub(crate) struct VkDevState {
@@ -160,6 +161,10 @@ fn pick_features_ptr(
     }
 }
 
+fn lod_levels_for(max_dimension: u32) -> f32 {
+    (max_dimension.max(1) as f32).log2().floor()
+}
+
 fn build_caps(
     supported: &vk::PhysicalDeviceFeatures,
     limits: &vk::PhysicalDeviceLimits,
@@ -169,6 +174,7 @@ fn build_caps(
         sample_rate_shading: supported.sample_rate_shading == vk::TRUE,
         max_anisotropy: limits.max_sampler_anisotropy,
         max_lod_bias: limits.max_sampler_lod_bias,
+        max_lod_level: lod_levels_for(limits.max_image_dimension2_d),
     }
 }
 

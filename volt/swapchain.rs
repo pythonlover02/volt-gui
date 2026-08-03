@@ -12,12 +12,15 @@ use crate::config::Settings;
 use crate::consts::DEPTH_EMPTY_WARN;
 use crate::consts::PRESENT_MISS_WARN;
 use crate::device::VkDevState;
+use crate::env::env_probe_active;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::probe::build_probe;
+use crate::probe::call_write_probe;
 use crate::ranks::depth_rank;
 use crate::ranks::present_rank;
 
@@ -178,17 +181,23 @@ fn call_create_with(
     unsafe { (dev.swap_fp.create_swapchain_khr)(handle, &patched, alloc, out) }
 }
 
-fn call_chosen_present_mode(
+fn maybe_probe(
     inst: &VkInstState,
     dev: &VkDevState,
-    original: &vk::SwapchainCreateInfoKHR,
-    s: &Settings,
-) -> vk::PresentModeKHR {
-    pick_present_mode(
-        s.present_mode,
-        &call_query_present_modes(inst, dev.phys, original.surface),
-        original.present_mode,
-    )
+    surface: vk::SurfaceKHR,
+    supported: &[vk::PresentModeKHR],
+    caps: &vk::SurfaceCapabilitiesKHR,
+) {
+    match env_probe_active() {
+        true => call_write_probe(build_probe(
+            inst,
+            dev,
+            supported,
+            caps,
+            &call_query_surface_formats_all(inst, dev.phys, surface),
+        )),
+        false => (),
+    }
 }
 
 fn call_logged_create(created: vk::Result) -> vk::Result {
@@ -210,12 +219,15 @@ fn call_create_registered(
     alloc: *const vk::AllocationCallbacks,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
+    let supported = call_query_present_modes(inst, dev.phys, original.surface);
+    let caps = call_query_surface_caps(inst, dev.phys, original.surface);
+    maybe_probe(inst, dev, original.surface, &supported, &caps);
     call_logged_create(call_create_with(
         dev,
         handle,
         original,
-        call_chosen_present_mode(inst, dev, original, s),
-        &call_query_surface_caps(inst, dev.phys, original.surface),
+        pick_present_mode(s.present_mode, &supported, original.present_mode),
+        &caps,
         s,
         alloc,
         out,
