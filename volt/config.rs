@@ -7,8 +7,6 @@ use crate::bounds::ordered;
 use crate::bounds::Bounds;
 use crate::consts::ANISO_OFF;
 use crate::consts::DEFAULT_PROFILE;
-use crate::consts::DEPTH_EIGHT_BIT;
-use crate::consts::DEPTH_TEN_BIT;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
@@ -17,10 +15,6 @@ use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
 use crate::consts::PacingChoice;
-use crate::consts::PRESENT_FIFO;
-use crate::consts::PRESENT_FIFO_RELAXED;
-use crate::consts::PRESENT_IMMEDIATE;
-use crate::consts::PRESENT_MAILBOX;
 use crate::consts::SECTION_DISPLAY;
 use crate::consts::SECTION_FRAMERATE;
 use crate::consts::SECTION_GPU;
@@ -37,6 +31,8 @@ use crate::env::env_home;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::ranks::parse_depth_label;
+use crate::ranks::present_rank_of;
 use crate::watch::setup_watch;
 
 #[derive(Clone, Default)]
@@ -85,21 +81,11 @@ fn parse_uint(text: &str) -> Option<u32> {
 }
 
 fn parse_present(text: &str) -> Option<u32> {
-    match text {
-        "fifo" => Some(PRESENT_FIFO),
-        "fifo_relaxed" => Some(PRESENT_FIFO_RELAXED),
-        "mailbox" => Some(PRESENT_MAILBOX),
-        "immediate" => Some(PRESENT_IMMEDIATE),
-        _ => None,
-    }
+    Some(present_rank_of(text))
 }
 
 fn parse_depth(text: &str) -> Option<u32> {
-    match text {
-        "8bit" => Some(DEPTH_EIGHT_BIT),
-        "10bit" => Some(DEPTH_TEN_BIT),
-        _ => None,
-    }
+    parse_depth_label(text)
 }
 
 fn parse_filter(text: &str) -> Option<u32> {

@@ -9,12 +9,8 @@ use crate::bounds::resolved;
 use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::DEPTH_EIGHT_BIT;
 use crate::consts::DEPTH_EMPTY_WARN;
-use crate::consts::DEPTH_TEN_BIT;
-use crate::consts::PRESENT_FIFO_RELAXED;
-use crate::consts::PRESENT_IMMEDIATE;
-use crate::consts::PRESENT_MAILBOX;
+use crate::consts::PRESENT_MISS_WARN;
 use crate::device::VkDevState;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
@@ -22,64 +18,30 @@ use crate::instance::owning_instance;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::ranks::depth_rank;
+use crate::ranks::present_rank;
 
-fn present_rank(mode: vk::PresentModeKHR) -> Option<u32> {
-    match mode {
-        vk::PresentModeKHR::FIFO => Some(crate::consts::PRESENT_FIFO),
-        vk::PresentModeKHR::FIFO_RELAXED => Some(PRESENT_FIFO_RELAXED),
-        vk::PresentModeKHR::MAILBOX => Some(PRESENT_MAILBOX),
-        vk::PresentModeKHR::IMMEDIATE => Some(PRESENT_IMMEDIATE),
-        _ => None,
-    }
+fn ranked_modes(supported: &[vk::PresentModeKHR]) -> Vec<(u32, vk::PresentModeKHR)> {
+    supported.iter().map(|m| (present_rank(*m), *m)).collect()
 }
 
-fn present_vk(rank: u32) -> vk::PresentModeKHR {
-    match rank {
-        PRESENT_FIFO_RELAXED => vk::PresentModeKHR::FIFO_RELAXED,
-        PRESENT_MAILBOX => vk::PresentModeKHR::MAILBOX,
-        PRESENT_IMMEDIATE => vk::PresentModeKHR::IMMEDIATE,
-        _ => vk::PresentModeKHR::FIFO,
-    }
+fn mode_of_rank(list: &[(u32, vk::PresentModeKHR)], rank: u32) -> Option<vk::PresentModeKHR> {
+    list.iter().find(|(r, _)| *r == rank).map(|(_, m)| *m)
 }
 
-fn present_label(mode: vk::PresentModeKHR) -> &'static str {
-    match mode {
-        vk::PresentModeKHR::FIFO => "fifo",
-        vk::PresentModeKHR::FIFO_RELAXED => "fifo_relaxed",
-        vk::PresentModeKHR::MAILBOX => "mailbox",
-        vk::PresentModeKHR::IMMEDIATE => "immediate",
-        _ => "other",
-    }
+fn logged_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
+    log_at(LogLevel::Warn, PRESENT_MISS_WARN);
+    original
 }
 
-fn wanted_rank(b: Bounds<u32>, original: vk::PresentModeKHR) -> Option<u32> {
-    match present_rank(original) {
-        Some(rank) => Some(resolved(b, rank)),
-        None => b.force,
-    }
-}
-
-fn target_mode(b: Bounds<u32>, original: vk::PresentModeKHR) -> Option<vk::PresentModeKHR> {
-    match bounds_set(&b) {
-        true => wanted_rank(b, original).map(present_vk),
-        false => None,
-    }
-}
-
-fn supported_mode(
-    mode: vk::PresentModeKHR,
-    supported: &[vk::PresentModeKHR],
+fn resolved_mode(
+    b: Bounds<u32>,
+    list: &[(u32, vk::PresentModeKHR)],
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match supported.contains(&mode) {
-        true => mode,
-        false => {
-            log_at(
-                LogLevel::Warn,
-                &format!("present mode {} unsupported by surface, keeping application choice", present_label(mode)),
-            );
-            original
-        }
+    match mode_of_rank(list, resolved(b, present_rank(original))) {
+        Some(mode) => mode,
+        None => logged_miss(original),
     }
 }
 
@@ -88,9 +50,9 @@ fn pick_present_mode(
     supported: &[vk::PresentModeKHR],
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match target_mode(b, original) {
-        Some(mode) => supported_mode(mode, supported, original),
-        None => original,
+    match bounds_set(&b) {
+        true => resolved_mode(b, &ranked_modes(supported), original),
+        false => original,
     }
 }
 
@@ -103,19 +65,6 @@ fn caps_upper(caps_max: u32) -> u32 {
 
 fn pick_image_count(b: Bounds<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
     resolved(b, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
-}
-
-fn is_ten_bit(f: &vk::SurfaceFormatKHR) -> bool {
-    (f.format == vk::Format::A2B10G10R10_UNORM_PACK32
-        || f.format == vk::Format::A2R10G10B10_UNORM_PACK32)
-        && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR
-}
-
-fn depth_rank(f: &vk::SurfaceFormatKHR) -> u32 {
-    match is_ten_bit(f) {
-        true => DEPTH_TEN_BIT,
-        false => DEPTH_EIGHT_BIT,
-    }
 }
 
 fn depth_filtered(

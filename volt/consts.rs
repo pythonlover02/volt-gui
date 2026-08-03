@@ -38,13 +38,18 @@ pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const SUFFIX_MIN: &str = "_min";
 pub(crate) const SUFFIX_MAX: &str = "_max";
 
-pub(crate) const PRESENT_FIFO: u32 = 0;
-pub(crate) const PRESENT_FIFO_RELAXED: u32 = 1;
-pub(crate) const PRESENT_MAILBOX: u32 = 2;
-pub(crate) const PRESENT_IMMEDIATE: u32 = 3;
+pub(crate) const PRESENT_ORDER: [&str; 6] = [
+    "fifo",
+    "fifo_relaxed",
+    "mailbox",
+    "immediate",
+    "shared_demand_refresh",
+    "shared_continuous_refresh",
+];
 
-pub(crate) const DEPTH_EIGHT_BIT: u32 = 0;
-pub(crate) const DEPTH_TEN_BIT: u32 = 1;
+pub(crate) const DEPTH_SUFFIX: &str = "bit";
+pub(crate) const UNKNOWN_PREFIX: &str = "mode ";
+pub(crate) const RED_MARK: char = 'r';
 
 pub(crate) const FILTER_RETRO: u32 = 0;
 pub(crate) const FILTER_BILINEAR: u32 = 1;
@@ -55,6 +60,8 @@ pub(crate) const MIPMAP_LINEAR: u32 = 1;
 
 pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
+
+pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
