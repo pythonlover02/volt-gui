@@ -158,19 +158,11 @@ def _count_ceiling(low: int, high: int) -> int:
             return high
 
 
-def _low_entry(low: int) -> tuple:
-    match low % WHOLE_STEP:
-        case 0:
-            return ()
-        case _:
-            return (str(low),)
-
-
 def image_count_options(data: dict) -> tuple:
     low = int(probe_number(data, "min_image_count", MIN_COUNT_FALLBACK))
     high = int(probe_number(data, "max_image_count", MAX_COUNT_FALLBACK))
-    return plain_pairs(
-        _low_entry(low) + _whole_values(low, _count_ceiling(low, high)))
+    return plain_pairs(tuple(
+        str(v) for v in range(low, _count_ceiling(low, high) + 1, WHOLE_STEP)))
 
 
 def mip_options(data: dict) -> tuple:
