@@ -12,23 +12,23 @@ PRESET_OVERRIDES: Final[dict] = {
     "Default": {},
     "Quality": {
         "Display:present_mode": "fifo",
-        "Display:image_count": "3",
+        "Display:image_count": "4",
         "Textures:filtering": "trilinear",
         "Textures:anisotropy": "16",
-        "Textures:lod_bias": "-0.5",
+        "Textures:lod_bias": "-0.6",
         "Rendering:sample_shading": "1.0",
     },
     "Balanced": {
         "Display:present_mode": "mailbox",
         "Textures:filtering": "trilinear",
         "Textures:anisotropy": "8",
-        "Rendering:sample_shading": "0.5",
+        "Rendering:sample_shading": "0.6",
     },
     "Performance FPS": {
         "Display:present_mode": "mailbox",
-        "Display:image_count_max": "3",
+        "Display:image_count_max": "4",
         "Textures:anisotropy": "4",
-        "Textures:lod_bias": "0.5",
+        "Textures:lod_bias": "0.6",
         "Rendering:sample_shading": "off",
     },
     "Performance Low Latency": {
@@ -36,12 +36,12 @@ PRESET_OVERRIDES: Final[dict] = {
         "Display:image_count": "2",
         "Display:image_count_max": "2",
         "Textures:anisotropy": "4",
-        "Textures:lod_bias": "0.5",
+        "Textures:lod_bias": "0.6",
         "Rendering:sample_shading": "off",
     },
     "Potato FPS": {
         "Display:present_mode": "mailbox",
-        "Display:image_count_max": "3",
+        "Display:image_count_max": "4",
         "Textures:filtering": "bilinear",
         "Textures:anisotropy": "off",
         "Textures:lod_bias": "1.0",
@@ -88,18 +88,21 @@ def build_preset_combo_items(combo_widget) -> None:
     return None
 
 
-def process_preset_apply(widget_collection: dict, preset_name: str) -> bool:
+def _preset_dropped(widget_collection: dict, values: dict) -> tuple:
+    return tuple(
+        widget_key
+        for widget_key, setting_value in values.items()
+        if widget_collection.get(widget_key) is not None
+        and not process_widget_value_update(widget_collection[widget_key], setting_value))
+
+
+def process_preset_apply(widget_collection: dict, preset_name: str) -> tuple:
     match is_valid_preset_name(preset_name):
         case False:
-            return False
+            return ()
         case True:
             process_profile_widgets_block_signals(widget_collection, True)
             process_profile_widgets_reset(widget_collection)
-            for widget_key, setting_value in build_preset_values(preset_name).items():
-                match widget_collection.get(widget_key):
-                    case None:
-                        continue
-                    case widget:
-                        process_widget_value_update(widget, setting_value)
+            dropped = _preset_dropped(widget_collection, build_preset_values(preset_name))
             process_profile_widgets_block_signals(widget_collection, False)
-            return True
+            return dropped

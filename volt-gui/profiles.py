@@ -7,6 +7,7 @@ from typing import Optional
 
 from database import DEFAULT_PROFILE
 from database import DEFAULT_VALUE
+from database import find_option_sources
 from database import find_profile_fields
 
 SECTION_ORDER: Final[tuple] = ("display", "framerate", "textures", "rendering", "gpu")
@@ -102,8 +103,30 @@ def _widget_key_for(section_key: str) -> Optional[str]:
         None)
 
 
-def process_widget_value_update(widget, display_value: str) -> None:
-    widget.setCurrentText(display_value)
+def widget_value(widget) -> str:
+    match widget.currentData():
+        case None:
+            return DEFAULT_VALUE
+        case data:
+            return data
+
+
+def process_widget_value_update(widget, display_value: str) -> bool:
+    match widget.findData(display_value):
+        case -1:
+            widget.setCurrentIndex(0)
+            return False
+        case index:
+            widget.setCurrentIndex(index)
+            return True
+
+
+def process_widget_options_rebuild(widget, options: tuple) -> None:
+    keep = widget_value(widget)
+    widget.clear()
+    for value, label in options:
+        widget.addItem(label, value)
+    process_widget_value_update(widget, keep)
     return None
 
 
@@ -123,13 +146,23 @@ def process_profile_widgets_reset(widget_collection: dict) -> None:
             case None:
                 continue
             case widget:
-                widget.setCurrentText(DEFAULT_VALUE)
+                widget.setCurrentIndex(0)
+    return None
+
+
+def process_profile_options_rebuild(widget_collection: dict) -> None:
+    for widget_key, options in find_option_sources():
+        match widget_collection.get(widget_key):
+            case None:
+                continue
+            case widget:
+                process_widget_options_rebuild(widget, options)
     return None
 
 
 def collect_widget_values(widget_collection: dict) -> dict:
     return {
-        widget_key: widget_collection[widget_key].currentText().strip()
+        widget_key: widget_value(widget_collection[widget_key])
         for widget_key, _, _ in find_profile_fields()
         if widget_collection.get(widget_key) is not None}
 
@@ -142,26 +175,39 @@ def call_read_profile(profile_name: str) -> dict:
             return parse_profile_text(build_profile_path(profile_name).read_text(encoding="utf-8"))
 
 
-def _apply_parsed(widget_collection: dict, parsed: dict) -> None:
-    for section_key, value in parsed.items():
-        match _widget_key_for(section_key):
-            case None:
-                continue
-            case widget_key:
-                match widget_collection.get(widget_key):
-                    case None:
-                        continue
-                    case widget:
-                        process_widget_value_update(widget, value)
-    return None
+def _apply_to_widget(widget_collection: dict, widget_key: str, value: str) -> bool:
+    match widget_collection.get(widget_key):
+        case None:
+            return True
+        case widget:
+            return process_widget_value_update(widget, value)
 
 
-def process_profile_widget_load(widget_collection: dict, profile_name: str) -> bool:
+def _apply_one(widget_collection: dict, section_key: str, value: str) -> bool:
+    match _widget_key_for(section_key):
+        case None:
+            return True
+        case widget_key:
+            return _apply_to_widget(widget_collection, widget_key, value)
+
+
+def _kept(value: str) -> bool:
+    return value == DEFAULT_VALUE
+
+
+def _apply_parsed(widget_collection: dict, parsed: dict) -> tuple:
+    return tuple(
+        section_key
+        for section_key, value in parsed.items()
+        if not _kept(value) and not _apply_one(widget_collection, section_key, value))
+
+
+def process_profile_widget_load(widget_collection: dict, profile_name: str) -> tuple:
     process_profile_widgets_block_signals(widget_collection, True)
     process_profile_widgets_reset(widget_collection)
-    _apply_parsed(widget_collection, call_read_profile(profile_name))
+    dropped = _apply_parsed(widget_collection, call_read_profile(profile_name))
     process_profile_widgets_block_signals(widget_collection, False)
-    return True
+    return dropped
 
 
 def call_write_profile(values: dict, profile_name: str) -> None:
