@@ -49,6 +49,13 @@ fn slice_length_ns(remaining: u64) -> u64 {
     remaining.saturating_sub(SLICE_MARGIN_NS).min(SLICE_STEP_NS)
 }
 
+fn restart_wanted(method: Option<MethodChoice>, interval_changed: bool) -> bool {
+    match method {
+        Some(MethodChoice::Reactive) => true,
+        Some(MethodChoice::Early) | Some(MethodChoice::Late) | None => interval_changed,
+    }
+}
+
 fn call_sleep_ns(ns: u64) {
     match ns {
         0 => (),
@@ -91,19 +98,19 @@ fn call_swap_interval(interval: u64) -> u64 {
     INTERVAL_NS.swap(interval, Ordering::Relaxed)
 }
 
-fn call_frame_target(interval: u64) -> u64 {
+fn call_frame_target(interval: u64, method: Option<MethodChoice>) -> u64 {
     let target = next_target_ns(
         call_now_ns(),
         TARGET_NS.load(Ordering::Relaxed),
         interval,
-        call_swap_interval(interval) != interval,
+        restart_wanted(method, call_swap_interval(interval) != interval),
     );
     TARGET_NS.store(target, Ordering::Relaxed);
     target
 }
 
-fn call_limit_to(fps: f32, pacing: PacingChoice) {
-    call_wait_until(call_frame_target(target_interval_ns(fps)), pacing);
+fn call_limit_to(fps: f32, pacing: PacingChoice, method: Option<MethodChoice>) {
+    call_wait_until(call_frame_target(target_interval_ns(fps), method), pacing);
 }
 
 fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
@@ -116,7 +123,7 @@ fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
 fn stage_wanted(method: Option<MethodChoice>) -> LimitStage {
     match method {
         Some(MethodChoice::Late) => LimitStage::After,
-        Some(MethodChoice::Early) | None => LimitStage::Before,
+        Some(MethodChoice::Early) | Some(MethodChoice::Reactive) | None => LimitStage::Before,
     }
 }
 
@@ -127,7 +134,7 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
 pub(crate) fn maybe_limit_frame(stage: LimitStage) {
     let s = ensure_settings();
     match limit_fps(&s, stage) {
-        Some(fps) => call_limit_to(fps, pacing_or_default(s.pacing)),
+        Some(fps) => call_limit_to(fps, pacing_or_default(s.pacing), s.limit_method),
         None => (),
     }
 }

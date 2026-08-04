@@ -139,6 +139,7 @@ fn parse_method(text: &str) -> Option<MethodChoice> {
     match text {
         "early" => Some(MethodChoice::Early),
         "late" => Some(MethodChoice::Late),
+        "reactive" => Some(MethodChoice::Reactive),
         _ => None,
     }
 }

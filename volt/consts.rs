@@ -108,6 +108,7 @@ pub(crate) enum PacingChoice {
 pub(crate) enum MethodChoice {
     Early,
     Late,
+    Reactive,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
