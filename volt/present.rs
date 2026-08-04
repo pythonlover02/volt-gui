@@ -12,69 +12,69 @@ use crate::config::Settings;
 use crate::consts::LimitStage;
 use crate::consts::MethodChoice;
 use crate::consts::PacingChoice;
-use crate::consts::SLICE_MARGIN_US;
-use crate::consts::SLICE_STEP_US;
-use crate::consts::SPIN_MARGIN_US;
-use crate::consts::US_PER_S;
+use crate::consts::NS_PER_S;
+use crate::consts::SLICE_MARGIN_NS;
+use crate::consts::SLICE_STEP_NS;
+use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
 
 static EPOCH: OnceLock<Instant> = OnceLock::new();
-static TARGET_US: AtomicU64 = AtomicU64::new(0);
-static INTERVAL_US: AtomicU64 = AtomicU64::new(0);
+static TARGET_NS: AtomicU64 = AtomicU64::new(0);
+static INTERVAL_NS: AtomicU64 = AtomicU64::new(0);
 
-fn call_now_us() -> u64 {
-    EPOCH.get_or_init(Instant::now).elapsed().as_micros() as u64
+fn call_now_ns() -> u64 {
+    EPOCH.get_or_init(Instant::now).elapsed().as_nanos() as u64
 }
 
-fn target_interval_us(fps: f32) -> u64 {
-    (US_PER_S / fps) as u64
+fn target_interval_ns(fps: f32) -> u64 {
+    (NS_PER_S / fps as f64) as u64
 }
 
-fn overshoot_us(now: u64, target: u64) -> u64 {
+fn overshoot_ns(now: u64, target: u64) -> u64 {
     now.saturating_sub(target)
 }
 
-fn next_target_us(now: u64, previous: u64, interval: u64, fresh: bool) -> u64 {
-    match (fresh, overshoot_us(now, previous) >= interval) {
+fn next_target_ns(now: u64, previous: u64, interval: u64, fresh: bool) -> u64 {
+    match (fresh, overshoot_ns(now, previous) >= interval) {
         (false, false) => previous + interval,
         (_, _) => now + interval,
     }
 }
 
-fn wait_deficit_us(now: u64, target: u64) -> u64 {
+fn wait_deficit_ns(now: u64, target: u64) -> u64 {
     target.saturating_sub(now)
 }
 
-fn slice_length_us(remaining: u64) -> u64 {
-    remaining.saturating_sub(SLICE_MARGIN_US).min(SLICE_STEP_US)
+fn slice_length_ns(remaining: u64) -> u64 {
+    remaining.saturating_sub(SLICE_MARGIN_NS).min(SLICE_STEP_NS)
 }
 
-fn call_sleep_us(us: u64) {
-    match us {
+fn call_sleep_ns(ns: u64) {
+    match ns {
         0 => (),
-        n => thread::sleep(Duration::from_micros(n)),
+        n => thread::sleep(Duration::from_nanos(n)),
     }
 }
 
 fn call_spin_until(target: u64) {
     std::iter::repeat(())
-        .take_while(|_| call_now_us() < target)
+        .take_while(|_| call_now_ns() < target)
         .for_each(|_| std::hint::spin_loop());
 }
 
 fn call_sleep_until(target: u64) {
-    call_sleep_us(wait_deficit_us(call_now_us(), target));
+    call_sleep_ns(wait_deficit_ns(call_now_ns(), target));
 }
 
 fn call_precise_until(target: u64) {
-    call_sleep_us(wait_deficit_us(call_now_us(), target.saturating_sub(SPIN_MARGIN_US)));
+    call_sleep_ns(wait_deficit_ns(call_now_ns(), target.saturating_sub(SPIN_MARGIN_NS)));
     call_spin_until(target);
 }
 
 fn call_slice_until(target: u64) {
     std::iter::repeat(())
-        .take_while(|_| call_now_us() + SLICE_MARGIN_US < target)
-        .for_each(|_| call_sleep_us(slice_length_us(wait_deficit_us(call_now_us(), target))));
+        .take_while(|_| call_now_ns() + SLICE_MARGIN_NS < target)
+        .for_each(|_| call_sleep_ns(slice_length_ns(wait_deficit_ns(call_now_ns(), target))));
     call_spin_until(target);
 }
 
@@ -88,22 +88,22 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
 }
 
 fn call_swap_interval(interval: u64) -> u64 {
-    INTERVAL_US.swap(interval, Ordering::Relaxed)
+    INTERVAL_NS.swap(interval, Ordering::Relaxed)
 }
 
 fn call_frame_target(interval: u64) -> u64 {
-    let target = next_target_us(
-        call_now_us(),
-        TARGET_US.load(Ordering::Relaxed),
+    let target = next_target_ns(
+        call_now_ns(),
+        TARGET_NS.load(Ordering::Relaxed),
         interval,
         call_swap_interval(interval) != interval,
     );
-    TARGET_US.store(target, Ordering::Relaxed);
+    TARGET_NS.store(target, Ordering::Relaxed);
     target
 }
 
 fn call_limit_to(fps: f32, pacing: PacingChoice) {
-    call_wait_until(call_frame_target(target_interval_us(fps)), pacing);
+    call_wait_until(call_frame_target(target_interval_ns(fps)), pacing);
 }
 
 fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
