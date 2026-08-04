@@ -71,8 +71,8 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit": {
             "section": "framerate",
             "label": "Frame Limit",
-            "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device.",
-            "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540"),
+            "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device. Past about 500 the interval gets shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
+            "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
             "editable": False,
             "bounded": False,
         },
