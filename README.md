@@ -82,11 +82,14 @@ Limiter** card.
 ### Framerate
 - **Frame Limit**: cap the frame rate at present time, pick a common cap or
   type any value. Deadlines follow a fixed target timeline rather than the
-  last present, so scheduler jitter does not build up into a drift below the
-  rate you asked for.
+  last present, unless the method is reactive, so scheduler jitter does not
+  build up into a drift below the rate you asked for.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
-  game starts its next frame later and samples input closer to display time.
+  game starts its next frame later and samples input closer to display time;
+  reactive waits where early does but measures from the frame just shown
+  instead of a fixed timeline, so a slow frame is never chased with a fast
+  one.
 - **Frame Pacing**: how the limiter kills time, from cheapest to tightest.
   `sleep` hands the whole wait to the kernel. `sliced` sleeps in short steps
   and rechecks the clock, correcting for the kernel waking late. `precise`
