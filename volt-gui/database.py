@@ -174,50 +174,58 @@ GROUPS_DB: Final[dict] = {
 OPTIONS_DB: Final[dict] = {
     "application_theme": {
         "label": "Application Theme",
-        "description": "Color theme for the application. Takes effect on program restart.",
-        "options": ("cachyos", "amd", "intel", "nvidia"),
+        "description": "Color theme for the application. default is cachyos. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "cachyos", "amd", "intel", "nvidia"),
+        "fallback": "cachyos",
         "editable": False,
     },
     "window_transparency": {
         "label": "Window Transparency",
-        "description": "Window background transparency. Takes effect on program restart.",
-        "options": ("off", "on"),
+        "description": "Window background transparency. default is off. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "off",
         "editable": False,
     },
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
-        "description": "UI scaling multiplier. A hand written value outside 0.5 to 3.0 falls back to 1.0. Takes effect on program restart.",
-        "options": ("1.0", "0.5", "0.75", "1.25", "1.5", "1.75", "2.0", "2.5", "3.0"),
+        "description": "UI scaling multiplier, in steps of 0.2. default is 1.0, and a hand written value outside 0.5 to 3.0 falls back to it. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "0.6", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0", "2.2", "2.4", "2.6", "2.8", "3.0"),
+        "fallback": "1.0",
         "editable": False,
     },
     "start_window_maximized": {
         "label": "Start Window Maximized",
-        "description": "Start the window in maximized state. Takes effect on program restart.",
-        "options": ("off", "on"),
+        "description": "Start the window in maximized state. default is off. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "off",
         "editable": False,
     },
     "start_window_minimized": {
         "label": "Start Window Minimized",
-        "description": "Start the window minimized to tray. Takes effect on program restart.",
-        "options": ("off", "on"),
+        "description": "Start the window minimized to tray. default is off. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "off",
         "editable": False,
     },
     "system_tray_behavior": {
         "label": "System Tray",
-        "description": "Show icon in the system tray. Takes effect on program restart.",
-        "options": ("off", "on"),
+        "description": "Show icon in the system tray. default is off. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "off",
         "editable": False,
     },
     "welcome_message_display": {
         "label": "Welcome Message",
-        "description": "Show the welcome message on startup. Takes effect on program restart.",
-        "options": ("on", "off"),
+        "description": "Show the welcome message on startup. default is on. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "on",
         "editable": False,
     },
     "automatic_update_check": {
         "label": "Automatic Update Check",
-        "description": "Check for updates on startup. Takes effect on program restart.",
-        "options": ("off", "on"),
+        "description": "Check for updates on startup. default is off. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "on", "off"),
+        "fallback": "off",
         "editable": False,
     },
 }
@@ -405,6 +413,22 @@ def is_option_editable(option_key: str) -> bool:
 
 def get_option_default_value(option_key: str) -> str:
     return OPTIONS_DB[option_key]["options"][0]
+
+
+def get_option_fallback(option_key: str) -> str:
+    return OPTIONS_DB[option_key]["fallback"]
+
+
+def _option_is_unset(raw_value: str) -> bool:
+    return raw_value in ("", DEFAULT_VALUE)
+
+
+def resolve_option_value(option_key: str, raw_value: str) -> str:
+    match _option_is_unset(raw_value):
+        case True:
+            return get_option_fallback(option_key)
+        case False:
+            return raw_value
 
 
 def get_accent_colors(theme_name: str) -> tuple:

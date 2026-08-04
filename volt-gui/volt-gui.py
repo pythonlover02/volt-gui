@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QWidget
 from database import ALL_TABS
 from database import APP_VERSION
 from database import DEFAULT_PROFILE
+from database import DEFAULT_VALUE
 from database import OPTIONS_DB
 from database import get_about_data
 from database import get_option_default_value
@@ -39,6 +40,7 @@ from database import get_option_description
 from database import get_option_label
 from database import get_option_options
 from database import is_option_editable
+from database import resolve_option_value
 from presets import build_preset_combo_items
 from presets import get_preset_placeholder_label
 from presets import is_valid_preset_name
@@ -116,22 +118,26 @@ def resolve_scale_factor(raw: str) -> str:
             return DEFAULT_SCALE
 
 
+def get_persisted_option_resolved(option_key: str) -> str:
+    return resolve_option_value(option_key, get_persisted_option_value(option_key))
+
+
 def calculate_initial_scale() -> None:
     os.environ["QT_SCALE_FACTOR"] = resolve_scale_factor(
-        get_persisted_option_value("interface_scale_factor"))
+        get_persisted_option_resolved("interface_scale_factor"))
     return None
 
 
-def get_resolved_option_value(main_window, option_key: str) -> str:
+def get_widget_option_text(main_window, option_key: str) -> str:
     match main_window.options_widgets.get(option_key):
         case None:
-            return get_option_default_value(option_key)
+            return DEFAULT_VALUE
         case widget:
-            match widget.currentText().strip():
-                case "":
-                    return get_option_default_value(option_key)
-                case text:
-                    return text
+            return widget.currentText().strip()
+
+
+def get_resolved_option_value(main_window, option_key: str) -> str:
+    return resolve_option_value(option_key, get_widget_option_text(main_window, option_key))
 
 
 def is_option_enabled(main_window, option_key: str) -> bool:
@@ -692,7 +698,7 @@ def create_main_window_widget(singleton_socket):
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(620, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
-    process_theme_application(QApplication.instance(), get_persisted_option_value("application_theme"))
+    process_theme_application(QApplication.instance(), get_persisted_option_resolved("application_theme"))
     central_widget = QWidget()
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)
