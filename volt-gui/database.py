@@ -156,7 +156,7 @@ SETTINGS_DB: Final[dict] = {
             "section": "rendering",
             "label": "Alpha To Coverage",
             "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force. Only does something where the game already renders to an MSAA target.",
-            "options": (DEFAULT_VALUE, "off", "on"),
+            "options": (DEFAULT_VALUE, "on", "off"),
             "editable": False,
             "bounded": True,
         },
