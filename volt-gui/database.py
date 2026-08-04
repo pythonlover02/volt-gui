@@ -79,8 +79,8 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
-            "description": "Method sets when the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. Volt's own setting, so the list is fixed.",
-            "options": (DEFAULT_VALUE, "early", "late"),
+            "description": "Method sets when the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. Volt's own setting, so the list is fixed.",
+            "options": (DEFAULT_VALUE, "early", "late", "reactive"),
             "editable": False,
             "bounded": False,
         },
