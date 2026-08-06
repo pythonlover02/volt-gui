@@ -21,8 +21,8 @@ APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alterna
 DEFAULT_VALUE: Final[str] = "default"
 DEFAULT_PROFILE: Final[str] = "default"
 
-PROFILE_TABS: Final[tuple] = ("Display", "Framerate", "Textures", "Rendering", "GPU")
-ALL_TABS: Final[tuple] = ("Display", "Framerate", "Textures", "Rendering", "GPU", "Options", "About")
+PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate")
+ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
 
 BOUND_SUFFIXES: Final[tuple] = ("", "_min", "_max")
 BOUND_CAPTIONS: Final[tuple] = ("Force", "Minimum", "Maximum")

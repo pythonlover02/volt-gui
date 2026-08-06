@@ -10,7 +10,7 @@ from database import DEFAULT_VALUE
 from database import find_option_sources
 from database import find_profile_fields
 
-SECTION_ORDER: Final[tuple] = ("display", "framerate", "textures", "rendering", "gpu")
+SECTION_ORDER: Final[tuple] = ("gpu", "display", "textures", "rendering", "framerate")
 OPTIONS_FILE: Final[str] = "options.toml"
 PROFILE_SUFFIX: Final[str] = ".toml"
 PAIR_SEP: Final[str] = " = "
