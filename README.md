@@ -148,7 +148,7 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 |-----------|-------------|
 | **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (optionally i686 for 32-bit games) |
 | **Build** | Rust 1.77+, GNU make 4.3+ |
-| **GUI**   | Python 3.9+, PySide6 (a venv is created by the make targets) |
+| **GUI**   | Python 3.10+, PySide6 (a venv is created by the make targets) |
 
 ## Installation
 
