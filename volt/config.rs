@@ -11,6 +11,8 @@ use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
 use crate::consts::FRAME_LIMIT_MIN;
+use crate::consts::HOME_FALLBACK;
+use crate::consts::HOME_UNSET_WARN;
 use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
@@ -259,8 +261,20 @@ pub(crate) fn sanitize_name(raw: &str) -> String {
     }
 }
 
+fn fallback_home() -> String {
+    log_at(LogLevel::Warn, HOME_UNSET_WARN);
+    HOME_FALLBACK.into()
+}
+
+fn home_text() -> String {
+    match env_home() {
+        Some(path) => path,
+        None => fallback_home(),
+    }
+}
+
 pub(crate) fn home_dir() -> PathBuf {
-    PathBuf::from(env_home())
+    PathBuf::from(home_text())
 }
 
 pub(crate) fn config_dir() -> PathBuf {

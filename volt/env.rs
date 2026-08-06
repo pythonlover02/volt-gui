@@ -2,6 +2,7 @@ use std::env;
 
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::ENV_CONFIG_NAME;
+use crate::consts::ENV_HOME;
 use crate::consts::ENV_LOG;
 use crate::consts::ENV_PROBE;
 
@@ -25,8 +26,8 @@ pub(crate) fn env_probe_active() -> bool {
     read_var(ENV_PROBE).is_some()
 }
 
-pub(crate) fn env_home() -> String {
-    env::var("HOME").unwrap_or_else(|_| "/tmp".into())
+pub(crate) fn env_home() -> Option<String> {
+    read_var(ENV_HOME)
 }
 
 pub fn process_args() -> Vec<String> {
