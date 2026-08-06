@@ -65,6 +65,13 @@ Vulkan what frame rate it wants. There is no value to bound, so those three
 only decide how the layer waits, and volt-gui shows them in one **Frame
 Limiter** card.
 
+### GPU
+- **Physical Device**: pick which GPU the game sees, listed by name in the
+  order the driver reports them. The layer hides the rest during device
+  enumeration, so it works on every Vulkan driver. The bounds keep a range of
+  devices instead of one. If nothing matches, the full list comes back and a
+  warning is logged.
+
 ### Display
 - **VSync / Present Mode**: whatever the surface supports, ordered from most
   latency to least: fifo, fifo_relaxed, mailbox, immediate, then anything
@@ -78,24 +85,6 @@ Limiter** card.
   8-bit and 10-bit. The layer hides the formats you did not pick, so a game
   that takes the first supported format ends up with yours. If nothing
   matches, the full list comes back and a warning is logged.
-
-### Framerate
-- **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value. Deadlines follow a fixed target timeline rather than the
-  last present, unless the method is reactive, so scheduler jitter does not
-  build up into a drift below the rate you asked for.
-- **Frame Limit Method**: early holds the frame back so presents leave on a
-  fixed cadence; late lets the present through and waits afterwards, so the
-  game starts its next frame later and samples input closer to display time;
-  reactive waits where early does but measures from the frame just shown
-  instead of a fixed timeline, so a slow frame is never chased with a fast
-  one.
-- **Frame Pacing**: how the limiter kills time, from cheapest to tightest.
-  `sleep` hands the whole wait to the kernel. `sliced` sleeps in short steps
-  and rechecks the clock, correcting for the kernel waking late. `precise`
-  sleeps most of the interval then busy waits half a millisecond. `spin`
-  busy waits the whole interval, the steadiest option and the only one that
-  keeps a core awake.
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear. A sampler
@@ -117,24 +106,35 @@ Limiter** card.
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.
 
-### GPU
-- **Physical Device**: pick which GPU the game sees, listed by name in the
-  order the driver reports them. The layer hides the rest during device
-  enumeration, so it works on every Vulkan driver. The bounds keep a range of
-  devices instead of one. If nothing matches, the full list comes back and a
-  warning is logged.
+### Framerate
+- **Frame Limit**: cap the frame rate at present time, pick a common cap or
+  type any value. Deadlines follow a fixed target timeline rather than the
+  last present, unless the method is reactive, so scheduler jitter does not
+  build up into a drift below the rate you asked for.
+- **Frame Limit Method**: early holds the frame back so presents leave on a
+  fixed cadence; late lets the present through and waits afterwards, so the
+  game starts its next frame later and samples input closer to display time;
+  reactive waits where early does but measures from the frame just shown
+  instead of a fixed timeline, so a slow frame is never chased with a fast
+  one.
+- **Frame Pacing**: how the limiter kills time, from cheapest to tightest.
+  `sleep` hands the whole wait to the kernel. `sliced` sleeps in short steps
+  and rechecks the clock, correcting for the kernel waking late. `precise`
+  sleeps most of the interval then busy waits half a millisecond. `spin`
+  busy waits the whole interval, the steadiest option and the only one that
+  keeps a core awake.
 
 ## How It Works
 
 volt registers as an implicit Vulkan layer, gated by `VOLT_ENABLE=1` which the
 `volt` launcher sets on the target process only. The layer reads the selected
 profile from `~/.config/volt-gui/<profile>.toml` and rewrites the Vulkan calls
-the game makes: `vkEnumeratePhysicalDevices` for GPU selection,
-`vkCreateSampler` for texture settings, `vkCreateSwapchainKHR` for present
-mode and image count, `vkGetPhysicalDeviceSurfaceFormatsKHR` for color depth,
-`vkQueuePresentKHR` for the frame limiter, and
-`vkCreateGraphicsPipelines` for the rendering toggles. Core device features
-are enabled at device creation only when the hardware reports them.
+the game makes, and the tabs run in the order the layer acts:
+`vkEnumeratePhysicalDevices` for GPU selection, `vkCreateSwapchainKHR` and
+`vkGetPhysicalDeviceSurfaceFormatsKHR` for the display settings,
+`vkCreateSampler` for texture settings, `vkCreateGraphicsPipelines` for the
+rendering toggles, and `vkQueuePresentKHR` for the frame limiter. Core device
+features are enabled at device creation only when the hardware reports them.
 
 The layer watches the config directory with inotify: press Apply in volt-gui
 while a game is running and the new values take effect live.
