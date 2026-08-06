@@ -8,6 +8,8 @@ use std::sync::Arc;
 use ash::vk;
 use ash::vk::Handle;
 
+use crate::config::ensure_settings;
+use crate::config::Settings;
 use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_NAME;
@@ -154,8 +156,8 @@ fn call_forward_present(
     }
 }
 
-fn call_after_present(presented: vk::Result) -> vk::Result {
-    maybe_limit_frame(LimitStage::After);
+fn call_after_present(presented: vk::Result, s: &Settings) -> vk::Result {
+    maybe_limit_frame(LimitStage::After, s);
     presented
 }
 
@@ -164,8 +166,9 @@ fn call_limited_present(
     queue: vk::Queue,
     info: *const vk::PresentInfoKHR,
 ) -> vk::Result {
-    maybe_limit_frame(LimitStage::Before);
-    call_after_present(call_forward_present(owner, queue, info))
+    let s = ensure_settings();
+    maybe_limit_frame(LimitStage::Before, &s);
+    call_after_present(call_forward_present(owner, queue, info), &s)
 }
 
 unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(

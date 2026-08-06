@@ -7,7 +7,6 @@ use std::time::Instant;
 
 use ash::vk;
 
-use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::LimitStage;
 use crate::consts::MethodChoice;
@@ -131,9 +130,8 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
     s.frame_limit.filter(|_| stage_wanted(s.limit_method) == stage)
 }
 
-pub(crate) fn maybe_limit_frame(stage: LimitStage) {
-    let s = ensure_settings();
-    match limit_fps(&s, stage) {
+pub(crate) fn maybe_limit_frame(stage: LimitStage, s: &Settings) {
+    match limit_fps(s, stage) {
         Some(fps) => call_limit_to(fps, pacing_or_default(s.pacing), s.limit_method),
         None => (),
     }
