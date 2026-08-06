@@ -49,12 +49,6 @@ pub(crate) fn devs_get(h: u64) -> Option<Arc<VkDevState>> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&h).cloned()))
 }
 
-pub(crate) fn devs_any() -> Option<Arc<VkDevState>> {
-    DEVS.read()
-        .ok()
-        .and_then(|g| g.as_ref().and_then(|m| m.values().next().cloned()))
-}
-
 pub(crate) fn devs_gdpa(h: u64) -> Option<vk::PFN_vkGetDeviceProcAddr> {
     DEVS.read()
         .ok()

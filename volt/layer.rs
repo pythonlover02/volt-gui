@@ -15,8 +15,8 @@ use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_NAME;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
+use crate::consts::UNOWNED_QUEUE_ERROR;
 use crate::device::call_real_create_device;
-use crate::device::devs_any;
 use crate::device::devs_del;
 use crate::device::devs_gdpa;
 use crate::device::devs_get;
@@ -134,17 +134,9 @@ fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::In
     }
 }
 
-fn call_fallback_present(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
-    match devs_any() {
-        Some(d) => {
-            log_at(LogLevel::Warn, "present on untracked queue, forwarding directly");
-            unsafe { (d.swap_fp.queue_present_khr)(queue, info) }
-        }
-        None => {
-            log_at(LogLevel::Error, "present with no registered device, dropping frame");
-            vk::Result::SUCCESS
-        }
-    }
+fn call_unowned_present() -> vk::Result {
+    log_at(LogLevel::Error, UNOWNED_QUEUE_ERROR);
+    vk::Result::ERROR_INITIALIZATION_FAILED
 }
 
 fn call_forward_present(
@@ -154,7 +146,7 @@ fn call_forward_present(
 ) -> vk::Result {
     match owner {
         Some(d) => call_present_frame(&d, queue, info),
-        None => call_fallback_present(queue, info),
+        None => call_unowned_present(),
     }
 }
 

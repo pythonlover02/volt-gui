@@ -79,6 +79,7 @@ pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
 
 pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
+pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
