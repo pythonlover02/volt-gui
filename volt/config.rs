@@ -37,12 +37,10 @@ use crate::watch::setup_watch;
 
 #[derive(Clone, Default)]
 pub(crate) struct Settings {
+    pub(crate) gpu: Bounds<u32>,
     pub(crate) present_mode: Bounds<u32>,
     pub(crate) image_count: Bounds<u32>,
     pub(crate) depth: Bounds<u32>,
-    pub(crate) frame_limit: Option<f32>,
-    pub(crate) limit_method: Option<MethodChoice>,
-    pub(crate) pacing: Option<PacingChoice>,
     pub(crate) filtering: Bounds<u32>,
     pub(crate) mipmap: Bounds<u32>,
     pub(crate) anisotropy: Bounds<f32>,
@@ -51,7 +49,9 @@ pub(crate) struct Settings {
     pub(crate) mip_ceiling: Bounds<f32>,
     pub(crate) sample_shading: Bounds<f32>,
     pub(crate) alpha_coverage: Bounds<u32>,
-    pub(crate) gpu: Bounds<u32>,
+    pub(crate) frame_limit: Option<f32>,
+    pub(crate) limit_method: Option<MethodChoice>,
+    pub(crate) pacing: Option<PacingChoice>,
 }
 
 static SETTINGS: RwLock<Option<Settings>> = RwLock::new(None);
@@ -222,12 +222,10 @@ fn parse_doc(text: &str) -> toml::Value {
 pub(crate) fn parse_settings(text: &str) -> Settings {
     let doc = parse_doc(text);
     Settings {
+        gpu: bounds_field(&doc, SECTION_GPU, "device", parse_gpu),
         present_mode: bounds_field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
         image_count: bounds_field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         depth: bounds_field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
-        frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
-        limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
-        pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
         filtering: bounds_field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
         mipmap: bounds_field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
         anisotropy: bounds_field(&doc, SECTION_TEXTURES, "anisotropy", parse_aniso),
@@ -236,7 +234,9 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         mip_ceiling: bounds_field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
         sample_shading: bounds_field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
         alpha_coverage: bounds_field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
-        gpu: bounds_field(&doc, SECTION_GPU, "device", parse_gpu),
+        frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
+        limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
+        pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
     }
 }
 

@@ -92,9 +92,9 @@ pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectan
 
 pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";
-pub(crate) const SECTION_FRAMERATE: &str = "framerate";
 pub(crate) const SECTION_TEXTURES: &str = "textures";
 pub(crate) const SECTION_RENDERING: &str = "rendering";
+pub(crate) const SECTION_FRAMERATE: &str = "framerate";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PacingChoice {
@@ -129,6 +129,11 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # never asks vulkan for a frame rate, so there is nothing to bound. they
 # configure how the layer itself waits instead
 
+[gpu]
+device = "default"
+device_min = "default"
+device_max = "default"
+
 [display]
 present_mode = "default"
 present_mode_min = "default"
@@ -139,11 +144,6 @@ image_count_max = "default"
 color_depth = "default"
 color_depth_min = "default"
 color_depth_max = "default"
-
-[framerate]
-frame_limit = "default"
-frame_limit_method = "default"
-frame_pacing = "default"
 
 [textures]
 filtering = "default"
@@ -173,8 +173,8 @@ alpha_to_coverage = "default"
 alpha_to_coverage_min = "default"
 alpha_to_coverage_max = "default"
 
-[gpu]
-device = "default"
-device_min = "default"
-device_max = "default"
+[framerate]
+frame_limit = "default"
+frame_limit_method = "default"
+frame_pacing = "default"
 "#;
