@@ -36,6 +36,7 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_graphics_pipelines;
+use crate::present::call_forget_timeline;
 use crate::present::call_present_frame;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
@@ -78,6 +79,7 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
+        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
@@ -156,8 +158,12 @@ fn call_forward_present(
     }
 }
 
-fn call_after_present(presented: vk::Result, s: &Settings) -> vk::Result {
-    maybe_limit_frame(LimitStage::After, s);
+fn call_after_present(
+    presented: vk::Result,
+    s: &Settings,
+    info: *const vk::PresentInfoKHR,
+) -> vk::Result {
+    maybe_limit_frame(LimitStage::After, s, info);
     presented
 }
 
@@ -167,8 +173,8 @@ fn call_limited_present(
     info: *const vk::PresentInfoKHR,
 ) -> vk::Result {
     let s = ensure_settings();
-    maybe_limit_frame(LimitStage::Before, &s);
-    call_after_present(call_forward_present(owner, queue, info), &s)
+    maybe_limit_frame(LimitStage::Before, &s, info);
+    call_after_present(call_forward_present(owner, queue, info), &s, info)
 }
 
 unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(
@@ -339,6 +345,20 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
     match devs_get(dev.as_raw()) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_swapchain(&d, dev, ci, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkDestroySwapchainKHR(
+    dev: vk::Device,
+    sc: vk::SwapchainKHR,
+    alloc: *const vk::AllocationCallbacks,
+) {
+    match devs_get(dev.as_raw()) {
+        Some(d) => {
+            call_forget_timeline(sc);
+            (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc);
+        }
+        None => (),
     }
 }
 

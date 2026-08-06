@@ -1,11 +1,12 @@
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
+use std::collections::HashMap;
+use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
 use ash::vk;
+use ash::vk::Handle;
 
 use crate::config::Settings;
 use crate::consts::LimitStage;
@@ -17,9 +18,16 @@ use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
 
+#[derive(Clone, Copy)]
+struct Timeline {
+    target: u64,
+    interval: u64,
+}
+
+type TimelineMap = HashMap<u64, Timeline>;
+
 static EPOCH: OnceLock<Instant> = OnceLock::new();
-static TARGET_NS: AtomicU64 = AtomicU64::new(0);
-static INTERVAL_NS: AtomicU64 = AtomicU64::new(0);
+static TIMELINES: Mutex<Option<TimelineMap>> = Mutex::new(None);
 
 fn call_now_ns() -> u64 {
     EPOCH.get_or_init(Instant::now).elapsed().as_nanos() as u64
@@ -52,6 +60,37 @@ fn restart_wanted(method: Option<MethodChoice>, interval_changed: bool) -> bool 
     match method {
         Some(MethodChoice::Reactive) => true,
         Some(MethodChoice::Early) | Some(MethodChoice::Late) | None => interval_changed,
+    }
+}
+
+fn previous_target(previous: Option<Timeline>, now: u64) -> u64 {
+    match previous {
+        Some(line) => line.target,
+        None => now,
+    }
+}
+
+fn interval_changed(previous: Option<Timeline>, interval: u64) -> bool {
+    match previous {
+        Some(line) => line.interval != interval,
+        None => true,
+    }
+}
+
+fn advanced(
+    previous: Option<Timeline>,
+    now: u64,
+    interval: u64,
+    method: Option<MethodChoice>,
+) -> Timeline {
+    Timeline {
+        target: next_target_ns(
+            now,
+            previous_target(previous, now),
+            interval,
+            restart_wanted(method, interval_changed(previous, interval)),
+        ),
+        interval,
     }
 }
 
@@ -93,23 +132,42 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
     }
 }
 
-fn call_swap_interval(interval: u64) -> u64 {
-    INTERVAL_NS.swap(interval, Ordering::Relaxed)
+fn call_present_key(info: *const vk::PresentInfoKHR) -> u64 {
+    unsafe { (*(*info).p_swapchains).as_raw() }
 }
 
-fn call_frame_target(interval: u64, method: Option<MethodChoice>) -> u64 {
-    let target = next_target_ns(
-        call_now_ns(),
-        TARGET_NS.load(Ordering::Relaxed),
-        interval,
-        restart_wanted(method, call_swap_interval(interval) != interval),
-    );
-    TARGET_NS.store(target, Ordering::Relaxed);
-    target
+fn call_stored(map: &mut TimelineMap, key: u64, next: Timeline) -> u64 {
+    map.insert(key, next);
+    next.target
 }
 
-fn call_limit_to(fps: f32, pacing: PacingChoice, method: Option<MethodChoice>) {
-    call_wait_until(call_frame_target(target_interval_ns(fps), method), pacing);
+fn call_advanced_in(
+    map: &mut TimelineMap,
+    key: u64,
+    interval: u64,
+    method: Option<MethodChoice>,
+) -> u64 {
+    call_stored(
+        map,
+        key,
+        advanced(map.get(&key).copied(), call_now_ns(), interval, method),
+    )
+}
+
+fn call_frame_target(key: u64, interval: u64, method: Option<MethodChoice>) -> u64 {
+    match TIMELINES.lock() {
+        Ok(mut guard) => call_advanced_in(
+            guard.get_or_insert_with(HashMap::new),
+            key,
+            interval,
+            method,
+        ),
+        Err(_) => call_now_ns(),
+    }
+}
+
+fn call_limit_to(key: u64, fps: f32, pacing: PacingChoice, method: Option<MethodChoice>) {
+    call_wait_until(call_frame_target(key, target_interval_ns(fps), method), pacing);
 }
 
 fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
@@ -130,10 +188,28 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
     s.frame_limit.filter(|_| stage_wanted(s.limit_method) == stage)
 }
 
-pub(crate) fn maybe_limit_frame(stage: LimitStage, s: &Settings) {
+pub(crate) fn maybe_limit_frame(
+    stage: LimitStage,
+    s: &Settings,
+    info: *const vk::PresentInfoKHR,
+) {
     match limit_fps(s, stage) {
-        Some(fps) => call_limit_to(fps, pacing_or_default(s.pacing), s.limit_method),
+        Some(fps) => call_limit_to(
+            call_present_key(info),
+            fps,
+            pacing_or_default(s.pacing),
+            s.limit_method,
+        ),
         None => (),
+    }
+}
+
+pub(crate) fn call_forget_timeline(sc: vk::SwapchainKHR) {
+    match TIMELINES.lock() {
+        Ok(mut guard) => {
+            guard.get_or_insert_with(HashMap::new).remove(&sc.as_raw());
+        }
+        Err(_) => (),
     }
 }
 
