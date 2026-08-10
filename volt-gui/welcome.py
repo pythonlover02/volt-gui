@@ -24,7 +24,6 @@ def get_welcome_settings() -> dict:
             "The volt Layer": (
                 ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering and mip selection, the swapchain for vsync, image count and compositing, the surface format list for color depth, color space and transfer function, device enumeration for GPU selection, presents for the frame limiter, and pipelines for the rendering toggles."),
                 ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again. The preview window restarts on Apply so the lists here stay in step."),
-                ("text", "Where a setting names a Vulkan value, Minimum and Maximum run in the order the Vulkan registry itself gives those values, not in an order volt invented. A value volt has no name for can still be forced, but takes no part in a bound."),
             ),
             "What it Will Not Do": (
                 ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and CoreCtrl for clocks and fan curves."),
@@ -32,19 +31,20 @@ def get_welcome_settings() -> dict:
             )
         },
         "Settings": {
-            "Force, Minimum and Maximum": (
-                ("text", "Most settings have three boxes. Force replaces whatever the game asked for. Minimum and Maximum leave the game's own value alone while it stays inside the range, and pull it back to the nearest end when it does not. Set Force and a bound together and Force wins."),
-                ("text", "Use the bounds when you want to rule out the extremes but still let the game pick. On a setting with only two values there is nothing in between, so a Minimum or a Maximum ends up doing the same job as Force."),
-                ("text", "A Minimum set above its own Maximum does nothing. Both are dropped, a warning is logged, and the game keeps its own value."),
+            "One Value Per Setting": (
+                ("text", "Every setting is a single choice: the value volt forces, or default, which means volt does not touch what the game asked for. There is no range, no ordering between values, and nothing to get backwards."),
+                ("text", "A value volt has no name for still appears in the list, still saves to a profile, and still applies, exactly like a named one."),
+                ("text", "Where the specification admits only what a query returned, a value your device did not report is not forced. volt keeps the game's own value and logs a warning, so a profile written on another machine never makes a call invalid."),
+                ("text", "Where the specification bounds a value, LOD bias against your device limit and image count against what the surface allows, volt clamps what it passes down. That clamp is correctness rather than a choice, so it is not shown here."),
             ),
             "Where the Lists Come From": (
                 ("text", "Most of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, colour depths, colour spaces, transfer functions and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default."),
                 ("text", "That means a mode or a format volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
-                ("text", "The three Framerate settings are the exception. They are volt's own, so their list is fixed."),
+                ("text", "The three Framerate settings are the exception. A game never tells Vulkan what frame rate it wants, so there is nothing to read from the device and their lists are volt's own."),
             ),
-            "Settings Without Bounds": (
-                ("text", "The three Framerate settings have no bounds, because a game never tells Vulkan what frame rate it wants. There is no value to bound, so those three only decide how the layer itself waits, and they share one Frame Limiter card."),
-                ("text", "Pacing is the how of that wait, and its four values run from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and rechecks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole interval, the steadiest of the four and the only one that keeps a core awake."),
+            "The Frame Limiter": (
+                ("text", "Frame Limit caps the rate at present time. Method sets when the limiter waits and Pacing sets how, and neither does anything until Limit is set."),
+                ("text", "Pacing runs from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and rechecks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole interval, the steadiest of the four and the only one that keeps a core awake."),
             ),
             "Settings That Hide a List": (
                 ("text", "Color Depth, Color Space, Transfer Function, Present Mode and Physical Device work differently. Instead of changing a value they hide entries from the list the game is shown, so a game that takes the first surface format or the first device gets the one you picked. The three format settings filter one list one after the other, each restoring it on its own if nothing survives."),
@@ -81,7 +81,7 @@ def get_welcome_settings() -> dict:
         "Presets": {
             "Presets": (
                 ("text", "Presets fill the profile you have open with a starting point, arranged as a ladder from best looking to fastest:\n\n- Quality: trilinear filtering, blended mips, a slight sharpening bias, every mip level allowed, smoothed cutout edges, classic vsync, a 4 image swapchain, 10 bit colour where the surface has it, and precise pacing on an early wait.\n- Balanced: trilinear and blended mips still, mailbox present for vsync without the latency, sliced pacing.\n- Performance FPS: bilinear, a blurring bias, mailbox present, the swapchain held to 4 images, colour held to 8 bit and the cheaper sleep pacing.\n- Performance Low Latency: the same, aimed at input lag instead, with immediate present, a 2 image swapchain, a late wait and spin pacing, the steadiest of the four.\n- Potato FPS: bilinear, hard mip cuts, a full step of blurring bias, the top two mips off the table, cutout smoothing off.\n- Potato Low Latency: the same again with immediate present, a 2 image swapchain and a late wait.\n\nNo preset touches Colour Space, Transfer Function, Composite Alpha or Clipped Presentation: those depend on your display and your compositor, so they stay yours."),
-                ("text", "Presets mostly set Force values, and reach for a Maximum where a cap is the point, as with the swapchain image counts. Applying one replaces every value in the profile after a confirmation, so anything the preset does not set goes back to default. That includes the frame limit: the right cap depends on your display, so that choice stays yours."),
+                ("text", "Applying a preset replaces every value in the profile after a confirmation, so anything the preset does not set goes back to default. That includes the frame limit: the right cap depends on your display, so that choice stays yours."),
                 ("text", "A preset can name something your hardware does not offer, mailbox on a surface without it for instance. That setting resets to default and volt-gui says which ones, so the rest of the preset still lands."),
             )
         },

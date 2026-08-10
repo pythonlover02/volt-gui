@@ -34,6 +34,9 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
+Every setting is one value: the value volt forces, or `default`. There is no
+range, no ordering, and nothing to get backwards.
+
 The values each setting offers come from your own hardware, not from a list
 built into volt-gui. Present modes, colour depths, colour spaces, transfer
 functions and alpha modes come from what the surface reports, the GPU list
@@ -53,49 +56,34 @@ volt-gui carries on with what it learned last time.
 volt --probe myprofile -- vkgears
 ```
 
-Most settings have three boxes:
+A value volt has no name for still appears in the list, still saves to a
+profile, and still applies. Where the specification admits only what a query
+returned, a value the device did not report is not forced: volt keeps the
+game's own value and logs a warning.
 
-- **Force**: replaces whatever the game asked for.
-- **Minimum** and **Maximum**: leave the game's own value alone while it
-  stays inside the range, and pull it back to the nearest end when it does
-  not.
-
-Force wins if you set both. Use the bounds when you want to rule out the
-extremes but still let the game pick. A minimum set above its own maximum
-does nothing: both are dropped and a warning is logged.
-
-Where a setting names a Vulkan value, minimum and maximum run in the order
-the Vulkan registry itself gives those values, not in an order volt invented.
-A value volt has no name for still appears and can still be forced, but takes
-no part in a bound.
-
-The three **Framerate** settings have no bounds, because a game never tells
-Vulkan what frame rate it wants. There is no value to bound, so those three
-only decide how the layer waits, and volt-gui shows them in one **Frame
-Limiter** card.
+Where the specification bounds a value — LOD bias against the device limit,
+image count against what the surface allows — volt clamps what it passes
+down. That clamp is correctness, not a setting.
 
 ### GPU
-- **Physical Device**: pick which GPU the game sees, listed by name in the
-  order the driver reports them. The layer hides the rest during device
-  enumeration, so it works on every Vulkan driver. The bounds keep a range of
-  devices instead of one. If nothing matches, the full list comes back and a
-  warning is logged.
+- **Physical Device**: pick which GPU the game sees, listed by name. The
+  layer hides the rest during device enumeration, so it works on every Vulkan
+  driver. If nothing matches, the full list comes back and a warning is
+  logged.
 
 ### Display
-- **VSync / Present Mode**: whatever the surface supports, in Vulkan registry
-  order: immediate, mailbox, fifo, fifo_relaxed, then the newer ones. A
-  minimum of mailbox keeps a game off immediate, a maximum of mailbox keeps it
-  off classic vsync. The modes you rule out are hidden from the list the game
-  is shown as well, so a game's own vsync menu cannot offer one you
-  disallowed. That filtering is what makes the setting hold everywhere: a
+- **VSync / Present Mode**: whatever the surface supports. `immediate` turns
+  vsync off, `mailbox` is low latency vsync, `fifo` is classic vsync,
+  `fifo_relaxed` tears only below refresh. Every other mode is hidden from
+  the list the game is shown, so a game's own vsync menu cannot offer one you
+  ruled out. That filtering is what makes the setting hold everywhere: a
   swapchain may only switch between modes the surface reported, and a present
-  may only name one the swapchain was built with, so a mode you ruled out is
-  one the game never had to offer, whatever route it takes. A mode the surface
-  turns down falls back to the game's own choice with a warning.
+  may only name one the swapchain was built with. A mode the surface does not
+  support falls back to the game's own choice with a warning.
 - **Swapchain Images**: how many images the swapchain holds. Fewer images
-  lower display latency, more images smooth frame delivery. The list runs
-  across what the surface allows, and the narrowed range is reported back to
-  the game, so a game that derives its count from the surface honours it.
+  lower display latency, more images smooth frame delivery. The list is what
+  the surface allows, and the choice is reported back to the game, so a game
+  that derives its count from the surface honours it on its own.
 - **Color Depth**: the bits per colour channel this surface offers, usually
   8-bit and 10-bit. The layer hides the formats you did not pick, so a game
   that takes the first supported format ends up with yours. If nothing
@@ -109,7 +97,8 @@ Limiter** card.
   wrong looks washed out or crushed rather than broken, so set it back to
   default if the image looks off. No preset touches it.
 - **Composite Alpha**: how the compositor treats the finished image's alpha.
-  Forcing `opaque` skips compositor blending on Wayland.
+  Forcing `opaque` skips compositor blending on Wayland. A value the surface
+  does not report falls back to the game's own choice with a warning.
 - **Clipped Presentation**: whether the driver may skip pixels another window
   covers. On or off.
 
@@ -163,9 +152,7 @@ one. A game that queries formats through
 `vkGetPhysicalDeviceSurfaceFormats2KHR`, enumerates through
 `vkEnumeratePhysicalDeviceGroups`, creates samplers inline through
 `vkWriteSamplerDescriptorsEXT` or sets alpha to coverage as dynamic state gets
-the same treatment as one that takes the core path. Which paths exist is
-derived from the Vulkan registry rather than kept as a hand written list, so a
-new extension route shows up as a gap instead of a silent bypass.
+the same treatment as one that takes the core path.
 
 Settings are frozen for the life of the process. Press Apply, then start the
 game again.
@@ -248,6 +235,10 @@ A preset writes every value in the profile, so anything it does not set goes
 back to default. That includes the frame limit and the colour space, transfer
 function, composite alpha and clipped settings: those depend on your display
 and your compositor, so those choices stay yours.
+
+A preset can name something your hardware does not offer. That setting resets
+to default and volt-gui says which ones, so the rest of the preset still
+lands.
 
 ## What volt will never do
 
