@@ -156,8 +156,9 @@ the Vulkan calls the game makes, and the tabs run in the order the layer acts:
 device enumeration for GPU selection, the surface queries and swapchain
 creation for the display settings, `vkCreateSampler` for texture settings,
 `vkCreateGraphicsPipelines` for the rendering toggles, and `vkQueuePresentKHR`
-for the frame limiter. Device creation passes straight through: volt enables
-no feature the game left off.
+for the frame limiter. Device creation is read and never modified: volt learns
+which features the game enabled so a setting that needs one applies only where
+the game asked for it, and it enables nothing the game left off.
 
 Every setting is hooked on each path that reaches it, not just the obvious
 one. A game that queries formats through
