@@ -116,7 +116,7 @@ pub(crate) fn call_create_graphics_pipelines(
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
     let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo>> = originals
         .iter()
-        .map(|ci| patched_multisample(&s, &dev.caps, ci.p_multisample_state))
+        .map(|ci| patched_multisample(s, &dev.caps, ci.p_multisample_state))
         .collect();
     let patched: Vec<vk::GraphicsPipelineCreateInfo> = originals
         .iter()

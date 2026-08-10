@@ -30,10 +30,6 @@ pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
 pub(crate) const FLATPAK_INJECT: &str = "/usr/lib/extensions/vulkan/volt/bin/volt-flatpak";
 
-pub(crate) const POLL_INTERVAL_MS: i32 = 250;
-pub(crate) const INOTIFY_BUF: usize = 4096;
-pub(crate) const DEBOUNCE_MS: u64 = 100;
-
 pub(crate) const LOG_FD: i32 = 2;
 pub(crate) const LOG_LEVEL_OFF: i32 = 0;
 pub(crate) const LOG_LEVEL_ERROR: i32 = 1;
@@ -78,6 +74,7 @@ pub(crate) const MIPMAP_LINEAR: u32 = 1;
 pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
 
+pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 
@@ -91,7 +88,7 @@ pub(crate) const NULL_OK: [&str; 4] = [
     "vkEnumerateInstanceLayerProperties",
 ];
 
-pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n";
+pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n\nsettings are read once when the application starts and never change while it\nruns: edit the profile, then start the application again\n";
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
 
@@ -133,6 +130,9 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # frame_limit, frame_limit_method and frame_pacing carry no bounds: a game
 # never asks vulkan for a frame rate, so there is nothing to bound. they
 # configure how the layer itself waits instead
+#
+# settings are read once when the application starts. changing this file has
+# no effect on an application that is already running: start it again
 
 [gpu]
 device = "default"

@@ -41,6 +41,9 @@ anisotropy, mip levels and LOD bias run up to the limits the device gives. A
 setting whose feature the device lacks holds nothing but `default`. Only the
 three **Framerate** settings have a fixed list, since they are volt's own.
 
+Settings are read once, when the game starts, and never change while it
+runs. Press Apply, then start the game again.
+
 volt-gui learns this by keeping a small `vkgears` window running under the
 profile you are editing, which also serves as a live preview. Close it and
 volt-gui carries on with what it learned last time.
@@ -128,16 +131,16 @@ Limiter** card.
 
 volt registers as an implicit Vulkan layer, gated by `VOLT_ENABLE=1` which the
 `volt` launcher sets on the target process only. The layer reads the selected
-profile from `~/.config/volt-gui/<profile>.toml` and rewrites the Vulkan calls
-the game makes, and the tabs run in the order the layer acts:
-`vkEnumeratePhysicalDevices` for GPU selection, `vkCreateSwapchainKHR` and
-`vkGetPhysicalDeviceSurfaceFormatsKHR` for the display settings,
-`vkCreateSampler` for texture settings, `vkCreateGraphicsPipelines` for the
-rendering toggles, and `vkQueuePresentKHR` for the frame limiter. Core device
-features are enabled at device creation only when the hardware reports them.
+profile from `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
+the Vulkan calls the game makes, and the tabs run in the order the layer acts:
+device enumeration for GPU selection, the surface queries and swapchain
+creation for the display settings, `vkCreateSampler` for texture settings,
+`vkCreateGraphicsPipelines` for the rendering toggles, and `vkQueuePresentKHR`
+for the frame limiter. Core device features are enabled at device creation
+only when the hardware reports them.
 
-The layer watches the config directory with inotify: press Apply in volt-gui
-while a game is running and the new values take effect live.
+Settings are frozen for the life of the process. Press Apply, then start the
+game again.
 
 volt-gui is the PySide6 front end. It edits the same profile files the layer
 reads Apply just saves the profile, no elevated permissions, no scripts.
@@ -149,6 +152,7 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 | **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (optionally i686 for 32-bit games) |
 | **Build** | Rust 1.77+, GNU make 4.3+ |
 | **GUI**   | Python 3.10+, PySide6 (a venv is created by the make targets) |
+| **Preview** | `vkgears` from mesa-demos, optional: without it the option lists fall back to defaults |
 
 ## Installation
 
@@ -231,6 +235,7 @@ requires injecting shaders or processing the image is out of scope:
   requires is exactly what this rewrite retired.
 - Any Vulkan extension. Core 1.0 is the whole surface the layer touches, so
   behaviour never splits between drivers.
+- Change a setting under a running game. The profile is read once at startup.
 
 ## Contributing
 

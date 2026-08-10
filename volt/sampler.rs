@@ -129,8 +129,7 @@ pub(crate) fn call_create_sampler(
     alloc: *const vk::AllocationCallbacks,
     out: *mut vk::Sampler,
 ) -> vk::Result {
-    let s = ensure_settings();
-    let patched = patched_ci(&s, &dev.caps, unsafe { &*ci });
+    let patched = patched_ci(ensure_settings(), &dev.caps, unsafe { &*ci });
     match unsafe { dev.device.create_sampler(&patched, alloc.as_ref()) } {
         Ok(sampler) => {
             unsafe { *out = sampler };

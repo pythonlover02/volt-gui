@@ -86,18 +86,14 @@ pub(crate) fn insts_put(h: u64, v: VkInstState) {
     }
 }
 
-pub(crate) fn insts_del(h: u64) -> bool {
+pub(crate) fn insts_del(h: u64) {
     phys_owner_forget(h);
-    INSTS
-        .write()
-        .ok()
-        .and_then(|mut g| {
-            g.as_mut().map(|m| {
-                m.remove(&h);
-                m.is_empty()
-            })
-        })
-        .unwrap_or(true)
+    match INSTS.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).remove(&h);
+        }
+        Err(_) => (),
+    }
 }
 
 fn insts_all() -> Vec<(u64, VkInstState)> {

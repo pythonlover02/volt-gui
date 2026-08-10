@@ -555,7 +555,8 @@ def process_probe_poll(main_window) -> None:
 def process_all_settings_apply(main_window) -> None:
     process_application_options_save(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
-    process_notification_display(main_window, "Profile '" + main_window.current_profile + "' saved. Running games pick it up live.", False)
+    process_preview_start(main_window)
+    process_notification_display(main_window, "Profile '" + main_window.current_profile + "' saved. Start a game again to pick it up.", False)
     return None
 
 

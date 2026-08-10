@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Once;
-use std::sync::RwLock;
+use std::sync::OnceLock;
 
 use crate::bounds::ordered;
 use crate::bounds::Bounds;
@@ -22,6 +21,7 @@ use crate::consts::SECTION_FRAMERATE;
 use crate::consts::SECTION_GPU;
 use crate::consts::SECTION_RENDERING;
 use crate::consts::SECTION_TEXTURES;
+use crate::consts::SETTINGS_FROZEN_INFO;
 use crate::consts::SHADING_MAX;
 use crate::consts::SHADING_OFF;
 use crate::consts::SUFFIX_MAX;
@@ -35,9 +35,8 @@ use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::ranks::parse_depth_label;
 use crate::ranks::present_rank_of;
-use crate::watch::setup_watch;
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub(crate) struct Settings {
     pub(crate) gpu: Bounds<u32>,
     pub(crate) present_mode: Bounds<u32>,
@@ -56,8 +55,7 @@ pub(crate) struct Settings {
     pub(crate) pacing: Option<PacingChoice>,
 }
 
-static SETTINGS: RwLock<Option<Settings>> = RwLock::new(None);
-static INIT: Once = Once::new();
+static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
 fn table_value<'a>(doc: &'a toml::Value, section: &str, key: &str) -> Option<&'a str> {
     doc.as_table()
@@ -289,35 +287,19 @@ pub(crate) fn config_path(name: &str) -> PathBuf {
     config_dir().join(format!("{}.toml", name))
 }
 
-pub(crate) fn read_config(path: &PathBuf) -> Settings {
+fn read_config(path: &PathBuf) -> Settings {
     fs::read_to_string(path)
         .map(|t| parse_settings(&t))
         .unwrap_or_default()
 }
 
-pub(crate) fn store_settings(s: Settings) {
-    match SETTINGS.write() {
-        Ok(mut g) => *g = Some(s),
-        Err(_) => (),
-    }
-}
-
-pub(crate) fn load_settings() -> Settings {
+fn load_settings() -> Settings {
     init_log_level();
-    let s = read_config(&config_path(&profile_name()));
-    store_settings(s.clone());
-    setup_watch();
-    log_at(LogLevel::Info, "settings loaded");
-    s
+    let loaded = read_config(&config_path(&profile_name()));
+    log_at(LogLevel::Info, SETTINGS_FROZEN_INFO);
+    loaded
 }
 
-pub(crate) fn ensure_settings() -> Settings {
-    INIT.call_once(|| {
-        load_settings();
-    });
-    SETTINGS
-        .read()
-        .ok()
-        .and_then(|g| g.clone())
-        .unwrap_or_else(|| load_settings())
+pub(crate) fn ensure_settings() -> &'static Settings {
+    SETTINGS.get_or_init(load_settings)
 }

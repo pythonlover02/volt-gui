@@ -42,9 +42,6 @@ use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_formats;
-use crate::watch::maybe_reload;
-use crate::watch::maybe_shutdown_watch;
-use crate::watch::setup_watch;
 
 #[repr(C)]
 struct VkNegotiateLayerInterface {
@@ -165,8 +162,8 @@ fn call_limited_present(
     info: *const vk::PresentInfoKHR,
 ) -> vk::Result {
     let s = ensure_settings();
-    maybe_limit_frame(LimitStage::Before, &s, info);
-    call_after_present(call_forward_present(owner, queue, info), &s, info)
+    maybe_limit_frame(LimitStage::Before, s, info);
+    call_after_present(call_forward_present(owner, queue, info), s, info)
 }
 
 unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(
@@ -259,18 +256,12 @@ unsafe extern "system" fn vkCreateInstance(
 ) -> vk::Result {
     init_log_level();
     let link = call_advance_chain(chain_link_info((*ci).p_next, vk::StructureType::LOADER_INSTANCE_CREATE_INFO));
-    match call_real_create_instance(link, ci, alloc, out) {
-        vk::Result::SUCCESS => {
-            setup_watch();
-            vk::Result::SUCCESS
-        }
-        e => e,
-    }
+    call_real_create_instance(link, ci, alloc, out)
 }
 
 unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
     let st = insts_get(inst.as_raw());
-    maybe_shutdown_watch(insts_del(inst.as_raw()));
+    insts_del(inst.as_raw());
     match st {
         Some(s) => call_chain_destroy_instance(s.gipa, inst, alloc),
         None => (),
@@ -364,7 +355,6 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
 }
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
-    maybe_reload();
     call_limited_present(queue_owner(queue), queue, info)
 }
 

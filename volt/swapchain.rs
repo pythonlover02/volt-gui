@@ -243,7 +243,7 @@ pub(crate) fn call_create_swapchain(
 ) -> vk::Result {
     let s = ensure_settings();
     match insts_get(dev.instance_handle) {
-        Some(inst) => call_create_registered(dev, handle, &inst, unsafe { &*ci }, &s, alloc, out),
+        Some(inst) => call_create_registered(dev, handle, &inst, unsafe { &*ci }, s, alloc, out),
         None => unsafe { (dev.swap_fp.create_swapchain_khr)(handle, ci, alloc, out) },
     }
 }

@@ -23,7 +23,7 @@ def get_welcome_settings() -> dict:
         "How it Works": {
             "The volt Layer": (
                 ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering and mip selection, the swapchain for vsync and image count, the surface format list for color depth, device enumeration for GPU selection, presents for the frame limiter, and pipelines for the rendering toggles."),
-                ("text", "The layer watches the profile for changes. Press Apply while a game is running and the new values take effect live, without restarting the game."),
+                ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again. The preview window restarts on Apply so the lists here stay in step."),
             ),
             "What it Will Not Do": (
                 ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and CoreCtrl for clocks and fan curves."),
@@ -65,7 +65,7 @@ def get_welcome_settings() -> dict:
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
             ),
             "The Preview Window": (
-                ("text", "volt-gui keeps a small vkgears window running under the profile you are editing. It is what fills the setting lists with your hardware, and it doubles as a live look at the profile, since the layer picks up an Apply without a restart. Switching profiles restarts it."),
+                ("text", "volt-gui keeps a small vkgears window running under the profile you are editing. It is what fills the setting lists with your hardware, and it doubles as a look at the profile: pressing Apply restarts it under the values you just saved. Switching profiles restarts it too."),
                 ("text", "Close it whenever you like. volt-gui carries on with what it learned the last time it ran, and starts a fresh one when you change profile. If vkgears is not installed the lists fall back to sensible defaults, so nothing breaks."),
                 ("code", "volt --probe myprofile -- vkgears", "Run it yourself:"),
             )
