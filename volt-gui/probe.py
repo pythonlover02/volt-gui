@@ -14,8 +14,11 @@ FRACTION_DIGITS: Final[int] = 2
 COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
 
-PRESENT_FALLBACK: Final[tuple] = ("fifo", "fifo_relaxed", "mailbox", "immediate")
+PRESENT_FALLBACK: Final[tuple] = ("immediate", "mailbox", "fifo", "fifo_relaxed")
 DEPTH_FALLBACK: Final[tuple] = ("8bit", "10bit")
+SPACE_FALLBACK: Final[tuple] = ("srgb_nonlinear",)
+TRANSFER_FALLBACK: Final[tuple] = ("unorm", "srgb")
+ALPHA_FALLBACK: Final[tuple] = ("opaque", "inherit")
 DEVICE_FALLBACK: Final[tuple] = ("device 1", "device 2", "device 3", "device 4")
 BIAS_FALLBACK: Final[float] = 4.0
 LEVEL_FALLBACK: Final[float] = 14.0
@@ -117,6 +120,18 @@ def present_options(data: dict) -> tuple:
 
 def depth_options(data: dict) -> tuple:
     return plain_pairs(probe_list(data, "color_depths", DEPTH_FALLBACK))
+
+
+def space_options(data: dict) -> tuple:
+    return plain_pairs(probe_list(data, "color_spaces", SPACE_FALLBACK))
+
+
+def transfer_options(data: dict) -> tuple:
+    return plain_pairs(probe_list(data, "transfer_functions", TRANSFER_FALLBACK))
+
+
+def alpha_options(data: dict) -> tuple:
+    return plain_pairs(probe_list(data, "composite_alphas", ALPHA_FALLBACK))
 
 
 def gpu_options(data: dict) -> tuple:

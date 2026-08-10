@@ -41,7 +41,9 @@ use crate::present::call_present_frame;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::swapchain::call_create_swapchain;
+use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_formats;
+use crate::swapchain::call_surface_present_modes;
 
 #[repr(C)]
 struct VkNegotiateLayerInterface {
@@ -78,6 +80,8 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
         "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
         "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
         "vkGetDeviceQueue2" => Some(volt_GetDeviceQueue2 as *mut c_void),
@@ -352,6 +356,23 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
     formats: *mut vk::SurfaceFormatKHR,
 ) -> vk::Result {
     call_surface_formats(phys, surface, count, formats)
+}
+
+unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(
+    phys: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
+    count: *mut u32,
+    modes: *mut vk::PresentModeKHR,
+) -> vk::Result {
+    call_surface_present_modes(phys, surface, count, modes)
+}
+
+unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+    phys: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
+    caps: *mut vk::SurfaceCapabilitiesKHR,
+) -> vk::Result {
+    call_surface_capabilities(phys, surface, caps)
 }
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {

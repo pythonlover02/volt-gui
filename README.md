@@ -35,11 +35,12 @@ Every setting defaults to **default**, meaning the layer does not touch that
 value and the game keeps its own choice. A profile with everything on default does nothing.
 
 The values each setting offers come from your own hardware, not from a list
-built into volt-gui. Present modes and colour depths come from what the
-surface reports, the GPU list from what the driver enumerates, and
-anisotropy, mip levels and LOD bias run up to the limits the device gives. A
-setting whose feature the device lacks holds nothing but `default`. Only the
-three **Framerate** settings have a fixed list, since they are volt's own.
+built into volt-gui. Present modes, colour depths, colour spaces, transfer
+functions and alpha modes come from what the surface reports, the GPU list
+from what the driver enumerates, and mip levels and LOD bias run up to the
+limits the device gives. A setting whose feature the device lacks holds
+nothing but `default`. Only the three **Framerate** settings have a fixed
+list, since they are volt's own.
 
 Settings are read once, when the game starts, and never change while it
 runs. Press Apply, then start the game again.
@@ -63,6 +64,11 @@ Force wins if you set both. Use the bounds when you want to rule out the
 extremes but still let the game pick. A minimum set above its own maximum
 does nothing: both are dropped and a warning is logged.
 
+Where a setting names a Vulkan value, minimum and maximum run in the order
+the Vulkan registry itself gives those values, not in an order volt invented.
+A value volt has no name for still appears and can still be forced, but takes
+no part in a bound.
+
 The three **Framerate** settings have no bounds, because a game never tells
 Vulkan what frame rate it wants. There is no value to bound, so those three
 only decide how the layer waits, and volt-gui shows them in one **Frame
@@ -76,18 +82,36 @@ Limiter** card.
   warning is logged.
 
 ### Display
-- **VSync / Present Mode**: whatever the surface supports, ordered from most
-  latency to least: fifo, fifo_relaxed, mailbox, immediate, then anything
-  newer. A maximum of mailbox keeps a game from tearing, a minimum of mailbox
-  keeps it off classic vsync. A mode the surface turns down falls back to the
-  game's own choice with a warning.
+- **VSync / Present Mode**: whatever the surface supports, in Vulkan registry
+  order: immediate, mailbox, fifo, fifo_relaxed, then the newer ones. A
+  minimum of mailbox keeps a game off immediate, a maximum of mailbox keeps it
+  off classic vsync. The modes you rule out are hidden from the list the game
+  is shown as well, so a game's own vsync menu cannot offer one you
+  disallowed. That filtering is what makes the setting hold everywhere: a
+  swapchain may only switch between modes the surface reported, and a present
+  may only name one the swapchain was built with, so a mode you ruled out is
+  one the game never had to offer, whatever route it takes. A mode the surface
+  turns down falls back to the game's own choice with a warning.
 - **Swapchain Images**: how many images the swapchain holds. Fewer images
   lower display latency, more images smooth frame delivery. The list runs
-  across what the surface allows.
+  across what the surface allows, and the narrowed range is reported back to
+  the game, so a game that derives its count from the surface honours it.
 - **Color Depth**: the bits per colour channel this surface offers, usually
   8-bit and 10-bit. The layer hides the formats you did not pick, so a game
   that takes the first supported format ends up with yours. If nothing
   matches, the full list comes back and a warning is logged.
+- **Color Space**: filtered out of the same list. Everything past
+  `srgb_nonlinear` needs the stack around the game to have enabled it, through
+  DXVK_HDR, PROTON_ENABLE_HDR or gamescope, so on most setups this card holds
+  one entry.
+- **Transfer Function**: whether the game is shown `srgb` formats, plain
+  `unorm` ones, or float ones, filtered out of the same list again. Getting it
+  wrong looks washed out or crushed rather than broken, so set it back to
+  default if the image looks off. No preset touches it.
+- **Composite Alpha**: how the compositor treats the finished image's alpha.
+  Forcing `opaque` skips compositor blending on Wayland.
+- **Clipped Presentation**: whether the driver may skip pixels another window
+  covers. On or off.
 
 ### Textures
 - **Texture Filtering**: retro (sharp pixels), bilinear, trilinear. A sampler
@@ -212,8 +236,9 @@ Presets populate the active profile with curated values, from **Quality**
 (trilinear, blended mips, 10 bit colour, classic vsync) down to **Potato Low
 Latency** (bilinear, hard mip cuts, immediate present, 2 image swapchain).
 A preset writes every value in the profile, so anything it does not set goes
-back to default. That includes the frame limit: the right cap depends on your
-display, so that choice stays yours.
+back to default. That includes the frame limit and the colour space, transfer
+function, composite alpha and clipped settings: those depend on your display
+and your compositor, so those choices stay yours.
 
 ## What volt will never do
 

@@ -1,5 +1,6 @@
 from typing import Final
 
+from probe import alpha_options
 from probe import call_read_probe
 from probe import depth_options
 from probe import frametime_pairs
@@ -9,6 +10,8 @@ from probe import lod_bias_options
 from probe import mip_options
 from probe import plain_pairs
 from probe import present_options
+from probe import space_options
+from probe import transfer_options
 
 
 APP_VERSION: Final[str] = "2.0.0"
@@ -43,7 +46,7 @@ SETTINGS_DB: Final[dict] = {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. The list is what this surface supports, ordered from most latency to least, so a Maximum of mailbox keeps a game from tearing and a Minimum of mailbox keeps it off classic vsync. fifo is classic vsync, fifo_relaxed tears only below refresh, mailbox is low latency vsync, immediate turns vsync off. A mode the surface turns down falls back to the game's own choice with a warning.",
+            "description": "How finished frames reach the screen. The list is what this surface supports, in the order the Vulkan registry gives those modes: immediate, mailbox, fifo, fifo_relaxed, then the newer ones. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. A Minimum of mailbox keeps a game off immediate, a Maximum of mailbox keeps it off classic vsync. The layer also hides the modes you rule out from the list the game is shown, so a game's own vsync menu cannot offer one you disallowed. A mode the surface turns down falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
             "bounded": True,
@@ -51,7 +54,7 @@ SETTINGS_DB: Final[dict] = {
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
-            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list runs across what this surface allows, in steps of two.",
+            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list runs across what this surface allows, in steps of two. The narrowed range is reported back to the game as well, so a game that picks its count from what the surface offers honours the setting itself instead of being overridden afterwards.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
             "bounded": True,
@@ -61,6 +64,38 @@ SETTINGS_DB: Final[dict] = {
             "label": "Color Depth",
             "description": "Which surface formats the game is allowed to see, grouped by bits per colour channel. The list is the depths this surface actually offers. The layer hides the ones you did not pick, so a game that takes the first supported format ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
+            "editable": False,
+            "bounded": True,
+        },
+        "color_space": {
+            "section": "display",
+            "label": "Color Space",
+            "description": "Which color space the game is allowed to see, filtered out of the same surface format list as Color Depth. The list is what this surface reports, in Vulkan registry order: srgb_nonlinear first, then the extended and wide gamut spaces. Everything past srgb_nonlinear comes from a swapchain colorspace extension and only appears when the stack around the game enabled it, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope. A space volt has no name for can still be forced but takes no part in a bound. If nothing matches, the full list comes back and a warning is logged.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
+            "bounded": True,
+        },
+        "transfer_function": {
+            "section": "display",
+            "label": "Transfer Function",
+            "description": "Whether the game is shown srgb surface formats, plain unorm ones, or float ones, filtered out of the same list again. srgb formats have the encoding curve applied by the display hardware, unorm formats leave it to whatever the game does in its own shaders. The three run in the order of the lowest format value each covers, so unorm, then srgb, then sfloat. Getting this wrong looks washed out or crushed rather than broken, so set it back to default if the image looks wrong. No preset touches it.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
+            "bounded": True,
+        },
+        "composite_alpha": {
+            "section": "display",
+            "label": "Composite Alpha",
+            "description": "How the compositor treats the alpha channel of the finished image. The list is what this surface allows, in Vulkan registry order: opaque, pre_multiplied, post_multiplied, inherit. opaque tells the compositor to skip blending the window altogether, which is the cheapest path on Wayland.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
+            "bounded": True,
+        },
+        "clipped": {
+            "section": "display",
+            "label": "Clipped Presentation",
+            "description": "Whether the driver may discard work on pixels another window covers. on is cheaper and is what almost every game asks for already. off keeps those pixels rendered, which only matters if something reads the presented image back. Core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force.",
+            "options": (DEFAULT_VALUE, "off", "on"),
             "editable": False,
             "bounded": True,
         },
@@ -230,6 +265,9 @@ OPTION_BUILDERS: Final[dict] = {
     "present_mode": present_options,
     "image_count": image_count_options,
     "color_depth": depth_options,
+    "color_space": space_options,
+    "transfer_function": transfer_options,
+    "composite_alpha": alpha_options,
     "lod_bias": lod_bias_options,
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,

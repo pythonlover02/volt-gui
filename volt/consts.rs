@@ -46,18 +46,8 @@ pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const SUFFIX_MIN: &str = "_min";
 pub(crate) const SUFFIX_MAX: &str = "_max";
 
-pub(crate) const PRESENT_ORDER: [&str; 6] = [
-    "fifo",
-    "fifo_relaxed",
-    "mailbox",
-    "immediate",
-    "shared_demand_refresh",
-    "shared_continuous_refresh",
-];
-
 pub(crate) const DEPTH_SUFFIX: &str = "bit";
 pub(crate) const UNKNOWN_PREFIX: &str = "mode ";
-pub(crate) const RED_MARK: char = 'r';
 
 pub(crate) const FILTER_RETRO: u32 = 0;
 pub(crate) const FILTER_BILINEAR: u32 = 1;
@@ -71,10 +61,18 @@ pub(crate) const TOGGLE_ON: u32 = 1;
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
+pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
+pub(crate) const SPACE_EMPTY_WARN: &str = "color space selection matched no surface format, keeping every format";
+pub(crate) const TRANSFER_EMPTY_WARN: &str = "transfer function selection matched no surface format, keeping every format";
+pub(crate) const SPACE_EXTENDED_INFO: &str = "this color space comes from a swapchain colorspace extension and only exists where the stack enabled it";
+pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
+pub(crate) const FORMAT_FORCED_WARN: &str = "the application asked for a color depth the settings exclude, leaving it alone: it may have allocated resources to match";
+pub(crate) const SPACE_FORCED_WARN: &str = "the application asked for a color space the settings exclude, leaving it alone: it may have allocated resources to match";
+pub(crate) const TRANSFER_FORCED_WARN: &str = "the application asked for a transfer function the settings exclude, leaving it alone: it may have allocated resources to match";
 
 pub(crate) const NULL_OK: [&str; 4] = [
     "vkCreateInstance",
@@ -122,6 +120,10 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # a force wins over the bounds when both are set. a minimum above its maximum
 # is a mistake: both are ignored and a warning is logged
 #
+# where a setting names a vulkan enumerant, minimum and maximum run in the
+# order the vulkan registry itself gives those values. a value volt has no
+# name for can still be forced, but takes no part in a bound
+#
 # frame_limit, frame_limit_method and frame_pacing carry no bounds: a game
 # never asks vulkan for a frame rate, so there is nothing to bound. they
 # configure how the layer itself waits instead
@@ -144,6 +146,18 @@ image_count_max = "default"
 color_depth = "default"
 color_depth_min = "default"
 color_depth_max = "default"
+color_space = "default"
+color_space_min = "default"
+color_space_max = "default"
+transfer_function = "default"
+transfer_function_min = "default"
+transfer_function_max = "default"
+composite_alpha = "default"
+composite_alpha_min = "default"
+composite_alpha_max = "default"
+clipped = "default"
+clipped_min = "default"
+clipped_max = "default"
 
 [textures]
 filtering = "default"

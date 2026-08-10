@@ -30,8 +30,15 @@ use crate::env::env_home;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::ranks::alpha_parse;
+use crate::ranks::alpha_semantic;
 use crate::ranks::parse_depth_label;
-use crate::ranks::present_rank_of;
+use crate::ranks::present_parse;
+use crate::ranks::present_semantic;
+use crate::ranks::space_parse;
+use crate::ranks::space_semantic;
+use crate::ranks::transfer_parse;
+use crate::ranks::transfer_semantic;
 
 #[derive(Default)]
 pub(crate) struct Settings {
@@ -39,6 +46,10 @@ pub(crate) struct Settings {
     pub(crate) present_mode: Bounds<u32>,
     pub(crate) image_count: Bounds<u32>,
     pub(crate) depth: Bounds<u32>,
+    pub(crate) color_space: Bounds<u32>,
+    pub(crate) transfer: Bounds<u32>,
+    pub(crate) composite_alpha: Bounds<u32>,
+    pub(crate) clipped: Bounds<u32>,
     pub(crate) filtering: Bounds<u32>,
     pub(crate) mipmap: Bounds<u32>,
     pub(crate) lod_bias: Bounds<f32>,
@@ -76,11 +87,29 @@ fn parse_uint(text: &str) -> Option<u32> {
 }
 
 fn parse_present(text: &str) -> Option<u32> {
-    Some(present_rank_of(text))
+    present_parse(text)
+        .and_then(present_semantic)
+        .map(|facts| facts.rank)
 }
 
 fn parse_depth(text: &str) -> Option<u32> {
     parse_depth_label(text)
+}
+
+fn parse_space(text: &str) -> Option<u32> {
+    space_parse(text)
+        .and_then(space_semantic)
+        .map(|facts| facts.rank)
+}
+
+fn parse_transfer(text: &str) -> Option<u32> {
+    transfer_parse(text).map(|numeric| transfer_semantic(numeric).rank)
+}
+
+fn parse_alpha(text: &str) -> Option<u32> {
+    alpha_parse(text)
+        .and_then(alpha_semantic)
+        .map(|facts| facts.rank)
 }
 
 fn parse_filter(text: &str) -> Option<u32> {
@@ -207,6 +236,10 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         present_mode: bounds_field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
         image_count: bounds_field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         depth: bounds_field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
+        color_space: bounds_field(&doc, SECTION_DISPLAY, "color_space", parse_space),
+        transfer: bounds_field(&doc, SECTION_DISPLAY, "transfer_function", parse_transfer),
+        composite_alpha: bounds_field(&doc, SECTION_DISPLAY, "composite_alpha", parse_alpha),
+        clipped: bounds_field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
         filtering: bounds_field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
         mipmap: bounds_field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
         lod_bias: bounds_field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
