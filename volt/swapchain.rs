@@ -492,7 +492,7 @@ fn call_write_modes(list: *mut VkPresentModeList, kept_modes: &[vk::PresentModeK
     unsafe { (*list).present_mode_count = kept_modes.len() as u32 };
 }
 
-fn call_filtered_modes(list: *mut VkPresentModeList, choice: Option<u32>) {
+fn call_filtered_mode_list(list: *mut VkPresentModeList, choice: Option<u32>) {
     match unsafe { (*list).p_present_modes.is_null() } {
         true => (),
         false => call_write_modes(list, &present_filtered(call_read_modes(list), choice)),
@@ -502,7 +502,7 @@ fn call_filtered_modes(list: *mut VkPresentModeList, choice: Option<u32>) {
 fn call_filtered_chain(head: *mut c_void, choice: Option<u32>) {
     mode_lists(head)
         .into_iter()
-        .for_each(|list| call_filtered_modes(list, choice));
+        .for_each(|list| call_filtered_mode_list(list, choice));
 }
 
 fn call_caps2_through(
