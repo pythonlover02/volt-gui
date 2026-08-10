@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 use ash::vk;
 
 use crate::bounds::bounds_set;
@@ -12,6 +14,7 @@ use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
+use crate::instance::PfnWriteSamplers;
 
 fn filter_rank(mag: vk::Filter, min: vk::Filter, mip: vk::SamplerMipmapMode) -> u32 {
     match (
@@ -90,6 +93,18 @@ fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo)
     }
 }
 
+fn patched_list(
+    s: &Settings,
+    caps: &DeviceCaps,
+    cis: *const vk::SamplerCreateInfo,
+    count: u32,
+) -> Vec<vk::SamplerCreateInfo> {
+    unsafe { std::slice::from_raw_parts(cis, count as usize) }
+        .iter()
+        .map(|original| patched_ci(s, caps, original))
+        .collect()
+}
+
 pub(crate) fn call_create_sampler(
     dev: &VkDevState,
     ci: *const vk::SamplerCreateInfo,
@@ -103,5 +118,30 @@ pub(crate) fn call_create_sampler(
             vk::Result::SUCCESS
         }
         Err(e) => e,
+    }
+}
+
+fn call_samplers_through(
+    dev: &VkDevState,
+    fp: PfnWriteSamplers,
+    handle: vk::Device,
+    count: u32,
+    cis: *const vk::SamplerCreateInfo,
+    descriptors: *const c_void,
+) -> vk::Result {
+    let patched = patched_list(ensure_settings(), &dev.caps, cis, count);
+    unsafe { fp(handle, count, patched.as_ptr(), descriptors) }
+}
+
+pub(crate) fn call_write_sampler_descriptors(
+    dev: &VkDevState,
+    handle: vk::Device,
+    count: u32,
+    cis: *const vk::SamplerCreateInfo,
+    descriptors: *const c_void,
+) -> vk::Result {
+    match dev.samplers_fp {
+        Some(fp) => call_samplers_through(dev, fp, handle, count, cis, descriptors),
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
     }
 }

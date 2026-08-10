@@ -63,8 +63,10 @@ pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for th
 pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
+pub(crate) const UNOWNED_BUFFER_ERROR: &str = "alpha to coverage on a command buffer with no registered device";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
+pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
 pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
 pub(crate) const SPACE_EMPTY_WARN: &str = "color space selection matched no surface format, keeping every format";
 pub(crate) const TRANSFER_EMPTY_WARN: &str = "transfer function selection matched no surface format, keeping every format";
@@ -84,6 +86,15 @@ pub(crate) const NULL_OK: [&str; 4] = [
 pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n\nsettings are read once when the application starts and never change while it\nruns: edit the profile, then start the application again\n";
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
+
+pub(crate) const FN_SURFACE_CAPS_2: &str = "vkGetPhysicalDeviceSurfaceCapabilities2KHR";
+pub(crate) const FN_SURFACE_FORMATS_2: &str = "vkGetPhysicalDeviceSurfaceFormats2KHR";
+pub(crate) const FN_SURFACE_MODES_2: &str = "vkGetPhysicalDeviceSurfacePresentModes2EXT";
+pub(crate) const FN_DEVICE_GROUPS: &str = "vkEnumeratePhysicalDeviceGroups";
+pub(crate) const FN_DEVICE_GROUPS_KHR: &str = "vkEnumeratePhysicalDeviceGroupsKHR";
+pub(crate) const FN_SHARED_SWAPCHAINS: &str = "vkCreateSharedSwapchainsKHR";
+pub(crate) const FN_WRITE_SAMPLERS: &str = "vkWriteSamplerDescriptorsEXT";
+pub(crate) const FN_SET_ALPHA_COVERAGE: &str = "vkCmdSetAlphaToCoverageEnableEXT";
 
 pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";

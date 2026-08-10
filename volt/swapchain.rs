@@ -26,7 +26,15 @@ use crate::env::env_probe_active;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
+use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnSurfaceCaps2;
+use crate::instance::PfnSurfaceFormats2;
+use crate::instance::PfnSurfaceModes2;
 use crate::instance::VkInstState;
+use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::VkSurfaceCapabilities2;
+use crate::instance::VkSurfaceFormat2;
+use crate::instance::SURFACE_FORMAT_2;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::probe::build_probe;
@@ -410,6 +418,209 @@ pub(crate) fn call_surface_capabilities(
     }
 }
 
+fn call_caps2_through(
+    fp: PfnSurfaceCaps2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    out: *mut VkSurfaceCapabilities2,
+    b: Bounds<u32>,
+) -> vk::Result {
+    match unsafe { fp(phys, info, out) } {
+        vk::Result::SUCCESS => {
+            unsafe { (*out).surface_capabilities = clamped_caps((*out).surface_capabilities, b) };
+            vk::Result::SUCCESS
+        }
+        e => e,
+    }
+}
+
+pub(crate) fn call_surface_capabilities2(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    out: *mut VkSurfaceCapabilities2,
+) -> vk::Result {
+    match owning_instance(phys).and_then(|(_, inst)| inst.caps2_fp) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(fp) => call_caps2_through(fp, phys, info, out, ensure_settings().image_count),
+    }
+}
+
+fn empty_format2() -> VkSurfaceFormat2 {
+    VkSurfaceFormat2 {
+        s_type: vk::StructureType::from_raw(SURFACE_FORMAT_2 as i32),
+        p_next: ptr::null_mut(),
+        surface_format: vk::SurfaceFormatKHR::default(),
+    }
+}
+
+fn unwrapped_formats(wrapped: Vec<VkSurfaceFormat2>) -> Vec<vk::SurfaceFormatKHR> {
+    wrapped.into_iter().map(|one| one.surface_format).collect()
+}
+
+fn kept_offsets(
+    filled: &[VkSurfaceFormat2],
+    kept_formats: &[vk::SurfaceFormatKHR],
+) -> Vec<usize> {
+    filled
+        .iter()
+        .enumerate()
+        .filter(|(_, one)| kept_formats.contains(&one.surface_format))
+        .map(|(at, _)| at)
+        .collect()
+}
+
+fn call_read_filled(count: *mut u32, out: *mut VkSurfaceFormat2) -> Vec<VkSurfaceFormat2> {
+    (0..unsafe { *count } as usize)
+        .map(|at| unsafe { *out.add(at) })
+        .collect()
+}
+
+fn call_compact_to(out: *mut VkSurfaceFormat2, offsets: &[usize]) {
+    offsets
+        .iter()
+        .enumerate()
+        .for_each(|(at, from)| unsafe { ptr::swap(out.add(at), out.add(*from)) });
+}
+
+fn call_query_formats2_all(
+    fp: PfnSurfaceFormats2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+) -> Vec<vk::SurfaceFormatKHR> {
+    let mut n: u32 = 0;
+    let r1 = unsafe { fp(phys, info, &mut n, ptr::null_mut()) };
+    let mut v = vec![empty_format2(); n as usize];
+    let r2 = unsafe { fp(phys, info, &mut n, v.as_mut_ptr()) };
+    match (r1, r2) {
+        (vk::Result::SUCCESS, vk::Result::SUCCESS) => unwrapped_formats(v),
+        (_, _) => Vec::new(),
+    }
+}
+
+fn completed(written: usize, available: usize) -> vk::Result {
+    match written == available {
+        true => vk::Result::SUCCESS,
+        false => vk::Result::INCOMPLETE,
+    }
+}
+
+fn call_filtered_in_place(
+    queried: vk::Result,
+    kept_formats: &[vk::SurfaceFormatKHR],
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    match queried {
+        vk::Result::SUCCESS | vk::Result::INCOMPLETE => {
+            let offsets = kept_offsets(&call_read_filled(count, out), kept_formats);
+            call_compact_to(out, &offsets);
+            unsafe { *count = offsets.len() as u32 };
+            completed(offsets.len(), kept_formats.len())
+        }
+        e => e,
+    }
+}
+
+fn call_formats2_into(
+    fp: PfnSurfaceFormats2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    kept_formats: &[vk::SurfaceFormatKHR],
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    call_filtered_in_place(
+        unsafe { fp(phys, info, count, out) },
+        kept_formats,
+        count,
+        out,
+    )
+}
+
+fn call_formats2_count(kept_formats: &[vk::SurfaceFormatKHR], count: *mut u32) -> vk::Result {
+    unsafe { *count = kept_formats.len() as u32 };
+    vk::Result::SUCCESS
+}
+
+fn call_formats2_answer(
+    fp: PfnSurfaceFormats2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    kept_formats: &[vk::SurfaceFormatKHR],
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    match out.is_null() {
+        true => call_formats2_count(kept_formats, count),
+        false => call_formats2_into(fp, phys, info, kept_formats, count, out),
+    }
+}
+
+fn call_formats2_through(
+    fp: PfnSurfaceFormats2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+    s: &Settings,
+) -> vk::Result {
+    maybe_log_space(s.color_space);
+    call_formats2_answer(
+        fp,
+        phys,
+        info,
+        &surface_filtered(call_query_formats2_all(fp, phys, info), s),
+        count,
+        out,
+    )
+}
+
+pub(crate) fn call_surface_formats2(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    match owning_instance(phys).and_then(|(_, inst)| inst.formats2_fp) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(fp) => call_formats2_through(fp, phys, info, count, out, ensure_settings()),
+    }
+}
+
+fn call_query_modes2_all(
+    fp: PfnSurfaceModes2,
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+) -> Vec<vk::PresentModeKHR> {
+    let mut n: u32 = 0;
+    let r1 = unsafe { fp(phys, info, &mut n, ptr::null_mut()) };
+    let mut v = vec![vk::PresentModeKHR::FIFO; n as usize];
+    let r2 = unsafe { fp(phys, info, &mut n, v.as_mut_ptr()) };
+    match (r1, r2) {
+        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
+        (_, _) => Vec::new(),
+    }
+}
+
+pub(crate) fn call_surface_present_modes2(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    count: *mut u32,
+    out: *mut vk::PresentModeKHR,
+) -> vk::Result {
+    match owning_instance(phys).and_then(|(_, inst)| inst.modes2_fp) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(fp) => call_write_list(
+            &present_filtered(
+                call_query_modes2_all(fp, phys, info),
+                ensure_settings().present_mode,
+            ),
+            count,
+            out,
+        ),
+    }
+}
+
 fn maybe_probe(
     inst: &VkInstState,
     dev: &VkDevState,
@@ -488,5 +699,55 @@ pub(crate) fn call_create_swapchain(
     match insts_get(dev.instance_handle) {
         Some(inst) => call_create_registered(dev, handle, &inst, unsafe { &*ci }, s, alloc, out),
         None => unsafe { (dev.swap_fp.create_swapchain_khr)(handle, ci, alloc, out) },
+    }
+}
+
+fn call_shared_patched(
+    dev: &VkDevState,
+    inst: &VkInstState,
+    cis: *const vk::SwapchainCreateInfoKHR,
+    count: u32,
+    s: &Settings,
+) -> Vec<vk::SwapchainCreateInfoKHR> {
+    unsafe { std::slice::from_raw_parts(cis, count as usize) }
+        .iter()
+        .map(|original| call_prepared_ci(inst, dev, original, s))
+        .collect()
+}
+
+fn call_shared_through(
+    dev: &VkDevState,
+    inst: &VkInstState,
+    fp: PfnCreateSharedSwapchains,
+    handle: vk::Device,
+    count: u32,
+    cis: *const vk::SwapchainCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks,
+    out: *mut vk::SwapchainKHR,
+) -> vk::Result {
+    call_created_swapchain(unsafe {
+        fp(
+            handle,
+            count,
+            call_shared_patched(dev, inst, cis, count, ensure_settings()).as_ptr(),
+            alloc,
+            out,
+        )
+    })
+}
+
+pub(crate) fn call_create_shared_swapchains(
+    dev: &VkDevState,
+    handle: vk::Device,
+    count: u32,
+    cis: *const vk::SwapchainCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks,
+    out: *mut vk::SwapchainKHR,
+) -> vk::Result {
+    match (dev.shared_fp, insts_get(dev.instance_handle)) {
+        (Some(fp), Some(inst)) => {
+            call_shared_through(dev, &inst, fp, handle, count, cis, alloc, out)
+        }
+        (_, _) => vk::Result::ERROR_INITIALIZATION_FAILED,
     }
 }

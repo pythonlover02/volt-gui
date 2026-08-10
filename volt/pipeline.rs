@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ash::vk;
 
 use crate::bounds::bounds_set;
@@ -7,7 +9,10 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
+use crate::consts::UNOWNED_BUFFER_ERROR;
 use crate::device::VkDevState;
+use crate::logging::log_at;
+use crate::logging::LogLevel;
 
 fn toggle_rank(flag: vk::Bool32) -> u32 {
     match flag {
@@ -64,6 +69,26 @@ fn patched_ci(
     vk::GraphicsPipelineCreateInfo {
         p_multisample_state: state_ptr(multisample, original.p_multisample_state),
         ..*original
+    }
+}
+
+fn call_forward_coverage(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::Bool32) {
+    match dev.alpha_fp {
+        Some(fp) => unsafe {
+            fp(buffer, pick_coverage(ensure_settings().alpha_coverage, enable))
+        },
+        None => (),
+    }
+}
+
+pub(crate) fn call_set_alpha_coverage(
+    owner: Option<Arc<VkDevState>>,
+    buffer: vk::CommandBuffer,
+    enable: vk::Bool32,
+) {
+    match owner {
+        Some(d) => call_forward_coverage(&d, buffer, enable),
+        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 

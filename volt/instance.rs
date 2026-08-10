@@ -13,10 +13,62 @@ use crate::bounds::bounds_set;
 use crate::bounds::kept;
 use crate::bounds::Bounds;
 use crate::config::ensure_settings;
+use crate::consts::FN_DEVICE_GROUPS;
+use crate::consts::FN_DEVICE_GROUPS_KHR;
+use crate::consts::FN_SURFACE_CAPS_2;
+use crate::consts::FN_SURFACE_FORMATS_2;
+use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
+use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::LAYER_LINK_INFO;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+
+pub(crate) const SURFACE_FORMAT_2: u32 = 1000119002;
+
+pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
+    vk::PhysicalDevice,
+    *const VkPhysicalDeviceSurfaceInfo2,
+    *mut VkSurfaceCapabilities2,
+) -> vk::Result;
+
+pub(crate) type PfnSurfaceFormats2 = unsafe extern "system" fn(
+    vk::PhysicalDevice,
+    *const VkPhysicalDeviceSurfaceInfo2,
+    *mut u32,
+    *mut VkSurfaceFormat2,
+) -> vk::Result;
+
+pub(crate) type PfnSurfaceModes2 = unsafe extern "system" fn(
+    vk::PhysicalDevice,
+    *const VkPhysicalDeviceSurfaceInfo2,
+    *mut u32,
+    *mut vk::PresentModeKHR,
+) -> vk::Result;
+
+pub(crate) type PfnDeviceGroups = unsafe extern "system" fn(
+    vk::Instance,
+    *mut u32,
+    *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result;
+
+pub(crate) type PfnCreateSharedSwapchains = unsafe extern "system" fn(
+    vk::Device,
+    u32,
+    *const vk::SwapchainCreateInfoKHR,
+    *const vk::AllocationCallbacks,
+    *mut vk::SwapchainKHR,
+) -> vk::Result;
+
+pub(crate) type PfnWriteSamplers = unsafe extern "system" fn(
+    vk::Device,
+    u32,
+    *const vk::SamplerCreateInfo,
+    *const c_void,
+) -> vk::Result;
+
+pub(crate) type PfnCmdSetAlphaToCoverage =
+    unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
 
 #[repr(C)]
 pub(crate) struct VkLayerLink {
@@ -38,11 +90,39 @@ pub(crate) struct VkLayerCreateInfo {
     pub(crate) u_layer_info: *mut VkLayerLink,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPhysicalDeviceSurfaceInfo2 {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) surface: vk::SurfaceKHR,
+}
+
+#[repr(C)]
+pub(crate) struct VkSurfaceCapabilities2 {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) surface_capabilities: vk::SurfaceCapabilitiesKHR,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkSurfaceFormat2 {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) surface_format: vk::SurfaceFormatKHR,
+}
+
 #[derive(Clone)]
 pub(crate) struct VkInstState {
     pub(crate) instance: ash::Instance,
     pub(crate) gipa: vk::PFN_vkGetInstanceProcAddr,
     pub(crate) surface_fp: vk::KhrSurfaceFn,
+    pub(crate) caps2_fp: Option<PfnSurfaceCaps2>,
+    pub(crate) formats2_fp: Option<PfnSurfaceFormats2>,
+    pub(crate) modes2_fp: Option<PfnSurfaceModes2>,
+    pub(crate) groups_fp: Option<PfnDeviceGroups>,
+    pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
 }
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
@@ -157,6 +237,30 @@ fn gpu_filtered(devices: Vec<vk::PhysicalDevice>, b: Bounds<u32>) -> Vec<vk::Phy
     }
 }
 
+fn group_devices(group: &vk::PhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDevice> {
+    group.physical_devices[..group.physical_device_count as usize].to_vec()
+}
+
+fn group_wanted(
+    group: &vk::PhysicalDeviceGroupProperties,
+    allowed: &[vk::PhysicalDevice],
+) -> bool {
+    group_devices(group)
+        .into_iter()
+        .any(|device| allowed.contains(&device))
+}
+
+fn group_filtered(
+    groups: Vec<vk::PhysicalDeviceGroupProperties>,
+    allowed: Vec<vk::PhysicalDevice>,
+    b: Bounds<u32>,
+) -> Vec<vk::PhysicalDeviceGroupProperties> {
+    match bounds_set(&b) {
+        true => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
+        false => groups,
+    }
+}
+
 fn copy_count(requested: u32, available: usize) -> usize {
     (requested as usize).min(available)
 }
@@ -250,15 +354,112 @@ pub(crate) fn call_filtered_enumerate(
     }
 }
 
+fn call_query_groups(
+    handle: vk::Instance,
+    fp: PfnDeviceGroups,
+) -> Vec<vk::PhysicalDeviceGroupProperties> {
+    let mut n: u32 = 0;
+    let r1 = unsafe { fp(handle, &mut n, ptr::null_mut()) };
+    let mut v: Vec<vk::PhysicalDeviceGroupProperties> =
+        (0..n).map(|_| Default::default()).collect();
+    let r2 = unsafe { fp(handle, &mut n, v.as_mut_ptr()) };
+    match (r1, r2) {
+        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
+        (_, _) => Vec::new(),
+    }
+}
+
+fn call_allowed_devices(st: &VkInstState) -> Vec<vk::PhysicalDevice> {
+    gpu_filtered(
+        unsafe { st.instance.enumerate_physical_devices() }.unwrap_or_default(),
+        ensure_settings().gpu,
+    )
+}
+
+fn call_groups_through(
+    st: &VkInstState,
+    handle: vk::Instance,
+    fp: PfnDeviceGroups,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    call_write_list(
+        &group_filtered(
+            call_query_groups(handle, fp),
+            call_allowed_devices(st),
+            ensure_settings().gpu,
+        ),
+        count,
+        groups,
+    )
+}
+
+fn call_groups_with(
+    inst: vk::Instance,
+    found: Option<(VkInstState, PfnDeviceGroups)>,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    match found {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((st, fp)) => call_groups_through(&st, inst, fp, count, groups),
+    }
+}
+
+pub(crate) fn call_filtered_groups(
+    inst: vk::Instance,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    call_groups_with(
+        inst,
+        insts_get(inst.as_raw()).and_then(|st| st.groups_fp.map(|fp| (st, fp))),
+        count,
+        groups,
+    )
+}
+
+pub(crate) fn call_filtered_groups_khr(
+    inst: vk::Instance,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    call_groups_with(
+        inst,
+        insts_get(inst.as_raw()).and_then(|st| st.groups_khr_fp.map(|fp| (st, fp))),
+        count,
+        groups,
+    )
+}
+
 fn load_surface_fp(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) -> vk::KhrSurfaceFn {
     vk::KhrSurfaceFn::load(|name| unsafe { mem::transmute(gipa(handle, name.as_ptr())) })
+}
+
+fn call_typed_instance_fp<T>(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    handle: vk::Instance,
+    name: &str,
+) -> Option<T> {
+    call_next_gipa(gipa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
 fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) {
     let static_fn = vk::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
-    let surface_fp = load_surface_fp(gipa, handle);
-    insts_put(handle.as_raw(), VkInstState { instance, gipa, surface_fp });
+    insts_put(
+        handle.as_raw(),
+        VkInstState {
+            instance,
+            gipa,
+            surface_fp: load_surface_fp(gipa, handle),
+            caps2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_CAPS_2),
+            formats2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_FORMATS_2),
+            modes2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_MODES_2),
+            groups_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS),
+            groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),
+        },
+    );
     log_at(LogLevel::Info, "vk instance registered");
 }
 

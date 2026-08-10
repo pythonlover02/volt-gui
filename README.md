@@ -158,6 +158,15 @@ creation for the display settings, `vkCreateSampler` for texture settings,
 for the frame limiter. Device creation passes straight through: volt enables
 no feature the game left off.
 
+Every setting is hooked on each path that reaches it, not just the obvious
+one. A game that queries formats through
+`vkGetPhysicalDeviceSurfaceFormats2KHR`, enumerates through
+`vkEnumeratePhysicalDeviceGroups`, creates samplers inline through
+`vkWriteSamplerDescriptorsEXT` or sets alpha to coverage as dynamic state gets
+the same treatment as one that takes the core path. Which paths exist is
+derived from the Vulkan registry rather than kept as a hand written list, so a
+new extension route shows up as a gap instead of a silent bypass.
+
 Settings are frozen for the life of the process. Press Apply, then start the
 game again.
 
@@ -256,8 +265,16 @@ requires injecting shaders or processing the image is out of scope:
   setting whose value is illegal without one is out of scope, whatever it
   would be worth.
 - Require a Vulkan extension. Core 1.0 and `VK_KHR_swapchain` are the whole
-  surface volt asks for, so behaviour never splits between drivers.
+  surface volt asks for, so behaviour never splits between drivers. volt may
+  intercept an extension command the game itself calls, so a setting keeps
+  applying where the game moved that state elsewhere; a hook for an extension
+  the game never enabled is unreachable and its entry point is never handed
+  out.
 - Change a setting under a running game. The profile is read once at startup.
+- Write into memory the game owns. volt patches the structures it passes on
+  and fills the arrays a query asks it to fill; a `pNext` chain the game built
+  is read and never written. A setting reaches the game through the lists volt
+  hands it, not by reaching into what the game already built.
 
 ## Contributing
 

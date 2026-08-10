@@ -10,13 +10,25 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::FN_DEVICE_GROUPS;
+use crate::consts::FN_DEVICE_GROUPS_KHR;
+use crate::consts::FN_SET_ALPHA_COVERAGE;
+use crate::consts::FN_SHARED_SWAPCHAINS;
+use crate::consts::FN_SURFACE_CAPS_2;
+use crate::consts::FN_SURFACE_FORMATS_2;
+use crate::consts::FN_SURFACE_MODES_2;
+use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_NAME;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::consts::UNOWNED_QUEUE_ERROR;
+use crate::device::call_allocate_command_buffers;
+use crate::device::call_destroy_command_pool;
+use crate::device::call_free_command_buffers;
 use crate::device::call_real_create_device;
+use crate::device::cmdbuf_owner;
 use crate::device::devs_del;
 use crate::device::devs_gdpa;
 use crate::device::devs_get;
@@ -26,24 +38,35 @@ use crate::device::queue_owner;
 use crate::device::VkDevState;
 use crate::instance::call_advance_chain;
 use crate::instance::call_filtered_enumerate;
+use crate::instance::call_filtered_groups;
+use crate::instance::call_filtered_groups_khr;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::call_real_create_instance;
 use crate::instance::chain_link_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
+use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::VkSurfaceCapabilities2;
+use crate::instance::VkSurfaceFormat2;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_graphics_pipelines;
+use crate::pipeline::call_set_alpha_coverage;
 use crate::present::call_forget_timeline;
 use crate::present::call_present_frame;
 use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
+use crate::sampler::call_write_sampler_descriptors;
+use crate::swapchain::call_create_shared_swapchains;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_capabilities;
+use crate::swapchain::call_surface_capabilities2;
 use crate::swapchain::call_surface_formats;
+use crate::swapchain::call_surface_formats2;
 use crate::swapchain::call_surface_present_modes;
+use crate::swapchain::call_surface_present_modes2;
 
 #[repr(C)]
 struct VkNegotiateLayerInterface {
@@ -77,6 +100,9 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
+        "vkAllocateCommandBuffers" => Some(vkAllocateCommandBuffers as *mut c_void),
+        "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
+        "vkDestroyCommandPool" => Some(vkDestroyCommandPool as *mut c_void),
         "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
         "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
@@ -87,6 +113,54 @@ fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
         "vkGetDeviceQueue2" => Some(volt_GetDeviceQueue2 as *mut c_void),
         _ => None,
     }
+}
+
+fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
+    match name {
+        FN_SURFACE_CAPS_2 => Some(vkGetPhysicalDeviceSurfaceCapabilities2KHR as *mut c_void),
+        FN_SURFACE_FORMATS_2 => Some(vkGetPhysicalDeviceSurfaceFormats2KHR as *mut c_void),
+        FN_SURFACE_MODES_2 => Some(vkGetPhysicalDeviceSurfacePresentModes2EXT as *mut c_void),
+        FN_DEVICE_GROUPS => Some(vkEnumeratePhysicalDeviceGroups as *mut c_void),
+        FN_DEVICE_GROUPS_KHR => Some(vkEnumeratePhysicalDeviceGroupsKHR as *mut c_void),
+        _ => None,
+    }
+}
+
+fn instance_fp_present(inst: vk::Instance, name: &str) -> bool {
+    match (insts_get(inst.as_raw()), name) {
+        (Some(st), FN_SURFACE_CAPS_2) => st.caps2_fp.is_some(),
+        (Some(st), FN_SURFACE_FORMATS_2) => st.formats2_fp.is_some(),
+        (Some(st), FN_SURFACE_MODES_2) => st.modes2_fp.is_some(),
+        (Some(st), FN_DEVICE_GROUPS) => st.groups_fp.is_some(),
+        (Some(st), FN_DEVICE_GROUPS_KHR) => st.groups_khr_fp.is_some(),
+        (_, _) => false,
+    }
+}
+
+fn instance_hooked_symbol(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
+    instance_extension_hook(name).filter(|_| instance_fp_present(inst, name))
+}
+
+fn device_extension_hook(name: &str) -> Option<*mut c_void> {
+    match name {
+        FN_SHARED_SWAPCHAINS => Some(vkCreateSharedSwapchainsKHR as *mut c_void),
+        FN_WRITE_SAMPLERS => Some(vkWriteSamplerDescriptorsEXT as *mut c_void),
+        FN_SET_ALPHA_COVERAGE => Some(vkCmdSetAlphaToCoverageEnableEXT as *mut c_void),
+        _ => None,
+    }
+}
+
+fn device_fp_present(dev: vk::Device, name: &str) -> bool {
+    match (devs_get(dev.as_raw()), name) {
+        (Some(d), FN_SHARED_SWAPCHAINS) => d.shared_fp.is_some(),
+        (Some(d), FN_WRITE_SAMPLERS) => d.samplers_fp.is_some(),
+        (Some(d), FN_SET_ALPHA_COVERAGE) => d.alpha_fp.is_some(),
+        (_, _) => false,
+    }
+}
+
+fn device_hooked_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
+    device_extension_hook(name).filter(|_| device_fp_present(dev, name))
 }
 
 fn null_ok_ptr(name: &str) -> *mut c_void {
@@ -110,11 +184,18 @@ fn forward_device_proc(dev: vk::Device, name: &str) -> vk::PFN_vkVoidFunction {
     }
 }
 
+fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
+    match insts_get(inst.as_raw()) {
+        Some(st) => call_next_gipa(st.gipa, inst, name),
+        None => None,
+    }
+}
+
 fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
-    match (vk_hooked_symbol(name), insts_get(inst.as_raw())) {
+    match (vk_hooked_symbol(name), instance_hooked_symbol(inst, name)) {
         (Some(p), _) => unsafe { mem::transmute(p) },
-        (None, Some(st)) => call_next_gipa(st.gipa, inst, name),
-        (None, None) => None,
+        (None, Some(p)) => unsafe { mem::transmute(p) },
+        (None, None) => forward_instance_proc(inst, name),
     }
 }
 
@@ -247,9 +328,10 @@ unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const
 
 unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_char) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
-    match vk_hooked_symbol(n) {
-        Some(p) => mem::transmute(p),
-        None => forward_device_proc(dev, n),
+    match (vk_hooked_symbol(n), device_hooked_symbol(dev, n)) {
+        (Some(p), _) => mem::transmute(p),
+        (None, Some(p)) => mem::transmute(p),
+        (None, None) => forward_device_proc(dev, n),
     }
 }
 
@@ -278,6 +360,22 @@ unsafe extern "system" fn vkEnumeratePhysicalDevices(
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
     call_filtered_enumerate(inst, count, devices)
+}
+
+unsafe extern "system" fn vkEnumeratePhysicalDeviceGroups(
+    inst: vk::Instance,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    call_filtered_groups(inst, count, groups)
+}
+
+unsafe extern "system" fn vkEnumeratePhysicalDeviceGroupsKHR(
+    inst: vk::Instance,
+    count: *mut u32,
+    groups: *mut vk::PhysicalDeviceGroupProperties,
+) -> vk::Result {
+    call_filtered_groups_khr(inst, count, groups)
 }
 
 unsafe extern "system" fn vkCreateDevice(
@@ -311,6 +409,47 @@ unsafe extern "system" fn vkCreateGraphicsPipelines(
     }
 }
 
+unsafe extern "system" fn vkCmdSetAlphaToCoverageEnableEXT(
+    buffer: vk::CommandBuffer,
+    enable: vk::Bool32,
+) {
+    call_set_alpha_coverage(cmdbuf_owner(buffer), buffer, enable)
+}
+
+unsafe extern "system" fn vkAllocateCommandBuffers(
+    dev: vk::Device,
+    info: *const vk::CommandBufferAllocateInfo,
+    out: *mut vk::CommandBuffer,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_allocate_command_buffers(&d, dev, info, out),
+    }
+}
+
+unsafe extern "system" fn vkFreeCommandBuffers(
+    dev: vk::Device,
+    pool: vk::CommandPool,
+    count: u32,
+    buffers: *const vk::CommandBuffer,
+) {
+    match devs_get(dev.as_raw()) {
+        Some(d) => call_free_command_buffers(&d, dev, pool, count, buffers),
+        None => (),
+    }
+}
+
+unsafe extern "system" fn vkDestroyCommandPool(
+    dev: vk::Device,
+    pool: vk::CommandPool,
+    alloc: *const vk::AllocationCallbacks,
+) {
+    match devs_get(dev.as_raw()) {
+        Some(d) => call_destroy_command_pool(&d, dev, pool, alloc),
+        None => (),
+    }
+}
+
 unsafe extern "system" fn vkCreateSampler(
     dev: vk::Device,
     ci: *const vk::SamplerCreateInfo,
@@ -323,6 +462,18 @@ unsafe extern "system" fn vkCreateSampler(
     }
 }
 
+unsafe extern "system" fn vkWriteSamplerDescriptorsEXT(
+    dev: vk::Device,
+    count: u32,
+    cis: *const vk::SamplerCreateInfo,
+    descriptors: *const c_void,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_write_sampler_descriptors(&d, dev, count, cis, descriptors),
+    }
+}
+
 unsafe extern "system" fn vkCreateSwapchainKHR(
     dev: vk::Device,
     ci: *const vk::SwapchainCreateInfoKHR,
@@ -332,6 +483,19 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
     match devs_get(dev.as_raw()) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_swapchain(&d, dev, ci, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkCreateSharedSwapchainsKHR(
+    dev: vk::Device,
+    count: u32,
+    cis: *const vk::SwapchainCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks,
+    out: *mut vk::SwapchainKHR,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_create_shared_swapchains(&d, dev, count, cis, alloc, out),
     }
 }
 
@@ -358,6 +522,15 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
     call_surface_formats(phys, surface, count, formats)
 }
 
+unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormats2KHR(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    count: *mut u32,
+    formats: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    call_surface_formats2(phys, info, count, formats)
+}
+
 unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
@@ -367,12 +540,29 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(
     call_surface_present_modes(phys, surface, count, modes)
 }
 
+unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModes2EXT(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    count: *mut u32,
+    modes: *mut vk::PresentModeKHR,
+) -> vk::Result {
+    call_surface_present_modes2(phys, info, count, modes)
+}
+
 unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
     caps: *mut vk::SurfaceCapabilitiesKHR,
 ) -> vk::Result {
     call_surface_capabilities(phys, surface, caps)
+}
+
+unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilities2KHR(
+    phys: vk::PhysicalDevice,
+    info: *const VkPhysicalDeviceSurfaceInfo2,
+    caps: *mut VkSurfaceCapabilities2,
+) -> vk::Result {
+    call_surface_capabilities2(phys, info, caps)
 }
 
 unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {

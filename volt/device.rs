@@ -9,8 +9,15 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::consts::FN_PRESENT_RECTANGLES;
+use crate::consts::FN_SET_ALPHA_COVERAGE;
+use crate::consts::FN_SHARED_SWAPCHAINS;
+use crate::consts::FN_WRITE_SAMPLERS;
+use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::owning_instance;
+use crate::instance::PfnCmdSetAlphaToCoverage;
+use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnWriteSamplers;
 use crate::instance::VkInstState;
 use crate::instance::VkLayerLinkInfo;
 use crate::logging::log_at;
@@ -27,12 +34,16 @@ pub(crate) struct VkDevState {
     pub(crate) phys: vk::PhysicalDevice,
     pub(crate) gdpa: vk::PFN_vkGetDeviceProcAddr,
     pub(crate) swap_fp: vk::KhrSwapchainFn,
+    pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
+    pub(crate) samplers_fp: Option<PfnWriteSamplers>,
+    pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
     pub(crate) caps: DeviceCaps,
     pub(crate) instance_handle: u64,
 }
 
 static DEVS: RwLock<Option<HashMap<u64, Arc<VkDevState>>>> = RwLock::new(None);
 static QUEUE_TO_DEV: RwLock<Option<HashMap<u64, u64>>> = RwLock::new(None);
+static CMDBUF_TO_DEV: RwLock<Option<HashMap<u64, (u64, u64)>>> = RwLock::new(None);
 
 pub(crate) fn devs_get(h: u64) -> Option<Arc<VkDevState>> {
     DEVS.read()
@@ -81,6 +92,44 @@ pub(crate) fn queue_owner(queue: vk::Queue) -> Option<Arc<VkDevState>> {
     queue_dev_get(queue.as_raw()).and_then(devs_get)
 }
 
+fn cmdbuf_dev_get(c: u64) -> Option<u64> {
+    CMDBUF_TO_DEV
+        .read()
+        .ok()
+        .and_then(|g| g.as_ref().and_then(|m| m.get(&c).map(|owner| owner.0)))
+}
+
+fn cmdbuf_dev_put(c: u64, owner: (u64, u64)) {
+    match CMDBUF_TO_DEV.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).insert(c, owner);
+        }
+        Err(_) => (),
+    }
+}
+
+fn cmdbuf_dev_del(c: u64) {
+    match CMDBUF_TO_DEV.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).remove(&c);
+        }
+        Err(_) => (),
+    }
+}
+
+fn cmdbuf_pool_forget(pool: u64) {
+    match CMDBUF_TO_DEV.write() {
+        Ok(mut g) => g
+            .iter_mut()
+            .for_each(|m| m.retain(|_, owner| owner.1 != pool)),
+        Err(_) => (),
+    }
+}
+
+pub(crate) fn cmdbuf_owner(buffer: vk::CommandBuffer) -> Option<Arc<VkDevState>> {
+    cmdbuf_dev_get(buffer.as_raw()).and_then(devs_get)
+}
+
 fn lod_levels_for(max_dimension: u32) -> f32 {
     (max_dimension.max(1) as f32).log2().floor()
 }
@@ -103,6 +152,14 @@ fn load_swap_fp(gdpa: vk::PFN_vkGetDeviceProcAddr, handle: vk::Device) -> vk::Kh
     })
 }
 
+fn call_typed_device_fp<T>(
+    gdpa: vk::PFN_vkGetDeviceProcAddr,
+    handle: vk::Device,
+    name: &str,
+) -> Option<T> {
+    call_next_gdpa(gdpa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
+}
+
 pub(crate) fn inherit_device_dispatch(device_handle: vk::Device, queue: vk::Queue) {
     let src = device_handle.as_raw() as *const *const c_void;
     let dst = queue.as_raw() as *mut *const c_void;
@@ -111,6 +168,59 @@ pub(crate) fn inherit_device_dispatch(device_handle: vk::Device, queue: vk::Queu
 
 fn device_caps(inst: &VkInstState, phys: vk::PhysicalDevice) -> DeviceCaps {
     build_caps(unsafe { &inst.instance.get_physical_device_properties(phys) })
+}
+
+fn call_record_command_buffers(
+    dev: vk::Device,
+    info: *const vk::CommandBufferAllocateInfo,
+    out: *mut vk::CommandBuffer,
+) {
+    (0..unsafe { (*info).command_buffer_count } as usize).for_each(|at| {
+        cmdbuf_dev_put(
+            unsafe { (*out.add(at)).as_raw() },
+            (dev.as_raw(), unsafe { (*info).command_pool.as_raw() }),
+        )
+    });
+}
+
+fn call_forget_command_buffers(count: u32, buffers: *const vk::CommandBuffer) {
+    (0..count as usize).for_each(|at| cmdbuf_dev_del(unsafe { (*buffers.add(at)).as_raw() }));
+}
+
+pub(crate) fn call_allocate_command_buffers(
+    d: &VkDevState,
+    dev: vk::Device,
+    info: *const vk::CommandBufferAllocateInfo,
+    out: *mut vk::CommandBuffer,
+) -> vk::Result {
+    match unsafe { (d.device.fp_v1_0().allocate_command_buffers)(dev, info, out) } {
+        vk::Result::SUCCESS => {
+            call_record_command_buffers(dev, info, out);
+            vk::Result::SUCCESS
+        }
+        e => e,
+    }
+}
+
+pub(crate) fn call_free_command_buffers(
+    d: &VkDevState,
+    dev: vk::Device,
+    pool: vk::CommandPool,
+    count: u32,
+    buffers: *const vk::CommandBuffer,
+) {
+    call_forget_command_buffers(count, buffers);
+    unsafe { (d.device.fp_v1_0().free_command_buffers)(dev, pool, count, buffers) };
+}
+
+pub(crate) fn call_destroy_command_pool(
+    d: &VkDevState,
+    dev: vk::Device,
+    pool: vk::CommandPool,
+    alloc: *const vk::AllocationCallbacks,
+) {
+    cmdbuf_pool_forget(pool.as_raw());
+    unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
 }
 
 fn register_device(
@@ -124,14 +234,16 @@ fn register_device(
     let mut inst_fp = inst.instance.fp_v1_0().clone();
     inst_fp.get_device_proc_addr = gdpa;
     let device = unsafe { ash::Device::load(&inst_fp, handle) };
-    let swap_fp = load_swap_fp(gdpa, handle);
     devs_put(
         handle.as_raw(),
         VkDevState {
             device,
             phys,
             gdpa,
-            swap_fp,
+            swap_fp: load_swap_fp(gdpa, handle),
+            shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
+            samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
+            alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
             caps,
             instance_handle: inst_handle,
         },
