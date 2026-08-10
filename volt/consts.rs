@@ -43,11 +43,11 @@ pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 
-pub(crate) const SUFFIX_MIN: &str = "_min";
-pub(crate) const SUFFIX_MAX: &str = "_max";
-
 pub(crate) const DEPTH_SUFFIX: &str = "bit";
-pub(crate) const UNKNOWN_PREFIX: &str = "mode ";
+pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
+pub(crate) const SPACE_UNKNOWN_PREFIX: &str = "color space ";
+pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
+pub(crate) const FORMAT_UNKNOWN_PREFIX: &str = "format ";
 
 pub(crate) const FILTER_RETRO: u32 = 0;
 pub(crate) const FILTER_BILINEAR: u32 = 1;
@@ -60,8 +60,10 @@ pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
-pub(crate) const PRESENT_MISS_WARN: &str = "no supported present mode matches the setting, keeping application choice";
+pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
+pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
+pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 pub(crate) const UNOWNED_BUFFER_ERROR: &str = "alpha to coverage on a command buffer with no registered device";
 
@@ -72,6 +74,8 @@ pub(crate) const SPACE_EMPTY_WARN: &str = "color space selection matched no surf
 pub(crate) const TRANSFER_EMPTY_WARN: &str = "transfer function selection matched no surface format, keeping every format";
 pub(crate) const SPACE_EXTENDED_INFO: &str = "this color space comes from a swapchain colorspace extension and only exists where the stack enabled it";
 pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
+pub(crate) const TRANSFER_ENCODED_INFO: &str = "this transfer function leaves the encoding curve to the display hardware";
+pub(crate) const TRANSFER_SHADER_INFO: &str = "this transfer function leaves the encoding curve to whatever the application does in its own shaders";
 pub(crate) const FORMAT_FORCED_WARN: &str = "the application asked for a color depth the settings exclude, leaving it alone: it may have allocated resources to match";
 pub(crate) const SPACE_FORCED_WARN: &str = "the application asked for a color space the settings exclude, leaving it alone: it may have allocated resources to match";
 pub(crate) const TRANSFER_FORCED_WARN: &str = "the application asked for a transfer function the settings exclude, leaving it alone: it may have allocated resources to match";
@@ -124,73 +128,39 @@ pub(crate) enum LimitStage {
 }
 
 pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
-# every value accepts "default" to keep the application's own choice
+# every setting is one value: the value volt forces, or "default", which
+# keeps whatever the application asked for. there is no range and no order
 #
-# each setting carries three values: the bare key forces a value, the _min and
-# _max keys bound the value the application asked for without replacing it.
-# a force wins over the bounds when both are set. a minimum above its maximum
-# is a mistake: both are ignored and a warning is logged
+# a value volt has no name for is written the way the interface shows it,
+# and forces exactly like a named one
 #
-# where a setting names a vulkan enumerant, minimum and maximum run in the
-# order the vulkan registry itself gives those values. a value volt has no
-# name for can still be forced, but takes no part in a bound
-#
-# frame_limit, frame_limit_method and frame_pacing carry no bounds: a game
-# never asks vulkan for a frame rate, so there is nothing to bound. they
-# configure how the layer itself waits instead
+# a forced value the device did not report is not forced: volt keeps the
+# application's own value and logs a warning
 #
 # settings are read once when the application starts. changing this file has
 # no effect on an application that is already running: start it again
 
 [gpu]
 device = "default"
-device_min = "default"
-device_max = "default"
 
 [display]
 present_mode = "default"
-present_mode_min = "default"
-present_mode_max = "default"
 image_count = "default"
-image_count_min = "default"
-image_count_max = "default"
 color_depth = "default"
-color_depth_min = "default"
-color_depth_max = "default"
 color_space = "default"
-color_space_min = "default"
-color_space_max = "default"
 transfer_function = "default"
-transfer_function_min = "default"
-transfer_function_max = "default"
 composite_alpha = "default"
-composite_alpha_min = "default"
-composite_alpha_max = "default"
 clipped = "default"
-clipped_min = "default"
-clipped_max = "default"
 
 [textures]
 filtering = "default"
-filtering_min = "default"
-filtering_max = "default"
 mipmap_mode = "default"
-mipmap_mode_min = "default"
-mipmap_mode_max = "default"
 lod_bias = "default"
-lod_bias_min = "default"
-lod_bias_max = "default"
 mip_floor = "default"
-mip_floor_min = "default"
-mip_floor_max = "default"
 mip_ceiling = "default"
-mip_ceiling_min = "default"
-mip_ceiling_max = "default"
 
 [rendering]
 alpha_to_coverage = "default"
-alpha_to_coverage_min = "default"
-alpha_to_coverage_max = "default"
 
 [framerate]
 frame_limit = "default"

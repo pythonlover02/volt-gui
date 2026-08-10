@@ -2,36 +2,25 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::bounds::bounds_set;
-use crate::bounds::resolved;
-use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::UNOWNED_BUFFER_ERROR;
 use crate::device::VkDevState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-fn toggle_rank(flag: vk::Bool32) -> u32 {
-    match flag {
-        vk::TRUE => TOGGLE_ON,
-        _ => TOGGLE_OFF,
-    }
-}
-
-fn toggle_vk(rank: u32) -> vk::Bool32 {
-    match rank {
+fn toggle_vk(value: u32) -> vk::Bool32 {
+    match value {
         TOGGLE_ON => vk::TRUE,
         _ => vk::FALSE,
     }
 }
 
-fn pick_coverage(b: Bounds<u32>, original: vk::Bool32) -> vk::Bool32 {
-    match bounds_set(&b) {
-        true => toggle_vk(resolved(b, toggle_rank(original))),
-        false => original,
+fn pick_coverage(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
+    match choice {
+        Some(value) => toggle_vk(value),
+        None => original,
     }
 }
 

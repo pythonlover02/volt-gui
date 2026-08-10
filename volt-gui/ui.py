@@ -37,6 +37,10 @@ def get_copy_button_width() -> int:
     return 70
 
 
+def get_combo_minimum_width() -> int:
+    return 104
+
+
 def create_combo_widget(options: tuple, editable: bool) -> QComboBox:
     combo = QComboBox()
     combo.setView(QListView())
@@ -60,56 +64,7 @@ def create_divider_widget() -> QFrame:
     return divider
 
 
-def _add_caption_label(layout, caption_text: str) -> None:
-    match caption_text == "":
-        case True:
-            pass
-        case False:
-            caption_label = QLabel(caption_text)
-            caption_label.setWordWrap(False)
-            caption_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-            caption_label.setStyleSheet("color: #9A9A9A; font-size: 9pt;")
-            layout.addWidget(caption_label)
-    return None
-
-
-def get_combo_minimum_width() -> int:
-    return 104
-
-
-def _create_input_column(column: tuple) -> dict:
-    column_widget = QWidget()
-    column_widget.setProperty("cardRow", True)
-    column_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
-    column_layout = QVBoxLayout(column_widget)
-    column_layout.setContentsMargins(0, 0, 0, 0)
-    column_layout.setSpacing(2)
-    _add_caption_label(column_layout, column[1])
-    input_widget = create_combo_widget(column[2], column[3])
-    input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-    input_widget.setMinimumWidth(get_combo_minimum_width())
-    column_layout.addWidget(input_widget)
-    return {"column": column_widget, "widget": input_widget}
-
-
-def _build_input_row(columns: tuple) -> dict:
-    row = QWidget()
-    row.setProperty("cardRow", True)
-    row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
-    row_layout = QHBoxLayout(row)
-    row_layout.setContentsMargins(0, 0, 0, 0)
-    row_layout.setSpacing(6)
-    results = tuple(_create_input_column(column) for column in columns)
-    for column_result in results:
-        row_layout.addWidget(column_result["column"], 1)
-    return {
-        "row": row,
-        "widgets": dict(zip(
-            tuple(column[0] for column in columns),
-            tuple(entry["widget"] for entry in results)))}
-
-
-def create_setting_card_widget(label_text: str, description_text: str, columns: tuple) -> dict:
+def create_setting_card_widget(label_text: str, description_text: str, options: tuple, editable: bool) -> dict:
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
@@ -122,14 +77,16 @@ def create_setting_card_widget(label_text: str, description_text: str, columns: 
     title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
     title_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
     card_layout.addWidget(title_label)
-    row_result = _build_input_row(columns)
-    card_layout.addWidget(row_result["row"])
+    input_widget = create_combo_widget(options, editable)
+    input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    input_widget.setMinimumWidth(get_combo_minimum_width())
+    card_layout.addWidget(input_widget)
     description_label = QLabel(description_text)
     description_label.setWordWrap(True)
     description_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
     description_label.setStyleSheet("color: #585858; font-size: 9pt;")
     card_layout.addWidget(description_label)
-    return {"card": card, "widgets": row_result["widgets"]}
+    return {"card": card, "widget": input_widget}
 
 
 def build_monospace_font() -> QFont:
@@ -295,12 +252,12 @@ def create_tab_content_widget(tab_name: str, info_items) -> dict:
     container_widget = _build_content_container(info_items)
     match info_items is None:
         case True:
-            for card_key, label_text, description_text, columns in find_cards_for_tab(tab_name):
-                card_result = create_setting_card_widget(label_text, description_text, columns)
+            for widget_key, label_text, description_text, options, editable in find_cards_for_tab(tab_name):
+                card_result = create_setting_card_widget(label_text, description_text, options, editable)
                 container_widget.layout().addWidget(card_result["card"])
                 container_widget.layout().addWidget(create_divider_widget())
-                all_widgets.update(card_result["widgets"])
-                all_cards[card_key] = card_result["card"]
+                all_widgets[widget_key] = card_result["widget"]
+                all_cards[widget_key] = card_result["card"]
         case False:
             pass
     main_layout.addWidget(create_scrollable_content_area(container_widget), 1)

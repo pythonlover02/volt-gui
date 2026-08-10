@@ -2,8 +2,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-use crate::bounds::ordered;
-use crate::bounds::Bounds;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
@@ -21,8 +19,6 @@ use crate::consts::SECTION_GPU;
 use crate::consts::SECTION_RENDERING;
 use crate::consts::SECTION_TEXTURES;
 use crate::consts::SETTINGS_FROZEN_INFO;
-use crate::consts::SUFFIX_MAX;
-use crate::consts::SUFFIX_MIN;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::env::env_config_name;
@@ -31,31 +27,28 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_parse;
-use crate::ranks::alpha_semantic;
+use crate::ranks::numeric_parse;
 use crate::ranks::parse_depth_label;
 use crate::ranks::present_parse;
-use crate::ranks::present_semantic;
 use crate::ranks::space_parse;
-use crate::ranks::space_semantic;
-use crate::ranks::transfer_parse;
-use crate::ranks::transfer_semantic;
+use crate::ranks::Numeric;
 
 #[derive(Default)]
 pub(crate) struct Settings {
-    pub(crate) gpu: Bounds<u32>,
-    pub(crate) present_mode: Bounds<u32>,
-    pub(crate) image_count: Bounds<u32>,
-    pub(crate) depth: Bounds<u32>,
-    pub(crate) color_space: Bounds<u32>,
-    pub(crate) transfer: Bounds<u32>,
-    pub(crate) composite_alpha: Bounds<u32>,
-    pub(crate) clipped: Bounds<u32>,
-    pub(crate) filtering: Bounds<u32>,
-    pub(crate) mipmap: Bounds<u32>,
-    pub(crate) lod_bias: Bounds<f32>,
-    pub(crate) mip_floor: Bounds<f32>,
-    pub(crate) mip_ceiling: Bounds<f32>,
-    pub(crate) alpha_coverage: Bounds<u32>,
+    pub(crate) gpu: Option<u32>,
+    pub(crate) present_mode: Option<u32>,
+    pub(crate) image_count: Option<u32>,
+    pub(crate) depth: Option<u32>,
+    pub(crate) color_space: Option<u32>,
+    pub(crate) transfer: Option<Numeric>,
+    pub(crate) composite_alpha: Option<u32>,
+    pub(crate) clipped: Option<u32>,
+    pub(crate) filtering: Option<u32>,
+    pub(crate) mipmap: Option<u32>,
+    pub(crate) lod_bias: Option<f32>,
+    pub(crate) mip_floor: Option<f32>,
+    pub(crate) mip_ceiling: Option<f32>,
+    pub(crate) alpha_coverage: Option<u32>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) limit_method: Option<MethodChoice>,
     pub(crate) pacing: Option<PacingChoice>,
@@ -84,32 +77,6 @@ fn parse_float(text: &str) -> Option<f32> {
 
 fn parse_uint(text: &str) -> Option<u32> {
     text.parse::<u32>().ok()
-}
-
-fn parse_present(text: &str) -> Option<u32> {
-    present_parse(text)
-        .and_then(present_semantic)
-        .map(|facts| facts.rank)
-}
-
-fn parse_depth(text: &str) -> Option<u32> {
-    parse_depth_label(text)
-}
-
-fn parse_space(text: &str) -> Option<u32> {
-    space_parse(text)
-        .and_then(space_semantic)
-        .map(|facts| facts.rank)
-}
-
-fn parse_transfer(text: &str) -> Option<u32> {
-    transfer_parse(text).map(|numeric| transfer_semantic(numeric).rank)
-}
-
-fn parse_alpha(text: &str) -> Option<u32> {
-    alpha_parse(text)
-        .and_then(alpha_semantic)
-        .map(|facts| facts.rank)
 }
 
 fn parse_filter(text: &str) -> Option<u32> {
@@ -187,35 +154,6 @@ where
     }
 }
 
-fn checked_bounds<T: PartialOrd + Copy>(section: &str, key: &str, b: Bounds<T>) -> Bounds<T> {
-    match ordered(b.min, b.max) {
-        true => b,
-        false => {
-            log_at(
-                LogLevel::Warn,
-                &format!("{}.{} minimum is above its maximum, ignoring both", section, key),
-            );
-            Bounds { min: None, max: None, ..b }
-        }
-    }
-}
-
-fn bounds_field<T, F>(doc: &toml::Value, section: &str, key: &str, parse: F) -> Bounds<T>
-where
-    T: PartialOrd + Copy,
-    F: Fn(&str) -> Option<T>,
-{
-    checked_bounds(
-        section,
-        key,
-        Bounds {
-            force: field(doc, section, key, &parse),
-            min: field(doc, section, &format!("{}{}", key, SUFFIX_MIN), &parse),
-            max: field(doc, section, &format!("{}{}", key, SUFFIX_MAX), &parse),
-        },
-    )
-}
-
 fn parse_doc(text: &str) -> toml::Value {
     match text.parse::<toml::Value>() {
         Ok(d) => d,
@@ -232,20 +170,20 @@ fn parse_doc(text: &str) -> toml::Value {
 pub(crate) fn parse_settings(text: &str) -> Settings {
     let doc = parse_doc(text);
     Settings {
-        gpu: bounds_field(&doc, SECTION_GPU, "device", parse_gpu),
-        present_mode: bounds_field(&doc, SECTION_DISPLAY, "present_mode", parse_present),
-        image_count: bounds_field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
-        depth: bounds_field(&doc, SECTION_DISPLAY, "color_depth", parse_depth),
-        color_space: bounds_field(&doc, SECTION_DISPLAY, "color_space", parse_space),
-        transfer: bounds_field(&doc, SECTION_DISPLAY, "transfer_function", parse_transfer),
-        composite_alpha: bounds_field(&doc, SECTION_DISPLAY, "composite_alpha", parse_alpha),
-        clipped: bounds_field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
-        filtering: bounds_field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
-        mipmap: bounds_field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
-        lod_bias: bounds_field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
-        mip_floor: bounds_field(&doc, SECTION_TEXTURES, "mip_floor", parse_float),
-        mip_ceiling: bounds_field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
-        alpha_coverage: bounds_field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
+        gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
+        present_mode: field(&doc, SECTION_DISPLAY, "present_mode", present_parse),
+        image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
+        depth: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth_label),
+        color_space: field(&doc, SECTION_DISPLAY, "color_space", space_parse),
+        transfer: field(&doc, SECTION_DISPLAY, "transfer_function", numeric_parse),
+        composite_alpha: field(&doc, SECTION_DISPLAY, "composite_alpha", alpha_parse),
+        clipped: field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
+        filtering: field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
+        mipmap: field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
+        lod_bias: field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
+        mip_floor: field(&doc, SECTION_TEXTURES, "mip_floor", parse_float),
+        mip_ceiling: field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
+        alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
         pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),

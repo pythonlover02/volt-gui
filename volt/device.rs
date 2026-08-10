@@ -66,7 +66,27 @@ pub(crate) fn devs_put(h: u64, v: VkDevState) {
     }
 }
 
+fn queue_dev_forget(dev: u64) {
+    match QUEUE_TO_DEV.write() {
+        Ok(mut g) => g
+            .iter_mut()
+            .for_each(|m| m.retain(|_, owner| *owner != dev)),
+        Err(_) => (),
+    }
+}
+
+fn cmdbuf_dev_forget(dev: u64) {
+    match CMDBUF_TO_DEV.write() {
+        Ok(mut g) => g
+            .iter_mut()
+            .for_each(|m| m.retain(|_, owner| owner.0 != dev)),
+        Err(_) => (),
+    }
+}
+
 pub(crate) fn devs_del(h: u64) -> Option<Arc<VkDevState>> {
+    queue_dev_forget(h);
+    cmdbuf_dev_forget(h);
     DEVS.write()
         .ok()
         .and_then(|mut g| g.as_mut().and_then(|m| m.remove(&h)))

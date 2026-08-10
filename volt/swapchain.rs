@@ -2,25 +2,23 @@ use std::ptr;
 
 use ash::vk;
 
-use crate::bounds::accepts;
-use crate::bounds::bounds_set;
-use crate::bounds::kept;
-use crate::bounds::resolved;
-use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::ALPHA_MISS_WARN;
 use crate::consts::ALPHA_OPAQUE_INFO;
 use crate::consts::DEPTH_EMPTY_WARN;
 use crate::consts::FORMAT_FORCED_WARN;
 use crate::consts::PRESENT_EMPTY_WARN;
+use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
 use crate::consts::SPACE_EMPTY_WARN;
 use crate::consts::SPACE_EXTENDED_INFO;
 use crate::consts::SPACE_FORCED_WARN;
-use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::TRANSFER_EMPTY_WARN;
+use crate::consts::TRANSFER_ENCODED_INFO;
 use crate::consts::TRANSFER_FORCED_WARN;
+use crate::consts::TRANSFER_SHADER_INFO;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
 use crate::instance::call_write_list;
@@ -35,85 +33,129 @@ use crate::instance::VkPhysicalDeviceSurfaceInfo2;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::instance::VkSurfaceFormat2;
 use crate::instance::SURFACE_FORMAT_2;
+use crate::lists::filtered;
+use crate::lists::forced;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::probe::build_probe;
 use crate::probe::call_write_probe;
 use crate::ranks::alpha_semantic;
+use crate::ranks::format_display;
 use crate::ranks::format_semantic;
+use crate::ranks::numeric_semantic;
 use crate::ranks::present_semantic;
 use crate::ranks::space_semantic;
-use crate::ranks::transfer_semantic;
+use crate::ranks::Numeric;
 
-fn mode_rank(mode: vk::PresentModeKHR) -> Option<u32> {
-    present_semantic(mode.as_raw() as u32).map(|facts| facts.rank)
+fn mode_value(mode: &vk::PresentModeKHR) -> Option<u32> {
+    Some(mode.as_raw() as u32)
 }
 
 fn depth_of(f: &vk::SurfaceFormatKHR) -> Option<u32> {
     format_semantic(f.format.as_raw() as u32).map(|facts| facts.depth)
 }
 
-fn transfer_of(f: &vk::SurfaceFormatKHR) -> Option<u32> {
-    format_semantic(f.format.as_raw() as u32)
-        .map(|facts| transfer_semantic(facts.numeric).rank)
+fn numeric_of(f: &vk::SurfaceFormatKHR) -> Option<Numeric> {
+    format_semantic(f.format.as_raw() as u32).map(|facts| facts.numeric)
 }
 
 fn space_of(f: &vk::SurfaceFormatKHR) -> Option<u32> {
-    space_semantic(f.color_space.as_raw() as u32).map(|facts| facts.rank)
+    Some(f.color_space.as_raw() as u32)
 }
 
-fn ranked_accepted(b: Bounds<u32>, rank: Option<u32>) -> bool {
-    match rank {
-        Some(value) => accepts(b, value),
-        None => false,
-    }
-}
-
-fn ranked_modes(supported: &[vk::PresentModeKHR]) -> Vec<(u32, vk::PresentModeKHR)> {
-    supported
-        .iter()
-        .filter_map(|m| mode_rank(*m).map(|rank| (rank, *m)))
-        .collect()
-}
-
-fn mode_of_rank(list: &[(u32, vk::PresentModeKHR)], rank: u32) -> Option<vk::PresentModeKHR> {
-    list.iter().find(|(r, _)| *r == rank).map(|(_, m)| *m)
-}
-
-fn logged_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
-    log_at(LogLevel::Warn, PRESENT_MISS_WARN);
-    original
-}
-
-fn resolved_mode(
-    b: Bounds<u32>,
-    list: &[(u32, vk::PresentModeKHR)],
-    original: vk::PresentModeKHR,
-) -> vk::PresentModeKHR {
-    match mode_rank(original).and_then(|rank| mode_of_rank(list, resolved(b, rank))) {
-        Some(mode) => mode,
-        None => logged_miss(original),
-    }
-}
-
-fn pick_present_mode(
-    b: Bounds<u32>,
-    supported: &[vk::PresentModeKHR],
-    original: vk::PresentModeKHR,
-) -> vk::PresentModeKHR {
-    match bounds_set(&b) {
-        true => resolved_mode(b, &ranked_modes(supported), original),
-        false => original,
-    }
+fn surface_filtered(
+    formats: Vec<vk::SurfaceFormatKHR>,
+    s: &Settings,
+) -> Vec<vk::SurfaceFormatKHR> {
+    filtered(
+        filtered(
+            filtered(formats, s.depth, depth_of, DEPTH_EMPTY_WARN),
+            s.color_space,
+            space_of,
+            SPACE_EMPTY_WARN,
+        ),
+        s.transfer,
+        numeric_of,
+        TRANSFER_EMPTY_WARN,
+    )
 }
 
 fn present_filtered(
     modes: Vec<vk::PresentModeKHR>,
-    b: Bounds<u32>,
+    choice: Option<u32>,
 ) -> Vec<vk::PresentModeKHR> {
-    match bounds_set(&b) {
-        true => kept(modes, |m| ranked_accepted(b, mode_rank(*m)), PRESENT_EMPTY_WARN),
-        false => modes,
+    filtered(modes, choice, mode_value, PRESENT_EMPTY_WARN)
+}
+
+fn supported_mode(supported: &[vk::PresentModeKHR], value: u32) -> Option<vk::PresentModeKHR> {
+    supported.iter().copied().find(|m| m.as_raw() as u32 == value)
+}
+
+fn logged_mode_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
+    log_at(LogLevel::Warn, PRESENT_MISS_WARN);
+    original
+}
+
+fn chosen_mode(
+    supported: &[vk::PresentModeKHR],
+    value: u32,
+    original: vk::PresentModeKHR,
+) -> vk::PresentModeKHR {
+    match supported_mode(supported, value) {
+        Some(mode) => mode,
+        None => logged_mode_miss(original),
+    }
+}
+
+fn pick_present_mode(
+    choice: Option<u32>,
+    supported: &[vk::PresentModeKHR],
+    original: vk::PresentModeKHR,
+) -> vk::PresentModeKHR {
+    match choice {
+        Some(value) => chosen_mode(supported, value, original),
+        None => original,
+    }
+}
+
+fn logged_alpha_miss(original: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
+    log_at(LogLevel::Warn, ALPHA_MISS_WARN);
+    original
+}
+
+fn chosen_alpha(
+    mask: vk::CompositeAlphaFlagsKHR,
+    value: u32,
+    original: vk::CompositeAlphaFlagsKHR,
+) -> vk::CompositeAlphaFlagsKHR {
+    match mask.as_raw() & value != 0 {
+        true => vk::CompositeAlphaFlagsKHR::from_raw(value),
+        false => logged_alpha_miss(original),
+    }
+}
+
+fn pick_alpha(
+    choice: Option<u32>,
+    mask: vk::CompositeAlphaFlagsKHR,
+    original: vk::CompositeAlphaFlagsKHR,
+) -> vk::CompositeAlphaFlagsKHR {
+    match choice {
+        Some(value) => chosen_alpha(mask, value, original),
+        None => original,
+    }
+}
+
+fn toggle_vk(value: u32) -> vk::Bool32 {
+    match value {
+        TOGGLE_ON => vk::TRUE,
+        _ => vk::FALSE,
+    }
+}
+
+fn pick_clipped(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
+    match choice {
+        Some(value) => toggle_vk(value),
+        None => original,
     }
 }
 
@@ -124,8 +166,12 @@ fn caps_upper(caps_max: u32) -> u32 {
     }
 }
 
-fn pick_image_count(b: Bounds<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
-    resolved(b, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
+fn pick_image_count(
+    choice: Option<u32>,
+    caps: &vk::SurfaceCapabilitiesKHR,
+    original: u32,
+) -> u32 {
+    forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
 }
 
 fn reported_high(high: u32) -> u32 {
@@ -135,72 +181,42 @@ fn reported_high(high: u32) -> u32 {
     }
 }
 
-fn narrowed_caps(caps: vk::SurfaceCapabilitiesKHR, b: Bounds<u32>) -> vk::SurfaceCapabilitiesKHR {
-    let high = caps_upper(caps.max_image_count);
+fn narrowed_caps(caps: vk::SurfaceCapabilitiesKHR, value: u32) -> vk::SurfaceCapabilitiesKHR {
+    let held = value.clamp(caps.min_image_count, caps_upper(caps.max_image_count));
     vk::SurfaceCapabilitiesKHR {
-        min_image_count: resolved(b, caps.min_image_count).clamp(caps.min_image_count, high),
-        max_image_count: reported_high(resolved(b, high).clamp(caps.min_image_count, high)),
+        min_image_count: held,
+        max_image_count: reported_high(held),
         ..caps
     }
 }
 
-fn clamped_caps(caps: vk::SurfaceCapabilitiesKHR, b: Bounds<u32>) -> vk::SurfaceCapabilitiesKHR {
-    match bounds_set(&b) {
-        true => narrowed_caps(caps, b),
-        false => caps,
+fn clamped_caps(
+    caps: vk::SurfaceCapabilitiesKHR,
+    choice: Option<u32>,
+) -> vk::SurfaceCapabilitiesKHR {
+    match choice {
+        Some(value) => narrowed_caps(caps, value),
+        None => caps,
     }
 }
 
-fn depth_filtered(
-    formats: Vec<vk::SurfaceFormatKHR>,
-    b: Bounds<u32>,
-) -> Vec<vk::SurfaceFormatKHR> {
-    match bounds_set(&b) {
-        true => kept(formats, |f| ranked_accepted(b, depth_of(f)), DEPTH_EMPTY_WARN),
-        false => formats,
-    }
-}
-
-fn space_filtered(
-    formats: Vec<vk::SurfaceFormatKHR>,
-    b: Bounds<u32>,
-) -> Vec<vk::SurfaceFormatKHR> {
-    match bounds_set(&b) {
-        true => kept(formats, |f| ranked_accepted(b, space_of(f)), SPACE_EMPTY_WARN),
-        false => formats,
-    }
-}
-
-fn transfer_filtered(
-    formats: Vec<vk::SurfaceFormatKHR>,
-    b: Bounds<u32>,
-) -> Vec<vk::SurfaceFormatKHR> {
-    match bounds_set(&b) {
-        true => kept(formats, |f| ranked_accepted(b, transfer_of(f)), TRANSFER_EMPTY_WARN),
-        false => formats,
-    }
-}
-
-fn surface_filtered(
-    formats: Vec<vk::SurfaceFormatKHR>,
-    s: &Settings,
-) -> Vec<vk::SurfaceFormatKHR> {
-    transfer_filtered(
-        space_filtered(depth_filtered(formats, s.depth), s.color_space),
-        s.transfer,
-    )
-}
-
-fn log_extended(extended: bool) {
+fn log_extended(extended: bool, message: &str) {
     match extended {
-        true => log_at(LogLevel::Info, SPACE_EXTENDED_INFO),
+        true => log_at(LogLevel::Info, message),
         false => (),
     }
 }
 
-fn maybe_log_space(b: Bounds<u32>) {
-    match b.force.and_then(space_semantic) {
-        Some(facts) => log_extended(facts.extended),
+fn maybe_log_space(choice: Option<u32>) {
+    match choice.and_then(space_semantic) {
+        Some(facts) => log_extended(facts.extended, SPACE_EXTENDED_INFO),
+        None => (),
+    }
+}
+
+fn maybe_log_present(choice: Option<u32>) {
+    match choice.and_then(present_semantic) {
+        Some(facts) => log_extended(facts.extended, PRESENT_EXTENDED_INFO),
         None => (),
     }
 }
@@ -212,15 +228,32 @@ fn log_blending(blends: bool) {
     }
 }
 
-fn maybe_log_alpha(b: Bounds<u32>) {
-    match b.force.and_then(alpha_semantic) {
+fn maybe_log_alpha(choice: Option<u32>) {
+    match choice.and_then(alpha_semantic) {
         Some(facts) => log_blending(facts.blends),
         None => (),
     }
 }
 
-fn excluded(b: Bounds<u32>, rank: Option<u32>) -> bool {
-    bounds_set(&b) && !ranked_accepted(b, rank)
+fn log_encoding(encoded: bool) {
+    match encoded {
+        true => log_at(LogLevel::Info, TRANSFER_ENCODED_INFO),
+        false => log_at(LogLevel::Info, TRANSFER_SHADER_INFO),
+    }
+}
+
+fn maybe_log_transfer(choice: Option<Numeric>) {
+    match choice.and_then(numeric_semantic) {
+        Some(facts) => log_encoding(facts.encoded),
+        None => (),
+    }
+}
+
+fn excluded<V: PartialEq>(choice: Option<V>, value: Option<V>) -> bool {
+    match choice {
+        Some(wanted) => value != Some(wanted),
+        None => false,
+    }
 }
 
 fn maybe_warn(kept_out: bool, warn: &str) {
@@ -230,44 +263,29 @@ fn maybe_warn(kept_out: bool, warn: &str) {
     }
 }
 
+fn warn_excluded_format(kept_out: bool, format: u32) {
+    match kept_out {
+        true => log_at(
+            LogLevel::Warn,
+            &format!("{}: {}", FORMAT_FORCED_WARN, format_display(format)),
+        ),
+        false => (),
+    }
+}
+
 fn warn_excluded_choice(asked: vk::SurfaceFormatKHR, s: &Settings) {
-    maybe_warn(excluded(s.depth, depth_of(&asked)), FORMAT_FORCED_WARN);
+    warn_excluded_format(
+        excluded(s.depth, depth_of(&asked)),
+        asked.format.as_raw() as u32,
+    );
     maybe_warn(excluded(s.color_space, space_of(&asked)), SPACE_FORCED_WARN);
-    maybe_warn(excluded(s.transfer, transfer_of(&asked)), TRANSFER_FORCED_WARN);
+    maybe_warn(excluded(s.transfer, numeric_of(&asked)), TRANSFER_FORCED_WARN);
 }
 
 fn asked_format(original: &vk::SwapchainCreateInfoKHR) -> vk::SurfaceFormatKHR {
     vk::SurfaceFormatKHR {
         format: original.image_format,
         color_space: original.image_color_space,
-    }
-}
-
-fn pick_alpha(b: Bounds<u32>, original: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
-    match bounds_set(&b) {
-        true => vk::CompositeAlphaFlagsKHR::from_raw(resolved(b, original.as_raw())),
-        false => original,
-    }
-}
-
-fn toggle_rank(flag: vk::Bool32) -> u32 {
-    match flag {
-        vk::TRUE => TOGGLE_ON,
-        _ => TOGGLE_OFF,
-    }
-}
-
-fn toggle_vk(rank: u32) -> vk::Bool32 {
-    match rank {
-        TOGGLE_ON => vk::TRUE,
-        _ => vk::FALSE,
-    }
-}
-
-fn pick_clipped(b: Bounds<u32>, original: vk::Bool32) -> vk::Bool32 {
-    match bounds_set(&b) {
-        true => toggle_vk(resolved(b, toggle_rank(original))),
-        false => original,
     }
 }
 
@@ -280,7 +298,11 @@ fn patched_swapchain_ci(
     vk::SwapchainCreateInfoKHR {
         present_mode: chosen,
         min_image_count: pick_image_count(s.image_count, caps, original.min_image_count),
-        composite_alpha: pick_alpha(s.composite_alpha, original.composite_alpha),
+        composite_alpha: pick_alpha(
+            s.composite_alpha,
+            caps.supported_composite_alpha,
+            original.composite_alpha,
+        ),
         clipped: pick_clipped(s.clipped, original.clipped),
         ..*original
     }
@@ -349,6 +371,7 @@ fn call_filtered_formats(
     s: &Settings,
 ) -> Vec<vk::SurfaceFormatKHR> {
     maybe_log_space(s.color_space);
+    maybe_log_transfer(s.transfer);
     surface_filtered(call_query_surface_formats_all(inst, phys, surface), s)
 }
 
@@ -368,6 +391,16 @@ pub(crate) fn call_surface_formats(
     }
 }
 
+fn call_filtered_modes(
+    inst: &VkInstState,
+    phys: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
+    choice: Option<u32>,
+) -> Vec<vk::PresentModeKHR> {
+    maybe_log_present(choice);
+    present_filtered(call_query_present_modes(inst, phys, surface), choice)
+}
+
 pub(crate) fn call_surface_present_modes(
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
@@ -377,10 +410,7 @@ pub(crate) fn call_surface_present_modes(
     match owning_instance(phys) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some((_, inst)) => call_write_list(
-            &present_filtered(
-                call_query_present_modes(&inst, phys, surface),
-                ensure_settings().present_mode,
-            ),
+            &call_filtered_modes(&inst, phys, surface, ensure_settings().present_mode),
             count,
             modes,
         ),
@@ -390,11 +420,11 @@ pub(crate) fn call_surface_present_modes(
 fn call_narrowed_result(
     queried: vk::Result,
     out: *mut vk::SurfaceCapabilitiesKHR,
-    b: Bounds<u32>,
+    choice: Option<u32>,
 ) -> vk::Result {
     match queried {
         vk::Result::SUCCESS => {
-            unsafe { *out = clamped_caps(*out, b) };
+            unsafe { *out = clamped_caps(*out, choice) };
             vk::Result::SUCCESS
         }
         e => e,
@@ -423,11 +453,13 @@ fn call_caps2_through(
     phys: vk::PhysicalDevice,
     info: *const VkPhysicalDeviceSurfaceInfo2,
     out: *mut VkSurfaceCapabilities2,
-    b: Bounds<u32>,
+    choice: Option<u32>,
 ) -> vk::Result {
     match unsafe { fp(phys, info, out) } {
         vk::Result::SUCCESS => {
-            unsafe { (*out).surface_capabilities = clamped_caps((*out).surface_capabilities, b) };
+            unsafe {
+                (*out).surface_capabilities = clamped_caps((*out).surface_capabilities, choice)
+            };
             vk::Result::SUCCESS
         }
         e => e,
@@ -476,10 +508,9 @@ fn call_read_filled(count: *mut u32, out: *mut VkSurfaceFormat2) -> Vec<VkSurfac
 }
 
 fn call_compact_to(out: *mut VkSurfaceFormat2, offsets: &[usize]) {
-    offsets
-        .iter()
-        .enumerate()
-        .for_each(|(at, from)| unsafe { ptr::swap(out.add(at), out.add(*from)) });
+    offsets.iter().enumerate().for_each(|(at, from)| unsafe {
+        (*out.add(at)).surface_format = (*out.add(*from)).surface_format
+    });
 }
 
 fn call_query_formats2_all(
@@ -565,6 +596,7 @@ fn call_formats2_through(
     s: &Settings,
 ) -> vk::Result {
     maybe_log_space(s.color_space);
+    maybe_log_transfer(s.transfer);
     call_formats2_answer(
         fp,
         phys,

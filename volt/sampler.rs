@@ -2,81 +2,65 @@ use std::ffi::c_void;
 
 use ash::vk;
 
-use crate::bounds::bounds_set;
-use crate::bounds::resolved;
-use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
 use crate::consts::MIPMAP_LINEAR;
-use crate::consts::MIPMAP_NEAREST;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::instance::PfnWriteSamplers;
+use crate::lists::forced;
 
-fn filter_rank(mag: vk::Filter, min: vk::Filter, mip: vk::SamplerMipmapMode) -> u32 {
-    match (
-        mag == vk::Filter::NEAREST && min == vk::Filter::NEAREST,
-        mip == vk::SamplerMipmapMode::NEAREST,
-    ) {
-        (true, _) => FILTER_RETRO,
-        (false, true) => FILTER_BILINEAR,
-        (false, false) => FILTER_TRILINEAR,
-    }
-}
-
-fn filter_triple(rank: u32) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
-    match rank {
+fn filter_triple(value: u32) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
+    match value {
         FILTER_RETRO => (vk::Filter::NEAREST, vk::Filter::NEAREST, vk::SamplerMipmapMode::NEAREST),
         FILTER_BILINEAR => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::NEAREST),
+        FILTER_TRILINEAR => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
         _ => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
     }
 }
 
 fn pick_filters(
-    b: Bounds<u32>,
+    choice: Option<u32>,
     original: (vk::Filter, vk::Filter, vk::SamplerMipmapMode),
 ) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
-    match bounds_set(&b) {
-        true => filter_triple(resolved(b, filter_rank(original.0, original.1, original.2))),
-        false => original,
+    match choice {
+        Some(value) => filter_triple(value),
+        None => original,
     }
 }
 
-fn mipmap_rank(mode: vk::SamplerMipmapMode) -> u32 {
-    match mode {
-        vk::SamplerMipmapMode::LINEAR => MIPMAP_LINEAR,
-        _ => MIPMAP_NEAREST,
-    }
-}
-
-fn mipmap_vk(rank: u32) -> vk::SamplerMipmapMode {
-    match rank {
+fn mipmap_vk(value: u32) -> vk::SamplerMipmapMode {
+    match value {
         MIPMAP_LINEAR => vk::SamplerMipmapMode::LINEAR,
         _ => vk::SamplerMipmapMode::NEAREST,
     }
 }
 
-fn pick_mipmap(b: Bounds<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMipmapMode {
-    match bounds_set(&b) {
-        true => mipmap_vk(resolved(b, mipmap_rank(original))),
-        false => original,
+fn pick_mipmap(choice: Option<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMipmapMode {
+    match choice {
+        Some(value) => mipmap_vk(value),
+        None => original,
     }
 }
 
-fn pick_lod_bias(b: Bounds<f32>, caps: &DeviceCaps, original: f32) -> f32 {
-    resolved(b, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
+fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
+    forced(choice, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
 }
 
 fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
-    let low = resolved(s.mip_floor, original.0);
-    let high = resolved(s.mip_ceiling, original.1);
+    let low = forced(s.mip_floor, original.0);
+    let high = forced(s.mip_ceiling, original.1);
     (low.min(high), high.max(low))
 }
 
-fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo) -> vk::SamplerCreateInfo {
+fn patched_ci(
+    s: &Settings,
+    caps: &DeviceCaps,
+    original: &vk::SamplerCreateInfo,
+) -> vk::SamplerCreateInfo {
     let (mag, min, mip) = pick_filters(
         s.filtering,
         (original.mag_filter, original.min_filter, original.mipmap_mode),

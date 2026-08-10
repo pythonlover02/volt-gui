@@ -8,10 +8,6 @@ use std::sync::RwLock;
 use ash::vk;
 use ash::vk::Handle;
 
-use crate::bounds::accepts;
-use crate::bounds::bounds_set;
-use crate::bounds::kept;
-use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
@@ -21,6 +17,8 @@ use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::LAYER_LINK_INFO;
+use crate::lists::filtered;
+use crate::lists::kept;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
@@ -226,15 +224,16 @@ fn device_position(pair: &(usize, vk::PhysicalDevice)) -> u32 {
     pair.0 as u32 + 1
 }
 
-fn gpu_filtered(devices: Vec<vk::PhysicalDevice>, b: Bounds<u32>) -> Vec<vk::PhysicalDevice> {
-    match bounds_set(&b) {
-        true => plain(kept(
-            indexed(devices),
-            |pair| accepts(b, device_position(pair)),
-            GPU_EMPTY_WARN,
-        )),
-        false => devices,
-    }
+fn gpu_filtered(
+    devices: Vec<vk::PhysicalDevice>,
+    choice: Option<u32>,
+) -> Vec<vk::PhysicalDevice> {
+    plain(filtered(
+        indexed(devices),
+        choice,
+        |pair| Some(device_position(pair)),
+        GPU_EMPTY_WARN,
+    ))
 }
 
 fn group_devices(group: &vk::PhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDevice> {
@@ -253,11 +252,11 @@ fn group_wanted(
 fn group_filtered(
     groups: Vec<vk::PhysicalDeviceGroupProperties>,
     allowed: Vec<vk::PhysicalDevice>,
-    b: Bounds<u32>,
+    choice: Option<u32>,
 ) -> Vec<vk::PhysicalDeviceGroupProperties> {
-    match bounds_set(&b) {
-        true => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
-        false => groups,
+    match choice {
+        Some(_) => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
+        None => groups,
     }
 }
 

@@ -25,79 +25,66 @@ DEFAULT_PROFILE: Final[str] = "default"
 PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate")
 ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
 
-BOUND_SUFFIXES: Final[tuple] = ("", "_min", "_max")
-BOUND_CAPTIONS: Final[tuple] = ("Force", "Minimum", "Maximum")
-SINGLE_SUFFIXES: Final[tuple] = ("",)
-SINGLE_CAPTIONS: Final[tuple] = ("",)
-
 
 SETTINGS_DB: Final[dict] = {
     "GPU": {
         "device": {
             "section": "gpu",
             "label": "Physical Device",
-            "description": "Which GPU the game sees. The list is what this machine reports, in the order the driver gives them. Force hides every other device, and the bounds keep a range. If nothing matches, the full list comes back and a warning is logged.",
+            "description": "Which GPU the game sees, listed by name as this machine reports them. The layer hides every other device from enumeration, so a game that takes the first one it is offered gets yours. If your choice matches nothing, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
     },
     "Display": {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. The list is what this surface supports, in the order the Vulkan registry gives those modes: immediate, mailbox, fifo, fifo_relaxed, then the newer ones. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. A Minimum of mailbox keeps a game off immediate, a Maximum of mailbox keeps it off classic vsync. The layer also hides the modes you rule out from the list the game is shown, so a game's own vsync menu cannot offer one you disallowed. A mode the surface turns down falls back to the game's own choice with a warning.",
+            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. The layer hides every other mode from the list the game is shown, so a game's own vsync menu cannot offer one you ruled out, whatever route it takes to ask. A mode the surface does not support falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
-            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list runs across what this surface allows, in steps of two. The narrowed range is reported back to the game as well, so a game that picks its count from what the surface offers honours the setting itself instead of being overridden afterwards.",
+            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "color_depth": {
             "section": "display",
             "label": "Color Depth",
-            "description": "Which surface formats the game is allowed to see, grouped by bits per colour channel. The list is the depths this surface actually offers. The layer hides the ones you did not pick, so a game that takes the first supported format ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
+            "description": "Bits per colour channel, grouped out of the surface formats this surface offers. The layer hides every other format, so a game that takes the first supported one ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "color_space": {
             "section": "display",
             "label": "Color Space",
-            "description": "Which color space the game is allowed to see, filtered out of the same surface format list as Color Depth. The list is what this surface reports, in Vulkan registry order: srgb_nonlinear first, then the extended and wide gamut spaces. Everything past srgb_nonlinear comes from a swapchain colorspace extension and only appears when the stack around the game enabled it, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope. A space volt has no name for can still be forced but takes no part in a bound. If nothing matches, the full list comes back and a warning is logged.",
+            "description": "Which color space the game is allowed to see, filtered out of the same surface format list as Color Depth. Everything past srgb_nonlinear comes from a swapchain colorspace extension and only appears when the stack around the game enabled it, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope, so on most setups this card holds one entry. A space volt has no name for still appears and still applies.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "transfer_function": {
             "section": "display",
             "label": "Transfer Function",
-            "description": "Whether the game is shown srgb surface formats, plain unorm ones, or float ones, filtered out of the same list again. srgb formats have the encoding curve applied by the display hardware, unorm formats leave it to whatever the game does in its own shaders. The three run in the order of the lowest format value each covers, so unorm, then srgb, then sfloat. Getting this wrong looks washed out or crushed rather than broken, so set it back to default if the image looks wrong. No preset touches it.",
+            "description": "Whether the game is shown srgb surface formats, plain unorm ones, or float ones, filtered out of the same list again. srgb formats have the encoding curve applied by the display hardware, unorm formats leave it to whatever the game does in its own shaders. Getting this wrong looks washed out or crushed rather than broken, so set it back to default if the image looks wrong. No preset touches it.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "composite_alpha": {
             "section": "display",
             "label": "Composite Alpha",
-            "description": "How the compositor treats the alpha channel of the finished image. The list is what this surface allows, in Vulkan registry order: opaque, pre_multiplied, post_multiplied, inherit. opaque tells the compositor to skip blending the window altogether, which is the cheapest path on Wayland.",
+            "description": "How the compositor treats the alpha channel of the finished image. opaque tells the compositor to skip blending the window altogether, which is the cheapest path on Wayland. The list is what this surface allows, and a value the surface turns down falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "clipped": {
             "section": "display",
             "label": "Clipped Presentation",
-            "description": "Whether the driver may discard work on pixels another window covers. on is cheaper and is what almost every game asks for already. off keeps those pixels rendered, which only matters if something reads the presented image back. Core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force.",
+            "description": "Whether the driver may discard work on pixels another window covers. on is cheaper and is what almost every game asks for already. off keeps those pixels rendered, which only matters if something reads the presented image back. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "off", "on"),
             "editable": False,
-            "bounded": True,
         },
     },
     "Framerate": {
@@ -107,49 +94,43 @@ SETTINGS_DB: Final[dict] = {
             "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device. Past about 500 the interval gets shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
             "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
             "editable": False,
-            "bounded": False,
         },
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
-            "description": "Method sets when the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. Volt's own setting, so the list is fixed.",
+            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "early", "late", "reactive"),
             "editable": False,
-            "bounded": False,
         },
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
-            "description": "Pacing sets how the limiter waits, running from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and re-checks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole thing, which is the steadiest and the only one that keeps a core awake. Method and Pacing only do something when Limit is set. These three have no bounds, because a game never tells Vulkan what frame rate it wants.",
+            "description": "How the limiter waits, from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and re-checks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole thing, which is the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
             "editable": False,
-            "bounded": False,
         },
     },
     "Textures": {
         "filtering": {
             "section": "textures",
             "label": "Texture Filtering",
-            "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. All three are core Vulkan, so the list never changes. A sampler that matches none of them exactly counts as the closest one below it.",
+            "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. All three are core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "retro", "bilinear", "trilinear"),
             "editable": False,
-            "bounded": True,
         },
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
-            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Both are core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of linear or a Maximum of nearest does the same job as Force. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Both are core Vulkan, so the list never changes. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
             "editable": False,
-            "bounded": True,
         },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. A negative bias is the nearest volt gets to sharpening textures seen at a steep angle. The list runs in steps of 0.2 across the range your GPU reports.",
+            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. A negative bias is the nearest volt gets to sharpening textures seen at a steep angle. The list runs in steps of 0.2 across the range your GPU reports, and volt clamps what it passes down to that range.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "mip_floor": {
             "section": "textures",
@@ -157,7 +138,6 @@ SETTINGS_DB: Final[dict] = {
             "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs in steps of two up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
         "mip_ceiling": {
             "section": "textures",
@@ -165,26 +145,16 @@ SETTINGS_DB: Final[dict] = {
             "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor, and a ceiling that lands below the floor is swapped with it rather than dropped.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
-            "bounded": True,
         },
     },
     "Rendering": {
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
-            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. With only two values there is nothing in between, so a Minimum of on or a Maximum of off does the same job as Force. Only does something where the game already renders to an MSAA target.",
+            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
             "options": (DEFAULT_VALUE, "on", "off"),
             "editable": False,
-            "bounded": True,
         },
-    },
-}
-
-GROUPS_DB: Final[dict] = {
-    "Framerate": {
-        "label": "Frame Limiter",
-        "keys": ("frame_limit", "frame_limit_method", "frame_pacing"),
-        "captions": ("Limit", "Method", "Pacing"),
     },
 }
 
@@ -296,105 +266,29 @@ def is_setting_editable(tab_name: str, setting_key: str) -> bool:
     return SETTINGS_DB[tab_name][setting_key]["editable"]
 
 
-def is_setting_bounded(tab_name: str, setting_key: str) -> bool:
-    return SETTINGS_DB[tab_name][setting_key]["bounded"]
-
-
 def get_setting_section(tab_name: str, setting_key: str) -> str:
     return SETTINGS_DB[tab_name][setting_key]["section"]
 
 
-def get_setting_suffixes(tab_name: str, setting_key: str) -> tuple:
-    match is_setting_bounded(tab_name, setting_key):
-        case True:
-            return BOUND_SUFFIXES
-        case False:
-            return SINGLE_SUFFIXES
-
-
-def get_setting_captions(tab_name: str, setting_key: str) -> tuple:
-    match is_setting_bounded(tab_name, setting_key):
-        case True:
-            return BOUND_CAPTIONS
-        case False:
-            return SINGLE_CAPTIONS
-
-
-def find_setting_fields(tab_name: str, setting_key: str) -> tuple:
-    return tuple(
-        (tab_name + ":" + setting_key + suffix, setting_key + suffix)
-        for suffix in get_setting_suffixes(tab_name, setting_key))
-
-
-def find_setting_widget_keys(tab_name: str, setting_key: str) -> tuple:
-    return tuple(
-        widget_key for widget_key, _ in find_setting_fields(tab_name, setting_key))
-
-
-def is_tab_grouped(tab_name: str) -> bool:
-    return tab_name in GROUPS_DB
-
-
-def get_group_label(tab_name: str) -> str:
-    return GROUPS_DB[tab_name]["label"]
-
-
-def get_group_description(tab_name: str) -> str:
-    return " ".join(
-        get_setting_description(tab_name, setting_key)
-        for setting_key in GROUPS_DB[tab_name]["keys"])
-
-
-def find_setting_columns(tab_name: str, setting_key: str) -> tuple:
-    return tuple(
-        (widget_key,
-         caption,
-         get_setting_options(tab_name, setting_key),
-         is_setting_editable(tab_name, setting_key))
-        for (widget_key, _), caption in zip(
-            find_setting_fields(tab_name, setting_key),
-            get_setting_captions(tab_name, setting_key)))
-
-
-def find_group_columns(tab_name: str) -> tuple:
-    return tuple(
-        (tab_name + ":" + setting_key,
-         caption,
-         get_setting_options(tab_name, setting_key),
-         is_setting_editable(tab_name, setting_key))
-        for setting_key, caption in zip(
-            GROUPS_DB[tab_name]["keys"], GROUPS_DB[tab_name]["captions"]))
-
-
-def find_group_cards(tab_name: str) -> tuple:
-    return ((tab_name,
-             get_group_label(tab_name),
-             get_group_description(tab_name),
-             find_group_columns(tab_name)),)
-
-
-def find_setting_cards(tab_name: str) -> tuple:
-    return tuple(
-        (tab_name + ":" + setting_key,
-         get_setting_label(tab_name, setting_key),
-         get_setting_description(tab_name, setting_key),
-         find_setting_columns(tab_name, setting_key))
-        for setting_key in find_settings_for_tab(tab_name))
+def build_widget_key(tab_name: str, setting_key: str) -> str:
+    return tab_name + ":" + setting_key
 
 
 def find_cards_for_tab(tab_name: str) -> tuple:
-    match is_tab_grouped(tab_name):
-        case True:
-            return find_group_cards(tab_name)
-        case False:
-            return find_setting_cards(tab_name)
+    return tuple(
+        (build_widget_key(tab_name, setting_key),
+         get_setting_label(tab_name, setting_key),
+         get_setting_description(tab_name, setting_key),
+         get_setting_options(tab_name, setting_key),
+         is_setting_editable(tab_name, setting_key))
+        for setting_key in find_settings_for_tab(tab_name))
 
 
 def _tab_option_sources(tab_name: str, data: dict) -> tuple:
     return tuple(
-        (widget_key, find_setting_options(tab_name, setting_key, data))
-        for setting_key in find_settings_for_tab(tab_name)
-        for widget_key in find_setting_widget_keys(tab_name, setting_key))
+        (build_widget_key(tab_name, setting_key),
+         find_setting_options(tab_name, setting_key, data))
+        for setting_key in find_settings_for_tab(tab_name))
 
 
 def find_option_sources() -> tuple:
@@ -407,10 +301,11 @@ def find_option_sources() -> tuple:
 
 def find_profile_fields() -> tuple:
     return tuple(
-        (widget_key, get_setting_section(tab_name, setting_key), config_key)
+        (build_widget_key(tab_name, setting_key),
+         get_setting_section(tab_name, setting_key),
+         setting_key)
         for tab_name in PROFILE_TABS
-        for setting_key in find_settings_for_tab(tab_name)
-        for widget_key, config_key in find_setting_fields(tab_name, setting_key))
+        for setting_key in find_settings_for_tab(tab_name))
 
 
 def get_option_label(option_key: str) -> str:

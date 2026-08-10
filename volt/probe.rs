@@ -17,12 +17,9 @@ use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
 use crate::ranks::depth_label;
 use crate::ranks::format_semantic;
+use crate::ranks::numeric_display;
 use crate::ranks::present_display;
-use crate::ranks::present_semantic;
 use crate::ranks::space_display;
-use crate::ranks::space_semantic;
-use crate::ranks::transfer_display;
-use crate::ranks::transfer_semantic;
 
 static WRITTEN: Once = Once::new();
 
@@ -38,11 +35,6 @@ pub(crate) struct ProbeData {
     pub(crate) max_images: u32,
     pub(crate) max_lod_bias: f32,
     pub(crate) max_lod_level: f32,
-}
-
-fn sorted_names(mut pairs: Vec<(u32, String)>) -> Vec<String> {
-    pairs.sort_by_key(|(rank, _)| *rank);
-    pairs.into_iter().map(|(_, name)| name).collect()
 }
 
 fn unique_names(names: Vec<String>) -> Vec<String> {
@@ -86,25 +78,17 @@ fn device_index(all: &[vk::PhysicalDevice], phys: vk::PhysicalDevice) -> u32 {
 }
 
 fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
-    sorted_names(
-        unique_sorted(supported.iter().map(|m| m.as_raw() as u32).collect())
-            .into_iter()
-            .filter_map(|value| {
-                present_semantic(value).map(|facts| (facts.rank, present_display(value)))
-            })
-            .collect(),
-    )
+    unique_sorted(supported.iter().map(|m| m.as_raw() as u32).collect())
+        .into_iter()
+        .map(present_display)
+        .collect()
 }
 
 fn space_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
-    sorted_names(
-        unique_sorted(formats.iter().map(|f| f.color_space.as_raw() as u32).collect())
-            .into_iter()
-            .filter_map(|value| {
-                space_semantic(value).map(|facts| (facts.rank, space_display(value)))
-            })
-            .collect(),
-    )
+    unique_sorted(formats.iter().map(|f| f.color_space.as_raw() as u32).collect())
+        .into_iter()
+        .map(space_display)
+        .collect()
 }
 
 fn depth_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
@@ -121,15 +105,13 @@ fn depth_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
 }
 
 fn transfer_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
-    unique_names(sorted_names(
-        formats
-            .iter()
-            .filter_map(|f| format_semantic(f.format.as_raw() as u32))
-            .map(|facts| {
-                (transfer_semantic(facts.numeric).rank, transfer_display(facts.numeric))
-            })
+    unique_names(
+        unique_sorted(formats.iter().map(|f| f.format.as_raw() as u32).collect())
+            .into_iter()
+            .filter_map(format_semantic)
+            .map(|facts| numeric_display(facts.numeric))
             .collect(),
-    ))
+    )
 }
 
 fn set_bits(mask: u32) -> Vec<u32> {
