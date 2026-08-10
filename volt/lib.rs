@@ -16,5 +16,8 @@ mod sampler;
 mod pipeline;
 mod launcher;
 
+#[cfg(test)]
+mod checks;
+
 pub use env::process_args;
 pub use launcher::run_launcher;
