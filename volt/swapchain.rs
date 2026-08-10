@@ -13,8 +13,6 @@ use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
 use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
-use crate::consts::PRESENT_RUNTIME_WARN;
-use crate::consts::SWAPCHAIN_MODES_TYPE;
 use crate::consts::SPACE_EMPTY_WARN;
 use crate::consts::SPACE_EXTENDED_INFO;
 use crate::consts::SPACE_FORCED_WARN;
@@ -286,19 +284,6 @@ fn warn_excluded_choice(asked: vk::SurfaceFormatKHR, s: &Settings) {
     );
     maybe_warn(excluded(s.color_space, space_of(&asked)), SPACE_FORCED_WARN);
     maybe_warn(excluded(s.transfer, numeric_of(&asked)), TRANSFER_FORCED_WARN);
-}
-
-fn chain_carries(head: *const c_void, want: u32) -> bool {
-    chain_nodes(head as *mut c_void)
-        .into_iter()
-        .any(|node| node_type(node) == want)
-}
-
-fn warn_runtime_modes(head: *const c_void, choice: Option<u32>) {
-    match (choice, chain_carries(head, SWAPCHAIN_MODES_TYPE)) {
-        (Some(_), true) => log_at(LogLevel::Warn, PRESENT_RUNTIME_WARN),
-        (_, _) => (),
-    }
 }
 
 fn asked_format(original: &vk::SwapchainCreateInfoKHR) -> vk::SurfaceFormatKHR {
@@ -767,7 +752,6 @@ fn call_prepared_ci(
     maybe_probe(inst, dev, original.surface, &supported, &caps);
     maybe_log_alpha(s.composite_alpha);
     warn_excluded_choice(asked_format(original), s);
-    warn_runtime_modes(original.p_next, s.present_mode);
     patched_swapchain_ci(
         original,
         pick_present_mode(s.present_mode, &supported, original.present_mode),

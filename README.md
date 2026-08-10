@@ -82,15 +82,10 @@ down. That clamp is correctness, not a setting.
   with. A mode the surface does not support falls back to the game's own
   choice with a warning.
 
-  One route is left open, by choice. A game that enables
-  `VK_KHR_swapchain_maintenance1` may list several modes when it creates the
-  swapchain and switch between them at present time without rebuilding it.
-  volt filters the lists the driver hands such a game, so the modes it can
-  list are still the ones you allowed, and forces the mode the swapchain is
-  created with. It does not rewrite the list the game itself supplied:
-  that list is the game's own memory, and a game reaching for that extension
-  has deliberately asked to change mode at runtime. `VOLT_LOG=info` reports
-  when a game takes this route.
+  A game that enables `VK_KHR_swapchain_maintenance1` can switch present mode
+  without rebuilding the swapchain. It can only switch among the modes the
+  surface offered it, which volt has already filtered, so the setting still
+  holds.
 - **Swapchain Images**: how many images the swapchain holds. Fewer images
   lower display latency, more images smooth frame delivery. The list is what
   the surface allows, and the choice is reported back to the game, so a game
