@@ -7,7 +7,6 @@ use crate::ranks::alpha_parse;
 use crate::ranks::alpha_semantic;
 use crate::ranks::depth_label;
 use crate::ranks::format_display;
-use crate::ranks::format_parse;
 use crate::ranks::format_semantic;
 use crate::ranks::numeric_display;
 use crate::ranks::numeric_parse;
@@ -77,11 +76,6 @@ fn round_trips_a_composite_alpha_through_its_name() {
     assert_eq!(alpha_parse(&alpha_display(UNKNOWN_ALPHA)), Some(UNKNOWN_ALPHA));
 }
 
-#[test]
-fn round_trips_a_format_through_its_name() {
-    assert_eq!(format_parse(&format_display(SRGB_FORMAT)), Some(SRGB_FORMAT));
-    assert_eq!(format_parse(&format_display(UNKNOWN_FORMAT)), Some(UNKNOWN_FORMAT));
-}
 
 #[test]
 fn round_trips_a_transfer_function_through_its_name() {

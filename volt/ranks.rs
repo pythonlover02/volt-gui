@@ -207,12 +207,6 @@ pub(crate) fn format_display(value: u32) -> String {
     }
 }
 
-pub(crate) fn format_parse(text: &str) -> Option<u32> {
-    match FORMATS.iter().find(|(_, name, _, _)| *name == text) {
-        Some((value, _, _, _)) => Some(*value),
-        None => parse_unknown(FORMAT_UNKNOWN_PREFIX, text),
-    }
-}
 
 pub(crate) fn format_semantic(value: u32) -> Option<FormatFacts> {
     format_row(value).map(|(_, _, depth, numeric)| FormatFacts { depth, numeric })
