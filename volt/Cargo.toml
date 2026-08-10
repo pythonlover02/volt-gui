@@ -16,7 +16,7 @@ path = "main.rs"
 [dependencies]
 libc = "0.2"
 toml = "0.8"
-ash = "0.37"
+ash = "=0.37.3"
 
 [profile.release]
 opt-level = 3
