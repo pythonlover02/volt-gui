@@ -20,6 +20,8 @@ pub(crate) const PROBE_FLAG: &str = "--probe";
 pub(crate) const PROBE_FILE: &str = "probe.toml";
 pub(crate) const PROBE_SECTION: &str = "[probe]";
 pub(crate) const PROBE_SEP: &str = ";";
+pub(crate) const PROBE_ON: &str = "on";
+pub(crate) const PROBE_OFF: &str = "off";
 pub(crate) const PROBE_UNSET: &str = "";
 pub(crate) const PROBE_WRITE_INFO: &str = "probe written to the config directory";
 pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps its built in lists";
@@ -40,6 +42,9 @@ pub(crate) const SPIN_MARGIN_NS: u64 = 500_000;
 pub(crate) const SLICE_MARGIN_NS: u64 = 150_000;
 pub(crate) const SLICE_STEP_NS: u64 = 1_000_000;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
+pub(crate) const ANISO_OFF: f32 = 1.0;
+pub(crate) const SHADING_OFF: f32 = 0.0;
+pub(crate) const SHADING_MAX: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 
@@ -67,6 +72,8 @@ pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
+pub(crate) const ANISO_ABSENT_INFO: &str = "the application did not enable samplerAnisotropy, leaving anisotropic filtering alone";
+pub(crate) const SHADING_ABSENT_INFO: &str = "the application did not enable sampleRateShading, leaving sample shading alone";
 pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
 
@@ -142,6 +149,10 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # a value volt has no name for is written the way the interface shows it,
 # and forces exactly like a named one
 #
+# anisotropy and sample_shading need a device feature the application itself
+# enabled. volt never enables one: where the application left the feature
+# clear the setting is ignored and a line is logged
+#
 # a forced value the device did not report is not forced: volt keeps the
 # application's own value and logs a warning
 #
@@ -163,11 +174,13 @@ clipped = "default"
 [textures]
 filtering = "default"
 mipmap_mode = "default"
+anisotropy = "default"
 lod_bias = "default"
 mip_floor = "default"
 mip_ceiling = "default"
 
 [rendering]
+sample_shading = "default"
 alpha_to_coverage = "default"
 
 [framerate]

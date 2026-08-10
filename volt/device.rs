@@ -18,6 +18,7 @@ use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnWriteSamplers;
+use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkLayerLinkInfo;
 use crate::logging::log_at;
@@ -25,6 +26,9 @@ use crate::logging::LogLevel;
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct DeviceCaps {
+    pub(crate) sampler_anisotropy: bool,
+    pub(crate) sample_rate_shading: bool,
+    pub(crate) max_anisotropy: f32,
     pub(crate) max_lod_bias: f32,
     pub(crate) max_lod_level: f32,
 }
@@ -154,10 +158,45 @@ fn lod_levels_for(max_dimension: u32) -> f32 {
     (max_dimension.max(1) as f32).log2().floor()
 }
 
-fn build_caps(props: &vk::PhysicalDeviceProperties) -> DeviceCaps {
+fn build_caps(
+    props: &vk::PhysicalDeviceProperties,
+    asked: &vk::PhysicalDeviceFeatures,
+) -> DeviceCaps {
     DeviceCaps {
+        sampler_anisotropy: asked.sampler_anisotropy == vk::TRUE,
+        sample_rate_shading: asked.sample_rate_shading == vk::TRUE,
+        max_anisotropy: props.limits.max_sampler_anisotropy,
         max_lod_bias: props.limits.max_sampler_lod_bias,
         max_lod_level: lod_levels_for(props.limits.max_image_dimension2_d),
+    }
+}
+
+fn non_null_node(p: *const c_void) -> Option<*const VkChainNode> {
+    match p.is_null() {
+        true => None,
+        false => Some(p as *const VkChainNode),
+    }
+}
+
+fn chained_features(p_next: *const c_void) -> Option<vk::PhysicalDeviceFeatures> {
+    std::iter::successors(non_null_node(p_next), |node| {
+        non_null_node(unsafe { (**node).p_next as *const c_void })
+    })
+    .find(|node| unsafe { (**node).s_type } == vk::StructureType::PHYSICAL_DEVICE_FEATURES_2)
+    .map(|node| unsafe { (*(node as *const vk::PhysicalDeviceFeatures2)).features })
+}
+
+fn plain_features(ci: &vk::DeviceCreateInfo) -> Option<vk::PhysicalDeviceFeatures> {
+    match ci.p_enabled_features.is_null() {
+        true => None,
+        false => Some(unsafe { *ci.p_enabled_features }),
+    }
+}
+
+fn asked_features(ci: *const vk::DeviceCreateInfo) -> vk::PhysicalDeviceFeatures {
+    match chained_features(unsafe { (*ci).p_next }) {
+        Some(features) => features,
+        None => plain_features(unsafe { &*ci }).unwrap_or_default(),
     }
 }
 
@@ -186,8 +225,15 @@ pub(crate) fn inherit_device_dispatch(device_handle: vk::Device, queue: vk::Queu
     unsafe { *dst = *src };
 }
 
-fn device_caps(inst: &VkInstState, phys: vk::PhysicalDevice) -> DeviceCaps {
-    build_caps(unsafe { &inst.instance.get_physical_device_properties(phys) })
+fn device_caps(
+    inst: &VkInstState,
+    phys: vk::PhysicalDevice,
+    ci: *const vk::DeviceCreateInfo,
+) -> DeviceCaps {
+    build_caps(
+        unsafe { &inst.instance.get_physical_device_properties(phys) },
+        &asked_features(ci),
+    )
 }
 
 fn call_record_command_buffers(
@@ -292,7 +338,7 @@ fn invoke_create_device(
                 inst,
                 inst_handle,
                 phys,
-                device_caps(inst, phys),
+                device_caps(inst, phys, ci),
             );
             vk::Result::SUCCESS
         }

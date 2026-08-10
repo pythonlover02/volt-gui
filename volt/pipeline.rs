@@ -4,8 +4,11 @@ use ash::vk;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::SHADING_ABSENT_INFO;
+use crate::consts::SHADING_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::UNOWNED_BUFFER_ERROR;
+use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -24,11 +27,50 @@ fn pick_coverage(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
     }
 }
 
+fn shading_absent() -> Option<f32> {
+    log_at(LogLevel::Info, SHADING_ABSENT_INFO);
+    None
+}
+
+fn shading_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
+    match (choice, caps.sample_rate_shading) {
+        (None, _) => None,
+        (Some(rate), true) => Some(rate),
+        (Some(_), false) => shading_absent(),
+    }
+}
+
+fn shading_pair(rate: f32) -> (vk::Bool32, f32) {
+    match rate > SHADING_OFF {
+        true => (vk::TRUE, rate),
+        false => (vk::FALSE, SHADING_OFF),
+    }
+}
+
+fn pick_shading(
+    choice: Option<f32>,
+    caps: &DeviceCaps,
+    original: (vk::Bool32, f32),
+) -> (vk::Bool32, f32) {
+    match shading_allowed(choice, caps) {
+        Some(rate) => shading_pair(rate),
+        None => original,
+    }
+}
+
 fn rebuilt_multisample(
     s: &Settings,
+    caps: &DeviceCaps,
     original: &vk::PipelineMultisampleStateCreateInfo,
 ) -> vk::PipelineMultisampleStateCreateInfo {
+    let (shading_enable, shading_rate) = pick_shading(
+        s.sample_shading,
+        caps,
+        (original.sample_shading_enable, original.min_sample_shading),
+    );
     vk::PipelineMultisampleStateCreateInfo {
+        sample_shading_enable: shading_enable,
+        min_sample_shading: shading_rate,
         alpha_to_coverage_enable: pick_coverage(s.alpha_coverage, original.alpha_to_coverage_enable),
         ..*original
     }
@@ -36,11 +78,12 @@ fn rebuilt_multisample(
 
 fn patched_multisample(
     s: &Settings,
+    caps: &DeviceCaps,
     p: *const vk::PipelineMultisampleStateCreateInfo,
 ) -> Option<vk::PipelineMultisampleStateCreateInfo> {
     match p.is_null() {
         true => None,
-        false => Some(rebuilt_multisample(s, unsafe { &*p })),
+        false => Some(rebuilt_multisample(s, caps, unsafe { &*p })),
     }
 }
 
@@ -94,7 +137,7 @@ pub(crate) fn call_create_graphics_pipelines(
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
     let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo>> = originals
         .iter()
-        .map(|ci| patched_multisample(s, ci.p_multisample_state))
+        .map(|ci| patched_multisample(s, &dev.caps, ci.p_multisample_state))
         .collect();
     let patched: Vec<vk::GraphicsPipelineCreateInfo> = originals
         .iter()

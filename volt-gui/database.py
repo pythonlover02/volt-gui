@@ -1,6 +1,7 @@
 from typing import Final
 
 from probe import alpha_options
+from probe import aniso_options
 from probe import call_read_probe
 from probe import depth_options
 from probe import frametime_pairs
@@ -10,6 +11,7 @@ from probe import lod_bias_options
 from probe import mip_options
 from probe import plain_pairs
 from probe import present_options
+from probe import shading_options
 from probe import space_options
 from probe import transfer_options
 
@@ -125,6 +127,13 @@ SETTINGS_DB: Final[dict] = {
             "options": (DEFAULT_VALUE, "nearest", "linear"),
             "editable": False,
         },
+        "anisotropy": {
+            "section": "textures",
+            "label": "Anisotropic Filtering",
+            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. This one needs the samplerAnisotropy device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Nearly every game asks for it, so this is rare.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
+        },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
@@ -148,6 +157,13 @@ SETTINGS_DB: Final[dict] = {
         },
     },
     "Rendering": {
+        "sample_shading": {
+            "section": "rendering",
+            "label": "Sample Shading",
+            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2. This one needs the sampleRateShading device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Most modern renderers are deferred and never ask, so expect this card to be empty more often than not. Only does something in a game already using MSAA.",
+            "options": (DEFAULT_VALUE,),
+            "editable": False,
+        },
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
@@ -238,9 +254,11 @@ OPTION_BUILDERS: Final[dict] = {
     "color_space": space_options,
     "transfer_function": transfer_options,
     "composite_alpha": alpha_options,
+    "anisotropy": aniso_options,
     "lod_bias": lod_bias_options,
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,
+    "sample_shading": shading_options,
     "frame_limit": lambda _: frametime_pairs(
         SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
 }

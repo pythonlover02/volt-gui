@@ -113,12 +113,18 @@ down. That clamp is correctness, not a setting.
   that matches none of the three exactly counts as the closest one below it.
 - **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
   independently of the filter choice.
+- **Anisotropic Filtering**: off up to whatever your GPU reports. Needs the
+  `samplerAnisotropy` feature; volt never enables one, so where a game left it
+  off this card holds nothing but `default`. Nearly every game enables it.
 - **LOD Bias**: shift mipmap selection, sharper or blurrier, across the range
   the device allows.
 - **Mip Floor** and **Mip Ceiling**: the lowest and highest mip levels
   samplers may use, called minimum and maximum LOD in Vulkan.
 
 ### Rendering
+- **Sample Shading**: shade at sample rate inside MSAA targets to reduce
+  shimmer. Needs the `sampleRateShading` feature, which most deferred
+  renderers never enable, so expect this card to be empty more often than not.
 - **Alpha To Coverage**: turn fragment alpha into coverage. Softens cutout
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.
@@ -235,8 +241,9 @@ Create and switch them from the GUI or the system tray; select one at launch
 with `volt <name> -- ...`.
 
 Presets populate the active profile with curated values, from **Quality**
-(trilinear, blended mips, 10 bit colour, classic vsync) down to **Potato Low
-Latency** (bilinear, hard mip cuts, immediate present, 2 image swapchain).
+(trilinear, 16x anisotropy, blended mips, 10 bit colour, classic vsync) down
+to **Potato Low Latency** (bilinear, anisotropy off, hard mip cuts, immediate
+present, 2 image swapchain).
 A preset writes every value in the profile, so anything it does not set goes
 back to default. That includes the frame limit and the colour space, transfer
 function, composite alpha and clipped settings: those depend on your display
@@ -258,9 +265,9 @@ requires injecting shaders or processing the image is out of scope:
   Vulkan API. Use CoreCtrl for that.
 - OpenGL. The per driver environment variable maze that OpenGL support
   requires is exactly what this rewrite retired.
-- Enable a Vulkan device feature or extension the game did not request. A
-  setting whose value is illegal without one is out of scope, whatever it
-  would be worth.
+- Enable a Vulkan device feature or extension the game did not request. Where
+  a setting needs a feature, volt reads what the game enabled and applies the
+  setting only where the game enabled it.
 - Require a Vulkan extension. Core 1.0 and `VK_KHR_swapchain` are the whole
   surface volt asks for, so behaviour never splits between drivers. volt may
   intercept an extension command the game itself calls, so a setting keeps

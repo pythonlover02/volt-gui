@@ -4,6 +4,8 @@ use ash::vk;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::ANISO_ABSENT_INFO;
+use crate::consts::ANISO_OFF;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
@@ -12,6 +14,8 @@ use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::instance::PfnWriteSamplers;
 use crate::lists::forced;
+use crate::logging::log_at;
+use crate::logging::LogLevel;
 
 fn filter_triple(value: u32) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
     match value {
@@ -46,6 +50,37 @@ fn pick_mipmap(choice: Option<u32>, original: vk::SamplerMipmapMode) -> vk::Samp
     }
 }
 
+fn aniso_absent() -> Option<f32> {
+    log_at(LogLevel::Info, ANISO_ABSENT_INFO);
+    None
+}
+
+fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
+    match (choice, caps.sampler_anisotropy) {
+        (None, _) => None,
+        (Some(level), true) => Some(level.min(caps.max_anisotropy)),
+        (Some(_), false) => aniso_absent(),
+    }
+}
+
+fn aniso_pair(level: f32) -> (vk::Bool32, f32) {
+    match level > ANISO_OFF {
+        true => (vk::TRUE, level),
+        false => (vk::FALSE, ANISO_OFF),
+    }
+}
+
+fn pick_aniso(
+    choice: Option<f32>,
+    caps: &DeviceCaps,
+    original: (vk::Bool32, f32),
+) -> (vk::Bool32, f32) {
+    match aniso_allowed(choice, caps) {
+        Some(level) => aniso_pair(level),
+        None => original,
+    }
+}
+
 fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
     forced(choice, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
 }
@@ -65,11 +100,18 @@ fn patched_ci(
         s.filtering,
         (original.mag_filter, original.min_filter, original.mipmap_mode),
     );
+    let (aniso_enable, aniso_max) = pick_aniso(
+        s.anisotropy,
+        caps,
+        (original.anisotropy_enable, original.max_anisotropy),
+    );
     let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
         mag_filter: mag,
         min_filter: min,
         mipmap_mode: pick_mipmap(s.mipmap, mip),
+        anisotropy_enable: aniso_enable,
+        max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
         min_lod: lod_low,
         max_lod: lod_high,

@@ -18,6 +18,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "precise",
         "Textures:filtering": "trilinear",
         "Textures:mipmap_mode": "linear",
+        "Textures:anisotropy": "16",
         "Textures:lod_bias": "-0.6",
         "Textures:mip_floor": "0",
         "Rendering:alpha_to_coverage": "on",
@@ -28,6 +29,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "sliced",
         "Textures:filtering": "trilinear",
         "Textures:mipmap_mode": "linear",
+        "Textures:anisotropy": "8",
         "Textures:mip_floor": "0",
     },
     "Performance FPS": {
@@ -38,6 +40,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
         "Textures:mipmap_mode": "linear",
+        "Textures:anisotropy": "4",
         "Textures:lod_bias": "0.6",
     },
     "Performance Low Latency": {
@@ -48,6 +51,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "spin",
         "Textures:filtering": "bilinear",
         "Textures:mipmap_mode": "linear",
+        "Textures:anisotropy": "4",
         "Textures:lod_bias": "0.6",
     },
     "Potato FPS": {
@@ -58,6 +62,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
         "Textures:mipmap_mode": "nearest",
+        "Textures:anisotropy": "off",
         "Textures:lod_bias": "1.0",
         "Textures:mip_floor": "2",
         "Rendering:alpha_to_coverage": "off",
@@ -70,6 +75,7 @@ PRESET_OVERRIDES: Final[dict] = {
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
         "Textures:mipmap_mode": "nearest",
+        "Textures:anisotropy": "off",
         "Textures:lod_bias": "1.0",
         "Textures:mip_floor": "2",
         "Rendering:alpha_to_coverage": "off",

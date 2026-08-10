@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use crate::consts::ANISO_OFF;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
@@ -19,6 +20,8 @@ use crate::consts::SECTION_GPU;
 use crate::consts::SECTION_RENDERING;
 use crate::consts::SECTION_TEXTURES;
 use crate::consts::SETTINGS_FROZEN_INFO;
+use crate::consts::SHADING_MAX;
+use crate::consts::SHADING_OFF;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::env::env_config_name;
@@ -45,9 +48,11 @@ pub(crate) struct Settings {
     pub(crate) clipped: Option<u32>,
     pub(crate) filtering: Option<u32>,
     pub(crate) mipmap: Option<u32>,
+    pub(crate) anisotropy: Option<f32>,
     pub(crate) lod_bias: Option<f32>,
     pub(crate) mip_floor: Option<f32>,
     pub(crate) mip_ceiling: Option<f32>,
+    pub(crate) sample_shading: Option<f32>,
     pub(crate) alpha_coverage: Option<u32>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) limit_method: Option<MethodChoice>,
@@ -101,6 +106,20 @@ fn parse_toggle(text: &str) -> Option<u32> {
         "off" => Some(TOGGLE_OFF),
         "on" => Some(TOGGLE_ON),
         _ => None,
+    }
+}
+
+fn parse_aniso(text: &str) -> Option<f32> {
+    match text {
+        "off" => Some(ANISO_OFF),
+        other => parse_float(other).filter(|v| *v >= ANISO_OFF),
+    }
+}
+
+fn parse_shading(text: &str) -> Option<f32> {
+    match text {
+        "off" => Some(SHADING_OFF),
+        other => parse_float(other).filter(|v| (SHADING_OFF..=SHADING_MAX).contains(v)),
     }
 }
 
@@ -180,9 +199,11 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         clipped: field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
         filtering: field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
         mipmap: field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
+        anisotropy: field(&doc, SECTION_TEXTURES, "anisotropy", parse_aniso),
         lod_bias: field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
         mip_floor: field(&doc, SECTION_TEXTURES, "mip_floor", parse_float),
         mip_ceiling: field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
+        sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
         alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
