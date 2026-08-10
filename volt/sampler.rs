@@ -5,7 +5,6 @@ use crate::bounds::resolved;
 use crate::bounds::Bounds;
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::ANISO_OFF;
 use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
@@ -64,31 +63,6 @@ fn pick_mipmap(b: Bounds<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMi
     }
 }
 
-fn aniso_level(enable: vk::Bool32, level: f32) -> f32 {
-    match enable {
-        vk::TRUE => level,
-        _ => ANISO_OFF,
-    }
-}
-
-fn aniso_pair(level: f32, caps: &DeviceCaps) -> (vk::Bool32, f32) {
-    match level > ANISO_OFF && caps.sampler_anisotropy {
-        true => (vk::TRUE, level.min(caps.max_anisotropy)),
-        false => (vk::FALSE, level),
-    }
-}
-
-fn pick_aniso(
-    b: Bounds<f32>,
-    caps: &DeviceCaps,
-    original: (vk::Bool32, f32),
-) -> (vk::Bool32, f32) {
-    match bounds_set(&b) {
-        true => aniso_pair(resolved(b, aniso_level(original.0, original.1)), caps),
-        false => original,
-    }
-}
-
 fn pick_lod_bias(b: Bounds<f32>, caps: &DeviceCaps, original: f32) -> f32 {
     resolved(b, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
 }
@@ -104,18 +78,11 @@ fn patched_ci(s: &Settings, caps: &DeviceCaps, original: &vk::SamplerCreateInfo)
         s.filtering,
         (original.mag_filter, original.min_filter, original.mipmap_mode),
     );
-    let (aniso_enable, aniso_max) = pick_aniso(
-        s.anisotropy,
-        caps,
-        (original.anisotropy_enable, original.max_anisotropy),
-    );
     let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
         mag_filter: mag,
         min_filter: min,
         mipmap_mode: pick_mipmap(s.mipmap, mip),
-        anisotropy_enable: aniso_enable,
-        max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
         min_lod: lod_low,
         max_lod: lod_high,

@@ -5,7 +5,6 @@ from typing import Final
 
 PROBE_FILE: Final[str] = "probe.toml"
 PROBE_SEP: Final[str] = ";"
-PROBE_ON: Final[str] = "on"
 
 MS_PER_S: Final[float] = 1000.0
 FRAMETIME_DIGITS: Final[int] = 1
@@ -14,13 +13,10 @@ FRACTION_STEP: Final[float] = 0.20
 FRACTION_DIGITS: Final[int] = 2
 COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
-SHADING_CEILING: Final[float] = 1.0
-OFF_VALUE: Final[str] = "off"
 
 PRESENT_FALLBACK: Final[tuple] = ("fifo", "fifo_relaxed", "mailbox", "immediate")
 DEPTH_FALLBACK: Final[tuple] = ("8bit", "10bit")
 DEVICE_FALLBACK: Final[tuple] = ("device 1", "device 2", "device 3", "device 4")
-ANISO_FALLBACK: Final[float] = 16.0
 BIAS_FALLBACK: Final[float] = 4.0
 LEVEL_FALLBACK: Final[float] = 14.0
 MIN_COUNT_FALLBACK: Final[float] = 2.0
@@ -69,14 +65,6 @@ def probe_number(data: dict, key: str, fallback: float) -> float:
             return float(probe_text(data, key))
         case False:
             return fallback
-
-
-def probe_flag(data: dict, key: str) -> bool:
-    match probe_text(data, key):
-        case "":
-            return True
-        case text:
-            return text == PROBE_ON
 
 
 def _filled(values: tuple, fallback: tuple) -> tuple:
@@ -135,29 +123,6 @@ def gpu_options(data: dict) -> tuple:
     return tuple(
         (str(at + 1), name)
         for at, name in enumerate(probe_list(data, "device_names", DEVICE_FALLBACK)))
-
-
-def _aniso_ladder(data: dict) -> tuple:
-    return plain_pairs(_whole_values(
-        WHOLE_STEP,
-        int(probe_number(data, "max_anisotropy", ANISO_FALLBACK))))
-
-
-def aniso_options(data: dict) -> tuple:
-    match probe_flag(data, "sampler_anisotropy"):
-        case False:
-            return ()
-        case True:
-            return ((OFF_VALUE, OFF_VALUE),) + _aniso_ladder(data)
-
-
-def shading_options(data: dict) -> tuple:
-    match probe_flag(data, "sample_rate_shading"):
-        case False:
-            return ()
-        case True:
-            return ((OFF_VALUE, OFF_VALUE),) + plain_pairs(
-                _fraction_values(1, _span_of(SHADING_CEILING)))
 
 
 def _count_ceiling(low: int, high: int) -> int:

@@ -1,6 +1,5 @@
 from typing import Final
 
-from probe import aniso_options
 from probe import call_read_probe
 from probe import depth_options
 from probe import frametime_pairs
@@ -10,7 +9,6 @@ from probe import lod_bias_options
 from probe import mip_options
 from probe import plain_pairs
 from probe import present_options
-from probe import shading_options
 
 
 APP_VERSION: Final[str] = "2.0.0"
@@ -110,18 +108,10 @@ SETTINGS_DB: Final[dict] = {
             "editable": False,
             "bounded": True,
         },
-        "anisotropy": {
-            "section": "textures",
-            "label": "Anisotropic Filtering",
-            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. off counts as the lowest setting, so a Minimum of 4 raises a game that asked for less and leaves a game that asked for more alone. The list runs in steps of two up to what your GPU reports, and holds only default on a device without the feature.",
-            "options": (DEFAULT_VALUE,),
-            "editable": False,
-            "bounded": True,
-        },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. The list runs in steps of 0.2 across the range your GPU reports.",
+            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. A negative bias is the nearest volt gets to sharpening textures seen at a steep angle. The list runs in steps of 0.2 across the range your GPU reports.",
             "options": (DEFAULT_VALUE,),
             "editable": False,
             "bounded": True,
@@ -144,14 +134,6 @@ SETTINGS_DB: Final[dict] = {
         },
     },
     "Rendering": {
-        "sample_shading": {
-            "section": "rendering",
-            "label": "Sample Shading",
-            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2, and holds only default on a device without the sampleRateShading feature. Only does something in a game already using MSAA.",
-            "options": (DEFAULT_VALUE,),
-            "editable": False,
-            "bounded": True,
-        },
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
@@ -248,11 +230,9 @@ OPTION_BUILDERS: Final[dict] = {
     "present_mode": present_options,
     "image_count": image_count_options,
     "color_depth": depth_options,
-    "anisotropy": aniso_options,
     "lod_bias": lod_bias_options,
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,
-    "sample_shading": shading_options,
     "frame_limit": lambda _: frametime_pairs(
         SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
 }

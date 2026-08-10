@@ -94,17 +94,12 @@ Limiter** card.
   that matches none of the three exactly counts as the closest one below it.
 - **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
   independently of the filter choice.
-- **Anisotropic Filtering**: off up to whatever your GPU reports, where off
-  counts as the lowest setting. A minimum of 4x raises a game that asked for
-  less and leaves a game that asked for more alone.
 - **LOD Bias**: shift mipmap selection, sharper or blurrier, across the range
   the device allows.
 - **Mip Floor** and **Mip Ceiling**: the lowest and highest mip levels
   samplers may use, called minimum and maximum LOD in Vulkan.
 
 ### Rendering
-- **Sample Shading**: shade at sample rate inside MSAA targets to reduce
-  shimmer (needs the sampleRateShading device feature).
 - **Alpha To Coverage**: turn fragment alpha into coverage. Softens cutout
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.
@@ -136,8 +131,8 @@ the Vulkan calls the game makes, and the tabs run in the order the layer acts:
 device enumeration for GPU selection, the surface queries and swapchain
 creation for the display settings, `vkCreateSampler` for texture settings,
 `vkCreateGraphicsPipelines` for the rendering toggles, and `vkQueuePresentKHR`
-for the frame limiter. Core device features are enabled at device creation
-only when the hardware reports them.
+for the frame limiter. Device creation passes straight through: volt enables
+no feature the game left off.
 
 Settings are frozen for the life of the process. Press Apply, then start the
 game again.
@@ -214,8 +209,8 @@ Create and switch them from the GUI or the system tray; select one at launch
 with `volt <name> -- ...`.
 
 Presets populate the active profile with curated values, from **Quality**
-(trilinear, 16x anisotropy, full sample shading) down to **Potato Low
-Latency** (bilinear, anisotropy off, immediate present, 2 image swapchain).
+(trilinear, blended mips, 10 bit colour, classic vsync) down to **Potato Low
+Latency** (bilinear, hard mip cuts, immediate present, 2 image swapchain).
 A preset writes every value in the profile, so anything it does not set goes
 back to default. That includes the frame limit: the right cap depends on your
 display, so that choice stays yours.
@@ -226,15 +221,17 @@ volt changes what the game asks Vulkan for; it never draws. Anything that
 requires injecting shaders or processing the image is out of scope:
 
 - Sharpening, FSR or any upscaling, frame generation, post processing.
-- Forced MSAA or SSAA. Render passes belong to the game. Sample Shading is
-  as far as this can go without breaking games.
+- Forced MSAA or SSAA. Render passes and sample counts belong to the game.
 - Overlays and HUDs. Use MangoHud for that.
 - Overclocking, fan curves, power limits. That is sysfs territory, not the
   Vulkan API. Use CoreCtrl for that.
 - OpenGL. The per driver environment variable maze that OpenGL support
   requires is exactly what this rewrite retired.
-- Any Vulkan extension. Core 1.0 is the whole surface the layer touches, so
-  behaviour never splits between drivers.
+- Enable a Vulkan device feature or extension the game did not request. A
+  setting whose value is illegal without one is out of scope, whatever it
+  would be worth.
+- Require a Vulkan extension. Core 1.0 and `VK_KHR_swapchain` are the whole
+  surface volt asks for, so behaviour never splits between drivers.
 - Change a setting under a running game. The profile is read once at startup.
 
 ## Contributing
