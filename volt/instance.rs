@@ -111,6 +111,22 @@ pub(crate) struct VkSurfaceFormat2 {
     pub(crate) surface_format: vk::SurfaceFormatKHR,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkChainNode {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPresentModeList {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) present_mode_count: u32,
+    pub(crate) p_present_modes: *mut vk::PresentModeKHR,
+}
+
 #[derive(Clone)]
 pub(crate) struct VkInstState {
     pub(crate) instance: ash::Instance,

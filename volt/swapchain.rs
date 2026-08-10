@@ -1,3 +1,4 @@
+use std::ffi::c_void;
 use std::ptr;
 
 use ash::vk;
@@ -8,9 +9,12 @@ use crate::consts::ALPHA_MISS_WARN;
 use crate::consts::ALPHA_OPAQUE_INFO;
 use crate::consts::DEPTH_EMPTY_WARN;
 use crate::consts::FORMAT_FORCED_WARN;
+use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
 use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
+use crate::consts::PRESENT_RUNTIME_WARN;
+use crate::consts::SWAPCHAIN_MODES_TYPE;
 use crate::consts::SPACE_EMPTY_WARN;
 use crate::consts::SPACE_EXTENDED_INFO;
 use crate::consts::SPACE_FORCED_WARN;
@@ -28,8 +32,10 @@ use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
 use crate::instance::PfnSurfaceFormats2;
 use crate::instance::PfnSurfaceModes2;
+use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::instance::VkSurfaceFormat2;
 use crate::instance::SURFACE_FORMAT_2;
@@ -282,6 +288,19 @@ fn warn_excluded_choice(asked: vk::SurfaceFormatKHR, s: &Settings) {
     maybe_warn(excluded(s.transfer, numeric_of(&asked)), TRANSFER_FORCED_WARN);
 }
 
+fn chain_carries(head: *const c_void, want: u32) -> bool {
+    chain_nodes(head as *mut c_void)
+        .into_iter()
+        .any(|node| node_type(node) == want)
+}
+
+fn warn_runtime_modes(head: *const c_void, choice: Option<u32>) {
+    match (choice, chain_carries(head, SWAPCHAIN_MODES_TYPE)) {
+        (Some(_), true) => log_at(LogLevel::Warn, PRESENT_RUNTIME_WARN),
+        (_, _) => (),
+    }
+}
+
 fn asked_format(original: &vk::SwapchainCreateInfoKHR) -> vk::SurfaceFormatKHR {
     vk::SurfaceFormatKHR {
         format: original.image_format,
@@ -448,18 +467,73 @@ pub(crate) fn call_surface_capabilities(
     }
 }
 
+fn non_null_node(p: *mut c_void) -> Option<*mut VkChainNode> {
+    match p.is_null() {
+        true => None,
+        false => Some(p as *mut VkChainNode),
+    }
+}
+
+fn chain_nodes(head: *mut c_void) -> Vec<*mut VkChainNode> {
+    std::iter::successors(non_null_node(head), |node| {
+        non_null_node(unsafe { (**node).p_next })
+    })
+    .collect()
+}
+
+fn node_type(node: *mut VkChainNode) -> u32 {
+    unsafe { (*node).s_type.as_raw() as u32 }
+}
+
+fn mode_lists(head: *mut c_void) -> Vec<*mut VkPresentModeList> {
+    chain_nodes(head)
+        .into_iter()
+        .filter(|node| MODE_LIST_TYPES.contains(&node_type(*node)))
+        .map(|node| node as *mut VkPresentModeList)
+        .collect()
+}
+
+fn call_read_modes(list: *mut VkPresentModeList) -> Vec<vk::PresentModeKHR> {
+    (0..unsafe { (*list).present_mode_count } as usize)
+        .map(|at| unsafe { *(*list).p_present_modes.add(at) })
+        .collect()
+}
+
+fn call_write_modes(list: *mut VkPresentModeList, kept_modes: &[vk::PresentModeKHR]) {
+    kept_modes
+        .iter()
+        .enumerate()
+        .for_each(|(at, mode)| unsafe { *(*list).p_present_modes.add(at) = *mode });
+    unsafe { (*list).present_mode_count = kept_modes.len() as u32 };
+}
+
+fn call_filtered_modes(list: *mut VkPresentModeList, choice: Option<u32>) {
+    match unsafe { (*list).p_present_modes.is_null() } {
+        true => (),
+        false => call_write_modes(list, &present_filtered(call_read_modes(list), choice)),
+    }
+}
+
+fn call_filtered_chain(head: *mut c_void, choice: Option<u32>) {
+    mode_lists(head)
+        .into_iter()
+        .for_each(|list| call_filtered_modes(list, choice));
+}
+
 fn call_caps2_through(
     fp: PfnSurfaceCaps2,
     phys: vk::PhysicalDevice,
     info: *const VkPhysicalDeviceSurfaceInfo2,
     out: *mut VkSurfaceCapabilities2,
-    choice: Option<u32>,
+    s: &Settings,
 ) -> vk::Result {
     match unsafe { fp(phys, info, out) } {
         vk::Result::SUCCESS => {
             unsafe {
-                (*out).surface_capabilities = clamped_caps((*out).surface_capabilities, choice)
+                (*out).surface_capabilities =
+                    clamped_caps((*out).surface_capabilities, s.image_count)
             };
+            call_filtered_chain(unsafe { (*out).p_next }, s.present_mode);
             vk::Result::SUCCESS
         }
         e => e,
@@ -473,7 +547,7 @@ pub(crate) fn call_surface_capabilities2(
 ) -> vk::Result {
     match owning_instance(phys).and_then(|(_, inst)| inst.caps2_fp) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(fp) => call_caps2_through(fp, phys, info, out, ensure_settings().image_count),
+        Some(fp) => call_caps2_through(fp, phys, info, out, ensure_settings()),
     }
 }
 
@@ -693,6 +767,7 @@ fn call_prepared_ci(
     maybe_probe(inst, dev, original.surface, &supported, &caps);
     maybe_log_alpha(s.composite_alpha);
     warn_excluded_choice(asked_format(original), s);
+    warn_runtime_modes(original.p_next, s.present_mode);
     patched_swapchain_ci(
         original,
         pick_present_mode(s.present_mode, &supported, original.present_mode),

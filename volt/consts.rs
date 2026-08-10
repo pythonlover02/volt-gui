@@ -43,6 +43,14 @@ pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 
+pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
+pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;
+pub(crate) const SWAPCHAIN_MODES_TYPE: u32 = 1000275002;
+pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
+    MODE_COMPATIBILITY_TYPE,
+    LATENCY_CAPABILITIES_TYPE,
+];
+
 pub(crate) const DEPTH_SUFFIX: &str = "bit";
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const SPACE_UNKNOWN_PREFIX: &str = "color space ";
@@ -62,6 +70,7 @@ pub(crate) const TOGGLE_ON: u32 = 1;
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
+pub(crate) const PRESENT_RUNTIME_WARN: &str = "this application can change present mode without rebuilding the swapchain: the setting is applied at creation and volt does not rewrite the mode list the application supplied";
 pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
 pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
