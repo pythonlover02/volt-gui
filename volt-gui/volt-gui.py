@@ -812,7 +812,6 @@ def main() -> None:
             sys.exit(0)
         case False:
             pass
-    os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
     os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.theme.gnome=false")
     calculate_initial_scale()
     application = QApplication(sys.argv)
