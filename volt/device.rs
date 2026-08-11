@@ -17,6 +17,7 @@ use crate::instance::call_next_gipa;
 use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
@@ -37,6 +38,7 @@ pub(crate) struct VkDevState {
     pub(crate) device: ash::Device,
     pub(crate) phys: vk::PhysicalDevice,
     pub(crate) gdpa: vk::PFN_vkGetDeviceProcAddr,
+    pub(crate) loader_data: Option<PfnSetDeviceLoaderData>,
     pub(crate) swap_fp: vk::KhrSwapchainFn,
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
@@ -219,10 +221,15 @@ fn call_typed_device_fp<T>(
     call_next_gdpa(gdpa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
-pub(crate) fn inherit_device_dispatch(device_handle: vk::Device, queue: vk::Queue) {
-    let src = device_handle.as_raw() as *const *const c_void;
-    let dst = queue.as_raw() as *mut *const c_void;
-    unsafe { *dst = *src };
+fn call_loader_data(fp: PfnSetDeviceLoaderData, handle: vk::Device, queue: vk::Queue) {
+    let _ = unsafe { fp(handle, queue.as_raw() as usize as *mut c_void) };
+}
+
+pub(crate) fn call_register_queue(dev: &VkDevState, handle: vk::Device, queue: vk::Queue) {
+    match dev.loader_data {
+        Some(fp) => call_loader_data(fp, handle, queue),
+        None => (),
+    }
 }
 
 fn device_caps(
@@ -291,6 +298,7 @@ pub(crate) fn call_destroy_command_pool(
 
 fn register_device(
     gdpa: vk::PFN_vkGetDeviceProcAddr,
+    loader_data: Option<PfnSetDeviceLoaderData>,
     handle: vk::Device,
     inst: &VkInstState,
     inst_handle: u64,
@@ -306,6 +314,7 @@ fn register_device(
             device,
             phys,
             gdpa,
+            loader_data,
             swap_fp: load_swap_fp(gdpa, handle),
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
@@ -320,6 +329,7 @@ fn register_device(
 fn invoke_create_device(
     create_fn: unsafe extern "system" fn(),
     link: &VkLayerLinkInfo,
+    loader_data: Option<PfnSetDeviceLoaderData>,
     inst: &VkInstState,
     inst_handle: u64,
     phys: vk::PhysicalDevice,
@@ -334,6 +344,7 @@ fn invoke_create_device(
         vk::Result::SUCCESS => {
             register_device(
                 link.pfn_next_get_device_proc_addr,
+                loader_data,
                 unsafe { *out },
                 inst,
                 inst_handle,
@@ -348,6 +359,7 @@ fn invoke_create_device(
 
 pub(crate) fn call_real_create_device(
     link: Option<VkLayerLinkInfo>,
+    loader_data: Option<PfnSetDeviceLoaderData>,
     phys: vk::PhysicalDevice,
     ci: *const vk::DeviceCreateInfo,
     alloc: *const vk::AllocationCallbacks,
@@ -359,7 +371,7 @@ pub(crate) fn call_real_create_device(
             vk::Instance::from_raw(ih),
             "vkCreateDevice",
         )
-        .map(|f| invoke_create_device(f, &l, &inst, ih, phys, ci, alloc, out))
+        .map(|f| invoke_create_device(f, &l, loader_data, &inst, ih, phys, ci, alloc, out))
         .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
         (_, _) => vk::Result::ERROR_INITIALIZATION_FAILED,
     }

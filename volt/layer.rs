@@ -18,8 +18,10 @@ use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::FN_SURFACE_FORMATS_2;
 use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::FN_WRITE_SAMPLERS;
+use crate::consts::LAYER_DATA_CALLBACK;
 use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
+use crate::consts::LAYER_LINK_INFO;
 use crate::consts::LAYER_NAME;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
@@ -28,11 +30,11 @@ use crate::device::call_allocate_command_buffers;
 use crate::device::call_destroy_command_pool;
 use crate::device::call_free_command_buffers;
 use crate::device::call_real_create_device;
+use crate::device::call_register_queue;
 use crate::device::cmdbuf_owner;
 use crate::device::devs_del;
 use crate::device::devs_gdpa;
 use crate::device::devs_get;
-use crate::device::inherit_device_dispatch;
 use crate::device::queue_dev_put;
 use crate::device::queue_owner;
 use crate::device::VkDevState;
@@ -40,10 +42,11 @@ use crate::instance::call_advance_chain;
 use crate::instance::call_filtered_enumerate;
 use crate::instance::call_filtered_groups;
 use crate::instance::call_filtered_groups_khr;
+use crate::instance::call_loader_data_fn;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::call_real_create_instance;
-use crate::instance::chain_link_info;
+use crate::instance::chain_layer_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
@@ -298,7 +301,7 @@ unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: 
     match devs_get(dev.as_raw()) {
         Some(d) => {
             let q = d.device.get_device_queue(qfam, qidx);
-            inherit_device_dispatch(dev, q);
+            call_register_queue(&d, dev, q);
             queue_dev_put(q.as_raw(), dev.as_raw());
             *out = q;
         }
@@ -310,7 +313,7 @@ unsafe extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk:
     match devs_get(dev.as_raw()) {
         Some(d) => {
             let q = d.device.get_device_queue2(&*info);
-            inherit_device_dispatch(dev, q);
+            call_register_queue(&d, dev, q);
             queue_dev_put(q.as_raw(), dev.as_raw());
             *out = q;
         }
@@ -341,8 +344,16 @@ unsafe extern "system" fn vkCreateInstance(
     out: *mut vk::Instance,
 ) -> vk::Result {
     init_log_level();
-    let link = call_advance_chain(chain_link_info((*ci).p_next, vk::StructureType::LOADER_INSTANCE_CREATE_INFO));
-    call_real_create_instance(link, ci, alloc, out)
+    call_real_create_instance(
+        call_advance_chain(chain_layer_info(
+            (*ci).p_next,
+            vk::StructureType::LOADER_INSTANCE_CREATE_INFO,
+            LAYER_LINK_INFO,
+        )),
+        ci,
+        alloc,
+        out,
+    )
 }
 
 unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
@@ -384,8 +395,22 @@ unsafe extern "system" fn vkCreateDevice(
     alloc: *const vk::AllocationCallbacks,
     out: *mut vk::Device,
 ) -> vk::Result {
-    let link = call_advance_chain(chain_link_info((*ci).p_next, vk::StructureType::LOADER_DEVICE_CREATE_INFO));
-    call_real_create_device(link, phys, ci, alloc, out)
+    call_real_create_device(
+        call_advance_chain(chain_layer_info(
+            (*ci).p_next,
+            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+            LAYER_LINK_INFO,
+        )),
+        call_loader_data_fn(chain_layer_info(
+            (*ci).p_next,
+            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+            LAYER_DATA_CALLBACK,
+        )),
+        phys,
+        ci,
+        alloc,
+        out,
+    )
 }
 
 unsafe extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::AllocationCallbacks) {

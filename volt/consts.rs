@@ -47,6 +47,7 @@ pub(crate) const SHADING_OFF: f32 = 0.0;
 pub(crate) const SHADING_MAX: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
+pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
 
 pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
 pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;

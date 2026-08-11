@@ -16,7 +16,6 @@ use crate::consts::FN_SURFACE_FORMATS_2;
 use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::GROUP_EMPTY_WARN;
-use crate::consts::LAYER_LINK_INFO;
 use crate::lists::filtered;
 use crate::lists::kept;
 use crate::logging::log_at;
@@ -67,6 +66,9 @@ pub(crate) type PfnWriteSamplers = unsafe extern "system" fn(
 
 pub(crate) type PfnCmdSetAlphaToCoverage =
     unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
+
+pub(crate) type PfnSetDeviceLoaderData =
+    unsafe extern "system" fn(vk::Device, *mut c_void) -> vk::Result;
 
 #[repr(C)]
 pub(crate) struct VkLayerLink {
@@ -294,13 +296,24 @@ fn non_null_ci(p: *const VkLayerCreateInfo) -> Option<*const VkLayerCreateInfo> 
     }
 }
 
-pub(crate) fn chain_link_info(p_next: *const c_void, want: vk::StructureType) -> *mut VkLayerCreateInfo {
+pub(crate) fn chain_layer_info(
+    p_next: *const c_void,
+    want: vk::StructureType,
+    function: i32,
+) -> *mut VkLayerCreateInfo {
     std::iter::successors(non_null_ci(p_next as *const VkLayerCreateInfo), |p| {
         non_null_ci(unsafe { (**p).p_next as *const VkLayerCreateInfo })
     })
-    .find(|p| unsafe { (**p).s_type == want && (**p).function == LAYER_LINK_INFO })
+    .find(|p| unsafe { (**p).s_type == want && (**p).function == function })
     .map(|p| p as *mut VkLayerCreateInfo)
     .unwrap_or(ptr::null_mut())
+}
+
+pub(crate) fn call_loader_data_fn(node: *mut VkLayerCreateInfo) -> Option<PfnSetDeviceLoaderData> {
+    unsafe { node.as_ref() }
+        .map(|info| info.u_layer_info)
+        .filter(|link| !link.is_null())
+        .map(|link| unsafe { mem::transmute(link) })
 }
 
 pub(crate) fn call_advance_chain(link: *mut VkLayerCreateInfo) -> Option<VkLayerLinkInfo> {
