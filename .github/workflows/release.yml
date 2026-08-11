@@ -1,0 +1,46 @@
+name: Release (Container)
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-container:
+    runs-on: ubuntu-22.04
+
+    env:
+      CONTAINER: docker
+
+    steps:
+    - name: Checkout code
+      id: checkout-code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build release
+      id: build-release
+      run: make release-container
+
+    - name: List artifacts
+      id: list-artifacts
+      run: du -h releases/*
+
+    - name: Upload artifacts
+      id: upload-artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: volt-gui-${{ github.ref_name }}
+        path: releases/*
+        if-no-files-found: error
+
+    - name: Publish release
+      id: publish-release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: releases/*

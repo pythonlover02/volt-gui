@@ -1,0 +1,58 @@
+name: Artifacts (Package)
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  artifacts-linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      id: checkout-code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup problem matcher
+      uses: r7kamura/rust-problem-matchers@v1
+
+    - name: Install dependencies
+      id: install-dependencies
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          gcc-multilib libc6-dev-i386 python3-venv python3-dev \
+          flatpak ostree patchelf
+
+    - name: Get version
+      id: get-version
+      shell: bash
+      run: echo "VERSION_NAME=${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+    - name: Build layer and gui
+      id: build-all
+      run: make
+
+    - name: Build flatpak extensions
+      id: build-flatpak
+      run: make flatpak
+
+    - name: Stage install tree
+      id: stage-install
+      run: make install DESTDIR="$PWD/staging/volt-gui-$VERSION_NAME" PREFIX=/usr
+
+    - name: Collect flatpak bundles
+      id: collect-bundles
+      shell: bash
+      run: |
+        mkdir -p "staging/volt-gui-${VERSION_NAME}/bundles"
+        cp build/bundles/*.flatpak "staging/volt-gui-${VERSION_NAME}/bundles/"
+
+    - name: Upload artifacts
+      id: upload-artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: volt-gui-${{ env.VERSION_NAME }}
+        path: staging/volt-gui-${{ env.VERSION_NAME }}
+        if-no-files-found: error

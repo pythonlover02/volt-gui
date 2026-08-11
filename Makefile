@@ -3,6 +3,23 @@ DESTDIR ?=
 bindir  ?= $(PREFIX)/bin
 datadir ?= $(PREFIX)/share
 
+OUT      ?= build
+RELEASES ?= releases
+GUI      ?= pyinstaller
+
+CARGO   ?= cargo
+RUSTUP  ?= rustup
+PYTHON3 ?= python3
+OSTREE  ?= ostree
+FLATPAK ?= flatpak
+WGET    ?= wget
+TAR     ?= tar
+CC32    ?= gcc
+
+ifeq ($(filter grouped-target,$(.FEATURES)),)
+$(error GNU make 4.3+ required)
+endif
+
 ifneq ($(wildcard /usr/lib/x86_64-linux-gnu/.),)
 LIBDIR_64_REL := lib/x86_64-linux-gnu
 LIBDIR_32_REL := lib/i386-linux-gnu
@@ -20,320 +37,278 @@ endif
 LIBDIR_64    ?= $(PREFIX)/$(LIBDIR_64_REL)
 LIBDIR_32    ?= $(PREFIX)/$(LIBDIR_32_REL)
 VK_LAYER_DIR := $(datadir)/vulkan/implicit_layer.d
+DESKTOP_DIR  := $(datadir)/applications
+ICON_DIR     := $(datadir)/icons/hicolor/256x256/apps
 STATE_DIR    := /var/lib/volt
+MANIFEST     := VkLayer_volt.json
+DESKTOP_FILE := volt-gui.desktop
+ICON_FILE    := volt-gui.png
+ICON_SOURCE  := images/1.png
 
-TARGET_64 := volt/target/x86_64-unknown-linux-gnu/release/libvolt.so
-TARGET_32 := volt/target/i686-unknown-linux-gnu/release/libvolt.so
-BIN       := volt/target/x86_64-unknown-linux-gnu/release/volt
-GUI_BIN   := bin/volt-gui
+VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' volt/Cargo.toml | head -n1)
+TRIPLE_64 := x86_64-unknown-linux-gnu
+TRIPLE_32 := i686-unknown-linux-gnu
 
-MANIFEST := VkLayer_volt.json
+TARGET_DIR := $(OUT)/target
+BIN_DIR    := $(OUT)/bin
+BUNDLE_DIR := $(OUT)/bundles
+SHARE_DIR  := $(OUT)/share
+VENV       := $(OUT)/py_env
 
-CARGO   ?= cargo
-RUSTUP  ?= rustup
-PYTHON3 ?= python3
-OSTREE  ?= ostree
-FLATPAK ?= flatpak
+CARGO_TARGET_DIR := $(abspath $(TARGET_DIR))
+APPIMAGE_EXTRACT_AND_RUN := 1
+export CARGO_TARGET_DIR APPIMAGE_EXTRACT_AND_RUN
 
-FORCE_INSTALL ?= 0
+LAYER_64 := $(TARGET_DIR)/$(TRIPLE_64)/release/libvolt.so
+LAYER_32 := $(TARGET_DIR)/$(TRIPLE_32)/release/libvolt.so
+LAUNCHER := $(TARGET_DIR)/$(TRIPLE_64)/release/volt
+GUI_BIN  := $(BIN_DIR)/volt-gui-$(GUI)
+DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
-RUST_SOURCES := $(wildcard volt/Cargo.toml volt/Cargo.lock volt/*.rs)
+RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs)
+GUI_SOURCES  := $(wildcard volt-gui/*.py)
+VENV_STAMP   := $(VENV)/.requirements
 
-ifeq ($(filter grouped-target,$(.FEATURES)),)
-$(error GNU make 4.3+ required)
-endif
-
-.PHONY: all 32 release gui-nuitka gui-pyinstaller flatpak install flatpak-install \
-        uninstall clean check-root check-sudo-user check-no-sudo
-
-
-all: $(TARGET_64) $(BIN)
-
-$(TARGET_64) $(BIN) &: $(RUST_SOURCES)
-	cd volt && $(CARGO) build --release --target x86_64-unknown-linux-gnu
-
-32: $(TARGET_32)
-
-$(TARGET_32): $(RUST_SOURCES)
-	@command -v $(RUSTUP) >/dev/null 2>&1 || { \
-	  echo "error: rustup required for 32-bit builds"; exit 1; }
-	@$(RUSTUP) target list --installed | grep -q '^i686-unknown-linux-gnu$$' \
-	  || $(RUSTUP) target add i686-unknown-linux-gnu
-	cd volt && \
-	CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=gcc \
-	$(CARGO) build --release --target i686-unknown-linux-gnu
-
-
-CONTAINER          ?= $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null || echo podman)
-CONTAINER_IMAGE    := rust:1.82-bookworm
-CONTAINER_STAMP_64 := volt/target/.container-stamp-64
-CONTAINER_STAMP_32 := volt/target/.container-stamp-32
-
-$(CONTAINER_STAMP_64): $(RUST_SOURCES)
-	@command -v $(CONTAINER) >/dev/null 2>&1 || { \
-	  echo "error: podman or docker required"; exit 1; }
-	$(CONTAINER) run --rm -v $$(pwd)/volt:/src:z -w /src $(CONTAINER_IMAGE) sh -c '\
-	  cargo build --release --target x86_64-unknown-linux-gnu'
-	@mkdir -p $(@D)
-	@touch $@
-
-$(CONTAINER_STAMP_32): $(RUST_SOURCES)
-	@command -v $(CONTAINER) >/dev/null 2>&1 || { \
-	  echo "error: podman or docker required"; exit 1; }
-	$(CONTAINER) run --rm -v $$(pwd)/volt:/src:z -w /src $(CONTAINER_IMAGE) sh -c '\
-	  rustup target add i686-unknown-linux-gnu && \
-	  apt-get update -qq && apt-get install -y -qq gcc-multilib 2>/dev/null && \
-	  CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=gcc \
-	  cargo build --release --target i686-unknown-linux-gnu'
-	@mkdir -p $(@D)
-	@touch $@
-
-
-define ensure_venv
-	if [ ! -d py_env ]; then \
-	  echo "setting up python virtual environment"; \
-	  $(PYTHON3) -m venv py_env; \
-	fi; \
-	. py_env/bin/activate; \
-	hash=$$(shasum -a 256 requirements.txt | cut -d" " -f1); \
-	stored=$$(cat py_env/requirements.sha256 2>/dev/null || true); \
-	if [ "$$hash" != "$$stored" ]; then \
-	  echo "installing python dependencies"; \
-	  pip install --upgrade pip -q; \
-	  pip install --no-cache-dir -r requirements.txt -q; \
-	  echo "$$hash" > py_env/requirements.sha256; \
-	fi
-endef
-
-gui-pyinstaller: check-no-sudo
-	@set -e; \
-	$(ensure_venv); \
-	pyinstaller --onefile --name=volt-gui volt-gui/volt-gui.py -y --log-level WARN; \
-	mkdir -p bin; \
-	mv dist/volt-gui bin/; \
-	rm -rf dist/ build/ volt-gui.spec; \
-	echo "output: bin/volt-gui"
-
-gui-nuitka: check-no-sudo
-	@set -e; \
-	$(ensure_venv); \
-	nuitka --onefile --output-filename=volt-gui --assume-yes-for-downloads \
-	  --enable-plugin=pyside6 volt-gui/volt-gui.py; \
-	mkdir -p bin; \
-	mv volt-gui bin/; \
-	rm -rf volt-gui.build/ volt-gui.dist/ volt-gui.onefile-build/; \
-	echo "output: bin/volt-gui"
-
+DESKTOP_NAME     := volt-gui
+DESKTOP_COMMENT  := My AMD Adrenaline / NVIDIA Settings Linux Alternative
+DESKTOP_CATEGORY := Utility;
+DESKTOP_KEYWORDS := vulkan;vsync;gpu;gaming;
 
 FLATPAK_RUNTIMES := 23.08 24.08 25.08
-FLATPAK_OUTDIR   := bundles
-FLATPAK_WORKDIR  := .flatpak-work
 FLATPAK_EXT_ID   := org.freedesktop.Platform.VulkanLayer.volt
 FLATPAK_ARCH     := x86_64
+FLATPAK_BUNDLES  := $(foreach rt,$(FLATPAK_RUNTIMES),\
+  $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-$(rt).flatpak)
 
-FLATPAK_BUNDLES := $(foreach rt,$(FLATPAK_RUNTIMES),\
-  $(FLATPAK_OUTDIR)/$(FLATPAK_EXT_ID)-$(rt).flatpak)
+APPIMAGE_TOOL := $(OUT)/appimagetool-x86_64.AppImage
+APPIMAGE_URL  := https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 
-ifeq ($(and $(wildcard $(TARGET_64)),$(wildcard $(TARGET_32))),)
-flatpak:
-	@echo "nothing to package build first with 'make' and 'make 32'"
-	@exit 1
+RELEASE_FILES := \
+  $(RELEASES)/volt-gui-$(VERSION)-pyinstaller-x86_64.AppImage \
+  $(RELEASES)/volt-gui-$(VERSION)-nuitka-x86_64.AppImage \
+  $(RELEASES)/volt-gui-$(VERSION)-pyinstaller.tar.gz \
+  $(RELEASES)/volt-gui-$(VERSION)-nuitka.tar.gz
+
+CONTAINER       ?= $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null || echo podman)
+CONTAINER_BASE  ?= rust:1.85.1-bookworm
+CONTAINER_IMAGE ?= volt-gui-build
+CONTAINER_OUT   ?= $(OUT)/container
+CONTAINER_STAMP := $(OUT)/.container-image
+
+NO_SUDO = @test -z "$$SUDO_USER" || { echo "error: do not build with sudo — run 'make' as your user, then 'sudo make install'"; exit 1; }
+
+PACK = $(OUT)/pack.$*/volt-gui-$(VERSION)-$*
+
+ifeq ($(DESTDIR),)
+ROOT_GUARD := check-root
+LIVE_SYSTEM := 1
 else
-flatpak: $(FLATPAK_BUNDLES)
+ROOT_GUARD :=
+LIVE_SYSTEM :=
 endif
 
-$(FLATPAK_OUTDIR)/$(FLATPAK_EXT_ID)-%.flatpak: \
-    $(TARGET_64) $(TARGET_32) $(MANIFEST) LICENSE \
-    flatpak/volt-flatpak flatpak/commit.py
-	@command -v $(FLATPAK) >/dev/null 2>&1 || { echo "error: $(FLATPAK) required"; exit 1; }
-	@command -v $(OSTREE)  >/dev/null 2>&1 || { echo "error: $(OSTREE) required";  exit 1; }
-	@command -v $(PYTHON3) >/dev/null 2>&1 || { echo "error: $(PYTHON3) required"; exit 1; }
-	@mkdir -p $(@D)
-	@set -e; \
-	rt="$*"; work="$(FLATPAK_WORKDIR).$$rt"; \
-	rm -rf $$work; \
-	mkdir -p $$work/stage/files/lib/x86_64-linux-gnu \
-	         $$work/stage/files/lib/i386-linux-gnu \
-	         $$work/stage/files/share/vulkan/implicit_layer.d \
-	         $$work/stage/files/share/doc/volt \
-	         $$work/stage/files/bin \
-	         $$work/repo; \
-	$(OSTREE) init --repo=$$work/repo --mode=archive-z2; \
-	cp $(TARGET_64) $$work/stage/files/lib/x86_64-linux-gnu/libvolt.so; \
-	cp $(TARGET_32) $$work/stage/files/lib/i386-linux-gnu/libvolt.so; \
-	cp $(MANIFEST)  $$work/stage/files/share/vulkan/implicit_layer.d/$(MANIFEST); \
-	cp LICENSE      $$work/stage/files/share/doc/volt/LICENSE; \
-	cp flatpak/volt-flatpak $$work/stage/files/bin/volt-flatpak; \
-	chmod +x $$work/stage/files/bin/volt-flatpak; \
-	$(PYTHON3) flatpak/commit.py "$$rt" "$$work/repo" "$$work/stage"; \
-	$(FLATPAK) build-bundle --arch=$(FLATPAK_ARCH) $$work/repo $@ \
-	  $(FLATPAK_EXT_ID) "$$rt" --runtime; \
-	rm -rf $$work
+INSTALL_FILES := \
+  $(DESTDIR)$(bindir)/volt \
+  $(DESTDIR)$(bindir)/volt-gui \
+  $(DESTDIR)$(LIBDIR_64)/libvolt.so \
+  $(DESTDIR)$(LIBDIR_32)/libvolt.so \
+  $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST) \
+  $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE) \
+  $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 
+.PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak \
+        release release-container container-image install flatpak-install \
+        uninstall clean help check-root check-sudo-user
 
-APPIMAGE_TOOL := appimagetool-x86_64.AppImage
+all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
-define build_appimage
-	if [ ! -f $(APPIMAGE_TOOL) ]; then \
-	  wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/$(APPIMAGE_TOOL)"; \
-	  chmod +x $(APPIMAGE_TOOL); \
-	fi; \
-	rm -rf AppDir; \
-	mkdir -p AppDir; \
-	cp images/1.png AppDir/preferences-system.png; \
-	cp $(GUI_BIN) AppDir/volt-gui; \
-	chmod +x AppDir/volt-gui; \
-	printf '[Desktop Entry]\nName=volt-gui\nComment=My AMD Adrenaline / NVIDIA Settings Linux Alternative\nExec=volt-gui\nIcon=preferences-system\nTerminal=false\nType=Application\nCategories=Utility;\n' > AppDir/volt-gui.desktop; \
-	printf '#!/bin/bash\nHERE="$$(dirname "$$(readlink -f "$${0}")")"\nexport APPDIR="$${HERE}"\ncd "$${HOME}" 2>/dev/null || cd /tmp\nexec "$${HERE}/volt-gui" "$$@"\n' > AppDir/AppRun; \
-	chmod +x AppDir/AppRun; \
-	./$(APPIMAGE_TOOL) AppDir volt-gui-x86_64.AppImage 2>/dev/null; \
-	chmod +x volt-gui-x86_64.AppImage; \
-	rm -rf AppDir
-endef
+layer-64:        $(LAYER_64) $(LAUNCHER)
+layer-32:        $(LAYER_32)
+gui-pyinstaller: $(BIN_DIR)/volt-gui-pyinstaller
+gui-nuitka:      $(BIN_DIR)/volt-gui-nuitka
+desktop:         $(DESKTOP)
+flatpak:         $(FLATPAK_BUNDLES)
+release:         $(RELEASE_FILES)
+container-image: $(CONTAINER_STAMP)
 
-define pack_release
-	mkdir -p releases/volt-gui-$(1); \
-	cp -r bin Makefile $(MANIFEST) volt releases/volt-gui-$(1)/; \
-	rm -rf releases/volt-gui-$(1)/volt/target; \
-	mkdir -p releases/volt-gui-$(1)/bundles; \
-	cp $(FLATPAK_OUTDIR)/*.flatpak releases/volt-gui-$(1)/bundles/; \
-	tar -czf releases/volt-gui-$(1).tar.gz -C releases volt-gui-$(1); \
-	rm -rf releases/volt-gui-$(1)
-endef
+$(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller $(OUT)/nuitka:
+	@mkdir -p $@
 
-release: check-no-sudo $(CONTAINER_STAMP_64) $(CONTAINER_STAMP_32)
-	@set -e; \
-	rm -rf releases bin; \
-	mkdir -p releases; \
-	$(MAKE) flatpak; \
-	$(MAKE) gui-pyinstaller; \
-	$(call build_appimage); \
-	mv volt-gui-x86_64.AppImage releases/volt-gui-pyinstaller-x86_64.AppImage; \
-	$(call pack_release,pyinstaller); \
-	rm -rf bin; \
-	$(MAKE) gui-nuitka; \
-	$(call build_appimage); \
-	mv volt-gui-x86_64.AppImage releases/volt-gui-nuitka-x86_64.AppImage; \
-	$(call pack_release,nuitka); \
-	echo "artifacts:"; \
-	du -h releases/* 2>/dev/null || true
+$(LAYER_64) $(LAUNCHER) &: $(RUST_SOURCES)
+	$(NO_SUDO)
+	cd volt && $(CARGO) build --release --target $(TRIPLE_64)
 
+$(LAYER_32): $(RUST_SOURCES)
+	$(NO_SUDO)
+	-@$(RUSTUP) target add $(TRIPLE_32)
+	cd volt && CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
+	  $(CARGO) build --release --target $(TRIPLE_32)
 
-INSTALL_FILES :=
-ifneq (,$(wildcard $(BIN)))
-INSTALL_FILES += $(DESTDIR)$(bindir)/volt
-endif
-ifneq (,$(wildcard $(GUI_BIN)))
-INSTALL_FILES += $(DESTDIR)$(bindir)/volt-gui
-endif
-ifneq (,$(wildcard $(TARGET_64)))
-INSTALL_FILES += $(DESTDIR)$(LIBDIR_64)/libvolt.so
-endif
-ifneq (,$(wildcard $(TARGET_32)))
-INSTALL_FILES += $(DESTDIR)$(LIBDIR_32)/libvolt.so
-endif
-ifneq (,$(wildcard $(TARGET_64))$(wildcard $(TARGET_32)))
-INSTALL_FILES += $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST)
-endif
+$(VENV)/bin/python: | $(OUT)
+	$(PYTHON3) -m venv $(VENV)
 
-BUILT_FLATPAKS := $(wildcard $(FLATPAK_OUTDIR)/$(FLATPAK_EXT_ID)-*.flatpak)
-INSTALLED_FLATPAK_STAMPS := \
-  $(BUILT_FLATPAKS:$(FLATPAK_OUTDIR)/%.flatpak=$(STATE_DIR)/.installed-%)
+$(VENV_STAMP): requirements.txt $(VENV)/bin/python
+	$(VENV)/bin/pip install --upgrade pip -q
+	$(VENV)/bin/pip install --no-cache-dir -r requirements.txt -q
+	@touch $@
 
-EXISTING_INSTALL := $(strip \
-  $(wildcard $(DESTDIR)$(bindir)/volt) \
-  $(wildcard $(DESTDIR)$(LIBDIR_64)/libvolt.so) \
-  $(wildcard $(DESTDIR)$(LIBDIR_32)/libvolt.so))
+$(BIN_DIR)/volt-gui-pyinstaller: $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/pyinstaller
+	$(NO_SUDO)
+	$(VENV)/bin/pyinstaller --onefile --name=$(@F) -y --log-level WARN \
+	  --distpath $(BIN_DIR) --workpath $(OUT)/pyinstaller --specpath $(OUT)/pyinstaller \
+	  volt-gui/volt-gui.py
 
-ifneq ($(DESTDIR),)
-EXISTING_INSTALL :=
-endif
-ifneq ($(FORCE_INSTALL),0)
-EXISTING_INSTALL :=
-endif
+$(BIN_DIR)/volt-gui-nuitka: $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/nuitka
+	$(NO_SUDO)
+	$(VENV)/bin/nuitka --onefile --assume-yes-for-downloads --enable-plugin=pyside6 \
+	  --output-dir=$(OUT)/nuitka --output-filename=$(@F) volt-gui/volt-gui.py
+	@cp $(OUT)/nuitka/$(@F) $@
 
-ifneq (,$(EXISTING_INSTALL))
-install: check-root
-	@echo "error: volt or a program with the same name is installed:"
-	@for f in $(EXISTING_INSTALL); do echo "  $$f"; done
-	@echo "if it's a prior version, run 'make uninstall' first or use FORCE_INSTALL=1"
-	@exit 1
-else ifeq (,$(strip $(INSTALL_FILES)))
-install: check-root
-	@echo "nothing to install build first with 'make', 'make 32', or the gui targets"
-	@exit 1
-else
-install: check-root $(INSTALL_FILES)
-	@test -n "$(DESTDIR)" || ldconfig 2>/dev/null || true
+$(DESKTOP): Makefile | $(SHARE_DIR)
+	@printf '%s\n' \
+	  '[Desktop Entry]' \
+	  'Type=Application' \
+	  'Version=1.0' \
+	  'Name=$(DESKTOP_NAME)' \
+	  'Comment=$(DESKTOP_COMMENT)' \
+	  'Exec=volt-gui' \
+	  'Icon=volt-gui' \
+	  'Terminal=false' \
+	  'Categories=$(DESKTOP_CATEGORY)' \
+	  'Keywords=$(DESKTOP_KEYWORDS)' \
+	  'StartupNotify=true' \
+	  'StartupWMClass=volt-gui' > $@
+
+$(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(MANIFEST) LICENSE \
+    flatpak/volt-flatpak flatpak/commit.py | $(BUNDLE_DIR)
+	rm -rf $(OUT)/flatpak.$*
+	install -Dm755 $(LAYER_64) $(OUT)/flatpak.$*/stage/files/lib/x86_64-linux-gnu/libvolt.so
+	install -Dm755 $(LAYER_32) $(OUT)/flatpak.$*/stage/files/lib/i386-linux-gnu/libvolt.so
+	install -Dm644 $(MANIFEST) $(OUT)/flatpak.$*/stage/files/share/vulkan/implicit_layer.d/$(MANIFEST)
+	install -Dm644 LICENSE $(OUT)/flatpak.$*/stage/files/share/doc/volt/LICENSE
+	install -Dm755 flatpak/volt-flatpak $(OUT)/flatpak.$*/stage/files/bin/volt-flatpak
+	$(OSTREE) init --repo=$(OUT)/flatpak.$*/repo --mode=archive-z2
+	$(PYTHON3) flatpak/commit.py "$*" "$(OUT)/flatpak.$*/repo" "$(OUT)/flatpak.$*/stage"
+	$(FLATPAK) build-bundle --arch=$(FLATPAK_ARCH) $(OUT)/flatpak.$*/repo $@ \
+	  $(FLATPAK_EXT_ID) "$*" --runtime
+	rm -rf $(OUT)/flatpak.$*
+
+$(APPIMAGE_TOOL): | $(OUT)
+	$(WGET) -q -O $@ $(APPIMAGE_URL)
+	chmod +x $@
+
+$(RELEASES)/volt-gui-$(VERSION)-%-x86_64.AppImage: $(BIN_DIR)/volt-gui-% \
+    $(DESKTOP) $(APPIMAGE_TOOL) $(ICON_SOURCE) | $(RELEASES)
+	rm -rf $(OUT)/AppDir.$*
+	install -Dm755 $< $(OUT)/AppDir.$*/volt-gui
+	install -Dm644 $(DESKTOP) $(OUT)/AppDir.$*/$(DESKTOP_FILE)
+	install -Dm644 $(ICON_SOURCE) $(OUT)/AppDir.$*/$(ICON_FILE)
+	install -Dm644 $(ICON_SOURCE) \
+	  $(OUT)/AppDir.$*/usr/share/icons/hicolor/256x256/apps/$(ICON_FILE)
+	@printf '%s\n' '#!/bin/sh' \
+	  'HERE="$$(dirname "$$(readlink -f "$$0")")"' \
+	  'export APPDIR="$$HERE"' \
+	  'cd "$$HOME" 2>/dev/null || cd /tmp' \
+	  'exec "$$HERE/volt-gui" "$$@"' > $(OUT)/AppDir.$*/AppRun
+	chmod +x $(OUT)/AppDir.$*/AppRun
+	$(APPIMAGE_TOOL) $(OUT)/AppDir.$* $@
+	rm -rf $(OUT)/AppDir.$*
+
+$(RELEASES)/volt-gui-$(VERSION)-%.tar.gz: $(BIN_DIR)/volt-gui-% \
+    $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(DESKTOP) $(FLATPAK_BUNDLES) \
+    $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(RELEASES)
+	rm -rf $(OUT)/pack.$*
+	install -Dm755 $< $(PACK)/build/bin/volt-gui-$*
+	install -Dm755 $(LAYER_64) $(PACK)/build/target/$(TRIPLE_64)/release/libvolt.so
+	install -Dm755 $(LAUNCHER) $(PACK)/build/target/$(TRIPLE_64)/release/volt
+	install -Dm755 $(LAYER_32) $(PACK)/build/target/$(TRIPLE_32)/release/libvolt.so
+	install -Dm644 $(DESKTOP) $(PACK)/build/share/$(DESKTOP_FILE)
+	install -Dm644 $(MANIFEST) $(PACK)/$(MANIFEST)
+	install -Dm644 Makefile $(PACK)/Makefile
+	install -Dm644 LICENSE $(PACK)/LICENSE
+	install -Dm644 README.md $(PACK)/README.md
+	install -Dm644 requirements.txt $(PACK)/requirements.txt
+	cp -r volt volt-gui images flatpak $(PACK)/
+	mkdir -p $(PACK)/build/bundles
+	cp $(FLATPAK_BUNDLES) $(PACK)/build/bundles/
+	touch $(PACK)/build/bin/* $(PACK)/build/share/* $(PACK)/build/target/*/release/*
+	$(TAR) -czf $@ -C $(OUT)/pack.$* volt-gui-$(VERSION)-$*
+	rm -rf $(OUT)/pack.$*
+
+$(CONTAINER_STAMP): container/Containerfile | $(OUT)
+	$(CONTAINER) build --build-arg BASE=$(CONTAINER_BASE) -t $(CONTAINER_IMAGE) -f $< container
+	@touch $@
+
+release-container: $(CONTAINER_STAMP)
+	$(CONTAINER) run --rm -v "$(CURDIR):/src:z" -w /src \
+	  --user "$$(id -u):$$(id -g)" \
+	  -e HOME=/tmp \
+	  -e CARGO_HOME=/src/$(CONTAINER_OUT)/cargo \
+	  -e NUITKA_CACHE_DIR=/src/$(CONTAINER_OUT)/nuitka-cache \
+	  $(CONTAINER_IMAGE) make release OUT=$(CONTAINER_OUT)
+
+install: $(INSTALL_FILES)
+	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
+	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
+	@test -z "$(LIVE_SYSTEM)" || gtk-update-icon-cache -qtf $(datadir)/icons/hicolor 2>/dev/null || true
 	@echo "install complete."
 	@echo "  bin:       $(bindir)"
 	@echo "  lib (64):  $(LIBDIR_64)"
 	@echo "  lib (32):  $(LIBDIR_32)"
 	@echo "  manifest:  $(VK_LAYER_DIR)"
-endif
+	@echo "  launcher:  $(DESKTOP_DIR)/$(DESKTOP_FILE)"
+	@echo "  icon:      $(ICON_DIR)/$(ICON_FILE)"
 
-ifneq ($(DESTDIR),)
-flatpak-install: check-root
-	@echo "error: flatpak-install does not support DESTDIR"
-	@echo "  package the .flatpak files from $(FLATPAK_OUTDIR)/ directly instead"
-	@exit 1
-else ifeq (,$(strip $(INSTALLED_FLATPAK_STAMPS)))
-flatpak-install: check-root
-	@echo "nothing to install build first with 'make flatpak'"
-	@exit 1
-else
-flatpak-install: check-root $(INSTALLED_FLATPAK_STAMPS)
+$(DESTDIR)$(bindir)/volt:                  $(LAUNCHER)   | $(ROOT_GUARD) ; install -Dm755 $< $@
+$(DESTDIR)$(bindir)/volt-gui:              $(GUI_BIN)    | $(ROOT_GUARD) ; install -Dm755 $< $@
+$(DESTDIR)$(LIBDIR_64)/libvolt.so:         $(LAYER_64)   | $(ROOT_GUARD) ; install -Dm755 $< $@
+$(DESTDIR)$(LIBDIR_32)/libvolt.so:         $(LAYER_32)   | $(ROOT_GUARD) ; install -Dm755 $< $@
+$(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST):     $(MANIFEST)   | $(ROOT_GUARD) ; install -Dm644 $< $@
+$(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE):  $(DESKTOP)    | $(ROOT_GUARD) ; install -Dm644 $< $@
+$(DESTDIR)$(ICON_DIR)/$(ICON_FILE):        $(ICON_SOURCE) | $(ROOT_GUARD) ; install -Dm644 $< $@
+
+INSTALLED_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(STATE_DIR)/.installed-%)
+
+flatpak-install: $(INSTALLED_STAMPS)
 	@echo "flatpak extensions installed."
-endif
 
-$(DESTDIR)$(bindir)/volt:              $(BIN)      ; install -Dm755 $< $@
-$(DESTDIR)$(bindir)/volt-gui:          $(GUI_BIN)  ; install -Dm755 $< $@
-$(DESTDIR)$(LIBDIR_64)/libvolt.so:     $(TARGET_64); install -Dm755 $< $@
-$(DESTDIR)$(LIBDIR_32)/libvolt.so:     $(TARGET_32); install -Dm755 $< $@
-$(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST): $(MANIFEST) ; install -Dm644 $< $@
-
-$(STATE_DIR)/.installed-%: $(FLATPAK_OUTDIR)/%.flatpak | check-sudo-user
+$(STATE_DIR)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-root check-sudo-user
 	@mkdir -p $(@D)
-	@su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$(abspath $<)'"
+	su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$(abspath $<)'"
 	@touch $@
 
-uninstall: check-root
-	rm -f $(DESTDIR)$(bindir)/volt
-	rm -f $(DESTDIR)$(bindir)/volt-gui
-	rm -f $(DESTDIR)$(LIBDIR_64)/libvolt.so
-	rm -f $(DESTDIR)$(LIBDIR_32)/libvolt.so
-	rm -f $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST)
-	@if [ -z "$(DESTDIR)" ]; then \
-	  rm -rf $(STATE_DIR); \
-	  ldconfig 2>/dev/null || true; \
-	  if [ -n "$$SUDO_USER" ]; then \
-	    su - "$$SUDO_USER" -c \
-	      "flatpak uninstall --user -y $(FLATPAK_EXT_ID) 2>/dev/null" || true; \
-	    su - "$$SUDO_USER" -c "rm -rf \"\$$HOME/.config/volt-gui\"" || true; \
-	  else \
-	    echo "note: SUDO_USER not set run as your user: flatpak uninstall --user $(FLATPAK_EXT_ID)"; \
-	  fi; \
-	fi
-
-check-root:
-	@if [ "$$(id -u)" -ne 0 ]; then \
-	  echo "error: needs root run: sudo make $(MAKECMDGOALS)"; \
-	  exit 1; \
-	fi
-
-check-sudo-user:
-	@if [ -z "$$SUDO_USER" ]; then \
-	  echo "error: SUDO_USER not set run via 'sudo make ...' from your user shell"; \
-	  exit 1; \
-	fi
-
-check-no-sudo:
-	@if [ "$$(id -u)" -eq 0 ]; then \
-	  echo "error: do not run this target with sudo"; \
-	  exit 1; \
-	fi
+uninstall: | $(ROOT_GUARD)
+	rm -f $(INSTALL_FILES)
+	@test -z "$(LIVE_SYSTEM)" || rm -rf $(STATE_DIR)
+	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
+	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
+	@test -z "$(LIVE_SYSTEM)" || gtk-update-icon-cache -qtf $(datadir)/icons/hicolor 2>/dev/null || true
+	@test -z "$(LIVE_SYSTEM)" -o -z "$$SUDO_USER" || \
+	  su - "$$SUDO_USER" -c "$(FLATPAK) uninstall --user -y $(FLATPAK_EXT_ID) 2>/dev/null" || true
+	@test -z "$(LIVE_SYSTEM)" -o -z "$$SUDO_USER" || \
+	  su - "$$SUDO_USER" -c "rm -rf \"\$$HOME/.config/volt-gui\"" || true
+	@echo "uninstall complete."
 
 clean:
-	cd volt && $(CARGO) clean
-	rm -rf bin py_env dist build *.spec *.build *.dist *.onefile-build
-	rm -rf $(FLATPAK_OUTDIR) $(FLATPAK_WORKDIR)* AppDir *.AppImage releases
+	rm -rf $(OUT) $(RELEASES) bin bundles py_env volt/target
+
+check-root:
+	@test "$$(id -u)" -eq 0 || { echo "error: needs root — run: sudo make $(MAKECMDGOALS)"; exit 1; }
+
+check-sudo-user:
+	@test -n "$$SUDO_USER" || { echo "error: SUDO_USER not set — run via 'sudo make ...' from your user shell"; exit 1; }
+
+help:
+	@echo "make                    layer (64 + 32), launcher, gui ($(GUI)), desktop entry"
+	@echo "make layer-64           64-bit layer and the volt launcher"
+	@echo "make layer-32           32-bit layer"
+	@echo "make gui-pyinstaller    gui binary via PyInstaller"
+	@echo "make gui-nuitka         gui binary via Nuitka"
+	@echo "make desktop            desktop entry only"
+	@echo "make flatpak            flatpak runtime extension bundles"
+	@echo "make release            full release into $(RELEASES)/ (host toolchain)"
+	@echo "make release-container  the same, built inside $(CONTAINER_BASE)"
+	@echo "sudo make install       install (GUI=$(GUI))"
+	@echo "sudo make flatpak-install"
+	@echo "sudo make uninstall"
+	@echo "make clean"

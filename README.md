@@ -23,6 +23,7 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Building Releases](#building-releases)
 - [Usage](#usage)
 - [Flatpak](#flatpak)
 - [Profiles & Presets](#profiles--presets)
@@ -178,38 +179,93 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 | Component | Requirement |
 |-----------|-------------|
 | **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (optionally i686 for 32-bit games) |
-| **Build** | Rust 1.77+, GNU make 4.3+ |
-| **GUI**   | Python 3.10+, PySide6 (a venv is created by the make targets) |
+| **Build** | Rust 1.85.1+ with rustup, GNU make 4.3+ |
+| **GUI**   | Python 3.10+, PySide6 (a venv is created under `build/` by the make targets) |
+| **Flatpak bundles** | `flatpak`, `ostree` |
+| **Container release** | `podman` or `docker` |
 | **Preview** | `vkgears` from mesa-demos, optional: without it the option lists fall back to defaults |
 
 ## Installation
 
-| Command | What it does |
-|---------|--------------|
-| `make` | Build the 64-bit layer and the `volt` launcher |
-| `make 32` | Build the 32-bit layer for 32-bit games |
-| `make gui-pyinstaller` | Build the GUI binary with PyInstaller into `bin/` |
-| `make gui-nuitka` | Build the GUI binary with Nuitka into `bin/` |
-| `make flatpak` | Build the Flatpak runtime extension bundles (needs `make` + `make 32`) |
-| `make release` | Portable container builds plus the full release matrix in `releases/` |
-| `sudo make install` | Install launcher, GUI, layer libraries and manifest. Never builds. |
-| `sudo make flatpak-install` | Install the built extension bundles for the invoking user |
-| `sudo make uninstall` | Remove everything, including the user Flatpak extension and `~/.config/volt-gui` |
-| `make clean` | Remove all build artifacts |
+Every build target is a file, so make only rebuilds what actually changed.
+Everything lands under `build/`; `make clean` is a single `rm -rf`.
+
+| Command | What it builds |
+|---------|----------------|
+| `make` | 64-bit layer, 32-bit layer, the `volt` launcher, and the GUI |
+| `make layer-64` | `build/target/x86_64-unknown-linux-gnu/release/{libvolt.so,volt}` |
+| `make layer-32` | `build/target/i686-unknown-linux-gnu/release/libvolt.so` |
+| `make gui-pyinstaller` | `build/bin/volt-gui-pyinstaller` |
+| `make gui-nuitka` | `build/bin/volt-gui-nuitka` |
+| `make flatpak` | `build/bundles/*.flatpak` |
+| `make release` | the full release matrix in `releases/`, host toolchain |
+| `make release-container` | the same, built inside a pinned container image |
+| `sudo make install` | launcher, GUI, both layers and the manifest |
+| `sudo make flatpak-install` | the built extension bundles, for the invoking user |
+| `sudo make uninstall` | everything, including the user Flatpak extension and `~/.config/volt-gui` |
+| `make clean` | `rm -rf build releases` |
 
 ```
 git clone https://github.com/pythonlover02/volt-gui.git
 cd volt-gui
 make
-make 32                # optional, for 32-bit games
-make gui-pyinstaller   # or make gui-nuitka
 sudo make install
 ```
 
-`make release` produces: `volt-gui-pyinstaller-x86_64.AppImage`,
-`volt-gui-nuitka-x86_64.AppImage`, and matching `.tar.gz` archives that carry
-the binaries, the Makefile, the layer sources, and the Flatpak extension
-bundles.
+`make` picks PyInstaller for the GUI. For Nuitka, set `GUI` on both halves so
+install picks up the binary you built:
+
+```
+make GUI=nuitka
+sudo make install GUI=nuitka
+```
+
+Building with `sudo` is refused: the build targets stop with an error rather
+than leaving a root-owned `build/`. Build as your user, install as root.
+
+Packagers can skip root entirely — with `DESTDIR` set, `make install` stages
+into the given prefix without needing it:
+
+```
+make
+make install DESTDIR="$PWD/pkg" PREFIX=/usr
+```
+
+## Building Releases
+
+Both release targets produce the same four files in `releases/`:
+
+```
+volt-gui-<version>-pyinstaller-x86_64.AppImage
+volt-gui-<version>-nuitka-x86_64.AppImage
+volt-gui-<version>-pyinstaller.tar.gz
+volt-gui-<version>-nuitka.tar.gz
+```
+
+Each archive is a ready-to-install tree: the compiled layers sit at the paths
+the Makefile expects, so unpacking and running `sudo make install` installs
+without compiling anything. The sources, the Flatpak bundles and the Makefile
+ride along. The Nuitka archive installs with `sudo make install GUI=nuitka`.
+
+**`make release`** builds against your own toolchain and glibc. Fast, and
+right for a local build, but the binaries inherit your system's glibc floor.
+
+**`make release-container`** builds everything inside `rust:1.82-bookworm`
+(Debian 12, glibc 2.36, Python 3.11) from `container/Containerfile`, so the
+floor is fixed regardless of what you run. It builds into `build/container/`,
+so it never collides with your host build and neither invalidates the other.
+The container runs as your own uid, so nothing it writes is root-owned.
+
+Override the base if you want a different floor:
+
+```
+make release-container CONTAINER_BASE=rust:1.82-bullseye
+make release-container CONTAINER=docker
+```
+
+Bullseye drops the floor to glibc 2.31 but ships Python 3.9, which is below
+what the GUI needs — use it only for `make layer-64 layer-32` inside the
+container, not for a full release.
 
 ## Usage
 
@@ -229,9 +285,10 @@ button in volt-gui, ready to copy.
 
 Flatpak games run sandboxed, so the layer ships as a **Flatpak runtime
 extension** for `org.freedesktop.Platform` 23.08, 24.08 and 25.08. Build with
-`make flatpak`, install with `sudo make flatpak-install` (or grab the bundles
-from the release archives). The `volt` launcher detects `flatpak run` commands
-and routes activation through the in-sandbox wrapper automatically.
+`make flatpak`, which writes to `build/bundles/`, then install with
+`sudo make flatpak-install` (or grab the bundles from a release archive). The
+`volt` launcher detects `flatpak run` commands and routes activation through
+the in-sandbox wrapper automatically.
 
 There is no Flatpak build of volt-gui itself, only the layer extension.
 
