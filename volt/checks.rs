@@ -42,6 +42,7 @@ const TEN_BIT: u32 = 10;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
 const TRANSFER_PROFILE: &str = "[display]\ntransfer_function = \"ufloat\"\n";
+const LIST_EMPTY_WARN: &str = "list emptied by the choice, restoring";
 const LIMIT_START_NS: u64 = 10_000;
 const LIMIT_INTERVAL_NS: u64 = 1_000;
 const OTHER_INTERVAL_NS: u64 = 2_000;
@@ -57,15 +58,15 @@ fn keeps_the_application_value_when_nothing_is_forced() {
 
 #[test]
 fn restores_a_list_the_choice_emptied() {
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3, ""), vec![1, 2, 3]);
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1, ""), vec![2, 3]);
+    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3, LIST_EMPTY_WARN), vec![1, 2, 3]);
+    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1, LIST_EMPTY_WARN), vec![2, 3]);
 }
 
 #[test]
 fn keeps_only_what_the_choice_names() {
-    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v), ""), vec![2]);
-    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v), ""), vec![1, 2, 3]);
-    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v), ""), vec![1, 2, 3]);
+    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![2]);
+    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
+    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
 }
 
 #[test]
