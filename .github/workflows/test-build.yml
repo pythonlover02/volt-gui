@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: ['1.77.0', 'stable']
+        rust: ['1.85.1', 'stable']
 
     steps:
     - name: Checkout code
