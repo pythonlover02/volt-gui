@@ -41,10 +41,9 @@ def get_combo_minimum_width() -> int:
     return 104
 
 
-def create_combo_widget(options: tuple, editable: bool) -> QComboBox:
+def create_combo_widget(options: tuple) -> QComboBox:
     combo = QComboBox()
     combo.setView(QListView())
-    combo.setEditable(editable)
     combo.setFixedHeight(get_standard_button_height())
     combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     combo.setFocusPolicy(Qt.ClickFocus)
@@ -64,7 +63,7 @@ def create_divider_widget() -> QFrame:
     return divider
 
 
-def create_setting_card_widget(label_text: str, description_text: str, options: tuple, editable: bool) -> dict:
+def create_setting_card_widget(label_text: str, description_text: str, options: tuple) -> dict:
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
@@ -77,7 +76,7 @@ def create_setting_card_widget(label_text: str, description_text: str, options: 
     title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
     title_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
     card_layout.addWidget(title_label)
-    input_widget = create_combo_widget(options, editable)
+    input_widget = create_combo_widget(options)
     input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
     input_widget.setMinimumWidth(get_combo_minimum_width())
     card_layout.addWidget(input_widget)
@@ -252,8 +251,8 @@ def create_tab_content_widget(tab_name: str, info_items) -> dict:
     container_widget = _build_content_container(info_items)
     match info_items is None:
         case True:
-            for widget_key, label_text, description_text, options, editable in find_cards_for_tab(tab_name):
-                card_result = create_setting_card_widget(label_text, description_text, options, editable)
+            for widget_key, label_text, description_text, options in find_cards_for_tab(tab_name):
+                card_result = create_setting_card_widget(label_text, description_text, options)
                 container_widget.layout().addWidget(card_result["card"])
                 container_widget.layout().addWidget(create_divider_widget())
                 all_widgets[widget_key] = card_result["widget"]

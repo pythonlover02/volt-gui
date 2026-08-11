@@ -39,7 +39,6 @@ from database import get_option_default_value
 from database import get_option_description
 from database import get_option_label
 from database import get_option_options
-from database import is_option_editable
 from database import resolve_option_value
 from presets import build_preset_combo_items
 from presets import get_preset_placeholder_label
@@ -170,7 +169,7 @@ def create_options_tab_widget() -> dict:
         title_label = QLabel(get_option_label(option_key))
         title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
         card_layout.addWidget(title_label)
-        combo = create_combo_widget(get_option_options(option_key), is_option_editable(option_key))
+        combo = create_combo_widget(get_option_options(option_key))
         card_layout.addWidget(combo)
         description_label = QLabel(get_option_description(option_key))
         description_label.setWordWrap(True)

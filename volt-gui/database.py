@@ -35,7 +35,6 @@ SETTINGS_DB: Final[dict] = {
             "label": "Physical Device",
             "description": "Which GPU the game sees, listed by name as this machine reports them. The layer hides every other device from enumeration, so a game that takes the first one it is offered gets yours. If your choice matches nothing, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
     },
     "Display": {
@@ -44,49 +43,42 @@ SETTINGS_DB: Final[dict] = {
             "label": "VSync / Present Mode",
             "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. The layer hides every other mode from the list the game is shown, so a game's own vsync menu cannot offer one you ruled out, whatever route it takes to ask. A mode the surface does not support falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
             "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "color_depth": {
             "section": "display",
             "label": "Color Depth",
             "description": "Bits per colour channel, grouped out of the surface formats this surface offers. The layer hides every other format, so a game that takes the first supported one ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "color_space": {
             "section": "display",
             "label": "Color Space",
             "description": "Which color space the game is allowed to see, filtered out of the same surface format list as Color Depth. Everything past srgb_nonlinear comes from a swapchain colorspace extension and only appears when the stack around the game enabled it, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope, so on most setups this card holds one entry. A space volt has no name for still appears and still applies.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "transfer_function": {
             "section": "display",
             "label": "Transfer Function",
             "description": "Whether the game is shown srgb surface formats, plain unorm ones, or float ones, filtered out of the same list again. srgb formats have the encoding curve applied by the display hardware, unorm formats leave it to whatever the game does in its own shaders. Getting this wrong looks washed out or crushed rather than broken, so set it back to default if the image looks wrong. No preset touches it.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "composite_alpha": {
             "section": "display",
             "label": "Composite Alpha",
             "description": "How the compositor treats the alpha channel of the finished image. opaque tells the compositor to skip blending the window altogether, which is the cheapest path on Wayland. The list is what this surface allows, and a value the surface turns down falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "clipped": {
             "section": "display",
             "label": "Clipped Presentation",
             "description": "Whether the driver may discard work on pixels another window covers. on is cheaper and is what almost every game asks for already. off keeps those pixels rendered, which only matters if something reads the presented image back. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "off", "on"),
-            "editable": False,
         },
     },
     "Framerate": {
@@ -95,21 +87,18 @@ SETTINGS_DB: Final[dict] = {
             "label": "Frame Limit",
             "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device. Past about 500 the interval gets shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
             "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
-            "editable": False,
         },
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
             "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "early", "late", "reactive"),
-            "editable": False,
         },
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
             "description": "How the limiter waits, from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and re-checks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole thing, which is the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
-            "editable": False,
         },
     },
     "Textures": {
@@ -118,42 +107,36 @@ SETTINGS_DB: Final[dict] = {
             "label": "Texture Filtering",
             "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. All three are core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "retro", "bilinear", "trilinear"),
-            "editable": False,
         },
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
             "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Both are core Vulkan, so the list never changes. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
-            "editable": False,
         },
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
             "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. This one needs the samplerAnisotropy device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Nearly every game asks for it, so this is rare.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
             "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. A negative bias is the nearest volt gets to sharpening textures seen at a steep angle. The list runs in steps of 0.2 across the range your GPU reports, and volt clamps what it passes down to that range.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "mip_floor": {
             "section": "textures",
             "label": "Mip Floor",
             "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs in steps of two up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "mip_ceiling": {
             "section": "textures",
             "label": "Mip Ceiling",
             "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor, and a ceiling that lands below the floor is swapped with it rather than dropped.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
     },
     "Rendering": {
@@ -162,14 +145,12 @@ SETTINGS_DB: Final[dict] = {
             "label": "Sample Shading",
             "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2. This one needs the sampleRateShading device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Most modern renderers are deferred and never ask, so expect this card to be empty more often than not. Only does something in a game already using MSAA.",
             "options": (DEFAULT_VALUE,),
-            "editable": False,
         },
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
             "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
             "options": (DEFAULT_VALUE, "on", "off"),
-            "editable": False,
         },
     },
 }
@@ -180,56 +161,48 @@ OPTIONS_DB: Final[dict] = {
         "description": "Color theme for the application. default is cachyos. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "cachyos", "amd", "intel", "nvidia"),
         "fallback": "cachyos",
-        "editable": False,
     },
     "window_transparency": {
         "label": "Window Transparency",
         "description": "Window background transparency. default is off. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
-        "editable": False,
     },
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
-        "description": "UI scaling multiplier, in steps of 0.2. default is 1.0, and a hand written value outside 0.5 to 3.0 falls back to it. Takes effect on program restart.",
+        "description": "UI scaling multiplier, in steps of 0.2. default is 1.0. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "0.6", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0", "2.2", "2.4", "2.6", "2.8", "3.0"),
         "fallback": "1.0",
-        "editable": False,
     },
     "start_window_maximized": {
         "label": "Start Window Maximized",
         "description": "Start the window in maximized state. default is off. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
-        "editable": False,
     },
     "start_window_minimized": {
         "label": "Start Window Minimized",
         "description": "Start the window minimized to tray. default is off. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
-        "editable": False,
     },
     "system_tray_behavior": {
         "label": "System Tray",
         "description": "Show icon in the system tray. default is off. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
-        "editable": False,
     },
     "welcome_message_display": {
         "label": "Welcome Message",
         "description": "Show the welcome message on startup. default is on. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "on",
-        "editable": False,
     },
     "automatic_update_check": {
         "label": "Automatic Update Check",
         "description": "Check for updates on startup. default is off. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
-        "editable": False,
     },
 }
 
@@ -280,10 +253,6 @@ def get_setting_options(tab_name: str, setting_key: str) -> tuple:
     return find_setting_options(tab_name, setting_key, call_read_probe())
 
 
-def is_setting_editable(tab_name: str, setting_key: str) -> bool:
-    return SETTINGS_DB[tab_name][setting_key]["editable"]
-
-
 def get_setting_section(tab_name: str, setting_key: str) -> str:
     return SETTINGS_DB[tab_name][setting_key]["section"]
 
@@ -297,8 +266,7 @@ def find_cards_for_tab(tab_name: str) -> tuple:
         (build_widget_key(tab_name, setting_key),
          get_setting_label(tab_name, setting_key),
          get_setting_description(tab_name, setting_key),
-         get_setting_options(tab_name, setting_key),
-         is_setting_editable(tab_name, setting_key))
+         get_setting_options(tab_name, setting_key))
         for setting_key in find_settings_for_tab(tab_name))
 
 
@@ -336,10 +304,6 @@ def get_option_description(option_key: str) -> str:
 
 def get_option_options(option_key: str) -> tuple:
     return plain_pairs(OPTIONS_DB[option_key]["options"])
-
-
-def is_option_editable(option_key: str) -> bool:
-    return OPTIONS_DB[option_key]["editable"]
 
 
 def get_option_default_value(option_key: str) -> str:
