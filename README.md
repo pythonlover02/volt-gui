@@ -179,7 +179,7 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 | Component | Requirement |
 |-----------|-------------|
 | **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (optionally i686 for 32-bit games) |
-| **Build** | Rust 1.77+ with rustup, GNU make 4.3+ |
+| **Build** | Rust 1.85.1+ with rustup, GNU make 4.3+ |
 | **GUI**   | Python 3.10+, PySide6 (a venv is created under `build/` by the make targets) |
 | **Flatpak bundles** | `flatpak`, `ostree` |
 | **Container release** | `podman` or `docker` |

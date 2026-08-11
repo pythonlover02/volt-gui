@@ -1,4 +1,4 @@
-ARG BASE=rust:1.82-bookworm
+ARG BASE
 FROM ${BASE}
 
 RUN apt-get update -qq \

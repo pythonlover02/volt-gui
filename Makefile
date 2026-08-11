@@ -90,7 +90,7 @@ RELEASE_FILES := \
   $(RELEASES)/volt-gui-$(VERSION)-nuitka.tar.gz
 
 CONTAINER       ?= $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null || echo podman)
-CONTAINER_BASE  ?= rust:1.82-bookworm
+CONTAINER_BASE  ?= rust:1.85.1-bookworm
 CONTAINER_IMAGE ?= volt-gui-build
 CONTAINER_OUT   ?= $(OUT)/container
 CONTAINER_STAMP := $(OUT)/.container-image
