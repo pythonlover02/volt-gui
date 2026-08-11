@@ -130,8 +130,8 @@ down. That clamp is correctness, not a setting.
   renders to an MSAA target.
 
 ### Framerate
-- **Frame Limit**: cap the frame rate at present time, pick a common cap or
-  type any value. Deadlines follow a fixed target timeline rather than the
+- **Frame Limit**: cap the frame rate at present time, from a fixed list of
+  common caps. Deadlines follow a fixed target timeline rather than the
   last present, unless the method is reactive, so scheduler jitter does not
   build up into a drift below the rate you asked for.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
