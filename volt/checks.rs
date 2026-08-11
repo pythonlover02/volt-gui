@@ -1,7 +1,11 @@
 use crate::config::parse_settings;
+use crate::consts::MethodChoice;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
+use crate::present::advanced;
+use crate::present::target_interval_ns;
+use crate::present::Timeline;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_parse;
 use crate::ranks::alpha_semantic;
@@ -38,6 +42,12 @@ const TEN_BIT: u32 = 10;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
 const TRANSFER_PROFILE: &str = "[display]\ntransfer_function = \"ufloat\"\n";
+const LIMIT_START_NS: u64 = 10_000;
+const LIMIT_INTERVAL_NS: u64 = 1_000;
+const OTHER_INTERVAL_NS: u64 = 2_000;
+const LATE_NS: u64 = 100;
+const TWO_HUNDRED_FPS: f32 = 200.0;
+const TWO_HUNDRED_FPS_NS: u64 = 5_000_000;
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
@@ -126,4 +136,78 @@ fn forces_a_value_volt_has_no_name_for() {
     assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, Some(UNKNOWN_MODE));
     assert_eq!(parse_settings(NAMED_MODE_PROFILE).present_mode, Some(FIFO_MODE));
     assert_eq!(parse_settings(TRANSFER_PROFILE).transfer, Some(Numeric::Ufloat));
+}
+
+#[test]
+fn turns_a_frame_rate_into_an_interval() {
+    assert_eq!(target_interval_ns(TWO_HUNDRED_FPS), TWO_HUNDRED_FPS_NS);
+}
+
+#[test]
+fn starts_the_timeline_one_interval_after_the_first_frame() {
+    assert_eq!(
+        advanced(None, LIMIT_START_NS, LIMIT_INTERVAL_NS, Some(MethodChoice::Early)),
+        Timeline {
+            target: LIMIT_START_NS + LIMIT_INTERVAL_NS,
+            interval: LIMIT_INTERVAL_NS,
+        }
+    );
+}
+
+#[test]
+fn holds_the_cadence_when_a_frame_runs_a_little_late() {
+    assert_eq!(
+        advanced(
+            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            LIMIT_START_NS + LATE_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+        )
+        .target,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn never_chases_a_slow_frame_with_a_fast_one() {
+    assert_eq!(
+        advanced(
+            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+        )
+        .target,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn measures_a_reactive_interval_from_the_frame_just_shown() {
+    assert_eq!(
+        advanced(
+            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            LIMIT_START_NS + LATE_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Reactive),
+        )
+        .target,
+        LIMIT_START_NS + LATE_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn restarts_the_timeline_when_the_frame_limit_changes() {
+    assert_eq!(
+        advanced(
+            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            LIMIT_START_NS + LATE_NS,
+            OTHER_INTERVAL_NS,
+            Some(MethodChoice::Late),
+        ),
+        Timeline {
+            target: LIMIT_START_NS + LATE_NS + OTHER_INTERVAL_NS,
+            interval: OTHER_INTERVAL_NS,
+        }
+    );
 }

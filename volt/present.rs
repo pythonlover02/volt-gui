@@ -18,10 +18,10 @@ use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
 
-#[derive(Clone, Copy)]
-struct Timeline {
-    target: u64,
-    interval: u64,
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Timeline {
+    pub(crate) target: u64,
+    pub(crate) interval: u64,
 }
 
 type TimelineMap = HashMap<u64, Timeline>;
@@ -33,7 +33,7 @@ fn call_now_ns() -> u64 {
     EPOCH.get_or_init(Instant::now).elapsed().as_nanos() as u64
 }
 
-fn target_interval_ns(fps: f32) -> u64 {
+pub(crate) fn target_interval_ns(fps: f32) -> u64 {
     (NS_PER_S / fps as f64) as u64
 }
 
@@ -77,7 +77,7 @@ fn interval_changed(previous: Option<Timeline>, interval: u64) -> bool {
     }
 }
 
-fn advanced(
+pub(crate) fn advanced(
     previous: Option<Timeline>,
     now: u64,
     interval: u64,
