@@ -64,6 +64,17 @@ fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
     unsafe { inst.instance.enumerate_physical_devices() }.unwrap_or_default()
 }
 
+fn device_features(
+    inst: &VkInstState,
+    phys: vk::PhysicalDevice,
+) -> vk::PhysicalDeviceFeatures {
+    unsafe { inst.instance.get_physical_device_features(phys) }
+}
+
+fn feature_held(flag: vk::Bool32) -> bool {
+    flag == vk::TRUE
+}
+
 fn device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
     let props = unsafe { inst.instance.get_physical_device_properties(phys) };
     unsafe { CStr::from_ptr(props.device_name.as_ptr()) }
@@ -153,6 +164,7 @@ pub(crate) fn build_probe(
     formats: &[vk::SurfaceFormatKHR],
 ) -> ProbeData {
     let all = all_devices(inst);
+    let features = device_features(inst, dev.phys);
     ProbeData {
         index: device_index(&all, dev.phys),
         names: device_names(inst, &all),
@@ -166,8 +178,8 @@ pub(crate) fn build_probe(
         max_anisotropy: dev.caps.max_anisotropy,
         max_lod_bias: dev.caps.max_lod_bias,
         max_lod_level: dev.caps.max_lod_level,
-        anisotropy: dev.caps.sampler_anisotropy,
-        shading: dev.caps.sample_rate_shading,
+        anisotropy: feature_held(features.sampler_anisotropy),
+        shading: feature_held(features.sample_rate_shading),
     }
 }
 
