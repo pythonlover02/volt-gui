@@ -1,0 +1,13 @@
+ARG BASE=rust:1.82-bookworm
+FROM ${BASE}
+
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends \
+      gcc-multilib libc6-dev-i386 \
+      python3 python3-venv python3-dev \
+      flatpak ostree \
+      wget ca-certificates file zsync desktop-file-utils patchelf make \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN rustup target add i686-unknown-linux-gnu \
+ && chmod -R a+w "${RUSTUP_HOME}" "${CARGO_HOME}"
