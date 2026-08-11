@@ -192,42 +192,8 @@ pub(crate) fn insts_del(h: u64) {
     }
 }
 
-fn insts_all() -> Vec<(u64, VkInstState)> {
-    INSTS
-        .read()
-        .ok()
-        .and_then(|g| g.as_ref().map(|m| m.iter().map(|(k, v)| (*k, v.clone())).collect()))
-        .unwrap_or_default()
-}
-
-fn instance_lists_phys(st: &VkInstState, phys: vk::PhysicalDevice) -> bool {
-    unsafe { st.instance.enumerate_physical_devices() }
-        .map(|v| v.contains(&phys))
-        .unwrap_or(false)
-}
-
-fn scan_owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
-    insts_all()
-        .into_iter()
-        .find(|(_, st)| instance_lists_phys(st, phys))
-}
-
-fn cached_owner(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
-    phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
-}
-
-fn scanned_owner(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
-    scan_owning_instance(phys).map(|(h, st)| {
-        phys_owner_put(phys.as_raw(), h);
-        (h, st)
-    })
-}
-
 pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
-    match cached_owner(phys) {
-        Some(found) => Some(found),
-        None => scanned_owner(phys),
-    }
+    phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
 }
 
 fn indexed(devices: Vec<vk::PhysicalDevice>) -> Vec<(usize, vk::PhysicalDevice)> {
@@ -472,9 +438,20 @@ fn call_typed_instance_fp<T>(
     call_next_gipa(gipa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
+fn call_owned_devices(instance: &ash::Instance) -> Vec<vk::PhysicalDevice> {
+    unsafe { instance.enumerate_physical_devices() }.unwrap_or_default()
+}
+
+fn call_remember_owner(handle: vk::Instance, devices: Vec<vk::PhysicalDevice>) {
+    devices
+        .into_iter()
+        .for_each(|phys| phys_owner_put(phys.as_raw(), handle.as_raw()));
+}
+
 fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) {
     let static_fn = vk::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
+    call_remember_owner(handle, call_owned_devices(&instance));
     insts_put(
         handle.as_raw(),
         VkInstState {
