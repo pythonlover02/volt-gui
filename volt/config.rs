@@ -150,13 +150,16 @@ fn parse_pacing(text: &str) -> Option<PacingChoice> {
     }
 }
 
-fn checked<T>(section: &str, key: &str, value: Option<T>) -> Option<T> {
+fn checked<T>(section: &str, key: &str, text: &str, value: Option<T>) -> Option<T> {
     match value {
         Some(v) => Some(v),
         None => {
             log_at(
                 LogLevel::Warn,
-                &format!("invalid value for {}.{}, keeping default", section, key),
+                &format!(
+                    "{}.{} names \"{}\", which is not a value this build can read: that setting was left alone",
+                    section, key, text
+                ),
             );
             None
         }
@@ -169,7 +172,7 @@ where
 {
     match table_value(doc, section, key).and_then(non_default) {
         None => None,
-        Some(text) => checked(section, key, parse(text)),
+        Some(text) => checked(section, key, text, parse(text)),
     }
 }
 
