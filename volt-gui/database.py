@@ -91,7 +91,7 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
-            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. Only does something when Frame Limit is set.",
+            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. late is the equivalent of Reflex and Anti-Lag here, since holding the next frame back is the mechanism those use too. Going further would need to know when the GPU actually finished a frame, which core Vulkan does not report, so there is nothing above late. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "early", "late", "reactive"),
         },
         "frame_pacing": {

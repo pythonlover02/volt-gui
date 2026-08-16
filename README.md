@@ -143,7 +143,10 @@ down. That clamp is correctness, not a setting.
   game starts its next frame later and samples input closer to display time;
   reactive waits where early does but measures from the frame just shown
   instead of a fixed timeline, so a slow frame is never chased with a fast
-  one.
+  one. late is the equivalent of Reflex and Anti-Lag here: holding the next
+  frame back is the mechanism those use too. Going further needs feedback
+  on when the GPU actually finished, which lives in `VK_KHR_present_wait`
+  and `VK_EXT_present_timing`, so it stays out.
 - **Frame Pacing**: how the limiter kills time, from cheapest to tightest.
   `sleep` hands the whole wait to the kernel. `sliced` sleeps in short steps
   and rechecks the clock, correcting for the kernel waking late. `precise`
