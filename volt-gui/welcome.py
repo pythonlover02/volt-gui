@@ -38,7 +38,7 @@ def get_welcome_settings() -> dict:
                 ("text", "Where the specification bounds a value, LOD bias against your device limit and image count against what the surface allows, volt clamps what it passes down. That clamp is correctness rather than a choice, so it is not shown here."),
             ),
             "Where the Lists Come From": (
-                ("text", "Most of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, colour depths, colour spaces, transfer functions and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default."),
+                ("text", "Most of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, colour depths, colour spaces, transfer functions and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default, and so does every device backed card until the probe has run: volt-gui offers no option it has not read."),
                 ("text", "That means a mode or a format volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
                 ("text", "The three Framerate settings are the exception. A game never tells Vulkan what frame rate it wants, so there is nothing to read from the device and their lists are volt's own."),
             ),
@@ -66,9 +66,10 @@ def get_welcome_settings() -> dict:
                 ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
             ),
-            "The Preview Window": (
-                ("text", "volt-gui keeps a small vkgears window running under the profile you are editing. It is what fills the setting lists with your hardware, and it doubles as a look at the profile: pressing Apply restarts it under the values you just saved. Switching profiles restarts it too."),
-                ("text", "Close it whenever you like. volt-gui carries on with what it learned the last time it ran, and starts a fresh one when you change profile. If vkgears is not installed the lists fall back to sensible defaults, so nothing breaks."),
+            "The Probe Window": (
+                ("text", "volt-gui keeps a small vkgears window running under the profile you are editing. It is what fills the setting lists with your hardware. Pressing Apply restarts it so those lists match the values you just saved, and switching profiles restarts it too."),
+                ("text", "It is not a preview. Most settings act on textures, samplers and pipelines vkgears does not have, so anisotropic filtering, LOD bias, mip levels and sample shading look identical in it however you set them. An unchanged window means the probe ran, not that the setting was ignored. Run the game with VOLT_LOG=info to see what actually applied."),
+                ("text", "vkgears comes from mesa-demos and volt-gui needs it. Nothing else reads your hardware, so without it every device backed card holds nothing but default, and volt-gui tells you it could not probe. volt-gui invents no options: a list it cannot read is a list it does not offer. Close the window whenever you like once it has run, and volt-gui carries on with what it learned."),
                 ("code", "volt --probe myprofile -- vkgears", "Run it yourself:"),
             )
         },

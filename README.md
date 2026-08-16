@@ -43,15 +43,18 @@ built into volt-gui. Present modes, colour depths, colour spaces, transfer
 functions and alpha modes come from what the surface reports, the GPU list
 from what the driver enumerates, and mip levels and LOD bias run up to the
 limits the device gives. A setting whose feature the device lacks holds
-nothing but `default`. Only the three **Framerate** settings have a fixed
-list, since they are volt's own.
+nothing but `default`, and so does every device backed setting until the
+probe has run: volt-gui offers no option it has not read. Only the three
+**Framerate** settings have a fixed list, since they are volt's own.
 
 Settings are read once, when the game starts, and never change while it
 runs. Press Apply, then start the game again.
 
 volt-gui learns this by keeping a small `vkgears` window running under the
-profile you are editing, which also serves as a live preview. Close it and
-volt-gui carries on with what it learned last time.
+profile you are editing. It is there to read your hardware, not to show you
+the result: most settings act on textures and samplers vkgears does not
+have, so an unchanged window is the normal outcome and not a failure. Close
+it and volt-gui carries on with what it learned last time.
 
 ```
 volt --probe myprofile -- vkgears
@@ -183,7 +186,7 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 | **GUI**   | Python 3.10+, PySide6 (a venv is created under `build/` by the make targets) |
 | **Flatpak bundles** | `flatpak`, `ostree` |
 | **Container release** | `podman` or `docker` |
-| **Preview** | `vkgears` from mesa-demos, optional: without it the option lists fall back to defaults |
+| **Probe** | `vkgears` from mesa-demos, required at runtime: every device backed option list is read through it |
 
 ## Installation
 
@@ -211,6 +214,11 @@ cd volt-gui
 make
 sudo make install
 ```
+
+`vkgears` from mesa-demos is not built here and is not optional at runtime.
+Nothing else reads your hardware, so without it every device backed card
+holds nothing but `default` and volt-gui says so on startup. Install your
+distribution's mesa-demos package alongside.
 
 `make` picks PyInstaller for the GUI. For Nuitka, set `GUI` on both halves so
 install picks up the binary you built:
