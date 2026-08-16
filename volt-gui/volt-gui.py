@@ -76,6 +76,7 @@ PREVIEW_TARGET: Final[str] = "vkgears"
 PREVIEW_POLL_MS: Final[int] = 750
 PREVIEW_START_MS: Final[int] = 300
 PREVIEW_STOP_MS: Final[int] = 1500
+PROBE_FAILED_ERROR: Final[str] = "Could not probe this device.\n\nThe vkgears window failed to run, so volt-gui has nothing to read your hardware with. Every setting fed by the device holds nothing but default until it does, because volt-gui offers no option it has not read.\n\nInstall mesa-demos, which provides vkgears, then restart volt-gui."
 
 
 def build_preview_args(profile_name: str) -> list:
@@ -507,9 +508,43 @@ def process_preview_stop(main_window) -> None:
             return None
 
 
+def process_probe_failure(main_window) -> None:
+    match main_window.probe_error_shown:
+        case True:
+            return None
+        case False:
+            main_window.probe_error_shown = True
+            process_notification_display(main_window, PROBE_FAILED_ERROR, True)
+            return None
+
+
+def process_preview_error(main_window, process_error) -> None:
+    match process_error == QProcess.ProcessError.FailedToStart:
+        case True:
+            process_probe_failure(main_window)
+            return None
+        case False:
+            return None
+
+
+def process_preview_exit(main_window, exit_code: int, exit_status) -> None:
+    match (exit_status == QProcess.ExitStatus.NormalExit, exit_code):
+        case (True, 0):
+            return None
+        case (True, _):
+            process_probe_failure(main_window)
+            return None
+        case _:
+            return None
+
+
 def process_preview_start(main_window) -> None:
     process_preview_stop(main_window)
     worker = QProcess(main_window)
+    worker.errorOccurred.connect(
+        lambda process_error: process_preview_error(main_window, process_error))
+    worker.finished.connect(
+        lambda exit_code, exit_status: process_preview_exit(main_window, exit_code, exit_status))
     worker.start(PREVIEW_BIN, build_preview_args(main_window.current_profile))
     main_window.preview_process = worker
     return None
@@ -690,6 +725,7 @@ def create_main_window_widget(singleton_socket):
     window.current_profile = DEFAULT_PROFILE
     window.welcome_window = None
     window.preview_process = None
+    window.probe_error_shown = False
     window.probe_stamp = call_probe_stamp()
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(620, 380)
