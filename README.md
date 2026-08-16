@@ -250,7 +250,7 @@ ride along. The Nuitka archive installs with `sudo make install GUI=nuitka`.
 **`make release`** builds against your own toolchain and glibc. Fast, and
 right for a local build, but the binaries inherit your system's glibc floor.
 
-**`make release-container`** builds everything inside `rust:1.82-bookworm`
+**`make release-container`** builds everything inside `rust:1.85.1-bookworm`
 (Debian 12, glibc 2.36, Python 3.11) from `container/Containerfile`, so the
 floor is fixed regardless of what you run. It builds into `build/container/`,
 so it never collides with your host build and neither invalidates the other.
@@ -259,7 +259,7 @@ The container runs as your own uid, so nothing it writes is root-owned.
 Override the base if you want a different floor:
 
 ```
-make release-container CONTAINER_BASE=rust:1.82-bullseye
+make release-container CONTAINER_BASE=rust:1.85.1-bullseye
 make release-container CONTAINER=docker
 ```
 
