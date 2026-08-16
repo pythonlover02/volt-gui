@@ -389,14 +389,10 @@ def process_profile_apply_from_tray(main_window, profile_name: str) -> None:
 
 
 def process_notification_display(main_window, notification_message: str, is_error: bool) -> None:
-    match (hasattr(main_window, "tray_icon"), is_error):
-        case (True, True):
-            main_window.tray_icon.showMessage("volt-gui", notification_message, QSystemTrayIcon.MessageIcon.Critical, 2000)
-        case (True, False):
-            main_window.tray_icon.showMessage("volt-gui", notification_message, QSystemTrayIcon.MessageIcon.Information, 2000)
-        case (False, True):
+    match is_error:
+        case True:
             QMessageBox.warning(main_window, "volt-gui", notification_message)
-        case (False, False):
+        case False:
             QMessageBox.information(main_window, "volt-gui", notification_message)
     return None
 
