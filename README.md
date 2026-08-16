@@ -90,10 +90,13 @@ down. That clamp is correctness, not a setting.
   without rebuilding the swapchain. It can only switch among the modes the
   surface offered it, which volt has already filtered, so the setting still
   holds.
-- **Swapchain Images**: how many images the swapchain holds. Fewer images
-  lower display latency, more images smooth frame delivery. The list is what
-  the surface allows, and the choice is reported back to the game, so a game
-  that derives its count from the surface honours it on its own.
+- **Swapchain Images**: how many images the swapchain holds. This is the
+  frames in flight control: more images let the game run further ahead of
+  the GPU, which smooths frame delivery and costs input lag, and fewer hold
+  it closer to the display. If you came looking for an anti-lag setting,
+  this is it. The list is what the surface allows, and the choice is
+  reported back to the game, so a game that derives its count from the
+  surface honours it on its own.
 - **Color Depth**: the bits per colour channel this surface offers, usually
   8-bit and 10-bit. The layer hides the formats you did not pick, so a game
   that takes the first supported format ends up with yours. If nothing

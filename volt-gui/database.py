@@ -47,7 +47,7 @@ SETTINGS_DB: Final[dict] = {
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
-            "description": "How many images the swapchain holds. Fewer images lower display latency, more images smooth frame delivery. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
+            "description": "How many images the swapchain holds. This is the frames in flight control, and the closest thing here to an anti-lag setting: more images let the game run further ahead of the GPU, which smooths frame delivery and costs input lag, while fewer hold it closer to the display. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
             "options": (DEFAULT_VALUE,),
         },
         "color_depth": {
