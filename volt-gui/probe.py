@@ -2,6 +2,7 @@ import os
 
 from pathlib import Path
 from typing import Final
+from typing import Optional
 
 PROBE_FILE: Final[str] = "probe.toml"
 PROBE_SEP: Final[str] = ";"
@@ -16,18 +17,6 @@ COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
 SHADING_CEILING: Final[float] = 1.0
 OFF_VALUE: Final[str] = "off"
-
-PRESENT_FALLBACK: Final[tuple] = ("immediate", "mailbox", "fifo", "fifo_relaxed")
-DEPTH_FALLBACK: Final[tuple] = ("8bit", "10bit")
-SPACE_FALLBACK: Final[tuple] = ("srgb_nonlinear",)
-TRANSFER_FALLBACK: Final[tuple] = ("unorm", "srgb")
-ALPHA_FALLBACK: Final[tuple] = ("opaque", "inherit")
-DEVICE_FALLBACK: Final[tuple] = ("device 1", "device 2", "device 3", "device 4")
-ANISO_FALLBACK: Final[float] = 16.0
-BIAS_FALLBACK: Final[float] = 4.0
-LEVEL_FALLBACK: Final[float] = 14.0
-MIN_COUNT_FALLBACK: Final[float] = 2.0
-MAX_COUNT_FALLBACK: Final[float] = 0.0
 
 
 def build_probe_path() -> Path:
@@ -66,34 +55,20 @@ def _is_number(text: str) -> bool:
     return text.replace("-", "", 1).replace(".", "", 1).isdigit()
 
 
-def probe_number(data: dict, key: str, fallback: float) -> float:
+def probe_number(data: dict, key: str) -> Optional[float]:
     match _is_number(probe_text(data, key)):
         case True:
             return float(probe_text(data, key))
         case False:
-            return fallback
+            return None
 
 
 def probe_flag(data: dict, key: str) -> bool:
-    match probe_text(data, key):
-        case "":
-            return True
-        case text:
-            return text == PROBE_ON
+    return probe_text(data, key) == PROBE_ON
 
 
-def _filled(values: tuple, fallback: tuple) -> tuple:
-    match len(values):
-        case 0:
-            return fallback
-        case _:
-            return values
-
-
-def probe_list(data: dict, key: str, fallback: tuple) -> tuple:
-    return _filled(
-        tuple(v.lower() for v in probe_text(data, key).split(PROBE_SEP) if v != ""),
-        fallback)
+def probe_list(data: dict, key: str) -> tuple:
+    return tuple(v.lower() for v in probe_text(data, key).split(PROBE_SEP) if v != "")
 
 
 def plain_pairs(values: tuple) -> tuple:
@@ -127,35 +102,38 @@ def _span_of(limit: float) -> int:
 
 
 def present_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "present_modes", PRESENT_FALLBACK))
+    return plain_pairs(probe_list(data, "present_modes"))
 
 
 def depth_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "color_depths", DEPTH_FALLBACK))
+    return plain_pairs(probe_list(data, "color_depths"))
 
 
 def space_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "color_spaces", SPACE_FALLBACK))
+    return plain_pairs(probe_list(data, "color_spaces"))
 
 
 def transfer_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "transfer_functions", TRANSFER_FALLBACK))
+    return plain_pairs(probe_list(data, "transfer_functions"))
 
 
 def alpha_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "composite_alphas", ALPHA_FALLBACK))
+    return plain_pairs(probe_list(data, "composite_alphas"))
 
 
 def gpu_options(data: dict) -> tuple:
     return tuple(
         (str(at + 1), name)
-        for at, name in enumerate(probe_list(data, "device_names", DEVICE_FALLBACK)))
+        for at, name in enumerate(probe_list(data, "device_names")))
 
 
-def _aniso_ladder(data: dict) -> tuple:
-    return plain_pairs(_whole_values(
-        WHOLE_STEP,
-        int(probe_number(data, "max_anisotropy", ANISO_FALLBACK))))
+def _aniso_ladder(limit: Optional[float]) -> tuple:
+    match limit:
+        case None:
+            return ()
+        case value:
+            return ((OFF_VALUE, OFF_VALUE),) + plain_pairs(
+                _whole_values(WHOLE_STEP, int(value)))
 
 
 def aniso_options(data: dict) -> tuple:
@@ -163,7 +141,7 @@ def aniso_options(data: dict) -> tuple:
         case False:
             return ()
         case True:
-            return ((OFF_VALUE, OFF_VALUE),) + _aniso_ladder(data)
+            return _aniso_ladder(probe_number(data, "max_anisotropy"))
 
 
 def shading_options(data: dict) -> tuple:
@@ -183,18 +161,44 @@ def _count_ceiling(low: int, high: int) -> int:
             return high
 
 
+def _count_values(low: Optional[float], high: Optional[float]) -> tuple:
+    match (low, high):
+        case (None, _) | (_, None):
+            return ()
+        case (start, stop):
+            return plain_pairs(
+                _whole_values(int(start), _count_ceiling(int(start), int(stop))))
+
+
 def image_count_options(data: dict) -> tuple:
-    low = int(probe_number(data, "min_image_count", MIN_COUNT_FALLBACK))
-    high = int(probe_number(data, "max_image_count", MAX_COUNT_FALLBACK))
-    return plain_pairs(_whole_values(low, _count_ceiling(low, high)))
+    return _count_values(
+        probe_number(data, "min_image_count"),
+        probe_number(data, "max_image_count"))
+
+
+def _mip_values(limit: Optional[float]) -> tuple:
+    match limit:
+        case None:
+            return ()
+        case value:
+            return plain_pairs(_whole_values(0, int(value)))
 
 
 def mip_options(data: dict) -> tuple:
-    return plain_pairs(_whole_values(
-        0,
-        int(probe_number(data, "max_lod_level", LEVEL_FALLBACK))))
+    return _mip_values(probe_number(data, "max_lod_level"))
+
+
+def _bias_ladder(span: int) -> tuple:
+    return plain_pairs(_fraction_values(-span, span))
+
+
+def _bias_values(limit: Optional[float]) -> tuple:
+    match limit:
+        case None:
+            return ()
+        case value:
+            return _bias_ladder(_span_of(min(value, BIAS_CEILING)))
 
 
 def lod_bias_options(data: dict) -> tuple:
-    span = _span_of(min(probe_number(data, "max_lod_bias", BIAS_FALLBACK), BIAS_CEILING))
-    return plain_pairs(_fraction_values(-span, span))
+    return _bias_values(probe_number(data, "max_lod_bias"))
