@@ -346,6 +346,14 @@ requires injecting shaders or processing the image is out of scope:
   applying where the game moved that state elsewhere; a hook for an extension
   the game never enabled is unreachable and its entry point is never handed
   out.
+- Resolution scaling. Presenting an image smaller than the surface needs
+  `VK_KHR_surface_maintenance1` and `VK_KHR_swapchain_maintenance1`, and
+  volt enables neither, so that path exists only where the game asked for
+  both. Use gamescope for that.
+- Frame pacing tighter than the limiter gives. Deadlines measured against
+  the display rather than a clock need `VK_KHR_present_wait` or
+  `VK_EXT_present_timing`. The late method is as close as core Vulkan
+  reaches.
 - Change a setting under a running game. The profile is read once at startup.
 - Write into memory the game owns. volt patches the structures it passes on
   and fills the arrays a query asks it to fill; a `pNext` chain the game built
