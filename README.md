@@ -290,9 +290,12 @@ installed at all. That is enough to write and copy profiles and not enough to
 use them: with no layer on disk there is nothing for the probe to load, so every
 device backed card holds nothing but `default`.
 
-Native Steam games are still not covered either way. They run under the Steam
+The Flatpak extension never covers native Steam games: they run under the Steam
 Linux Runtime, which is not Flatpak, so a `--user` extension is never mounted
-for them.
+for them. The native install does reach them. Steam expands `%command%` on the
+host, so the launcher only has to be on your `PATH`, and the runtime container
+bind mounts your home directory and imports the host's implicit layers, so the
+manifest and both layer directories under `~/.local` stay visible inside it.
 
 ## Building Releases
 
