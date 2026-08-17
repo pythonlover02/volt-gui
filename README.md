@@ -23,6 +23,7 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Immutable Systems](#immutable-systems)
 - [Building Releases](#building-releases)
 - [Usage](#usage)
 - [Flatpak](#flatpak)
@@ -213,6 +214,10 @@ Everything lands under `build/`; `make clean` is a single `rm -rf`.
 | `sudo make install` | launcher, GUI, both layers and the manifest |
 | `sudo make flatpak-install` | the built extension bundles, for the invoking user |
 | `sudo make uninstall` | everything, including the user Flatpak extension and `~/.config/volt-gui` |
+| `make install-user` | the same into `~/.local`, no root |
+| `make flatpak-install-user` | the extension bundles, `flatpak install --user`, no root |
+| `make setup-user` | both rootless installs at once |
+| `make uninstall-user` | the rootless install, including `~/.config/volt-gui` |
 | `make clean` | `rm -rf build releases` |
 
 ```
@@ -250,6 +255,38 @@ into the given prefix without needing it:
 make
 make install DESTDIR="$PWD/pkg" PREFIX=/usr
 ```
+
+## Immutable Systems
+
+On SteamOS, Bazzite, Silverblue and anything else with a read only `/usr`,
+`sudo make install` means `steamos-readonly disable` or a layered package, redone
+after every system update. Nothing here needs that:
+
+```
+make setup-user
+```
+
+`install-user` puts the launcher and the GUI in `~/.local/bin`, both layers under
+`~/.local/lib/volt` and the manifest in `~/.local/share/vulkan/implicit_layer.d`,
+which the loader already searches, so no environment variable is needed to find
+it. The `.so` still is: `library_path` in the manifest is a bare filename, which
+is what lets one manifest serve both architectures, so the `volt` launcher adds
+both layer directories to `LD_LIBRARY_PATH` and ld.so picks the one matching the
+game. `flatpak-install-user` installs the extension bundles with
+`flatpak install --user`, which never needed root anyway.
+
+`~/.local/bin` has to be on your `PATH`, because volt-gui runs `volt` to read
+your hardware.
+
+The GUI is also one self contained binary, so unpacking a release archive and
+double clicking `build/bin/volt-gui-pyinstaller` opens the editor with nothing
+installed at all. That is enough to write and copy profiles and not enough to
+use them: with no layer on disk there is nothing for the probe to load, so every
+device backed card holds nothing but `default`.
+
+Native Steam games are still not covered either way. They run under the Steam
+Linux Runtime, which is not Flatpak, so a `--user` extension is never mounted
+for them.
 
 ## Building Releases
 
@@ -304,7 +341,8 @@ button in volt-gui, ready to copy.
 Flatpak games run sandboxed, so the layer ships as a **Flatpak runtime
 extension** for `org.freedesktop.Platform` 23.08, 24.08 and 25.08. Build with
 `make flatpak`, which writes to `build/bundles/`, then install with
-`sudo make flatpak-install` (or grab the bundles from a release archive). The
+`make flatpak-install-user`, which needs no root, or `sudo make flatpak-install`
+(or grab the bundles from a release archive). The
 `volt` launcher detects `flatpak run` commands and routes activation through
 the in-sandbox wrapper automatically.
 

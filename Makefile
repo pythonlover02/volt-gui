@@ -79,6 +79,8 @@ DESKTOP_KEYWORDS := vulkan;vsync;gpu;gaming;
 FLATPAK_RUNTIMES := 23.08 24.08 25.08
 FLATPAK_EXT_ID   := org.freedesktop.Platform.VulkanLayer.volt
 FLATPAK_ARCH     := x86_64
+LIBDIR_64_ARCH   := x86_64-linux-gnu
+LIBDIR_32_ARCH   := i386-linux-gnu
 FLATPAK_BUNDLES  := $(foreach rt,$(FLATPAK_RUNTIMES),\
   $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-$(rt).flatpak)
 
@@ -113,11 +115,32 @@ INSTALL_FILES := \
   $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE) \
   $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 
+USER_PREFIX    ?= $(HOME)/.local
+USER_BIN       := $(USER_PREFIX)/bin
+USER_LIB       := $(USER_PREFIX)/lib/volt
+USER_DATA      := $(USER_PREFIX)/share
+USER_LAYER_DIR := $(USER_DATA)/vulkan/implicit_layer.d
+USER_DESK_DIR  := $(USER_DATA)/applications
+USER_ICON_DIR  := $(USER_DATA)/icons/hicolor/256x256/apps
+USER_STATE     := $(USER_DATA)/volt
+
+USER_FILES := \
+  $(USER_BIN)/volt \
+  $(USER_BIN)/volt-gui \
+  $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so \
+  $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so \
+  $(USER_LAYER_DIR)/$(MANIFEST) \
+  $(USER_DESK_DIR)/$(DESKTOP_FILE) \
+  $(USER_ICON_DIR)/$(ICON_FILE)
+
+USER_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(USER_STATE)/.installed-%)
+
 .DELETE_ON_ERROR:
 
 .PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak dist \
         release release-container container-image install flatpak-install \
-        uninstall clean help check-root check-sudo-user
+        install-user flatpak-install-user setup-user uninstall-user \
+        uninstall clean help check-root check-sudo-user check-not-root
 
 all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
@@ -261,6 +284,39 @@ $(STATE_DIR)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-root check-sudo-user
 	su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$(abspath $<)'"
 	@touch $@
 
+install-user: $(USER_FILES)
+	@echo "user install complete, no root used."
+	@echo "  bin:       $(USER_BIN)"
+	@echo "  lib:       $(USER_LIB)"
+	@echo "  manifest:  $(USER_LAYER_DIR)"
+	@echo "$(USER_BIN) must be on PATH: volt-gui runs volt to read your hardware."
+
+$(USER_BIN)/volt:                        $(LAUNCHER)    | check-not-root ; install -Dm755 $< $@
+$(USER_BIN)/volt-gui:                    $(GUI_BIN)     | check-not-root ; install -Dm755 $< $@
+$(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so: $(LAYER_64)   | check-not-root ; install -Dm755 $< $@
+$(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so: $(LAYER_32)   | check-not-root ; install -Dm755 $< $@
+$(USER_LAYER_DIR)/$(MANIFEST):           $(MANIFEST)    | check-not-root ; install -Dm644 $< $@
+$(USER_DESK_DIR)/$(DESKTOP_FILE):        $(DESKTOP)     | check-not-root ; install -Dm644 $< $@
+$(USER_ICON_DIR)/$(ICON_FILE):           $(ICON_SOURCE) | check-not-root ; install -Dm644 $< $@
+
+flatpak-install-user: $(USER_STAMPS)
+	@echo "flatpak extensions installed for this user."
+
+$(USER_STATE)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-not-root
+	@mkdir -p $(@D)
+	$(FLATPAK) install --user -y --reinstall "$(abspath $<)"
+	@touch $@
+
+setup-user: install-user flatpak-install-user
+	@echo "ready: launch volt-gui from your menu, or run $(USER_BIN)/volt-gui."
+
+uninstall-user: | check-not-root
+	rm -f $(USER_FILES)
+	rm -rf $(USER_STATE)
+	$(FLATPAK) uninstall --user -y $(FLATPAK_EXT_ID) 2>/dev/null || true
+	rm -rf "$(HOME)/.config/volt-gui"
+	@echo "user uninstall complete."
+
 uninstall: | $(ROOT_GUARD)
 	rm -f $(INSTALL_FILES)
 	@test -z "$(LIVE_SYSTEM)" || rm -rf $(STATE_DIR)
@@ -282,6 +338,9 @@ check-root:
 check-sudo-user:
 	@test -n "$$SUDO_USER" || { echo "error: SUDO_USER not set — run via 'sudo make ...' from your user shell"; exit 1; }
 
+check-not-root:
+	@test "$$(id -u)" -ne 0 || { echo "error: this installs into \$$HOME — run as your user, no sudo"; exit 1; }
+
 help:
 	@echo "make                    layer (64 + 32), launcher, gui ($(GUI)), desktop entry"
 	@echo "make layer-64           64-bit layer and the volt launcher"
@@ -296,4 +355,8 @@ help:
 	@echo "sudo make install       install (GUI=$(GUI))"
 	@echo "sudo make flatpak-install"
 	@echo "sudo make uninstall"
+	@echo "make setup-user         install-user + flatpak-install-user, no root"
+	@echo "make install-user       layer, launcher and gui into ~/.local"
+	@echo "make flatpak-install-user  the extensions, flatpak --user"
+	@echo "make uninstall-user"
 	@echo "make clean"
