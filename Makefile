@@ -178,14 +178,15 @@ $(DESKTOP): Makefile | $(SHARE_DIR)
 	  'StartupNotify=true' \
 	  'StartupWMClass=volt-gui' > $@
 
-$(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(MANIFEST) LICENSE \
-    flatpak/volt-flatpak flatpak/commit.py | $(BUNDLE_DIR)
+$(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
+    $(MANIFEST) LICENSE flatpak/volt-flatpak flatpak/commit.py | $(BUNDLE_DIR)
 	rm -rf $(OUT)/flatpak.$*
 	install -Dm755 $(LAYER_64) $(OUT)/flatpak.$*/stage/files/lib/x86_64-linux-gnu/libvolt.so
 	install -Dm755 $(LAYER_32) $(OUT)/flatpak.$*/stage/files/lib/i386-linux-gnu/libvolt.so
 	install -Dm644 $(MANIFEST) $(OUT)/flatpak.$*/stage/files/share/vulkan/implicit_layer.d/$(MANIFEST)
 	install -Dm644 LICENSE $(OUT)/flatpak.$*/stage/files/share/doc/volt/LICENSE
 	install -Dm755 flatpak/volt-flatpak $(OUT)/flatpak.$*/stage/files/bin/volt-flatpak
+	install -Dm755 $(LAUNCHER) $(OUT)/flatpak.$*/stage/files/bin/volt
 	$(OSTREE) init --repo=$(OUT)/flatpak.$*/repo --mode=archive-z2
 	$(PYTHON3) flatpak/commit.py "$*" "$(OUT)/flatpak.$*/repo" "$(OUT)/flatpak.$*/stage"
 	$(FLATPAK) build-bundle --arch=$(FLATPAK_ARCH) $(OUT)/flatpak.$*/repo $@ \

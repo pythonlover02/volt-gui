@@ -2,6 +2,7 @@
 BASE="/usr/lib/extensions/vulkan/volt"
 export VOLT_ENABLE=1
 export XDG_DATA_DIRS="${BASE}/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+export PATH="${BASE}/bin${PATH:+:$PATH}"
 LIB="${BASE}/lib/x86_64-linux-gnu"
 [ -d "${BASE}/lib/i386-linux-gnu" ] && LIB="${LIB}:${BASE}/lib/i386-linux-gnu"
 export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
