@@ -100,11 +100,15 @@ DIST_TREES := volt volt-gui images flatpak container .github
 
 ifeq ($(DESTDIR),)
 ROOT_GUARD := check-root
+LAYER_GUARD := check-no-user-layer
 LIVE_SYSTEM := 1
 else
 ROOT_GUARD :=
+LAYER_GUARD :=
 LIVE_SYSTEM :=
 endif
+
+USER_MANIFEST_HOME = $${SUDO_USER:+$$(getent passwd "$$SUDO_USER" | cut -d: -f6)}
 
 INSTALL_FILES := \
   $(DESTDIR)$(bindir)/volt \
@@ -140,7 +144,8 @@ USER_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(USER_STATE)/.installe
 .PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak dist \
         release release-container container-image install flatpak-install \
         install-user flatpak-install-user setup-user uninstall-user \
-        uninstall clean help check-root check-sudo-user check-not-root
+        uninstall clean help check-root check-sudo-user check-not-root \
+        check-no-user-layer check-no-system-layer
 
 all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
@@ -254,7 +259,7 @@ release-container: $(CONTAINER_STAMP)
 	  -e NUITKA_CACHE_DIR=/src/$(CONTAINER_OUT)/nuitka-cache \
 	  $(CONTAINER_IMAGE) make release OUT=$(CONTAINER_OUT)
 
-install: $(INSTALL_FILES)
+install: $(INSTALL_FILES) | $(LAYER_GUARD)
 	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || gtk-update-icon-cache -qtf $(datadir)/icons/hicolor 2>/dev/null || true
@@ -284,7 +289,7 @@ $(STATE_DIR)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-root check-sudo-user
 	su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$(abspath $<)'"
 	@touch $@
 
-install-user: $(USER_FILES)
+install-user: $(USER_FILES) | check-no-system-layer
 	@echo "user install complete, no root used."
 	@echo "  bin:       $(USER_BIN)"
 	@echo "  lib:       $(USER_LIB)"
@@ -340,6 +345,21 @@ check-sudo-user:
 
 check-not-root:
 	@test "$$(id -u)" -ne 0 || { echo "error: this installs into \$$HOME — run as your user, no sudo"; exit 1; }
+
+check-no-user-layer:
+	@home="$(USER_MANIFEST_HOME)"; \
+	  test -z "$$home" -o ! -e "$$home/.local/share/vulkan/implicit_layer.d/$(MANIFEST)" || { \
+	  echo "error: a user install already owns the layer at"; \
+	  echo "  $$home/.local/share/vulkan/implicit_layer.d/$(MANIFEST)"; \
+	  echo "two manifests naming the same layer is undefined: run 'make uninstall-user' first"; \
+	  exit 1; }
+
+check-no-system-layer:
+	@test ! -e "$(VK_LAYER_DIR)/$(MANIFEST)" || { \
+	  echo "error: a system install already owns the layer at"; \
+	  echo "  $(VK_LAYER_DIR)/$(MANIFEST)"; \
+	  echo "two manifests naming the same layer is undefined: run 'sudo make uninstall' first"; \
+	  exit 1; }
 
 help:
 	@echo "make                    layer (64 + 32), launcher, gui ($(GUI)), desktop entry"

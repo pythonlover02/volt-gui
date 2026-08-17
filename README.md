@@ -278,6 +278,12 @@ game. `flatpak-install-user` installs the extension bundles with
 `~/.local/bin` has to be on your `PATH`, because volt-gui runs `volt` to read
 your hardware.
 
+Pick one of the two, not both. The loader scans the system and the user
+directory alike, so two manifests naming `VK_LAYER_VOLT_settings` leave it
+undefined which one is used, or whether the layer is inserted twice and every
+setting applied twice over. Both install targets refuse to run while the other
+one owns the layer, and name the uninstall that clears the way.
+
 The GUI is also one self contained binary, so unpacking a release archive and
 double clicking `build/bin/volt-gui-pyinstaller` opens the editor with nothing
 installed at all. That is enough to write and copy profiles and not enough to
