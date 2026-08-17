@@ -253,11 +253,9 @@ make install DESTDIR="$PWD/pkg" PREFIX=/usr
 
 ## Building Releases
 
-Both release targets produce the same four files in `releases/`:
+Both release targets produce the same two files in `releases/`:
 
 ```
-volt-gui-<version>-pyinstaller-x86_64.AppImage
-volt-gui-<version>-nuitka-x86_64.AppImage
 volt-gui-<version>-pyinstaller.tar.gz
 volt-gui-<version>-nuitka.tar.gz
 ```

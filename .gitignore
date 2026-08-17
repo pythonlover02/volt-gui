@@ -17,6 +17,3 @@ bin/
 releases/
 bundles/
 .flatpak-work*
-AppDir/
-*.AppImage
-appimagetool-x86_64.AppImage

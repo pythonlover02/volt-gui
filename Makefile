@@ -12,7 +12,6 @@ RUSTUP  ?= rustup
 PYTHON3 ?= python3
 OSTREE  ?= ostree
 FLATPAK ?= flatpak
-WGET    ?= wget
 TAR     ?= tar
 CC32    ?= gcc
 
@@ -60,8 +59,7 @@ DIST_NAME   = volt-gui-$(VERSION)-$*
 DIST        = $(DIST_DIR)/$(DIST_NAME)
 
 CARGO_TARGET_DIR := $(abspath $(TARGET_DIR))
-APPIMAGE_EXTRACT_AND_RUN := 1
-export CARGO_TARGET_DIR APPIMAGE_EXTRACT_AND_RUN
+export CARGO_TARGET_DIR
 
 LAYER_64 := $(TARGET_DIR)/$(TRIPLE_64)/release/libvolt.so
 LAYER_32 := $(TARGET_DIR)/$(TRIPLE_32)/release/libvolt.so
@@ -84,12 +82,7 @@ FLATPAK_ARCH     := x86_64
 FLATPAK_BUNDLES  := $(foreach rt,$(FLATPAK_RUNTIMES),\
   $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-$(rt).flatpak)
 
-APPIMAGE_TOOL := $(OUT)/appimagetool-x86_64.AppImage
-APPIMAGE_URL  := https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-
 RELEASE_FILES := \
-  $(RELEASES)/volt-gui-$(VERSION)-pyinstaller-x86_64.AppImage \
-  $(RELEASES)/volt-gui-$(VERSION)-nuitka-x86_64.AppImage \
   $(RELEASES)/volt-gui-$(VERSION)-pyinstaller.tar.gz \
   $(RELEASES)/volt-gui-$(VERSION)-nuitka.tar.gz
 
@@ -198,27 +191,6 @@ $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(MANIFEST) L
 	$(FLATPAK) build-bundle --arch=$(FLATPAK_ARCH) $(OUT)/flatpak.$*/repo $@ \
 	  $(FLATPAK_EXT_ID) "$*" --runtime
 	rm -rf $(OUT)/flatpak.$*
-
-$(APPIMAGE_TOOL): | $(OUT)
-	$(WGET) -q -O $@ $(APPIMAGE_URL)
-	chmod +x $@
-
-$(RELEASES)/volt-gui-$(VERSION)-%-x86_64.AppImage: $(BIN_DIR)/volt-gui-% \
-    $(DESKTOP) $(APPIMAGE_TOOL) $(ICON_SOURCE) | $(RELEASES)
-	rm -rf $(OUT)/AppDir.$*
-	install -Dm755 $< $(OUT)/AppDir.$*/volt-gui
-	install -Dm644 $(DESKTOP) $(OUT)/AppDir.$*/$(DESKTOP_FILE)
-	install -Dm644 $(ICON_SOURCE) $(OUT)/AppDir.$*/$(ICON_FILE)
-	install -Dm644 $(ICON_SOURCE) \
-	  $(OUT)/AppDir.$*/usr/share/icons/hicolor/256x256/apps/$(ICON_FILE)
-	@printf '%s\n' '#!/bin/sh' \
-	  'HERE="$$(dirname "$$(readlink -f "$$0")")"' \
-	  'export APPDIR="$$HERE"' \
-	  'cd "$$HOME" 2>/dev/null || cd /tmp' \
-	  'exec "$$HERE/volt-gui" "$$@"' > $(OUT)/AppDir.$*/AppRun
-	chmod +x $(OUT)/AppDir.$*/AppRun
-	$(APPIMAGE_TOOL) $(OUT)/AppDir.$* $@
-	rm -rf $(OUT)/AppDir.$*
 
 $(OUT)/.dist-%: $(BIN_DIR)/volt-gui-% \
     $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(DESKTOP) $(FLATPAK_BUNDLES) \
