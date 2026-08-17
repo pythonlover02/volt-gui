@@ -1,7 +1,7 @@
 #!/bin/sh
 BASE="/usr/lib/extensions/vulkan/volt"
 export VOLT_ENABLE=1
-export VK_ADD_LAYER_PATH="${BASE}/share/vulkan/implicit_layer.d${VK_ADD_LAYER_PATH:+:$VK_ADD_LAYER_PATH}"
+export XDG_DATA_DIRS="${BASE}/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
 LIB="${BASE}/lib/x86_64-linux-gnu"
 [ -d "${BASE}/lib/i386-linux-gnu" ] && LIB="${LIB}:${BASE}/lib/i386-linux-gnu"
 export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
