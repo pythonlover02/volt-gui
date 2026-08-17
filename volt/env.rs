@@ -3,6 +3,7 @@ use std::env;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::ENV_CONFIG_NAME;
 use crate::consts::ENV_HOME;
+use crate::consts::ENV_LIB_PATH;
 use crate::consts::ENV_LOG;
 use crate::consts::ENV_PROBE;
 
@@ -28,6 +29,10 @@ pub(crate) fn env_probe_active() -> bool {
 
 pub(crate) fn env_home() -> Option<String> {
     read_var(ENV_HOME)
+}
+
+pub(crate) fn env_lib_path() -> Option<String> {
+    read_var(ENV_LIB_PATH)
 }
 
 pub fn process_args() -> Vec<String> {

@@ -5,12 +5,14 @@ use std::process::Command;
 
 use crate::config::config_dir;
 use crate::config::config_path;
+use crate::config::home_dir;
 use crate::config::sanitize_name;
 use crate::consts::DEFAULT_CONFIG;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::ENABLE_VALUE;
 use crate::consts::ENV_CONFIG_NAME;
 use crate::consts::ENV_ENABLE;
+use crate::consts::ENV_LIB_PATH;
 use crate::consts::EXIT_EXEC_FAILED;
 use crate::consts::EXIT_OK;
 use crate::consts::EXIT_USAGE;
@@ -18,9 +20,14 @@ use crate::consts::FLATPAK_CMD;
 use crate::consts::FLATPAK_INJECT;
 use crate::consts::ENV_PROBE;
 use crate::consts::FLATPAK_RUN;
+use crate::consts::LIB_DIR_32;
+use crate::consts::LIB_DIR_64;
+use crate::consts::PATH_SEP;
 use crate::consts::PROBE_FLAG;
 use crate::consts::PROBE_UNSET;
 use crate::consts::USAGE;
+use crate::consts::USER_LIB_REL;
+use crate::env::env_lib_path;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -144,12 +151,32 @@ fn write_default_config(path: &PathBuf) {
     }
 }
 
+fn lib_dir(arch: &str) -> String {
+    home_dir()
+        .join(USER_LIB_REL)
+        .join(arch)
+        .to_string_lossy()
+        .into_owned()
+}
+
+fn lib_dirs() -> String {
+    [lib_dir(LIB_DIR_64), lib_dir(LIB_DIR_32)].join(PATH_SEP)
+}
+
+fn lib_path(existing: Option<String>) -> String {
+    match existing {
+        Some(current) => [current, lib_dirs()].join(PATH_SEP),
+        None => lib_dirs(),
+    }
+}
+
 fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
     let err = Command::new(&cmd[0])
         .args(&cmd[1..])
         .env(ENV_ENABLE, ENABLE_VALUE)
         .env(ENV_CONFIG_NAME, profile)
         .env(ENV_PROBE, probe_value(probe))
+        .env(ENV_LIB_PATH, lib_path(env_lib_path()))
         .exec();
     log_at(LogLevel::Error, &format!("exec failed: {}", err));
     EXIT_EXEC_FAILED

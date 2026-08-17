@@ -12,9 +12,14 @@ pub(crate) const ENV_LOG: &str = "VOLT_LOG";
 pub(crate) const ENV_ENABLE: &str = "VOLT_ENABLE";
 pub(crate) const ENV_PROBE: &str = "VOLT_PROBE";
 pub(crate) const ENV_HOME: &str = "HOME";
+pub(crate) const ENV_LIB_PATH: &str = "LD_LIBRARY_PATH";
 
 pub(crate) const HOME_FALLBACK: &str = "/tmp";
 pub(crate) const HOME_UNSET_WARN: &str = "HOME is unset, reading profiles from /tmp instead";
+pub(crate) const USER_LIB_REL: &str = ".local/lib/volt";
+pub(crate) const LIB_DIR_64: &str = "x86_64-linux-gnu";
+pub(crate) const LIB_DIR_32: &str = "i386-linux-gnu";
+pub(crate) const PATH_SEP: &str = ":";
 
 pub(crate) const PROBE_FLAG: &str = "--probe";
 pub(crate) const PROBE_FILE: &str = "probe.toml";
