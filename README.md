@@ -207,6 +207,7 @@ Everything lands under `build/`; `make clean` is a single `rm -rf`.
 | `make gui-pyinstaller` | `build/bin/volt-gui-pyinstaller` |
 | `make gui-nuitka` | `build/bin/volt-gui-nuitka` |
 | `make flatpak` | `build/bundles/*.flatpak` |
+| `make dist` | the sources with `build/` populated, in `build/dist/` |
 | `make release` | the full release matrix in `releases/`, host toolchain |
 | `make release-container` | the same, built inside a pinned container image |
 | `sudo make install` | launcher, GUI, both layers and the manifest |
@@ -220,6 +221,11 @@ cd volt-gui
 make
 sudo make install
 ```
+
+The artifacts on the Actions tab are `make dist` trees, so they are a clone of
+this repository with `build/` already filled in. Unpack one and `sudo make install`
+installs it without compiling anything, and `make` on top rebuilds only what you
+changed.
 
 `vkgears` from mesa-demos is not built here and is not optional at runtime.
 Nothing else reads your hardware, so without it every device backed card

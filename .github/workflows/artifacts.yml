@@ -28,7 +28,9 @@ jobs:
     - name: Get version
       id: get-version
       shell: bash
-      run: echo "VERSION_NAME=${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::8}" >> $GITHUB_ENV
+      run: |
+        echo "VERSION_NAME=${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::8}" >> $GITHUB_ENV
+        echo "VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' volt/Cargo.toml | head -n1)" >> $GITHUB_ENV
 
     - name: Build layer and gui
       id: build-all
@@ -38,21 +40,14 @@ jobs:
       id: build-flatpak
       run: make flatpak
 
-    - name: Stage install tree
-      id: stage-install
-      run: make install DESTDIR="$PWD/staging/volt-gui-$VERSION_NAME" PREFIX=/usr
-
-    - name: Collect flatpak bundles
-      id: collect-bundles
-      shell: bash
-      run: |
-        mkdir -p "staging/volt-gui-${VERSION_NAME}/bundles"
-        cp build/bundles/*.flatpak "staging/volt-gui-${VERSION_NAME}/bundles/"
+    - name: Build dist tree
+      id: build-dist
+      run: make dist
 
     - name: Upload artifacts
       id: upload-artifacts
       uses: actions/upload-artifact@v4
       with:
         name: volt-gui-${{ env.VERSION_NAME }}
-        path: staging/volt-gui-${{ env.VERSION_NAME }}
+        path: build/dist/volt-gui-${{ env.VERSION }}-pyinstaller
         if-no-files-found: error

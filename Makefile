@@ -55,6 +55,10 @@ BUNDLE_DIR := $(OUT)/bundles
 SHARE_DIR  := $(OUT)/share
 VENV       := $(OUT)/py_env
 
+DIST_DIR   := $(OUT)/dist
+DIST_NAME   = volt-gui-$(VERSION)-$*
+DIST        = $(DIST_DIR)/$(DIST_NAME)
+
 CARGO_TARGET_DIR := $(abspath $(TARGET_DIR))
 APPIMAGE_EXTRACT_AND_RUN := 1
 export CARGO_TARGET_DIR APPIMAGE_EXTRACT_AND_RUN
@@ -67,7 +71,7 @@ DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
 RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs)
 GUI_SOURCES  := $(wildcard volt-gui/*.py)
-VENV_STAMP   := $(VENV)/.requirements
+VENV_STAMP   := $(OUT)/.venv
 
 DESKTOP_NAME     := volt-gui
 DESKTOP_COMMENT  := My AMD Adrenaline / NVIDIA Settings Linux Alternative
@@ -97,7 +101,7 @@ CONTAINER_STAMP := $(OUT)/.container-image
 
 NO_SUDO = @test -z "$$SUDO_USER" || { echo "error: do not build with sudo — run 'make' as your user, then 'sudo make install'"; exit 1; }
 
-PACK = $(OUT)/pack.$*/volt-gui-$(VERSION)-$*
+DIST_TREES := volt volt-gui images flatpak container .github
 
 ifeq ($(DESTDIR),)
 ROOT_GUARD := check-root
@@ -116,7 +120,9 @@ INSTALL_FILES := \
   $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE) \
   $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 
-.PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak \
+.DELETE_ON_ERROR:
+
+.PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak dist \
         release release-container container-image install flatpak-install \
         uninstall clean help check-root check-sudo-user
 
@@ -128,6 +134,7 @@ gui-pyinstaller: $(BIN_DIR)/volt-gui-pyinstaller
 gui-nuitka:      $(BIN_DIR)/volt-gui-nuitka
 desktop:         $(DESKTOP)
 flatpak:         $(FLATPAK_BUNDLES)
+dist:            $(OUT)/.dist-$(GUI)
 release:         $(RELEASE_FILES)
 container-image: $(CONTAINER_STAMP)
 
@@ -144,10 +151,9 @@ $(LAYER_32): $(RUST_SOURCES)
 	cd volt && CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
 	  $(CARGO) build --release --target $(TRIPLE_32)
 
-$(VENV)/bin/python: | $(OUT)
+$(VENV_STAMP): requirements.txt | $(OUT)
+	$(NO_SUDO)
 	$(PYTHON3) -m venv $(VENV)
-
-$(VENV_STAMP): requirements.txt $(VENV)/bin/python
 	$(VENV)/bin/pip install --upgrade pip -q
 	$(VENV)/bin/pip install --no-cache-dir -r requirements.txt -q
 	@touch $@
@@ -214,26 +220,31 @@ $(RELEASES)/volt-gui-$(VERSION)-%-x86_64.AppImage: $(BIN_DIR)/volt-gui-% \
 	$(APPIMAGE_TOOL) $(OUT)/AppDir.$* $@
 	rm -rf $(OUT)/AppDir.$*
 
-$(RELEASES)/volt-gui-$(VERSION)-%.tar.gz: $(BIN_DIR)/volt-gui-% \
+$(OUT)/.dist-%: $(BIN_DIR)/volt-gui-% \
     $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(DESKTOP) $(FLATPAK_BUNDLES) \
-    $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(RELEASES)
-	rm -rf $(OUT)/pack.$*
-	install -Dm755 $< $(PACK)/build/bin/volt-gui-$*
-	install -Dm755 $(LAYER_64) $(PACK)/build/target/$(TRIPLE_64)/release/libvolt.so
-	install -Dm755 $(LAUNCHER) $(PACK)/build/target/$(TRIPLE_64)/release/volt
-	install -Dm755 $(LAYER_32) $(PACK)/build/target/$(TRIPLE_32)/release/libvolt.so
-	install -Dm644 $(DESKTOP) $(PACK)/build/share/$(DESKTOP_FILE)
-	install -Dm644 $(MANIFEST) $(PACK)/$(MANIFEST)
-	install -Dm644 Makefile $(PACK)/Makefile
-	install -Dm644 LICENSE $(PACK)/LICENSE
-	install -Dm644 README.md $(PACK)/README.md
-	install -Dm644 requirements.txt $(PACK)/requirements.txt
-	cp -r volt volt-gui images flatpak $(PACK)/
-	mkdir -p $(PACK)/build/bundles
-	cp $(FLATPAK_BUNDLES) $(PACK)/build/bundles/
-	touch $(PACK)/build/bin/* $(PACK)/build/share/* $(PACK)/build/target/*/release/*
-	$(TAR) -czf $@ -C $(OUT)/pack.$* volt-gui-$(VERSION)-$*
-	rm -rf $(OUT)/pack.$*
+    $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(OUT)
+	rm -rf $(DIST)
+	install -Dm755 $< $(DIST)/build/bin/volt-gui-$*
+	install -Dm755 $(LAYER_64) $(DIST)/build/target/$(TRIPLE_64)/release/libvolt.so
+	install -Dm755 $(LAUNCHER) $(DIST)/build/target/$(TRIPLE_64)/release/volt
+	install -Dm755 $(LAYER_32) $(DIST)/build/target/$(TRIPLE_32)/release/libvolt.so
+	install -Dm644 $(DESKTOP) $(DIST)/build/share/$(DESKTOP_FILE)
+	install -Dm644 $(MANIFEST) $(DIST)/$(MANIFEST)
+	install -Dm644 Makefile $(DIST)/Makefile
+	install -Dm644 LICENSE $(DIST)/LICENSE
+	install -Dm644 README.md $(DIST)/README.md
+	install -Dm644 requirements.txt $(DIST)/requirements.txt
+	cp -r $(DIST_TREES) $(DIST)/
+	rm -rf $(DIST)/volt/target
+	mkdir -p $(DIST)/build/bundles
+	cp $(FLATPAK_BUNDLES) $(DIST)/build/bundles/
+	touch $(DIST)/build/.venv
+	touch $(DIST)/build/bin/* $(DIST)/build/share/* \
+	  $(DIST)/build/bundles/* $(DIST)/build/target/*/release/*
+	@touch $@
+
+$(RELEASES)/volt-gui-$(VERSION)-%.tar.gz: $(OUT)/.dist-% | $(RELEASES)
+	$(TAR) -czf $@ -C $(DIST_DIR) $(DIST_NAME)
 
 $(CONTAINER_STAMP): container/Containerfile | $(OUT)
 	$(CONTAINER) build --build-arg BASE=$(CONTAINER_BASE) -t $(CONTAINER_IMAGE) -f $< container
@@ -306,6 +317,7 @@ help:
 	@echo "make gui-nuitka         gui binary via Nuitka"
 	@echo "make desktop            desktop entry only"
 	@echo "make flatpak            flatpak runtime extension bundles"
+	@echo "make dist               source + build tree in $(DIST_DIR)/ (GUI=$(GUI))"
 	@echo "make release            full release into $(RELEASES)/ (host toolchain)"
 	@echo "make release-container  the same, built inside $(CONTAINER_BASE)"
 	@echo "sudo make install       install (GUI=$(GUI))"
