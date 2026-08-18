@@ -17,17 +17,78 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 ![](/images/2.png)
 ![](/images/3.png)
 
+### At a glance
+
+- **19 settings across 5 tabs**: GPU selection, display and swapchain, texture
+  sampling, rendering toggles, and volt's own frame limiter.
+- **Core Vulkan 1.0 only.** The layer asks for nothing beyond `VK_KHR_swapchain`,
+  so behaviour never splits between drivers.
+- **One value per setting**: the value volt forces, or `default`, which keeps
+  whatever the game asked for. No ranges, no ordering, nothing to get backwards.
+- **Lists read from your hardware.** Present modes, colour depths, colour spaces,
+  transfer functions, alpha modes, GPU names, mip levels and LOD bias all come
+  from a probe of your own device, not from a table built into volt-gui.
+- **Enables nothing.** volt reads what the game asked for at device creation and
+  applies a feature gated setting only where the game enabled that feature.
+- **Every path hooked, not just the obvious one.** The `2`/`EXT` query variants,
+  device groups, shared swapchains, inline sampler writes and dynamic alpha to
+  coverage get the same treatment as the core calls.
+- **Dual-arch in one build**: `make` produces an x86_64 and an i686 layer served
+  by a single manifest, so 32-bit games under Steam, Wine and Proton are covered.
+- **Rootless install**, first class: everything into `~/.local`, for SteamOS,
+  Bazzite, Silverblue and anything else with a read only `/usr`.
+- **Flatpak support**, optional, via a runtime extension for
+  `org.freedesktop.Platform` 23.08, 24.08 and 25.08.
+- **Profiles and presets**: one TOML per configuration, switchable from the GUI,
+  the system tray, or the launch command.
+
+## Quick Start
+
+```
+# 1. Build and install, no root needed
+git clone https://github.com/pythonlover02/volt-gui.git
+cd volt-gui
+make
+make install-user
+
+# 2. Open the panel, set what you want, press Apply
+volt-gui
+
+# 3. Launch the game through the launcher
+volt -- ./game
+```
+
+That is a complete install for native, Steam, Wine and Proton games. Prefer a
+system wide one? `make` then `sudo make install`. Pick one of the two, never
+both.
+
+Flatpak games need one extra piece, built and installed separately — see
+[Flatpak](#flatpak).
+
+**Steam**, set the game Launch Options to:
+
+```
+volt -- %command%
+```
+
 ## Table of Contents
 
 - [What you can do?](#what-you-can-do)
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Install paths](#install-paths)
+- [Uninstalling](#uninstalling)
+- [Cleaning build artifacts](#cleaning-build-artifacts)
 - [Immutable Systems](#immutable-systems)
+- [FEX-Emu / Box64](#fex-emu--box64)
 - [Building Releases](#building-releases)
 - [Usage](#usage)
+- [Environment Variables](#environment-variables)
+- [Files](#files)
 - [Flatpak](#flatpak)
-- [Profiles & Presets](#profiles--presets)
+- [Flatpak without the launcher](#flatpak-without-the-launcher)
+- [Profiles, Presets & Options](#profiles-presets--options)
 - [What volt will never do](#what-volt-will-never-do)
 - [Contributing](#contributing)
 
@@ -38,6 +99,14 @@ value and the game keeps its own choice. A profile with everything on default do
 
 Every setting is one value: the value volt forces, or `default`. There is no
 range, no ordering, and nothing to get backwards.
+
+| Tab | Section | Count | What it covers |
+|-----|---------|------:|----------------|
+| GPU | `[gpu]` | 1 | which device the game is shown |
+| Display | `[display]` | 7 | present mode, image count, colour depth, colour space, transfer function, compositing, clipping |
+| Textures | `[textures]` | 6 | filtering, mip behaviour, anisotropy, LOD bias and range |
+| Rendering | `[rendering]` | 2 | sample shading, alpha to coverage |
+| Framerate | `[framerate]` | 3 | frame limit, method, pacing |
 
 The values each setting offers come from your own hardware, not from a list
 built into volt-gui. Present modes, colour depths, colour spaces, transfer
@@ -127,7 +196,8 @@ down. That clamp is correctness, not a setting.
 - **LOD Bias**: shift mipmap selection, sharper or blurrier, across the range
   the device allows.
 - **Mip Floor** and **Mip Ceiling**: the lowest and highest mip levels
-  samplers may use, called minimum and maximum LOD in Vulkan.
+  samplers may use, called minimum and maximum LOD in Vulkan. A ceiling that
+  lands below the floor is swapped with it rather than dropped.
 
 ### Rendering
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
@@ -141,7 +211,8 @@ down. That clamp is correctness, not a setting.
 - **Frame Limit**: cap the frame rate at present time, from a fixed list of
   common caps. Deadlines follow a fixed target timeline rather than the
   last present, unless the method is reactive, so scheduler jitter does not
-  build up into a drift below the rate you asked for.
+  build up into a drift below the rate you asked for. The timeline is kept per
+  swapchain and dropped when that swapchain is destroyed.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
   game starts its next frame later and samples input closer to display time;
@@ -160,23 +231,41 @@ down. That clamp is correctness, not a setting.
 
 ## How It Works
 
-volt registers as an implicit Vulkan layer, gated by `VOLT_ENABLE=1` which the
-`volt` launcher sets on the target process only. The layer reads the selected
-profile from `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
-the Vulkan calls the game makes, and the tabs run in the order the layer acts:
-device enumeration for GPU selection, the surface queries and swapchain
-creation for the display settings, `vkCreateSampler` for texture settings,
-`vkCreateGraphicsPipelines` for the rendering toggles, and `vkQueuePresentKHR`
-for the frame limiter. Device creation is read and never modified: volt learns
-which features the game enabled so a setting that needs one applies only where
-the game asked for it, and it enables nothing the game left off.
+volt registers as an implicit Vulkan layer (`VK_LAYER_VOLT_settings`) through
+the manifest at `/usr/share/vulkan/implicit_layer.d/VkLayer_volt.json`. The
+manifest declares `enable_environment = VOLT_ENABLE`, so the loader always
+discovers the layer but only activates it when `VOLT_ENABLE=1` is set in the
+target process, which the `volt` launcher does for that process only.
+
+The layer reads the selected profile from `~/.config/volt-gui/<profile>.toml`
+once at startup and rewrites the Vulkan calls the game makes. The tabs run in
+the order the layer acts:
+
+| Tab | Where the layer acts |
+|-----|----------------------|
+| GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups`, `vkEnumeratePhysicalDeviceGroupsKHR` |
+| Display | `vkGetPhysicalDeviceSurfaceFormats(2)KHR`, `vkGetPhysicalDeviceSurfacePresentModesKHR`, `vkGetPhysicalDeviceSurfacePresentModes2EXT`, `vkGetPhysicalDeviceSurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
+| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT` |
+| Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT` |
+| Framerate | `vkQueuePresentKHR` |
+
+Device creation is read and never modified: volt learns which features the game
+enabled so a setting that needs one applies only where the game asked for it,
+and it enables nothing the game left off.
 
 Every setting is hooked on each path that reaches it, not just the obvious
 one. A game that queries formats through
 `vkGetPhysicalDeviceSurfaceFormats2KHR`, enumerates through
 `vkEnumeratePhysicalDeviceGroups`, creates samplers inline through
 `vkWriteSamplerDescriptorsEXT` or sets alpha to coverage as dynamic state gets
-the same treatment as one that takes the core path.
+the same treatment as one that takes the core path. Where a surface
+capabilities query carries a present mode list in its `pNext` chain, that list
+is filtered in place too, so a game reading the compatible modes from there
+sees the same set as one that asks for them directly.
+
+An entry point for an extension the game never enabled is unreachable, and the
+layer never hands it out: the hook is only returned when the call actually
+resolves further down the chain.
 
 Settings are frozen for the life of the process. Press Apply, then start the
 game again.
@@ -188,36 +277,43 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 
 | Component | Requirement |
 |-----------|-------------|
-| **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (optionally i686 for 32-bit games) |
+| **Layer** | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (and i686 for 32-bit games) |
 | **Build** | Rust 1.85.1+ with rustup, GNU make 4.3+ |
+| **32-bit layer** | `gcc-multilib`, `libc6-dev-i386`; the `i686-unknown-linux-gnu` target is added automatically |
 | **GUI**   | Python 3.10+, PySide6 (a venv is created under `build/` by the make targets) |
 | **Flatpak bundles** | `flatpak`, `ostree` |
 | **Container release** | `podman` or `docker` |
 | **Probe** | `vkgears` from mesa-demos, required at runtime: every device backed option list is read through it |
+
+Native aarch64 builds are not provided. See
+[FEX-Emu / Box64](#fex-emu--box64) if you are on an aarch64 host.
 
 ## Installation
 
 Every build target is a file, so make only rebuilds what actually changed.
 Everything lands under `build/`; `make clean` is a single `rm -rf`.
 
-| Command | What it builds |
-|---------|----------------|
-| `make` | 64-bit layer, 32-bit layer, the `volt` launcher, and the GUI |
+| Command | What it does |
+|---------|--------------|
+| `make` | builds both layers, the `volt` launcher, the GUI and the desktop entry |
 | `make layer-64` | `build/target/x86_64-unknown-linux-gnu/release/{libvolt.so,volt}` |
 | `make layer-32` | `build/target/i686-unknown-linux-gnu/release/libvolt.so` |
 | `make gui` | `build/bin/volt-gui` |
-| `make flatpak` | `build/bundles/*.flatpak` |
+| `make desktop` | `build/share/volt-gui.desktop` |
+| `make flatpak` | `build/bundles/*.flatpak`, one per supported runtime |
 | `make dist` | the sources with `build/` populated, in `build/dist/` |
 | `make release` | the release archive in `releases/`, host toolchain |
-| `make release-container` | the same, built inside a pinned container image |
-| `sudo make install` | launcher, GUI, both layers and the manifest |
-| `sudo make flatpak-install` | the built extension bundles, for the invoking user |
-| `sudo make uninstall` | everything, including the user Flatpak extension and `~/.config/volt-gui` |
+| `make container-image` | the build image only, from `container/Containerfile` |
+| `make release-container` | the release archive, built inside that image |
+| `sudo make install` | launcher, GUI, both layers, the manifest, the desktop entry and the icon |
 | `make install-user` | the same into `~/.local`, no root |
-| `make flatpak-install-user` | the extension bundles, `flatpak install --user`, no root |
-| `make setup-user` | both rootless installs at once |
+| `sudo make flatpak-install` | the extension bundles, for the invoking user. Needs `make flatpak` first. |
+| `make flatpak-install-user` | the extension bundles, `flatpak install --user`, no root. Needs `make flatpak` first. |
+| `make setup-user` | `install-user` and `flatpak-install-user` at once. Needs `make flatpak` first. |
+| `sudo make uninstall` | everything, including the user Flatpak extension and `~/.config/volt-gui` |
 | `make uninstall-user` | the rootless install, including `~/.config/volt-gui` |
 | `make clean` | `rm -rf build releases` |
+| `make help` | the same list, printed from the Makefile itself |
 
 ```
 git clone https://github.com/pythonlover02/volt-gui.git
@@ -225,6 +321,15 @@ cd volt-gui
 make
 sudo make install
 ```
+
+A bare `make` builds both architectures and nothing else. The 32-bit layer is
+not an optional extra — any Steam library has 32-bit titles — so it is part of
+the default build; `make layer-32` exists only for building that one piece
+while you work on it, and adds the Rust target for you if it is missing. The
+Flatpak bundles are the opposite: they are optional, they are built only by
+`make flatpak`, and neither install target touches them. `make` followed by
+`make install-user` or `sudo make install` is a complete install for native,
+Steam, Wine and Proton games.
 
 The artifacts on the Actions tab are `make dist` trees, so they are a clone of
 this repository with `build/` already filled in. Unpack one and `sudo make install`
@@ -242,7 +347,7 @@ Building with `sudo` is refused: the build targets stop with an error rather
 than leaving a root-owned `build/`. The install targets are the mirror of
 that — they only copy what is already in `build/`, and stop with an error
 naming what is missing if you have not built it yet. Build as your user,
-install as root.
+install as root. volt-gui itself also refuses to start under `sudo`.
 
 Packagers can skip root entirely — with `DESTDIR` set, `make install` stages
 into the given prefix without needing it:
@@ -252,6 +357,70 @@ make
 make install DESTDIR="$PWD/pkg" PREFIX=/usr
 ```
 
+With `DESTDIR` set the install also skips `ldconfig`, the desktop database and
+the icon cache, since none of those apply to a staged tree, and skips the check
+for a competing user install.
+
+### Install paths
+
+| File | System install | User install |
+|------|----------------|--------------|
+| Launcher | `/usr/bin/volt` | `~/.local/bin/volt` |
+| GUI | `/usr/bin/volt-gui` | `~/.local/bin/volt-gui` |
+| Library (64-bit) | `/usr/lib/x86_64-linux-gnu/libvolt.so`, or `/usr/lib64`, or `/usr/lib` | `~/.local/lib/volt/x86_64-linux-gnu/libvolt.so` |
+| Library (32-bit) | `/usr/lib/i386-linux-gnu/libvolt.so`, or `/usr/lib32`, or `/usr/lib` | `~/.local/lib/volt/i386-linux-gnu/libvolt.so` |
+| Layer manifest | `/usr/share/vulkan/implicit_layer.d/VkLayer_volt.json` | `~/.local/share/vulkan/implicit_layer.d/VkLayer_volt.json` |
+| Desktop entry | `/usr/share/applications/volt-gui.desktop` | `~/.local/share/applications/volt-gui.desktop` |
+| Icon | `/usr/share/icons/hicolor/256x256/apps/volt-gui.png` | `~/.local/share/icons/hicolor/256x256/apps/volt-gui.png` |
+| Flatpak install stamps | `/var/lib/volt` | `~/.local/share/volt` |
+
+The library directory is picked from what your distribution already has:
+`lib/x86_64-linux-gnu` and `lib/i386-linux-gnu` where those exist, otherwise
+`lib` and `lib32`, otherwise `lib64` and `lib`. Because the manifest lands in
+the system wide implicit layer directory and the libraries in the standard
+paths, 32-bit games find the 32-bit layer and 64-bit games the 64-bit one with
+no `VK_LAYER_PATH` mapping of any kind.
+
+> [!WARNING]
+> Avoid changing `PREFIX` away from `/usr` or `/usr/local`. The Vulkan loader
+> only scans a fixed set of manifest directories
+> (`/usr/share/vulkan/implicit_layer.d`,
+> `/usr/local/share/vulkan/implicit_layer.d`,
+> `$XDG_DATA_DIRS/vulkan/implicit_layer.d` and `$VK_LAYER_PATH`). Installing to
+> e.g. `/opt/volt` puts the manifest where nothing reads it, the library where
+> `ldconfig` does not see it, and the launcher off `$PATH`. `library_path` in
+> the manifest is a bare filename, which is what lets one manifest serve both
+> architectures, so the `.so` has to be reachable through `ldconfig` or
+> `LD_LIBRARY_PATH` either way.
+
+### Uninstalling
+
+```
+sudo make uninstall     # system install
+make uninstall-user     # ~/.local install
+```
+
+`sudo make uninstall` removes the launcher, the GUI, both libraries, the
+manifest, the desktop entry, the icon, the install stamps under `/var/lib/volt`,
+the user scope Flatpak extension, and `~/.config/volt-gui` for the invoking
+user. Run directly as root there is no `SUDO_USER` to work from, so the user
+scope steps are skipped: remove `~/.config/volt-gui` and the Flatpak extension
+as your own user if you want those gone too.
+
+`make uninstall-user` does the same for `~/.local`, including the Flatpak
+extension and `~/.config/volt-gui`.
+
+### Cleaning build artifacts
+
+```
+make clean
+```
+
+Removes `build/` and `releases/`, along with any stray `bin/`, `bundles/`,
+`py_env/` and `volt/target/` left over from older layouts. The venv, the
+container image stamp and the cargo target directory all live under `build/`,
+so nothing survives it.
+
 ## Immutable Systems
 
 On SteamOS, Bazzite, Silverblue and anything else with a read only `/usr`,
@@ -260,8 +429,17 @@ after every system update. Nothing here needs that:
 
 ```
 make
-make setup-user
+make install-user
 ```
+
+Add the Flatpak extension too, if you want it:
+
+```
+make flatpak
+make flatpak-install-user
+```
+
+`make setup-user` runs both installs in one step once the bundles exist.
 
 `install-user` puts the launcher and the GUI in `~/.local/bin`, both layers under
 `~/.local/lib/volt` and the manifest in `~/.local/share/vulkan/implicit_layer.d`,
@@ -275,7 +453,7 @@ game. `flatpak-install-user` installs the extension bundles with
 `~/.local/bin` has to be on your `PATH`, because volt-gui runs `volt` to read
 your hardware.
 
-Pick one of the two, not both. The loader scans the system and the user
+Pick one of the two installs, not both. The loader scans the system and the user
 directory alike, so two manifests naming `VK_LAYER_VOLT_settings` leave it
 undefined which one is used, or whether the layer is inserted twice and every
 setting applied twice over. Both install targets refuse to run while the other
@@ -293,6 +471,45 @@ for them. The native install does reach them. Steam expands `%command%` on the
 host, so the launcher only has to be on your `PATH`, and the runtime container
 bind mounts your home directory and imports the host's implicit layers, so the
 manifest and both layer directories under `~/.local` stay visible inside it.
+
+## FEX-Emu / Box64
+
+On an aarch64 host, x86_64 Vulkan games run through FEX-Emu or Box64. There is
+no native aarch64 build here, because every shipping Vulkan game on Linux has an
+x86_64 build and the translated x86_64 path is what people actually use.
+
+Translation layers run the game inside their own root directory: a tree of
+x86_64 binaries and libraries separate from the aarch64 host `/usr`. The layer
+has to be installed into that tree, not the host.
+
+### Flatpak, if your host runs x86_64 binaries transparently
+
+If the kernel routes x86_64 ELFs through FEX-Emu or Box64 via `binfmt_misc`, an
+x86_64 Flatpak runtime behaves like any other runtime and the extension is
+picked up by games running inside it. Flatpak itself does not translate between
+architectures, so set that up first, then:
+
+```
+flatpak install org.freedesktop.Platform//24.08 --arch=x86_64
+make flatpak
+make flatpak-install-user
+```
+
+### Otherwise: install into the translation layer root
+
+```
+make
+make install DESTDIR=/path/to/translation-root
+```
+
+The destination must be a tree where the translated process sees `/usr/` as the
+standard layout. Afterwards the manifest lives at
+`<root>/usr/share/vulkan/implicit_layer.d/VkLayer_volt.json` and the libraries
+under `<root>/usr/lib/…`, and the x86_64 loader inside the translated process
+finds them through the normal paths. With `DESTDIR` set the install needs no
+root and touches nothing on the host, so the two are independent: run
+`make DESTDIR=/path/to/translation-root uninstall` to clear the tree, and
+`make uninstall-user` or `sudo make uninstall` for anything on the host itself.
 
 ## Building Releases
 
@@ -329,7 +546,17 @@ container, not for a full release.
 
 ## Usage
 
-Prepend the launcher to your game command:
+The launcher syntax is:
+
+```
+volt [--probe] [PROFILE] -- COMMAND [ARGS...]
+volt -- COMMAND [ARGS...]      # the default profile, ~/.config/volt-gui/default.toml
+volt --help                    # or -h
+```
+
+Everything before `--` is launcher options: an optional profile name and an
+optional `--probe`. Everything after is the command to run. Prepend it to your
+game command:
 
 ```
 volt -- %command%                # Steam, default profile
@@ -341,23 +568,156 @@ volt -- flatpak run com.example.Game
 The launch command for the selected profile is always shown next to the Apply
 button in volt-gui, ready to copy.
 
+A profile name must be non-empty printable ASCII with no path separator and no
+`..`. Anything else falls back to the default profile with a warning. The
+launcher writes a fully commented profile on first use if the file does not
+exist yet.
+
+`--probe` additionally asks the layer to record what the device supports into
+`probe.toml`, once, when the first swapchain is created. That is what fills the
+option lists, and it is what volt-gui runs behind the scenes:
+
+```
+volt --probe myprofile -- vkgears
+```
+
+To see what actually applied, raise the log level:
+
+```
+VOLT_LOG=info volt -- ./game
+```
+
+Every line is prefixed `[volt]` and goes to stderr.
+
+## Environment Variables
+
+| Variable | Purpose | Values | Default |
+|----------|---------|--------|---------|
+| `VOLT_CONFIG_NAME` | which profile the layer loads. Set by the launcher from the profile argument, and settable by hand. | any profile name (sanitised) | `default` |
+| `VOLT_LOG` | log verbosity, written to stderr | `off`, `error`, `warn`, `info` | `warn` |
+| `VOLT_PROBE` | write `probe.toml` when the first swapchain is created. Set by the launcher from `--probe`. | any non-empty value | *(unset)* |
+| `VOLT_ENABLE` | activates the implicit layer. Set by the launcher on the child process, or by the wrapper inside a Flatpak sandbox. | `1` | *(unset)* |
+| `VOLT_DISABLE` | the loader's own off switch, declared by the manifest | `1` | *(unset)* |
+
+Two more are read but not owned by volt: `HOME` decides where profiles live,
+and falls back to `/tmp` with a warning if it is unset, and `LD_LIBRARY_PATH`
+is extended by the launcher with both `~/.local/lib/volt` directories so a
+rootless install can be found, preserving whatever was already there.
+
+There is no environment override for the settings themselves. A profile file is
+the only way to set them, which is what keeps the panel and the layer describing
+the same thing.
+
+## Files
+
+Everything volt and volt-gui write lives in one directory.
+
+| Path | What it is |
+|------|------------|
+| `~/.config/volt-gui/default.toml` | the default profile |
+| `~/.config/volt-gui/<name>.toml` | named profiles, one per configuration |
+| `~/.config/volt-gui/probe.toml` | what the last probe read from this device |
+| `~/.config/volt-gui/options.toml` | volt-gui's own preferences and the last active profile |
+
+Profiles are plain TOML with one section per tab and one string per setting,
+so they can be written by hand, copied between machines, or kept in a dotfiles
+repository. `probe.toml` is written by the layer and read by the GUI; volt-gui
+watches it and rebuilds the option lists as soon as it changes, which is how a
+freshly probed device fills the panel without a restart. Deleting it costs
+nothing but a re-probe.
+
 ## Flatpak
 
-Flatpak games run sandboxed, so the layer ships as a **Flatpak runtime
-extension** for `org.freedesktop.Platform` 23.08, 24.08 and 25.08. Build with
-`make flatpak`, which writes to `build/bundles/`, then install with
-`make flatpak-install-user`, which needs no root, or `sudo make flatpak-install`
-(or grab the bundles from a release archive). The
-`volt` launcher detects `flatpak run` commands and routes activation through
-the in-sandbox wrapper automatically.
+Flatpak games run sandboxed and cannot see host environment paths, so the layer
+ships as a **Flatpak runtime extension** for `org.freedesktop.Platform` 23.08,
+24.08 and 25.08. The bundle mounts both libraries, the manifest and a small
+wrapper script under `/usr/lib/extensions/vulkan/volt` inside the runtime.
+
+This is a separate, optional install: neither `make` nor the install targets
+produce or touch the bundles. Build them explicitly, then install them:
+
+```
+make flatpak
+make flatpak-install-user     # or: sudo make flatpak-install
+```
+
+`make flatpak` lists both layers and the launcher as prerequisites, so it
+builds whatever is missing on its own. `make setup-user` runs `install-user`
+and `flatpak-install-user` together once the bundles exist.
+
+One bundle is produced per supported runtime:
+
+```
+org.freedesktop.Platform.VulkanLayer.volt-23.08.flatpak
+org.freedesktop.Platform.VulkanLayer.volt-24.08.flatpak
+org.freedesktop.Platform.VulkanLayer.volt-25.08.flatpak
+```
+
+Install the one matching your runtime; run `flatpak list` and look for
+`org.freedesktop.Platform` if you are unsure. Multiple versions can coexist.
+The bundle always carries the 32-bit library too, for Flatpak games that run
+32-bit Vulkan binaries.
+
+```
+flatpak install --user build/bundles/org.freedesktop.Platform.VulkanLayer.volt-24.08.flatpak
+flatpak uninstall --user org.freedesktop.Platform.VulkanLayer.volt
+```
+
+The `volt` launcher detects `flatpak run` commands and routes activation
+through the in-sandbox wrapper automatically:
+
+```
+volt -- flatpak run com.example.Game
+volt -- flatpak run --branch=stable com.example.Game   # flags pass through
+volt myprofile -- flatpak run com.example.Game         # named profile
+```
+
+It rewrites the command to run the wrapper through `--command=` and injects the
+profile name and the probe flag as sandbox environment variables. The wrapper
+sets `VOLT_ENABLE=1`, adds the extension's data, binary and library directories
+so the loader finds the manifest and the matching `.so`, then execs the
+application entry point read from `/app/manifest.json`.
 
 There is no Flatpak build of volt-gui itself, only the layer extension.
 
-## Profiles & Presets
+### Flatpak without the launcher
+
+Everything above prepends `volt` to a `flatpak run` command. You can skip the
+launcher entirely and call the in sandbox wrapper yourself, useful where only
+the extension is installed and there is no `volt` on `$PATH`:
+
+```
+flatpak run --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
+```
+
+Plain `VOLT_*` variables set on the host shell reach the sandbox, so a profile
+or a log level can be prepended the usual way:
+
+```
+VOLT_CONFIG_NAME=myprofile flatpak run --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
+```
+
+The same line works as a Steam **Launch Options** entry for a Flatpak game:
+
+```
+/usr/lib/extensions/vulkan/volt/bin/volt-flatpak %command%
+```
+
+Your home directory is mounted into the sandbox, so `~/.config/volt-gui`
+resolves exactly as it does natively and profiles written in the panel apply
+unchanged.
+
+## Profiles, Presets & Options
+
+### Profiles
 
 Profiles are TOML files in `~/.config/volt-gui/`, one per configuration.
 Create and switch them from the GUI or the system tray; select one at launch
-with `volt <name> -- ...`.
+with `volt <name> -- ...`. Switching profiles saves the one you were on first,
+so nothing is lost on the way out, and restarts the probe so the lists match
+the profile you are now editing.
+
+### Presets
 
 Presets populate the active profile with curated values, from **Quality**
 (trilinear, 16x anisotropy, blended mips, 10 bit colour, classic vsync) down
@@ -371,6 +731,14 @@ and your compositor, so those choices stay yours.
 A preset can name something your hardware does not offer. That setting resets
 to default and volt-gui says which ones, so the rest of the preset still
 lands.
+
+### Options
+
+The **Options** tab holds volt-gui's own preferences rather than anything the
+layer reads: theme, window transparency, interface scale, whether the window
+starts maximised or minimised to tray, the system tray icon, the welcome
+window and the startup update check. They save themselves as you change them
+and take effect when volt-gui is restarted. Only one instance runs at a time.
 
 ## What volt will never do
 
