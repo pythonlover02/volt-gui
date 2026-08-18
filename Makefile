@@ -137,7 +137,7 @@ USER_FILES := \
   $(USER_DESK_DIR)/$(DESKTOP_FILE) \
   $(USER_ICON_DIR)/$(ICON_FILE)
 
-USER_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(USER_STATE)/.installed-%)
+BUILT_ARTIFACTS := $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
 .DELETE_ON_ERROR:
 
@@ -145,7 +145,7 @@ USER_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(USER_STATE)/.installe
         release release-container container-image install flatpak-install \
         install-user flatpak-install-user setup-user uninstall-user \
         uninstall clean help check-root check-sudo-user check-not-root \
-        check-no-user-layer check-no-system-layer
+        check-no-user-layer check-no-system-layer check-built check-bundles
 
 all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
@@ -259,7 +259,14 @@ release-container: $(CONTAINER_STAMP)
 	  -e NUITKA_CACHE_DIR=/src/$(CONTAINER_OUT)/nuitka-cache \
 	  $(CONTAINER_IMAGE) make release OUT=$(CONTAINER_OUT)
 
-install: $(INSTALL_FILES) | $(LAYER_GUARD)
+install: | $(ROOT_GUARD) check-built $(LAYER_GUARD)
+	install -Dm755 $(LAUNCHER)    $(DESTDIR)$(bindir)/volt
+	install -Dm755 $(GUI_BIN)     $(DESTDIR)$(bindir)/volt-gui
+	install -Dm755 $(LAYER_64)    $(DESTDIR)$(LIBDIR_64)/libvolt.so
+	install -Dm755 $(LAYER_32)    $(DESTDIR)$(LIBDIR_32)/libvolt.so
+	install -Dm644 $(MANIFEST)    $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST)
+	install -Dm644 $(DESKTOP)     $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE)
+	install -Dm644 $(ICON_SOURCE) $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || gtk-update-icon-cache -qtf $(datadir)/icons/hicolor 2>/dev/null || true
@@ -271,46 +278,39 @@ install: $(INSTALL_FILES) | $(LAYER_GUARD)
 	@echo "  launcher:  $(DESKTOP_DIR)/$(DESKTOP_FILE)"
 	@echo "  icon:      $(ICON_DIR)/$(ICON_FILE)"
 
-$(DESTDIR)$(bindir)/volt:                  $(LAUNCHER)   | $(ROOT_GUARD) ; install -Dm755 $< $@
-$(DESTDIR)$(bindir)/volt-gui:              $(GUI_BIN)    | $(ROOT_GUARD) ; install -Dm755 $< $@
-$(DESTDIR)$(LIBDIR_64)/libvolt.so:         $(LAYER_64)   | $(ROOT_GUARD) ; install -Dm755 $< $@
-$(DESTDIR)$(LIBDIR_32)/libvolt.so:         $(LAYER_32)   | $(ROOT_GUARD) ; install -Dm755 $< $@
-$(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST):     $(MANIFEST)   | $(ROOT_GUARD) ; install -Dm644 $< $@
-$(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE):  $(DESKTOP)    | $(ROOT_GUARD) ; install -Dm644 $< $@
-$(DESTDIR)$(ICON_DIR)/$(ICON_FILE):        $(ICON_SOURCE) | $(ROOT_GUARD) ; install -Dm644 $< $@
-
-INSTALLED_STAMPS := $(FLATPAK_BUNDLES:$(BUNDLE_DIR)/%.flatpak=$(STATE_DIR)/.installed-%)
-
-flatpak-install: $(INSTALLED_STAMPS)
+flatpak-install: | check-root check-sudo-user check-bundles
+	@for b in $(FLATPAK_BUNDLES); do \
+	  case "$$b" in /*) p="$$b";; *) p="$(CURDIR)/$$b";; esac; \
+	  s="$(STATE_DIR)/.installed-$$(basename "$$b" .flatpak)"; \
+	  if [ ! -e "$$s" ] || [ "$$b" -nt "$$s" ]; then \
+	    su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$$p'" || exit 1; \
+	    mkdir -p "$(STATE_DIR)" && touch "$$s"; \
+	  fi; done
 	@echo "flatpak extensions installed."
 
-$(STATE_DIR)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-root check-sudo-user
-	@mkdir -p $(@D)
-	su - "$$SUDO_USER" -c "$(FLATPAK) install --user -y --reinstall '$(abspath $<)'"
-	@touch $@
-
-install-user: $(USER_FILES) | check-no-system-layer
+install-user: | check-not-root check-built check-no-system-layer
+	install -Dm755 $(LAUNCHER)    $(USER_BIN)/volt
+	install -Dm755 $(GUI_BIN)     $(USER_BIN)/volt-gui
+	install -Dm755 $(LAYER_64)    $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so
+	install -Dm755 $(LAYER_32)    $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so
+	install -Dm644 $(MANIFEST)    $(USER_LAYER_DIR)/$(MANIFEST)
+	install -Dm644 $(DESKTOP)     $(USER_DESK_DIR)/$(DESKTOP_FILE)
+	install -Dm644 $(ICON_SOURCE) $(USER_ICON_DIR)/$(ICON_FILE)
 	@echo "user install complete, no root used."
 	@echo "  bin:       $(USER_BIN)"
 	@echo "  lib:       $(USER_LIB)"
 	@echo "  manifest:  $(USER_LAYER_DIR)"
 	@echo "$(USER_BIN) must be on PATH: volt-gui runs volt to read your hardware."
 
-$(USER_BIN)/volt:                        $(LAUNCHER)    | check-not-root ; install -Dm755 $< $@
-$(USER_BIN)/volt-gui:                    $(GUI_BIN)     | check-not-root ; install -Dm755 $< $@
-$(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so: $(LAYER_64)   | check-not-root ; install -Dm755 $< $@
-$(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so: $(LAYER_32)   | check-not-root ; install -Dm755 $< $@
-$(USER_LAYER_DIR)/$(MANIFEST):           $(MANIFEST)    | check-not-root ; install -Dm644 $< $@
-$(USER_DESK_DIR)/$(DESKTOP_FILE):        $(DESKTOP)     | check-not-root ; install -Dm644 $< $@
-$(USER_ICON_DIR)/$(ICON_FILE):           $(ICON_SOURCE) | check-not-root ; install -Dm644 $< $@
-
-flatpak-install-user: $(USER_STAMPS)
+flatpak-install-user: | check-not-root check-bundles
+	@for b in $(FLATPAK_BUNDLES); do \
+	  case "$$b" in /*) p="$$b";; *) p="$(CURDIR)/$$b";; esac; \
+	  s="$(USER_STATE)/.installed-$$(basename "$$b" .flatpak)"; \
+	  if [ ! -e "$$s" ] || [ "$$b" -nt "$$s" ]; then \
+	    $(FLATPAK) install --user -y --reinstall "$$p" || exit 1; \
+	    mkdir -p "$(USER_STATE)" && touch "$$s"; \
+	  fi; done
 	@echo "flatpak extensions installed for this user."
-
-$(USER_STATE)/.installed-%: $(BUNDLE_DIR)/%.flatpak | check-not-root
-	@mkdir -p $(@D)
-	$(FLATPAK) install --user -y --reinstall "$(abspath $<)"
-	@touch $@
 
 setup-user: install-user flatpak-install-user
 	@echo "ready: launch volt-gui from your menu, or run $(USER_BIN)/volt-gui."
@@ -346,6 +346,24 @@ check-sudo-user:
 check-not-root:
 	@test "$$(id -u)" -ne 0 || { echo "error: this installs into \$$HOME — run as your user, no sudo"; exit 1; }
 
+check-built:
+	@missing=; for f in $(BUILT_ARTIFACTS); do \
+	  test -e "$$f" || missing="$$missing $$f"; done; \
+	test -z "$$missing" || { \
+	  echo "error: build artifacts missing:"; \
+	  for f in $$missing; do echo "  $$f"; done; \
+	  echo "run 'make' as your user first (GUI=$(GUI)), then re-run this target"; \
+	  exit 1; }
+
+check-bundles:
+	@missing=; for b in $(FLATPAK_BUNDLES); do \
+	  test -e "$$b" || missing="$$missing $$b"; done; \
+	test -z "$$missing" || { \
+	  echo "error: flatpak bundles missing:"; \
+	  for b in $$missing; do echo "  $$b"; done; \
+	  echo "run 'make flatpak' as your user first"; \
+	  exit 1; }
+
 check-no-user-layer:
 	@home="$(USER_MANIFEST_HOME)"; \
 	  test -z "$$home" -o ! -e "$$home/.local/share/vulkan/implicit_layer.d/$(MANIFEST)" || { \
@@ -372,6 +390,7 @@ help:
 	@echo "make dist               source + build tree in $(DIST_DIR)/ (GUI=$(GUI))"
 	@echo "make release            full release into $(RELEASES)/ (host toolchain)"
 	@echo "make release-container  the same, built inside $(CONTAINER_BASE)"
+	@echo "install targets never build: run 'make' (and 'make flatpak') as your user first"
 	@echo "sudo make install       install (GUI=$(GUI))"
 	@echo "sudo make flatpak-install"
 	@echo "sudo make uninstall"
