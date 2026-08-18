@@ -23,7 +23,7 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
           gcc-multilib libc6-dev-i386 python3-venv python3-dev \
-          flatpak ostree patchelf
+          flatpak ostree
 
     - name: Get version
       id: get-version
@@ -49,5 +49,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: volt-gui-${{ env.VERSION_NAME }}
-        path: build/dist/volt-gui-${{ env.VERSION }}-pyinstaller
+        path: build/dist/volt-gui-${{ env.VERSION }}
         if-no-files-found: error

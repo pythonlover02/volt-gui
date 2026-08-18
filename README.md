@@ -205,11 +205,10 @@ Everything lands under `build/`; `make clean` is a single `rm -rf`.
 | `make` | 64-bit layer, 32-bit layer, the `volt` launcher, and the GUI |
 | `make layer-64` | `build/target/x86_64-unknown-linux-gnu/release/{libvolt.so,volt}` |
 | `make layer-32` | `build/target/i686-unknown-linux-gnu/release/libvolt.so` |
-| `make gui-pyinstaller` | `build/bin/volt-gui-pyinstaller` |
-| `make gui-nuitka` | `build/bin/volt-gui-nuitka` |
+| `make gui` | `build/bin/volt-gui` |
 | `make flatpak` | `build/bundles/*.flatpak` |
 | `make dist` | the sources with `build/` populated, in `build/dist/` |
-| `make release` | the full release matrix in `releases/`, host toolchain |
+| `make release` | the release archive in `releases/`, host toolchain |
 | `make release-container` | the same, built inside a pinned container image |
 | `sudo make install` | launcher, GUI, both layers and the manifest |
 | `sudo make flatpak-install` | the built extension bundles, for the invoking user |
@@ -237,16 +236,13 @@ Nothing else reads your hardware, so without it every device backed card
 holds nothing but `default` and volt-gui says so on startup. Install your
 distribution's mesa-demos package alongside.
 
-`make` picks PyInstaller for the GUI. For Nuitka, set `GUI` on both halves so
-install picks up the binary you built:
-
-```
-make GUI=nuitka
-sudo make install GUI=nuitka
-```
+The GUI is built with PyInstaller into a single `build/bin/volt-gui`.
 
 Building with `sudo` is refused: the build targets stop with an error rather
-than leaving a root-owned `build/`. Build as your user, install as root.
+than leaving a root-owned `build/`. The install targets are the mirror of
+that — they only copy what is already in `build/`, and stop with an error
+naming what is missing if you have not built it yet. Build as your user,
+install as root.
 
 Packagers can skip root entirely — with `DESTDIR` set, `make install` stages
 into the given prefix without needing it:
@@ -263,6 +259,7 @@ On SteamOS, Bazzite, Silverblue and anything else with a read only `/usr`,
 after every system update. Nothing here needs that:
 
 ```
+make
 make setup-user
 ```
 
@@ -285,7 +282,7 @@ setting applied twice over. Both install targets refuse to run while the other
 one owns the layer, and name the uninstall that clears the way.
 
 The GUI is also one self contained binary, so unpacking a release archive and
-double clicking `build/bin/volt-gui-pyinstaller` opens the editor with nothing
+double clicking `build/bin/volt-gui` opens the editor with nothing
 installed at all. That is enough to write and copy profiles and not enough to
 use them: with no layer on disk there is nothing for the probe to load, so every
 device backed card holds nothing but `default`.
@@ -299,17 +296,16 @@ manifest and both layer directories under `~/.local` stay visible inside it.
 
 ## Building Releases
 
-Both release targets produce the same two files in `releases/`:
+Both release targets produce the same file in `releases/`:
 
 ```
-volt-gui-<version>-pyinstaller.tar.gz
-volt-gui-<version>-nuitka.tar.gz
+volt-gui-<version>.tar.gz
 ```
 
-Each archive is a ready-to-install tree: the compiled layers sit at the paths
+The archive is a ready-to-install tree: the compiled layers sit at the paths
 the Makefile expects, so unpacking and running `sudo make install` installs
 without compiling anything. The sources, the Flatpak bundles and the Makefile
-ride along. The Nuitka archive installs with `sudo make install GUI=nuitka`.
+ride along.
 
 **`make release`** builds against your own toolchain and glibc. Fast, and
 right for a local build, but the binaries inherit your system's glibc floor.

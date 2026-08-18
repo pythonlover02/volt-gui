@@ -5,7 +5,6 @@ datadir ?= $(PREFIX)/share
 
 OUT      ?= build
 RELEASES ?= releases
-GUI      ?= pyinstaller
 
 CARGO   ?= cargo
 RUSTUP  ?= rustup
@@ -54,9 +53,10 @@ BUNDLE_DIR := $(OUT)/bundles
 SHARE_DIR  := $(OUT)/share
 VENV       := $(OUT)/py_env
 
-DIST_DIR   := $(OUT)/dist
-DIST_NAME   = volt-gui-$(VERSION)-$*
-DIST        = $(DIST_DIR)/$(DIST_NAME)
+DIST_DIR  := $(OUT)/dist
+DIST_NAME := volt-gui-$(VERSION)
+DIST      := $(DIST_DIR)/$(DIST_NAME)
+DIST_STAMP := $(OUT)/.dist
 
 CARGO_TARGET_DIR := $(abspath $(TARGET_DIR))
 export CARGO_TARGET_DIR
@@ -64,7 +64,7 @@ export CARGO_TARGET_DIR
 LAYER_64 := $(TARGET_DIR)/$(TRIPLE_64)/release/libvolt.so
 LAYER_32 := $(TARGET_DIR)/$(TRIPLE_32)/release/libvolt.so
 LAUNCHER := $(TARGET_DIR)/$(TRIPLE_64)/release/volt
-GUI_BIN  := $(BIN_DIR)/volt-gui-$(GUI)
+GUI_BIN  := $(BIN_DIR)/volt-gui
 DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
 RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs)
@@ -84,9 +84,7 @@ LIBDIR_32_ARCH   := i386-linux-gnu
 FLATPAK_BUNDLES  := $(foreach rt,$(FLATPAK_RUNTIMES),\
   $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-$(rt).flatpak)
 
-RELEASE_FILES := \
-  $(RELEASES)/volt-gui-$(VERSION)-pyinstaller.tar.gz \
-  $(RELEASES)/volt-gui-$(VERSION)-nuitka.tar.gz
+RELEASE_FILES := $(RELEASES)/volt-gui-$(VERSION).tar.gz
 
 CONTAINER       ?= $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null || echo podman)
 CONTAINER_BASE  ?= rust:1.85.1-bookworm
@@ -141,7 +139,7 @@ BUILT_ARTIFACTS := $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
 .DELETE_ON_ERROR:
 
-.PHONY: all layer-64 layer-32 gui-pyinstaller gui-nuitka desktop flatpak dist \
+.PHONY: all layer-64 layer-32 gui desktop flatpak dist \
         release release-container container-image install flatpak-install \
         install-user flatpak-install-user setup-user uninstall-user \
         uninstall clean help check-root check-sudo-user check-not-root \
@@ -151,15 +149,14 @@ all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
 
 layer-64:        $(LAYER_64) $(LAUNCHER)
 layer-32:        $(LAYER_32)
-gui-pyinstaller: $(BIN_DIR)/volt-gui-pyinstaller
-gui-nuitka:      $(BIN_DIR)/volt-gui-nuitka
+gui:             $(GUI_BIN)
 desktop:         $(DESKTOP)
 flatpak:         $(FLATPAK_BUNDLES)
-dist:            $(OUT)/.dist-$(GUI)
+dist:            $(DIST_STAMP)
 release:         $(RELEASE_FILES)
 container-image: $(CONTAINER_STAMP)
 
-$(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller $(OUT)/nuitka:
+$(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller:
 	@mkdir -p $@
 
 $(LAYER_64) $(LAUNCHER) &: $(RUST_SOURCES)
@@ -179,17 +176,11 @@ $(VENV_STAMP): requirements.txt | $(OUT)
 	$(VENV)/bin/pip install --no-cache-dir -r requirements.txt -q
 	@touch $@
 
-$(BIN_DIR)/volt-gui-pyinstaller: $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/pyinstaller
+$(GUI_BIN): $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/pyinstaller
 	$(NO_SUDO)
 	$(VENV)/bin/pyinstaller --onefile --name=$(@F) -y --log-level WARN \
 	  --distpath $(BIN_DIR) --workpath $(OUT)/pyinstaller --specpath $(OUT)/pyinstaller \
 	  volt-gui/volt-gui.py
-
-$(BIN_DIR)/volt-gui-nuitka: $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/nuitka
-	$(NO_SUDO)
-	$(VENV)/bin/nuitka --onefile --assume-yes-for-downloads --enable-plugin=pyside6 \
-	  --output-dir=$(OUT)/nuitka --output-filename=$(@F) volt-gui/volt-gui.py
-	@cp $(OUT)/nuitka/$(@F) $@
 
 $(DESKTOP): Makefile | $(SHARE_DIR)
 	@printf '%s\n' \
@@ -221,11 +212,11 @@ $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
 	  $(FLATPAK_EXT_ID) "$*" --runtime
 	rm -rf $(OUT)/flatpak.$*
 
-$(OUT)/.dist-%: $(BIN_DIR)/volt-gui-% \
+$(DIST_STAMP): $(GUI_BIN) \
     $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(DESKTOP) $(FLATPAK_BUNDLES) \
     $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(OUT)
 	rm -rf $(DIST)
-	install -Dm755 $< $(DIST)/build/bin/volt-gui-$*
+	install -Dm755 $(GUI_BIN) $(DIST)/build/bin/volt-gui
 	install -Dm755 $(LAYER_64) $(DIST)/build/target/$(TRIPLE_64)/release/libvolt.so
 	install -Dm755 $(LAUNCHER) $(DIST)/build/target/$(TRIPLE_64)/release/volt
 	install -Dm755 $(LAYER_32) $(DIST)/build/target/$(TRIPLE_32)/release/libvolt.so
@@ -244,7 +235,7 @@ $(OUT)/.dist-%: $(BIN_DIR)/volt-gui-% \
 	  $(DIST)/build/bundles/* $(DIST)/build/target/*/release/*
 	@touch $@
 
-$(RELEASES)/volt-gui-$(VERSION)-%.tar.gz: $(OUT)/.dist-% | $(RELEASES)
+$(RELEASES)/volt-gui-$(VERSION).tar.gz: $(DIST_STAMP) | $(RELEASES)
 	$(TAR) -czf $@ -C $(DIST_DIR) $(DIST_NAME)
 
 $(CONTAINER_STAMP): container/Containerfile | $(OUT)
@@ -256,7 +247,6 @@ release-container: $(CONTAINER_STAMP)
 	  --user "$$(id -u):$$(id -g)" \
 	  -e HOME=/tmp \
 	  -e CARGO_HOME=/src/$(CONTAINER_OUT)/cargo \
-	  -e NUITKA_CACHE_DIR=/src/$(CONTAINER_OUT)/nuitka-cache \
 	  $(CONTAINER_IMAGE) make release OUT=$(CONTAINER_OUT)
 
 install: | $(ROOT_GUARD) check-built $(LAYER_GUARD)
@@ -352,7 +342,7 @@ check-built:
 	test -z "$$missing" || { \
 	  echo "error: build artifacts missing:"; \
 	  for f in $$missing; do echo "  $$f"; done; \
-	  echo "run 'make' as your user first (GUI=$(GUI)), then re-run this target"; \
+	  echo "run 'make' as your user first, then re-run this target"; \
 	  exit 1; }
 
 check-bundles:
@@ -380,18 +370,17 @@ check-no-system-layer:
 	  exit 1; }
 
 help:
-	@echo "make                    layer (64 + 32), launcher, gui ($(GUI)), desktop entry"
+	@echo "make                    layer (64 + 32), launcher, gui, desktop entry"
 	@echo "make layer-64           64-bit layer and the volt launcher"
 	@echo "make layer-32           32-bit layer"
-	@echo "make gui-pyinstaller    gui binary via PyInstaller"
-	@echo "make gui-nuitka         gui binary via Nuitka"
+	@echo "make gui                gui binary via PyInstaller"
 	@echo "make desktop            desktop entry only"
 	@echo "make flatpak            flatpak runtime extension bundles"
-	@echo "make dist               source + build tree in $(DIST_DIR)/ (GUI=$(GUI))"
+	@echo "make dist               source + build tree in $(DIST_DIR)/"
 	@echo "make release            full release into $(RELEASES)/ (host toolchain)"
 	@echo "make release-container  the same, built inside $(CONTAINER_BASE)"
 	@echo "install targets never build: run 'make' (and 'make flatpak') as your user first"
-	@echo "sudo make install       install (GUI=$(GUI))"
+	@echo "sudo make install"
 	@echo "sudo make flatpak-install"
 	@echo "sudo make uninstall"
 	@echo "make setup-user         install-user + flatpak-install-user, no root"
