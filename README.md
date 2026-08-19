@@ -676,7 +676,9 @@ It rewrites the command to run the wrapper through `--command=` and injects the
 profile name and the probe flag as sandbox environment variables. The wrapper
 sets `VOLT_ENABLE=1`, adds the extension's data, binary and library directories
 so the loader finds the manifest and the matching `.so`, then execs the
-application entry point read from `/app/manifest.json`.
+application entry point. That entry point is read from `/.flatpak-info`, which
+every sandbox carries, falling back to `/app/manifest.json`. Where neither names
+one the wrapper stops with an error rather than exec'ing nothing.
 
 There is no Flatpak build of volt-gui itself, only the layer extension.
 

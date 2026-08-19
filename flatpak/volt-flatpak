@@ -7,9 +7,20 @@ LIB="${BASE}/lib/x86_64-linux-gnu"
 [ -d "${BASE}/lib/i386-linux-gnu" ] && LIB="${LIB}:${BASE}/lib/i386-linux-gnu"
 export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-if [ $# -eq 0 ] && [ -r /app/manifest.json ]; then
-    APP_CMD=$(sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /app/manifest.json | head -n1)
-    [ -n "$APP_CMD" ] && set -- "$APP_CMD"
+if [ $# -eq 0 ]; then
+    APP_CMD=$(sed -n 's/^command=[[:space:]]*//p' /.flatpak-info 2>/dev/null | head -n1)
+
+    if [ -z "$APP_CMD" ] && [ -r /app/manifest.json ]; then
+        APP_CMD=$(sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /app/manifest.json | head -n1)
+    fi
+
+    if [ -z "$APP_CMD" ]; then
+        echo "volt-flatpak: no application command in /.flatpak-info or /app/manifest.json" >&2
+        echo "volt-flatpak: name the binary yourself, after the application id" >&2
+        exit 1
+    fi
+
+    set -- "$APP_CMD"
 fi
 
 exec "$@"
