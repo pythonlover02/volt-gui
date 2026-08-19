@@ -548,30 +548,6 @@ fn unwrapped_formats(wrapped: Vec<VkSurfaceFormat2>) -> Vec<vk::SurfaceFormatKHR
     wrapped.into_iter().map(|one| one.surface_format).collect()
 }
 
-fn kept_offsets(
-    filled: &[VkSurfaceFormat2],
-    kept_formats: &[vk::SurfaceFormatKHR],
-) -> Vec<usize> {
-    filled
-        .iter()
-        .enumerate()
-        .filter(|(_, one)| kept_formats.contains(&one.surface_format))
-        .map(|(at, _)| at)
-        .collect()
-}
-
-fn call_read_filled(count: *mut u32, out: *mut VkSurfaceFormat2) -> Vec<VkSurfaceFormat2> {
-    (0..unsafe { *count } as usize)
-        .map(|at| unsafe { *out.add(at) })
-        .collect()
-}
-
-fn call_compact_to(out: *mut VkSurfaceFormat2, offsets: &[usize]) {
-    offsets.iter().enumerate().for_each(|(at, from)| unsafe {
-        (*out.add(at)).surface_format = (*out.add(*from)).surface_format
-    });
-}
-
 fn call_query_formats2_all(
     fp: PfnSurfaceFormats2,
     phys: vk::PhysicalDevice,
@@ -594,18 +570,28 @@ fn completed(written: usize, available: usize) -> vk::Result {
     }
 }
 
-fn call_filtered_in_place(
+fn call_write_formats2(
+    asked: u32,
+    kept_formats: &[vk::SurfaceFormatKHR],
+    count: *mut u32,
+    out: *mut VkSurfaceFormat2,
+) -> vk::Result {
+    let written = (asked as usize).min(kept_formats.len());
+    (0..written).for_each(|at| unsafe { (*out.add(at)).surface_format = kept_formats[at] });
+    unsafe { *count = written as u32 };
+    completed(written, kept_formats.len())
+}
+
+fn call_filled_formats2(
     queried: vk::Result,
+    asked: u32,
     kept_formats: &[vk::SurfaceFormatKHR],
     count: *mut u32,
     out: *mut VkSurfaceFormat2,
 ) -> vk::Result {
     match queried {
         vk::Result::SUCCESS | vk::Result::INCOMPLETE => {
-            let offsets = kept_offsets(&call_read_filled(count, out), kept_formats);
-            call_compact_to(out, &offsets);
-            unsafe { *count = offsets.len() as u32 };
-            completed(offsets.len(), kept_formats.len())
+            call_write_formats2(asked, kept_formats, count, out)
         }
         e => e,
     }
@@ -616,11 +602,13 @@ fn call_formats2_into(
     phys: vk::PhysicalDevice,
     info: *const VkPhysicalDeviceSurfaceInfo2,
     kept_formats: &[vk::SurfaceFormatKHR],
+    asked: u32,
     count: *mut u32,
     out: *mut VkSurfaceFormat2,
 ) -> vk::Result {
-    call_filtered_in_place(
+    call_filled_formats2(
         unsafe { fp(phys, info, count, out) },
+        asked,
         kept_formats,
         count,
         out,
@@ -642,7 +630,15 @@ fn call_formats2_answer(
 ) -> vk::Result {
     match out.is_null() {
         true => call_formats2_count(kept_formats, count),
-        false => call_formats2_into(fp, phys, info, kept_formats, count, out),
+        false => call_formats2_into(
+            fp,
+            phys,
+            info,
+            kept_formats,
+            unsafe { *count },
+            count,
+            out,
+        ),
     }
 }
 
