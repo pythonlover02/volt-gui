@@ -190,9 +190,11 @@ down. That clamp is correctness, not a setting.
   that matches none of the three exactly counts as the closest one below it.
 - **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
   independently of the filter choice.
-- **Anisotropic Filtering**: off up to whatever your GPU reports. Needs the
-  `samplerAnisotropy` feature; volt never enables one, so where a game left it
-  off this card holds nothing but `default`. Nearly every game enables it.
+- **Anisotropic Filtering**: off up to whatever your GPU reports. The list is
+  read from the device, so it holds nothing but `default` only where the device
+  itself lacks `samplerAnisotropy`. volt never enables the feature: where the
+  game left it off the setting is ignored and a line is logged. Nearly every
+  game enables it.
 - **LOD Bias**: shift mipmap selection, sharper or blurrier, across the range
   the device allows.
 - **Mip Floor** and **Mip Ceiling**: the lowest and highest mip levels
@@ -201,8 +203,10 @@ down. That clamp is correctness, not a setting.
 
 ### Rendering
 - **Sample Shading**: shade at sample rate inside MSAA targets to reduce
-  shimmer. Needs the `sampleRateShading` feature, which most deferred
-  renderers never enable, so expect this card to be empty more often than not.
+  shimmer. The list is read from the device, so it holds nothing but `default`
+  only where the device itself lacks `sampleRateShading`. volt never enables the
+  feature: most deferred renderers never ask for it, and where the game left it
+  off the setting is ignored and a line is logged.
 - **Alpha To Coverage**: turn fragment alpha into coverage. Softens cutout
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.

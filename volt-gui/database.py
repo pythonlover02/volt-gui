@@ -117,7 +117,7 @@ SETTINGS_DB: Final[dict] = {
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
-            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. This one needs the samplerAnisotropy device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Nearly every game asks for it, so this is rare.",
+            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. This list is read from the device, so it holds nothing but default only where the device itself lacks samplerAnisotropy. volt never enables a feature the game left off: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Nearly every game asks for it.",
             "options": (DEFAULT_VALUE,),
         },
         "lod_bias": {
@@ -143,7 +143,7 @@ SETTINGS_DB: Final[dict] = {
         "sample_shading": {
             "section": "rendering",
             "label": "Sample Shading",
-            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2. This one needs the sampleRateShading device feature, and volt never enables a feature the game left off: where the game did not ask for it the card holds nothing but default and the layer logs a line saying so. Most modern renderers are deferred and never ask, so expect this card to be empty more often than not. Only does something in a game already using MSAA.",
+            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2. This list is read from the device, so it holds nothing but default only where the device itself lacks sampleRateShading. volt never enables a feature the game left off: most modern renderers are deferred and never ask, and where the game did not ask the setting is ignored and the layer logs a line saying so. Only does something in a game already using MSAA.",
             "options": (DEFAULT_VALUE,),
         },
         "alpha_to_coverage": {
