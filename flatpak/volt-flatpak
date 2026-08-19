@@ -1,26 +1,103 @@
 #!/bin/sh
-BASE="/usr/lib/extensions/vulkan/volt"
-export VOLT_ENABLE=1
-export XDG_DATA_DIRS="${BASE}/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
-export PATH="${BASE}/bin${PATH:+:$PATH}"
-LIB="${BASE}/lib/x86_64-linux-gnu"
-[ -d "${BASE}/lib/i386-linux-gnu" ] && LIB="${LIB}:${BASE}/lib/i386-linux-gnu"
-export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-if [ $# -eq 0 ]; then
-    APP_CMD=$(sed -n 's/^command=[[:space:]]*//p' /.flatpak-info 2>/dev/null | head -n1)
+VOLT_BASE="/usr/lib/extensions/vulkan/volt"
+LIB_DIR_64="${VOLT_BASE}/lib/x86_64-linux-gnu"
+LIB_DIR_32="${VOLT_BASE}/lib/i386-linux-gnu"
+FLATPAK_INFO="/.flatpak-info"
+APP_MANIFEST="/app/manifest.json"
+INFO_COMMAND_EXPR='s/^command=[[:space:]]*//p'
+MANIFEST_COMMAND_EXPR='s/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+EXIT_NO_COMMAND=1
 
-    if [ -z "$APP_CMD" ] && [ -r /app/manifest.json ]; then
-        APP_CMD=$(sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /app/manifest.json | head -n1)
-    fi
+classify_dir_status() {
+    case "$1" in
+        0) echo present ;;
+        *) echo absent ;;
+    esac
+}
 
-    if [ -z "$APP_CMD" ]; then
-        echo "volt-flatpak: no application command in /.flatpak-info or /app/manifest.json" >&2
-        echo "volt-flatpak: name the binary yourself, after the application id" >&2
-        exit 1
-    fi
+classify_command() {
+    case "$1" in
+        "") echo missing ;;
+        *) echo found ;;
+    esac
+}
 
-    set -- "$APP_CMD"
-fi
+classify_arguments() {
+    case "$1" in
+        0) echo empty ;;
+        *) echo given ;;
+    esac
+}
 
-exec "$@"
+select_library_path() {
+    case "$1" in
+        present) echo "${LIB_DIR_64}:${LIB_DIR_32}" ;;
+        absent) echo "${LIB_DIR_64}" ;;
+    esac
+}
+
+call_dir_status() {
+    test -d "$1"
+    echo "$?"
+}
+
+call_read_info_command() {
+    sed -n "$INFO_COMMAND_EXPR" "$FLATPAK_INFO" 2>/dev/null | head -n1
+}
+
+call_read_manifest_command() {
+    sed -n "$MANIFEST_COMMAND_EXPR" "$APP_MANIFEST" 2>/dev/null | head -n1
+}
+
+call_export_environment() {
+    VOLT_ENABLE=1
+    XDG_DATA_DIRS="${VOLT_BASE}/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+    PATH="${VOLT_BASE}/bin${PATH:+:$PATH}"
+    LD_LIBRARY_PATH="${1}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export VOLT_ENABLE XDG_DATA_DIRS PATH LD_LIBRARY_PATH
+}
+
+call_exec_rest() {
+    shift
+    exec "$@"
+}
+
+call_exec_command() {
+    exec "$1"
+}
+
+call_report_missing() {
+    echo "volt-flatpak: no application command in ${FLATPAK_INFO} or ${APP_MANIFEST}" >&2
+    echo "volt-flatpak: name the binary yourself, after the application id" >&2
+    exit "$EXIT_NO_COMMAND"
+}
+
+choose_command() {
+    case "$(classify_command "$1")" in
+        found) echo "$1" ;;
+        missing) call_read_manifest_command ;;
+    esac
+}
+
+launch_resolved() {
+    case "$(classify_command "$1")" in
+        found) call_exec_command "$1" ;;
+        missing) call_report_missing ;;
+    esac
+}
+
+run_target() {
+    case "$1" in
+        given) call_exec_rest "$@" ;;
+        empty) launch_resolved "$(choose_command "$(call_read_info_command)")" ;;
+    esac
+}
+
+main() {
+    call_export_environment \
+        "$(select_library_path "$(classify_dir_status "$(call_dir_status "$LIB_DIR_32")")")"
+    run_target "$(classify_arguments "$#")" "$@"
+}
+
+main "$@"
