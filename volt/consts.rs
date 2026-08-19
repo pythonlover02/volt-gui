@@ -3,6 +3,7 @@ pub(crate) const LAYER_DESC: &str = "Driver style Vulkan settings layer for Linu
 
 pub(crate) const ENABLE_VALUE: &str = "1";
 pub(crate) const DEFAULT_PROFILE: &str = "default";
+pub(crate) const RESERVED_PROFILES: [&str; 2] = ["probe", "options"];
 pub(crate) const EXIT_EXEC_FAILED: i32 = 127;
 pub(crate) const EXIT_USAGE: i32 = 1;
 pub(crate) const EXIT_OK: i32 = 0;

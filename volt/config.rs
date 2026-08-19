@@ -14,6 +14,7 @@ use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
 use crate::consts::PacingChoice;
+use crate::consts::RESERVED_PROFILES;
 use crate::consts::SECTION_DISPLAY;
 use crate::consts::SECTION_FRAMERATE;
 use crate::consts::SECTION_GPU;
@@ -220,6 +221,7 @@ fn name_is_valid(raw: &str) -> bool {
         && !raw.contains('\\')
         && !raw.contains("..")
         && !raw.contains('\0')
+        && !RESERVED_PROFILES.contains(&raw)
         && raw.chars().all(|ch| ch.is_ascii_graphic())
 }
 
