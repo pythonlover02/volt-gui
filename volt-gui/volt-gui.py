@@ -48,6 +48,7 @@ from probe import call_probe_stamp
 from profiles import build_config_dir
 from profiles import build_options_path
 from profiles import find_all_profiles
+from profiles import is_reserved_profile_name
 from profiles import process_profile_delete
 from profiles import process_profile_options_rebuild
 from profiles import process_profile_save
@@ -237,7 +238,7 @@ def process_yes_no_dialog(parent_widget, title: str, message: str) -> bool:
 
 
 def is_new_profile_name_valid(profile_name: str) -> bool:
-    match (profile_name.strip() == "", profile_name.strip().lower() == DEFAULT_PROFILE, profile_name.strip() in find_all_profiles(), "/" in profile_name or "\\" in profile_name or ".." in profile_name):
+    match (profile_name.strip() == "", is_reserved_profile_name(profile_name), profile_name.strip() in find_all_profiles(), "/" in profile_name or "\\" in profile_name or ".." in profile_name):
         case (False, False, False, False):
             return True
         case _:

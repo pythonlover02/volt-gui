@@ -9,11 +9,16 @@ from database import DEFAULT_PROFILE
 from database import DEFAULT_VALUE
 from database import find_option_sources
 from database import find_profile_fields
+from probe import PROBE_FILE
 
 SECTION_ORDER: Final[tuple] = ("gpu", "display", "textures", "rendering", "framerate")
 OPTIONS_FILE: Final[str] = "options.toml"
 PROFILE_SUFFIX: Final[str] = ".toml"
 PAIR_SEP: Final[str] = " = "
+RESERVED_STEMS: Final[tuple] = (
+    DEFAULT_PROFILE,
+    OPTIONS_FILE.removesuffix(PROFILE_SUFFIX),
+    PROBE_FILE.removesuffix(PROFILE_SUFFIX))
 
 
 def build_config_dir() -> Path:
@@ -28,12 +33,12 @@ def build_options_path() -> Path:
     return build_config_dir() / OPTIONS_FILE
 
 
+def is_reserved_profile_name(profile_name: str) -> bool:
+    return profile_name.strip().lower() in RESERVED_STEMS
+
+
 def is_profile_file(file_path: Path) -> bool:
-    match file_path.name == OPTIONS_FILE:
-        case True:
-            return False
-        case False:
-            return file_path.stem.lower() != DEFAULT_PROFILE
+    return not is_reserved_profile_name(file_path.stem)
 
 
 def find_all_profiles() -> tuple:
