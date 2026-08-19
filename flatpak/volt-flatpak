@@ -3,10 +3,10 @@
 VOLT_BASE="/usr/lib/extensions/vulkan/volt"
 LIB_DIR_64="${VOLT_BASE}/lib/x86_64-linux-gnu"
 LIB_DIR_32="${VOLT_BASE}/lib/i386-linux-gnu"
-FLATPAK_INFO="/.flatpak-info"
 APP_MANIFEST="/app/manifest.json"
-INFO_COMMAND_EXPR='s/^command=[[:space:]]*//p'
+FLATPAK_INFO="/.flatpak-info"
 MANIFEST_COMMAND_EXPR='s/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+INFO_COMMAND_EXPR='s/^[[:space:]]*command[[:space:]]*=[[:space:]]*//p'
 EXIT_NO_COMMAND=1
 
 classify_dir_status() {
@@ -42,12 +42,12 @@ call_dir_status() {
     echo "$?"
 }
 
-call_read_info_command() {
-    sed -n "$INFO_COMMAND_EXPR" "$FLATPAK_INFO" 2>/dev/null | head -n1
-}
-
 call_read_manifest_command() {
     sed -n "$MANIFEST_COMMAND_EXPR" "$APP_MANIFEST" 2>/dev/null | head -n1
+}
+
+call_read_info_command() {
+    sed -n "$INFO_COMMAND_EXPR" "$FLATPAK_INFO" 2>/dev/null | head -n1
 }
 
 call_export_environment() {
@@ -68,7 +68,7 @@ call_exec_command() {
 }
 
 call_report_missing() {
-    echo "volt-flatpak: no application command in ${FLATPAK_INFO} or ${APP_MANIFEST}" >&2
+    echo "volt-flatpak: no application command in ${APP_MANIFEST} or ${FLATPAK_INFO}" >&2
     echo "volt-flatpak: name the binary yourself, after the application id" >&2
     exit "$EXIT_NO_COMMAND"
 }
@@ -76,7 +76,7 @@ call_report_missing() {
 choose_command() {
     case "$(classify_command "$1")" in
         found) echo "$1" ;;
-        missing) call_read_manifest_command ;;
+        missing) call_read_info_command ;;
     esac
 }
 
@@ -90,7 +90,7 @@ launch_resolved() {
 run_target() {
     case "$1" in
         given) call_exec_rest "$@" ;;
-        empty) launch_resolved "$(choose_command "$(call_read_info_command)")" ;;
+        empty) launch_resolved "$(choose_command "$(call_read_manifest_command)")" ;;
     esac
 }
 
