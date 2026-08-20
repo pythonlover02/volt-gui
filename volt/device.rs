@@ -8,6 +8,8 @@ use std::sync::RwLock;
 use ash::vk;
 use ash::vk::Handle;
 
+use crate::consts::FN_CREATE_SWAPCHAIN;
+use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::FN_PRESENT_RECTANGLES;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SHARED_SWAPCHAINS;
@@ -43,6 +45,8 @@ pub(crate) struct VkDevState {
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
+    pub(crate) swapchain_held: bool,
+    pub(crate) queue2_held: bool,
     pub(crate) caps: DeviceCaps,
     pub(crate) instance_handle: u64,
 }
@@ -221,6 +225,14 @@ fn call_typed_device_fp<T>(
     call_next_gdpa(gdpa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
+fn call_resolved(
+    gdpa: vk::PFN_vkGetDeviceProcAddr,
+    handle: vk::Device,
+    name: &str,
+) -> bool {
+    call_next_gdpa(gdpa, handle, name).is_some()
+}
+
 fn call_loader_data(fp: PfnSetDeviceLoaderData, handle: vk::Device, queue: vk::Queue) {
     let _ = unsafe { fp(handle, queue.as_raw() as usize as *mut c_void) };
 }
@@ -319,6 +331,8 @@ fn register_device(
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
             alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
+            swapchain_held: call_resolved(gdpa, handle, FN_CREATE_SWAPCHAIN),
+            queue2_held: call_resolved(gdpa, handle, FN_DEVICE_QUEUE_2),
             caps,
             instance_handle: inst_handle,
         },

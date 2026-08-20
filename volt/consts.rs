@@ -113,6 +113,11 @@ pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS
 
 pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
 
+pub(crate) const FN_CREATE_SWAPCHAIN: &str = "vkCreateSwapchainKHR";
+pub(crate) const FN_DESTROY_SWAPCHAIN: &str = "vkDestroySwapchainKHR";
+pub(crate) const FN_QUEUE_PRESENT: &str = "vkQueuePresentKHR";
+pub(crate) const FN_DEVICE_QUEUE_2: &str = "vkGetDeviceQueue2";
+
 pub(crate) const FN_SURFACE_CAPS_2: &str = "vkGetPhysicalDeviceSurfaceCapabilities2KHR";
 pub(crate) const FN_SURFACE_FORMATS_2: &str = "vkGetPhysicalDeviceSurfaceFormats2KHR";
 pub(crate) const FN_SURFACE_MODES_2: &str = "vkGetPhysicalDeviceSurfacePresentModes2EXT";

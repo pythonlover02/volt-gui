@@ -10,8 +10,12 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::FN_CREATE_SWAPCHAIN;
+use crate::consts::FN_DESTROY_SWAPCHAIN;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
+use crate::consts::FN_DEVICE_QUEUE_2;
+use crate::consts::FN_QUEUE_PRESENT;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_SURFACE_CAPS_2;
@@ -117,10 +121,10 @@ fn device_symbol(name: &str) -> Option<*mut c_void> {
         "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
         "vkDestroyCommandPool" => Some(vkDestroyCommandPool as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
-        "vkGetDeviceQueue2" => Some(volt_GetDeviceQueue2 as *mut c_void),
-        "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
-        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
-        "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
+        FN_DEVICE_QUEUE_2 => Some(volt_GetDeviceQueue2 as *mut c_void),
+        FN_CREATE_SWAPCHAIN => Some(vkCreateSwapchainKHR as *mut c_void),
+        FN_DESTROY_SWAPCHAIN => Some(vkDestroySwapchainKHR as *mut c_void),
+        FN_QUEUE_PRESENT => Some(vkQueuePresentKHR as *mut c_void),
         _ => None,
     }
 }
@@ -171,6 +175,20 @@ fn device_fp_present(dev: vk::Device, name: &str) -> bool {
 
 fn device_hooked_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
     device_extension_hook(name).filter(|_| device_fp_present(dev, name))
+}
+
+fn device_gate(dev: vk::Device, name: &str) -> bool {
+    match (devs_get(dev.as_raw()), name) {
+        (Some(d), FN_CREATE_SWAPCHAIN) => d.swapchain_held,
+        (Some(d), FN_DESTROY_SWAPCHAIN) => d.swapchain_held,
+        (Some(d), FN_QUEUE_PRESENT) => d.swapchain_held,
+        (Some(d), FN_DEVICE_QUEUE_2) => d.queue2_held,
+        (_, _) => true,
+    }
+}
+
+fn device_gated_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
+    device_symbol(name).filter(|_| device_gate(dev, name))
 }
 
 fn null_ok_ptr(name: &str) -> *mut c_void {
@@ -343,7 +361,7 @@ unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const
 
 unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_char) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
-    match (device_symbol(n), device_hooked_symbol(dev, n)) {
+    match (device_gated_symbol(dev, n), device_hooked_symbol(dev, n)) {
         (Some(p), _) => mem::transmute(p),
         (None, Some(p)) => mem::transmute(p),
         (None, None) => forward_device_proc(dev, n),
