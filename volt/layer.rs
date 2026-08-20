@@ -92,28 +92,35 @@ fn null_ok_name(name: &str) -> bool {
     NULL_OK.contains(&name)
 }
 
-fn vk_hooked_symbol(name: &str) -> Option<*mut c_void> {
+fn instance_symbol(name: &str) -> Option<*mut c_void> {
     match name {
         "vkGetInstanceProcAddr" => Some(vkGetInstanceProcAddr as *mut c_void),
         "vkGetDeviceProcAddr" => Some(vkGetDeviceProcAddr as *mut c_void),
         "vkCreateInstance" => Some(vkCreateInstance as *mut c_void),
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
-        "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
+        "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
+        _ => None,
+    }
+}
+
+fn device_symbol(name: &str) -> Option<*mut c_void> {
+    match name {
+        "vkGetDeviceProcAddr" => Some(vkGetDeviceProcAddr as *mut c_void),
+        "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkAllocateCommandBuffers" => Some(vkAllocateCommandBuffers as *mut c_void),
         "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
         "vkDestroyCommandPool" => Some(vkDestroyCommandPool as *mut c_void),
-        "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
-        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
-        "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
-        "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
-        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
-        "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
         "vkGetDeviceQueue2" => Some(volt_GetDeviceQueue2 as *mut c_void),
+        "vkCreateSwapchainKHR" => Some(vkCreateSwapchainKHR as *mut c_void),
+        "vkDestroySwapchainKHR" => Some(vkDestroySwapchainKHR as *mut c_void),
+        "vkQueuePresentKHR" => Some(vkQueuePresentKHR as *mut c_void),
         _ => None,
     }
 }
@@ -195,10 +202,15 @@ fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
 }
 
 fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
-    match (vk_hooked_symbol(name), instance_hooked_symbol(inst, name)) {
-        (Some(p), _) => unsafe { mem::transmute(p) },
-        (None, Some(p)) => unsafe { mem::transmute(p) },
-        (None, None) => forward_instance_proc(inst, name),
+    match (
+        instance_symbol(name),
+        device_symbol(name),
+        instance_hooked_symbol(inst, name),
+    ) {
+        (Some(p), _, _) => unsafe { mem::transmute(p) },
+        (None, Some(p), _) => unsafe { mem::transmute(p) },
+        (None, None, Some(p)) => unsafe { mem::transmute(p) },
+        (None, None, None) => forward_instance_proc(inst, name),
     }
 }
 
@@ -331,7 +343,7 @@ unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const
 
 unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_char) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
-    match (vk_hooked_symbol(n), device_hooked_symbol(dev, n)) {
+    match (device_symbol(n), device_hooked_symbol(dev, n)) {
         (Some(p), _) => mem::transmute(p),
         (None, Some(p)) => mem::transmute(p),
         (None, None) => forward_device_proc(dev, n),
