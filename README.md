@@ -19,7 +19,7 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 
 ### At a glance
 
-- **19 settings across 5 tabs**: GPU selection, display and swapchain, texture
+- **20 settings across 5 tabs**: GPU selection, display and swapchain, texture
   sampling, rendering toggles, and volt's own frame limiter.
 - **Core Vulkan 1.0 only.** The layer asks for nothing beyond `VK_KHR_swapchain`,
   so behaviour never splits between drivers.
@@ -106,7 +106,7 @@ range, no ordering, and nothing to get backwards.
 | Display | `[display]` | 7 | present mode, image count, colour depth, colour space, transfer function, compositing, clipping |
 | Textures | `[textures]` | 6 | filtering, mip behaviour, anisotropy, LOD bias and range |
 | Rendering | `[rendering]` | 2 | sample shading, alpha to coverage |
-| Framerate | `[framerate]` | 3 | frame limit, method, pacing |
+| Framerate | `[framerate]` | 4 | frame limit, offset, method, pacing |
 
 The values each setting offers come from your own hardware, not from a list
 built into volt-gui. Present modes, colour depths, colour spaces, transfer
@@ -114,7 +114,7 @@ functions and alpha modes come from what the surface reports, the GPU list
 from what the driver enumerates, and mip levels and LOD bias run up to the
 limits the device gives. A setting whose feature the device lacks holds
 nothing but `default`, and so does every device backed setting until the
-probe has run: volt-gui offers no option it has not read. Only the three
+probe has run: volt-gui offers no option it has not read. Only the four
 **Framerate** settings have a fixed list, since they are volt's own.
 
 Settings are read once, when the game starts, and never change while it
@@ -217,6 +217,12 @@ down. That clamp is correctness, not a setting.
   last present, unless the method is reactive, so scheduler jitter does not
   build up into a drift below the rate you asked for. The timeline is kept per
   swapchain and dropped when that swapchain is destroyed.
+- **Frame Limit Offset**: shift the cap a few frames up or down, -10 to 10
+  in steps of two, no shift by default. VRR displays want the cap sitting
+  just under refresh: pick 144, set the offset to -6, and you land on 138.
+  volt does not read your refresh rate and never shifts a cap by itself,
+  since most displays are not VRR. Only does something when Frame Limit is
+  set.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
   game starts its next frame later and samples input closer to display time;
