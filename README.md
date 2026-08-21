@@ -414,6 +414,22 @@ as your own user if you want those gone too.
 `make uninstall-user` does the same for `~/.local`, including the Flatpak
 extension and `~/.config/volt-gui`.
 
+Neither target touches a volt-gui 1.x install. 1.x lived in `/usr/local/bin`,
+2.0 lives in `/usr/bin`, and the desktop entry is the only file they share.
+Remove 1.x with `make remove` from a v1.4.1 checkout, or by hand:
+
+```
+sudo rm -f /usr/local/bin/volt /usr/local/bin/volt-gui /usr/local/bin/volt-helper
+sudo rm -f /usr/share/applications/volt-gui.desktop
+sudo update-desktop-database /usr/share/applications
+```
+
+Do it before installing 2.0, not after. `/usr/local/bin` comes before
+`/usr/bin` on most distributions, so a leftover 1.x `volt` shadows the 2.0
+launcher. It never sets `VOLT_ENABLE`, the layer stays inactive, and every
+setting silently does nothing. If 2.0 looks like it has no effect, run
+`which volt` first.
+
 ### Cleaning build artifacts
 
 ```
