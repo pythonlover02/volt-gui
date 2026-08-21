@@ -1,16 +1,13 @@
 import configparser
-import json
 import os
 import signal
 import socket
 import sys
-import urllib.request
 
 from typing import Final
 
 from PySide6.QtCore import QProcess
 from PySide6.QtCore import Qt
-from PySide6.QtCore import QThread
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction
 from PySide6.QtGui import QIcon
@@ -63,8 +60,6 @@ from ui import build_sidebar_container_widget
 from ui import get_header_vertical_margin
 from welcome import create_welcome_window_widget
 
-UPDATE_URL: Final[str] = "https://api.github.com/repos/pythonlover02/volt-gui/releases/latest"
-UPDATE_TIMEOUT_S: Final[int] = 5
 SINGLETON_PORT: Final[int] = 47832
 OPTIONS_SAVE_DEBOUNCE_MS: Final[int] = 500
 NEW_PROFILE_LABEL: Final[str] = "New Profile..."
@@ -479,7 +474,6 @@ def process_options_application(main_window) -> None:
     main_window.start_minimized = is_option_enabled(main_window, "start_window_minimized")
     main_window.start_maximized = is_option_enabled(main_window, "start_window_maximized")
     main_window.show_welcome = is_option_enabled(main_window, "welcome_message_display")
-    main_window.check_updates = is_option_enabled(main_window, "automatic_update_check")
     return None
 
 
@@ -687,33 +681,6 @@ def process_welcome_show(main_window) -> None:
     return None
 
 
-def call_fetch_latest_tag() -> str:
-    try:
-        with urllib.request.urlopen(UPDATE_URL, timeout=UPDATE_TIMEOUT_S) as response:
-            payload = json.loads(response.read().decode())
-            return str(payload.get("tag_name", "")).lstrip("v")
-    except (urllib.error.URLError, ValueError, OSError):
-        return ""
-
-
-def process_updates_check_worker(main_window, worker_thread) -> None:
-    latest_tag = call_fetch_latest_tag()
-    match latest_tag not in ("", APP_VERSION):
-        case True:
-            QTimer.singleShot(0, main_window, lambda bound_tag=latest_tag: process_notification_display(main_window, "New version available: " + bound_tag, False))
-        case False:
-            pass
-    worker_thread.quit()
-    return None
-
-
-def process_updates_check_async(main_window) -> None:
-    worker_thread = QThread(main_window)
-    worker_thread.started.connect(lambda: process_updates_check_worker(main_window, worker_thread))
-    worker_thread.finished.connect(worker_thread.deleteLater)
-    worker_thread.start()
-    return None
-
 
 def validate_singleton_instance(singleton_port: int) -> dict:
     lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -760,7 +727,6 @@ def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict,
 def create_main_window_widget(singleton_socket):
     window = QMainWindow()
     window.singleton_socket = singleton_socket
-    window.check_updates = False
     window.start_maximized = False
     window.start_minimized = False
     window.show_welcome = True
@@ -853,11 +819,6 @@ def create_main_window_widget(singleton_socket):
     match window.show_welcome:
         case True:
             QTimer.singleShot(100, lambda: process_welcome_show(window))
-        case False:
-            pass
-    match window.check_updates:
-        case True:
-            QTimer.singleShot(200, lambda: process_updates_check_async(window))
         case False:
             pass
     match window.start_minimized and window.use_system_tray:

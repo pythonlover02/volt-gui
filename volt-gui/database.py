@@ -198,12 +198,7 @@ OPTIONS_DB: Final[dict] = {
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "on",
     },
-    "automatic_update_check": {
-        "label": "Automatic Update Check",
-        "description": "Check for updates on startup. default is off. Takes effect on program restart.",
-        "options": (DEFAULT_VALUE, "on", "off"),
-        "fallback": "off",
-    },
+
 }
 
 
