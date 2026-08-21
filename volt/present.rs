@@ -9,6 +9,8 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::Settings;
+use crate::consts::FRAME_LIMIT_MIN;
+use crate::consts::FRAME_LIMIT_OFFSET_NONE;
 use crate::consts::LimitStage;
 use crate::consts::MethodChoice;
 use crate::consts::NS_PER_S;
@@ -17,6 +19,7 @@ use crate::consts::SLICE_MARGIN_NS;
 use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
+use crate::lists::forced;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Timeline {
@@ -184,8 +187,14 @@ fn stage_wanted(method: Option<MethodChoice>) -> LimitStage {
     }
 }
 
+pub(crate) fn shifted_fps(fps: f32, offset: Option<f32>) -> f32 {
+    (fps + forced(offset, FRAME_LIMIT_OFFSET_NONE)).max(FRAME_LIMIT_MIN)
+}
+
 fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
-    s.frame_limit.filter(|_| stage_wanted(s.limit_method) == stage)
+    s.frame_limit
+        .filter(|_| stage_wanted(s.limit_method) == stage)
+        .map(|fps| shifted_fps(fps, s.frame_limit_offset))
 }
 
 pub(crate) fn maybe_limit_frame(

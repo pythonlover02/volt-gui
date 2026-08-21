@@ -1,9 +1,11 @@
 use crate::config::parse_settings;
+use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
 use crate::present::advanced;
+use crate::present::shifted_fps;
 use crate::present::target_interval_ns;
 use crate::present::Timeline;
 use crate::ranks::alpha_display;
@@ -49,6 +51,11 @@ const OTHER_INTERVAL_NS: u64 = 2_000;
 const LATE_NS: u64 = 100;
 const TWO_HUNDRED_FPS: f32 = 200.0;
 const TWO_HUNDRED_FPS_NS: u64 = 5_000_000;
+const OFFSET_DOWN: f32 = -6.0;
+const OFFSET_MIN: f32 = -10.0;
+const REFRESH_FPS: f32 = 144.0;
+const UNDER_REFRESH_FPS: f32 = 138.0;
+const OFFSET_PROFILE: &str = "[framerate]\nframe_limit_offset = \"-6\"\n";
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
@@ -211,4 +218,20 @@ fn restarts_the_timeline_when_the_frame_limit_changes() {
             interval: OTHER_INTERVAL_NS,
         }
     );
+}
+
+#[test]
+fn shifts_the_frame_limit_by_the_offset() {
+    assert_eq!(shifted_fps(REFRESH_FPS, Some(OFFSET_DOWN)), UNDER_REFRESH_FPS);
+    assert_eq!(shifted_fps(REFRESH_FPS, None), REFRESH_FPS);
+}
+
+#[test]
+fn never_shifts_a_cap_below_one_frame_a_second() {
+    assert_eq!(shifted_fps(FRAME_LIMIT_MIN, Some(OFFSET_MIN)), FRAME_LIMIT_MIN);
+}
+
+#[test]
+fn reads_a_frame_limit_offset_from_a_profile() {
+    assert_eq!(parse_settings(OFFSET_PROFILE).frame_limit_offset, Some(OFFSET_DOWN));
 }

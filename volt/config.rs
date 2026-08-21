@@ -8,6 +8,7 @@ use crate::consts::FILTER_BILINEAR;
 use crate::consts::FILTER_RETRO;
 use crate::consts::FILTER_TRILINEAR;
 use crate::consts::FRAME_LIMIT_MIN;
+use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
 use crate::consts::HOME_UNSET_WARN;
 use crate::consts::MethodChoice;
@@ -56,6 +57,7 @@ pub(crate) struct Settings {
     pub(crate) sample_shading: Option<f32>,
     pub(crate) alpha_coverage: Option<u32>,
     pub(crate) frame_limit: Option<f32>,
+    pub(crate) frame_limit_offset: Option<f32>,
     pub(crate) limit_method: Option<MethodChoice>,
     pub(crate) pacing: Option<PacingChoice>,
 }
@@ -126,6 +128,10 @@ fn parse_shading(text: &str) -> Option<f32> {
 
 fn parse_limit(text: &str) -> Option<f32> {
     parse_float(text).filter(|v| *v >= FRAME_LIMIT_MIN)
+}
+
+fn parse_offset(text: &str) -> Option<f32> {
+    parse_float(text).filter(|v| v.abs() <= FRAME_LIMIT_OFFSET_MAX)
 }
 
 fn parse_gpu(text: &str) -> Option<u32> {
@@ -210,6 +216,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
         alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
+        frame_limit_offset: field(&doc, SECTION_FRAMERATE, "frame_limit_offset", parse_offset),
         limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
         pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
     }

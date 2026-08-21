@@ -48,6 +48,8 @@ pub(crate) const SPIN_MARGIN_NS: u64 = 500_000;
 pub(crate) const SLICE_MARGIN_NS: u64 = 150_000;
 pub(crate) const SLICE_STEP_NS: u64 = 1_000_000;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
+pub(crate) const FRAME_LIMIT_OFFSET_NONE: f32 = 0.0;
+pub(crate) const FRAME_LIMIT_OFFSET_MAX: f32 = 10.0;
 pub(crate) const ANISO_OFF: f32 = 1.0;
 pub(crate) const SHADING_OFF: f32 = 0.0;
 pub(crate) const SHADING_MAX: f32 = 1.0;
@@ -197,6 +199,7 @@ alpha_to_coverage = "default"
 
 [framerate]
 frame_limit = "default"
+frame_limit_offset = "default"
 frame_limit_method = "default"
 frame_pacing = "default"
 "#;
