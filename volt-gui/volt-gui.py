@@ -77,6 +77,9 @@ PREVIEW_TARGET: Final[str] = "vkgears"
 PREVIEW_POLL_MS: Final[int] = 750
 PREVIEW_START_MS: Final[int] = 300
 PREVIEW_STOP_MS: Final[int] = 1500
+BUNDLE_ATTR: Final[str] = "_MEIPASS"
+BUNDLE_VARS: Final[tuple] = ("LD_LIBRARY_PATH", "LD_PRELOAD")
+PATH_VAR: Final[str] = "PATH"
 PROBE_FAILED_ERROR: Final[str] = "Could not probe this device.\n\nThe vkgears window failed to run, so volt-gui has nothing to read your hardware with. Every setting fed by the device holds nothing but default until it does, because volt-gui offers no option it has not read.\n\nInstall mesa-demos, which provides vkgears, then restart volt-gui."
 
 
@@ -121,6 +124,45 @@ def resolve_scale_factor(raw: str) -> str:
 
 def get_persisted_option_resolved(option_key: str) -> str:
     return resolve_option_value(option_key, get_persisted_option_value(option_key))
+
+
+def get_bundle_dir() -> str:
+    return getattr(sys, BUNDLE_ATTR, "")
+
+
+def _outside_bundle(entry: str, bundle: str) -> bool:
+    return bundle not in entry
+
+
+def _cleaned_path(value: str, bundle: str) -> str:
+    return os.pathsep.join(
+        entry for entry in value.split(os.pathsep) if _outside_bundle(entry, bundle))
+
+
+def call_drop_bundle_vars() -> None:
+    for name in BUNDLE_VARS:
+        os.environ.pop(name, None)
+    return None
+
+
+def call_clean_path(bundle: str) -> None:
+    os.environ[PATH_VAR] = _cleaned_path(os.environ.get(PATH_VAR, ""), bundle)
+    return None
+
+
+def call_unbundle_environment(bundle: str) -> None:
+    call_drop_bundle_vars()
+    call_clean_path(bundle)
+    return None
+
+
+def call_clean_environment() -> None:
+    match get_bundle_dir():
+        case "":
+            return None
+        case bundle:
+            call_unbundle_environment(bundle)
+            return None
 
 
 def calculate_initial_scale() -> None:
@@ -846,6 +888,7 @@ def main() -> None:
         case False:
             pass
     os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.theme.gnome=false")
+    call_clean_environment()
     calculate_initial_scale()
     application = QApplication(sys.argv)
     application.setStyle("Fusion")
