@@ -16,7 +16,7 @@ from probe import space_options
 from probe import transfer_options
 
 
-APP_VERSION: Final[str] = "2.0.0"
+APP_VERSION: Final[str] = "2.0.1"
 APP_AUTHOR: Final[str] = "pythonlover02"
 APP_LICENSE: Final[str] = "GPL 3.0 License"
 APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alternative"
