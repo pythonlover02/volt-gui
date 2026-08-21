@@ -40,10 +40,11 @@ def get_welcome_settings() -> dict:
             "Where the Lists Come From": (
                 ("text", "Most of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, colour depths, colour spaces, transfer functions and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default, and so does every device backed card until the probe has run: volt-gui offers no option it has not read."),
                 ("text", "That means a mode or a format volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
-                ("text", "The three Framerate settings are the exception. A game never tells Vulkan what frame rate it wants, so there is nothing to read from the device and their lists are volt's own."),
+                ("text", "The four Framerate settings are the exception. A game never tells Vulkan what frame rate it wants, so there is nothing to read from the device and their lists are volt's own."),
             ),
             "The Frame Limiter": (
-                ("text", "Frame Limit caps the rate at present time. Method sets when the limiter waits and Pacing sets how, and neither does anything until Limit is set."),
+                ("text", "Frame Limit caps the rate at present time. Offset shifts that cap, Method sets when the limiter waits, Pacing sets how, and none of the three does anything until Limit is set."),
+                ("text", "Offset is there for variable refresh displays, which want the cap sitting just under refresh. Pick 144, set the offset to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR."),
                 ("text", "Pacing runs from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and rechecks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole interval, the steadiest of the four and the only one that keeps a core awake."),
             ),
             "Settings That Hide a List": (
