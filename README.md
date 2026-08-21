@@ -300,6 +300,22 @@ Native aarch64 builds are not provided. See
 
 ## Installation
 
+### Arch Linux (AUR)
+
+There is an unofficial package on the AUR,
+[volt-gui](https://aur.archlinux.org/packages/volt-gui). I do not maintain it,
+but the packager has been in touch and has been good to deal with, so I have no
+reason to steer anyone away from it.
+
+Read the `PKGBUILD` before you build it. Not because of the packager, but
+because the AUR lets anyone submit anything, so the build script is whatever
+the submitter wrote, every time.
+
+Building from source, or using the release archives, is what this repository
+supports directly.
+
+### From source
+
 Every build target is a file, so make only rebuilds what actually changed.
 Everything lands under `build/`; `make clean` is a single `rm -rf`.
 
