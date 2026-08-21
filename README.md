@@ -742,8 +742,8 @@ lands.
 
 The **Options** tab holds volt-gui's own preferences rather than anything the
 layer reads: theme, window transparency, interface scale, whether the window
-starts maximised or minimised to tray, the system tray icon, the welcome
-window and the startup update check. They save themselves as you change them
+starts maximised or minimised to tray, the system tray icon, and the welcome
+window. They save themselves as you change them
 and take effect when volt-gui is restarted. Only one instance runs at a time.
 
 ## What volt will never do
