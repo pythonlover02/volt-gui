@@ -793,7 +793,7 @@ requires injecting shaders or processing the image is out of scope:
 - Forced MSAA or SSAA. Render passes and sample counts belong to the game.
 - Overlays and HUDs. Use MangoHud for that.
 - Overclocking, fan curves, power limits. That is sysfs territory, not the
-  Vulkan API. Use CoreCtrl for that.
+  Vulkan API. Use LACT for that, or CoreCtrl if you also want CPU controls.
 - OpenGL. The per driver environment variable maze that OpenGL support
   requires is exactly what this rewrite retired.
 - Enable a Vulkan device feature or extension the game did not request. Where

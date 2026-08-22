@@ -26,7 +26,7 @@ def get_welcome_settings() -> dict:
                 ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again. The preview window restarts on Apply so the lists here stay in step."),
             ),
             "What it Will Not Do": (
-                ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and CoreCtrl for clocks and fan curves."),
+                ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and LACT for clocks and fan curves, or CoreCtrl if you also want CPU controls."),
                 ("text", "It also never turns anything on that the game left off. volt enables no device feature and no extension. Where a setting needs a feature, volt reads what the game asked for and applies the setting only if the game enabled it: that is how Anisotropic Filtering and Sample Shading work, and where the game left the feature clear the setting is ignored and a line is logged. A setting that cannot be reached that way at all stays out, which keeps wireframe, line width, depth clamp, alpha to one and cubic filtering off the table. Where a game moves state onto an extension path, volt follows it there: a hook for an extension the game never enabled is simply unreachable."),
             )
         },
