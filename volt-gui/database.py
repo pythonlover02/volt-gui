@@ -3,7 +3,6 @@ from typing import Final
 from probe import alpha_options
 from probe import aniso_options
 from probe import call_read_probe
-from probe import depth_options
 from probe import frametime_pairs
 from probe import gpu_options
 from probe import image_count_options
@@ -12,8 +11,6 @@ from probe import mip_options
 from probe import plain_pairs
 from probe import present_options
 from probe import shading_options
-from probe import space_options
-from probe import transfer_options
 
 
 APP_VERSION: Final[str] = "2.0.2"
@@ -48,24 +45,6 @@ SETTINGS_DB: Final[dict] = {
             "section": "display",
             "label": "Swapchain Images",
             "description": "How many images the swapchain holds. This is the frames in flight control, and the closest thing here to an anti-lag setting: more images let the game run further ahead of the GPU, which smooths frame delivery and costs input lag, while fewer hold it closer to the display. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
-            "options": (DEFAULT_VALUE,),
-        },
-        "color_depth": {
-            "section": "display",
-            "label": "Color Depth",
-            "description": "Bits per colour channel, grouped out of the surface formats this surface offers. The layer hides every other format, so a game that takes the first supported one ends up with yours. If nothing matches, the full list comes back and a warning is logged.",
-            "options": (DEFAULT_VALUE,),
-        },
-        "color_space": {
-            "section": "display",
-            "label": "Color Space",
-            "description": "Which color space the game is allowed to see, filtered out of the same surface format list as Color Depth. Everything past srgb_nonlinear comes from a swapchain colorspace extension and only appears when the stack around the game enabled it, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope, so on most setups this card holds one entry. A space volt has no name for still appears and still applies.",
-            "options": (DEFAULT_VALUE,),
-        },
-        "transfer_function": {
-            "section": "display",
-            "label": "Transfer Function",
-            "description": "Whether the game is shown srgb surface formats, plain unorm ones, or float ones, filtered out of the same list again. srgb formats have the encoding curve applied by the display hardware, unorm formats leave it to whatever the game does in its own shaders. Getting this wrong looks washed out or crushed rather than broken, so set it back to default if the image looks wrong. No preset touches it.",
             "options": (DEFAULT_VALUE,),
         },
         "composite_alpha": {
@@ -224,9 +203,6 @@ OPTION_BUILDERS: Final[dict] = {
     "device": gpu_options,
     "present_mode": present_options,
     "image_count": image_count_options,
-    "color_depth": depth_options,
-    "color_space": space_options,
-    "transfer_function": transfer_options,
     "composite_alpha": alpha_options,
     "anisotropy": aniso_options,
     "lod_bias": lod_bias_options,

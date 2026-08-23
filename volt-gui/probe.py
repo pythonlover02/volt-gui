@@ -105,18 +105,6 @@ def present_options(data: dict) -> tuple:
     return plain_pairs(probe_list(data, "present_modes"))
 
 
-def depth_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "color_depths"))
-
-
-def space_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "color_spaces"))
-
-
-def transfer_options(data: dict) -> tuple:
-    return plain_pairs(probe_list(data, "transfer_functions"))
-
-
 def alpha_options(data: dict) -> tuple:
     return plain_pairs(probe_list(data, "composite_alphas"))
 

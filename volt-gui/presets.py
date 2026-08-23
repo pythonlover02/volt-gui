@@ -13,7 +13,6 @@ PRESET_OVERRIDES: Final[dict] = {
     "Quality": {
         "Display:present_mode": "fifo",
         "Display:image_count": "4",
-        "Display:color_depth": "10bit",
         "Framerate:frame_limit_method": "early",
         "Framerate:frame_pacing": "precise",
         "Textures:filtering": "trilinear",
@@ -35,7 +34,6 @@ PRESET_OVERRIDES: Final[dict] = {
     "Performance FPS": {
         "Display:present_mode": "mailbox",
         "Display:image_count": "4",
-        "Display:color_depth": "8bit",
         "Framerate:frame_limit_method": "early",
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
@@ -46,7 +44,6 @@ PRESET_OVERRIDES: Final[dict] = {
     "Performance Low Latency": {
         "Display:present_mode": "immediate",
         "Display:image_count": "2",
-        "Display:color_depth": "8bit",
         "Framerate:frame_limit_method": "late",
         "Framerate:frame_pacing": "spin",
         "Textures:filtering": "bilinear",
@@ -57,7 +54,6 @@ PRESET_OVERRIDES: Final[dict] = {
     "Potato FPS": {
         "Display:present_mode": "mailbox",
         "Display:image_count": "4",
-        "Display:color_depth": "8bit",
         "Framerate:frame_limit_method": "early",
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
@@ -70,7 +66,6 @@ PRESET_OVERRIDES: Final[dict] = {
     "Potato Low Latency": {
         "Display:present_mode": "immediate",
         "Display:image_count": "2",
-        "Display:color_depth": "8bit",
         "Framerate:frame_limit_method": "late",
         "Framerate:frame_pacing": "sleep",
         "Textures:filtering": "bilinear",
