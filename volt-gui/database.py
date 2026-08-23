@@ -75,6 +75,12 @@ SETTINGS_DB: Final[dict] = {
             "description": "Shift the frame limit a few frames up or down, in steps of two. VRR displays want the cap sitting just under refresh: pick 144, set this to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR. This one is volt's own, so the list is fixed. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"),
         },
+        "frame_limit_cadence": {
+            "section": "framerate",
+            "label": "Frame Limit Cadence",
+            "description": "Which rate the limiter paces at. fixed uses your cap and nothing else. smooth paces at the slowest of the last few frames instead, so the fast frames wait for the slow ones and the cadence comes out even at whatever the machine is holding. dynamic reads exactly what smooth reads and then rounds it down to a quarter step of your cap, so it sits on a set rate rather than following the load. The steps are quarter steps of your cap's frame time, so they sit close together low down and far apart up top: a 60 cap steps 60, 48, 40, 34, 30, while a 240 cap steps 240, 192, 160, 137, 120. Both take the idea from consoles, which pick a rate the machine can hold and stay on it instead of letting frame time wander with the load. A limiter can only make frames later, which is why neither reads the average: a frame slower than the average could never be paced up to it. Both climb back on their own, and neither goes faster than your cap. The trade is frames for evenness: fixed does nothing at all once the machine falls under the cap, so what you get is whatever the machine produced, one frame long and the next short. smooth and dynamic hold the short frames back to match the long ones, which costs you the frames you would have seen and buys you even spacing. dynamic changing step is visible, but it is one change rather than a different frame time every frame. Set fixed if the machine holds the cap, or if you want every frame you can get for the input latency. Nothing here comes from the device, so the list never changes. Only does something when Frame Limit is set.",
+            "options": (DEFAULT_VALUE, "fixed", "smooth", "dynamic"),
+        },
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
