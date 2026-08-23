@@ -12,12 +12,16 @@ use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::FN_PRESENT_RECTANGLES;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
+use crate::consts::FN_SET_ALPHA_ONE;
+use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
+use crate::instance::PfnCmdSetAlphaToOne;
+use crate::instance::PfnCmdSetDepthClamp;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
@@ -31,6 +35,8 @@ use crate::logging::LogLevel;
 pub(crate) struct DeviceCaps {
     pub(crate) sampler_anisotropy: bool,
     pub(crate) sample_rate_shading: bool,
+    pub(crate) alpha_to_one: bool,
+    pub(crate) depth_clamp: bool,
     pub(crate) max_anisotropy: f32,
     pub(crate) max_lod_bias: f32,
     pub(crate) max_lod_level: f32,
@@ -45,6 +51,8 @@ pub(crate) struct VkDevState {
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
+    pub(crate) alpha_one_fp: Option<PfnCmdSetAlphaToOne>,
+    pub(crate) clamp_fp: Option<PfnCmdSetDepthClamp>,
     pub(crate) swapchain_held: bool,
     pub(crate) queue2_held: bool,
     pub(crate) caps: DeviceCaps,
@@ -171,6 +179,8 @@ fn build_caps(
     DeviceCaps {
         sampler_anisotropy: asked.sampler_anisotropy == vk::TRUE,
         sample_rate_shading: asked.sample_rate_shading == vk::TRUE,
+        alpha_to_one: asked.alpha_to_one == vk::TRUE,
+        depth_clamp: asked.depth_clamp == vk::TRUE,
         max_anisotropy: props.limits.max_sampler_anisotropy,
         max_lod_bias: props.limits.max_sampler_lod_bias,
         max_lod_level: lod_levels_for(props.limits.max_image_dimension2_d),
@@ -331,6 +341,8 @@ fn register_device(
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
             alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
+            alpha_one_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_ONE),
+            clamp_fp: call_typed_device_fp(gdpa, handle, FN_SET_DEPTH_CLAMP),
             swapchain_held: call_resolved(gdpa, handle, FN_CREATE_SWAPCHAIN),
             queue2_held: call_resolved(gdpa, handle, FN_DEVICE_QUEUE_2),
             caps,

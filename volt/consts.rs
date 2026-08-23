@@ -79,13 +79,15 @@ pub(crate) const TOGGLE_ON: u32 = 1;
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const ANISO_ABSENT_INFO: &str = "the application did not enable samplerAnisotropy, leaving anisotropic filtering alone";
 pub(crate) const SHADING_ABSENT_INFO: &str = "the application did not enable sampleRateShading, leaving sample shading alone";
+pub(crate) const ALPHA_ONE_ABSENT_INFO: &str = "the application did not enable alphaToOne, leaving alpha to one alone";
+pub(crate) const CLAMP_ABSENT_INFO: &str = "the application did not enable depthClamp, leaving depth clamp alone";
 pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
 
 pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
 pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
-pub(crate) const UNOWNED_BUFFER_ERROR: &str = "alpha to coverage on a command buffer with no registered device";
+pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer with no registered device";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
@@ -114,6 +116,8 @@ pub(crate) const FN_DEVICE_GROUPS_KHR: &str = "vkEnumeratePhysicalDeviceGroupsKH
 pub(crate) const FN_SHARED_SWAPCHAINS: &str = "vkCreateSharedSwapchainsKHR";
 pub(crate) const FN_WRITE_SAMPLERS: &str = "vkWriteSamplerDescriptorsEXT";
 pub(crate) const FN_SET_ALPHA_COVERAGE: &str = "vkCmdSetAlphaToCoverageEnableEXT";
+pub(crate) const FN_SET_ALPHA_ONE: &str = "vkCmdSetAlphaToOneEnableEXT";
+pub(crate) const FN_SET_DEPTH_CLAMP: &str = "vkCmdSetDepthClampEnableEXT";
 
 pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";
@@ -180,6 +184,8 @@ mip_ceiling = "default"
 [rendering]
 sample_shading = "default"
 alpha_to_coverage = "default"
+alpha_to_one = "default"
+depth_clamp = "default"
 
 [framerate]
 frame_limit = "default"

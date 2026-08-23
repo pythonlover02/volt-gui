@@ -57,6 +57,12 @@ pub(crate) type PfnWriteSamplers = unsafe extern "system" fn(
 pub(crate) type PfnCmdSetAlphaToCoverage =
     unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
 
+pub(crate) type PfnCmdSetAlphaToOne =
+    unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
+
+pub(crate) type PfnCmdSetDepthClamp =
+    unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
+
 pub(crate) type PfnSetDeviceLoaderData =
     unsafe extern "system" fn(vk::Device, *mut c_void) -> vk::Result;
 
