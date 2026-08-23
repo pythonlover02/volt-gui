@@ -6,9 +6,7 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_ABSENT_INFO;
 use crate::consts::ANISO_OFF;
-use crate::consts::FILTER_BILINEAR;
-use crate::consts::FILTER_RETRO;
-use crate::consts::FILTER_TRILINEAR;
+use crate::consts::FILTER_LINEAR;
 use crate::consts::MIPMAP_LINEAR;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
@@ -17,21 +15,16 @@ use crate::lists::forced;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-fn filter_triple(value: u32) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
+fn filter_vk(value: u32) -> vk::Filter {
     match value {
-        FILTER_RETRO => (vk::Filter::NEAREST, vk::Filter::NEAREST, vk::SamplerMipmapMode::NEAREST),
-        FILTER_BILINEAR => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::NEAREST),
-        FILTER_TRILINEAR => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
-        _ => (vk::Filter::LINEAR, vk::Filter::LINEAR, vk::SamplerMipmapMode::LINEAR),
+        FILTER_LINEAR => vk::Filter::LINEAR,
+        _ => vk::Filter::NEAREST,
     }
 }
 
-fn pick_filters(
-    choice: Option<u32>,
-    original: (vk::Filter, vk::Filter, vk::SamplerMipmapMode),
-) -> (vk::Filter, vk::Filter, vk::SamplerMipmapMode) {
+fn pick_filter(choice: Option<u32>, original: vk::Filter) -> vk::Filter {
     match choice {
-        Some(value) => filter_triple(value),
+        Some(value) => filter_vk(value),
         None => original,
     }
 }
@@ -96,10 +89,6 @@ fn patched_ci(
     caps: &DeviceCaps,
     original: &vk::SamplerCreateInfo,
 ) -> vk::SamplerCreateInfo {
-    let (mag, min, mip) = pick_filters(
-        s.filtering,
-        (original.mag_filter, original.min_filter, original.mipmap_mode),
-    );
     let (aniso_enable, aniso_max) = pick_aniso(
         s.anisotropy,
         caps,
@@ -107,9 +96,9 @@ fn patched_ci(
     );
     let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
-        mag_filter: mag,
-        min_filter: min,
-        mipmap_mode: pick_mipmap(s.mipmap, mip),
+        mag_filter: pick_filter(s.mag_filter, original.mag_filter),
+        min_filter: pick_filter(s.min_filter, original.min_filter),
+        mipmap_mode: pick_mipmap(s.mipmap, original.mipmap_mode),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),

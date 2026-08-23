@@ -67,9 +67,8 @@ pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
 
-pub(crate) const FILTER_RETRO: u32 = 0;
-pub(crate) const FILTER_BILINEAR: u32 = 1;
-pub(crate) const FILTER_TRILINEAR: u32 = 2;
+pub(crate) const FILTER_NEAREST: u32 = 0;
+pub(crate) const FILTER_LINEAR: u32 = 1;
 
 pub(crate) const MIPMAP_NEAREST: u32 = 0;
 pub(crate) const MIPMAP_LINEAR: u32 = 1;
@@ -170,7 +169,8 @@ composite_alpha = "default"
 clipped = "default"
 
 [textures]
-filtering = "default"
+mag_filter = "default"
+min_filter = "default"
 mipmap_mode = "default"
 anisotropy = "default"
 lod_bias = "default"

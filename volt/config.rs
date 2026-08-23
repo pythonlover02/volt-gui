@@ -4,9 +4,8 @@ use std::sync::OnceLock;
 
 use crate::consts::ANISO_OFF;
 use crate::consts::DEFAULT_PROFILE;
-use crate::consts::FILTER_BILINEAR;
-use crate::consts::FILTER_RETRO;
-use crate::consts::FILTER_TRILINEAR;
+use crate::consts::FILTER_LINEAR;
+use crate::consts::FILTER_NEAREST;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
@@ -41,7 +40,8 @@ pub(crate) struct Settings {
     pub(crate) image_count: Option<u32>,
     pub(crate) composite_alpha: Option<u32>,
     pub(crate) clipped: Option<u32>,
-    pub(crate) filtering: Option<u32>,
+    pub(crate) mag_filter: Option<u32>,
+    pub(crate) min_filter: Option<u32>,
     pub(crate) mipmap: Option<u32>,
     pub(crate) anisotropy: Option<f32>,
     pub(crate) lod_bias: Option<f32>,
@@ -82,9 +82,8 @@ fn parse_uint(text: &str) -> Option<u32> {
 
 fn parse_filter(text: &str) -> Option<u32> {
     match text {
-        "retro" => Some(FILTER_RETRO),
-        "bilinear" => Some(FILTER_BILINEAR),
-        "trilinear" => Some(FILTER_TRILINEAR),
+        "nearest" => Some(FILTER_NEAREST),
+        "linear" => Some(FILTER_LINEAR),
         _ => None,
     }
 }
@@ -197,7 +196,8 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
         composite_alpha: field(&doc, SECTION_DISPLAY, "composite_alpha", alpha_parse),
         clipped: field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
-        filtering: field(&doc, SECTION_TEXTURES, "filtering", parse_filter),
+        mag_filter: field(&doc, SECTION_TEXTURES, "mag_filter", parse_filter),
+        min_filter: field(&doc, SECTION_TEXTURES, "min_filter", parse_filter),
         mipmap: field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
         anisotropy: field(&doc, SECTION_TEXTURES, "anisotropy", parse_aniso),
         lod_bias: field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),

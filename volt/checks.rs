@@ -20,6 +20,9 @@ const UNKNOWN_ALPHA: u32 = 16;
 const FIFO_MODE: u32 = 2;
 const SHARED_MODE: u32 = 1000111000;
 const OPAQUE_ALPHA: u32 = 1;
+const NEAREST_FILTER: u32 = 0;
+const LINEAR_FILTER: u32 = 1;
+const FILTER_PROFILE: &str = "[textures]\nmag_filter = \"nearest\"\nmin_filter = \"linear\"\n";
 const INHERIT_ALPHA: u32 = 8;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
@@ -91,6 +94,12 @@ fn reads_the_facts_a_setting_branches_on() {
 fn forces_a_value_volt_has_no_name_for() {
     assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, Some(UNKNOWN_MODE));
     assert_eq!(parse_settings(NAMED_MODE_PROFILE).present_mode, Some(FIFO_MODE));
+}
+
+#[test]
+fn reads_each_sampler_filter_on_its_own() {
+    assert_eq!(parse_settings(FILTER_PROFILE).mag_filter, Some(NEAREST_FILTER));
+    assert_eq!(parse_settings(FILTER_PROFILE).min_filter, Some(LINEAR_FILTER));
 }
 
 #[test]
