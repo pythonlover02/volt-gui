@@ -1,8 +1,10 @@
 from typing import Final
 
+from probe import alpha_one_options
 from probe import alpha_options
 from probe import aniso_options
 from probe import call_read_probe
+from probe import clamp_options
 from probe import frametime_pairs
 from probe import gpu_options
 from probe import image_count_options
@@ -143,6 +145,18 @@ SETTINGS_DB: Final[dict] = {
             "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
             "options": (DEFAULT_VALUE, "on", "off"),
         },
+        "alpha_to_one": {
+            "section": "rendering",
+            "label": "Alpha To One",
+            "description": "Force fragment alpha to 1 after the shader runs. This list is read from the device, so it holds nothing but default only where the device itself lacks alphaToOne. volt never enables a feature the game left off: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Only does something where the game already renders to an MSAA target.",
+            "options": (DEFAULT_VALUE,),
+        },
+        "depth_clamp": {
+            "section": "rendering",
+            "label": "Depth Clamp",
+            "description": "Keep fragments outside the near and far planes and pin their depth to the plane instead of discarding them. Stops weapon models being sliced open when the camera backs into a wall. The same toggle covers the far plane, where distant geometry stops disappearing and flattens onto the plane instead, which can look worse, so try it per game. This list is read from the device, so it holds nothing but default only where the device itself lacks depthClamp. volt never enables it: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Most games never ask for it, so expect that line more often than not, and expect the card to do nothing in those games. Where a game did ask, it usually asked for one pass such as shadow rendering, and forcing the toggle applies it to every pipeline instead. Run with VOLT_LOG=info to see which case you are in.",
+            "options": (DEFAULT_VALUE,),
+        },
     },
 }
 
@@ -215,6 +229,8 @@ OPTION_BUILDERS: Final[dict] = {
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,
     "sample_shading": shading_options,
+    "alpha_to_one": alpha_one_options,
+    "depth_clamp": clamp_options,
     "frame_limit": lambda _: frametime_pairs(
         SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
 }

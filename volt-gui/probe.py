@@ -17,6 +17,7 @@ COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
 SHADING_CEILING: Final[float] = 1.0
 OFF_VALUE: Final[str] = "off"
+TOGGLE_VALUES: Final[tuple] = ("off", "on")
 
 
 def build_probe_path() -> Path:
@@ -130,6 +131,22 @@ def aniso_options(data: dict) -> tuple:
             return ()
         case True:
             return _aniso_ladder(probe_number(data, "max_anisotropy"))
+
+
+def _toggle_ladder(held: bool) -> tuple:
+    match held:
+        case False:
+            return ()
+        case True:
+            return plain_pairs(TOGGLE_VALUES)
+
+
+def alpha_one_options(data: dict) -> tuple:
+    return _toggle_ladder(probe_flag(data, "alpha_to_one"))
+
+
+def clamp_options(data: dict) -> tuple:
+    return _toggle_ladder(probe_flag(data, "depth_clamp"))
 
 
 def shading_options(data: dict) -> tuple:
