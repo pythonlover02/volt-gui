@@ -19,7 +19,7 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
 
 ### At a glance
 
-- **20 settings across 5 tabs**: GPU selection, display and swapchain, texture
+- **21 settings across 5 tabs**: GPU selection, display and swapchain, texture
   sampling, rendering toggles, and volt's own frame limiter.
 - **Core Vulkan 1.0 only.** The layer asks for nothing beyond `VK_KHR_swapchain`,
   so behaviour never splits between drivers.
@@ -30,6 +30,10 @@ every conformant driver. `VOLT_LOG=info` shows what was applied.
   from a probe of your own device, not from a table built into volt-gui.
 - **Enables nothing.** volt reads what the game asked for at device creation and
   applies a feature gated setting only where the game enabled that feature.
+- **Every setting forces**, bar one. volt writes the value into its own copy of
+  the create info, so a setting lands whether or not the game consulted a query
+  first. GPU selection is the exception: there is no field naming the device, so
+  hiding the others from enumeration is the only lever Vulkan gives.
 - **Every path hooked, not just the obvious one.** The `2`/`EXT` query variants,
   device groups, shared swapchains, inline sampler writes and dynamic alpha to
   coverage get the same treatment as the core calls.
@@ -103,32 +107,53 @@ range, no ordering, and nothing to get backwards.
 | Tab | Section | Count | What it covers |
 |-----|---------|------:|----------------|
 | GPU | `[gpu]` | 1 | which device the game is shown |
-| Display | `[display]` | 7 | present mode, image count, colour depth, colour space, transfer function, compositing, clipping |
-| Textures | `[textures]` | 6 | filtering, mip behaviour, anisotropy, LOD bias and range |
-| Rendering | `[rendering]` | 2 | sample shading, alpha to coverage |
-| Framerate | `[framerate]` | 4 | frame limit, offset, method, pacing |
+| Display | `[display]` | 4 | present mode, image count, compositing, clipping |
+| Textures | `[textures]` | 7 | magnification, minification, mip behaviour, anisotropy, LOD bias and range |
+| Rendering | `[rendering]` | 4 | sample shading, alpha to coverage, alpha to one, depth clamp |
+| Framerate | `[framerate]` | 5 | frame limit, offset, cadence, method, pacing |
 
-The values each setting offers come from your own hardware, not from a list
-built into volt-gui. Present modes, colour depths, colour spaces, transfer
-functions and alpha modes come from what the surface reports, the GPU list
-from what the driver enumerates, and mip levels and LOD bias run up to the
-limits the device gives. A setting whose feature the device lacks holds
-nothing but `default`, and so does every device backed setting until the
-probe has run: volt-gui offers no option it has not read. Only the four
-**Framerate** settings have a fixed list, since they are volt's own.
+Many of the values a setting offers come from your own hardware, not from a
+list built into volt-gui. Present modes, image counts and alpha modes come
+from what the surface reports, the GPU list from what the driver enumerates,
+and anisotropy, mip levels and LOD bias run up to the limits the device
+gives. A setting whose feature the device lacks holds nothing but `default`,
+and so does every device backed setting until the probe has run: volt-gui
+offers no option it has not read.
+
+The rest carry fixed lists, because there is nothing to read. `nearest` and
+`linear` are core Vulkan with no feature, no extension and no query behind
+them, so every driver has both and none of them reports it. The five
+**Framerate** settings have nothing to read at all: a game never tells Vulkan
+what frame rate it wants.
 
 Settings are read once, when the game starts, and never change while it
 runs. Press Apply, then start the game again.
 
-volt-gui learns this by keeping a small `vkgears` window running under the
-profile you are editing. It is there to read your hardware, not to show you
-the result: most settings act on textures and samplers vkgears does not
-have, so an unchanged window is the normal outcome and not a failure. Close
-it and volt-gui carries on with what it learned last time.
+volt-gui learns this by running `volt-probe` under the profile you are
+editing. It opens a one pixel window that is never mapped, creates a surface,
+a swapchain and a sampler so the layer sees every path it needs, records what
+the device reported, and exits. Nothing appears on screen and nothing is
+drawn.
 
 ```
-volt --probe myprofile -- vkgears
+volt --probe myprofile -- volt-probe
 ```
+
+It opens an X11 surface, which every desktop has, since a Wayland session runs
+XWayland. It is not the only surface a game opens, because Wine and Proton have
+native Wayland drivers and gamescope is its own path again, and the profile is
+written before volt knows which one the game will pick. Reporting two backends
+would offer values belonging to the path the game did not take.
+
+Present modes, image counts and alpha modes are answered against a surface
+rather than against the card, so the presentation path bounds them as much as
+the hardware does, and a short list there is the answer rather than a failure.
+Those three are also the only settings this affects. The lists mostly agree
+across backends, and where they do not, the layer already has the path: image
+count is clamped against the surface the game actually opened, and a present
+mode or alpha mode that surface turns down leaves the game's own value in place
+with a warning logged. Reading a native Wayland surface directly is on the
+list; until then the cost of the mismatch is a line in the log.
 
 A value volt has no name for still appears in the list, still saves to a
 profile, and still applies. Where the specification admits only what a query
@@ -144,6 +169,12 @@ down. That clamp is correctness, not a setting.
   layer hides the rest during device enumeration, so it works on every Vulkan
   driver. If nothing matches, the full list comes back and a warning is
   logged.
+
+  This is the one setting volt cannot force. Every other card is written into
+  a structure volt hands down, but nothing names the device a swapchain runs
+  on: the game already holds a physical device by the time volt sees anything
+  it could patch. A game that ignores enumeration order keeps the device it
+  picked.
 
 ### Display
 - **VSync / Present Mode**: whatever the surface supports. `immediate` turns
@@ -167,18 +198,6 @@ down. That clamp is correctness, not a setting.
   this is it. The list is what the surface allows, and the choice is
   reported back to the game, so a game that derives its count from the
   surface honours it on its own.
-- **Color Depth**: the bits per colour channel this surface offers, usually
-  8-bit and 10-bit. The layer hides the formats you did not pick, so a game
-  that takes the first supported format ends up with yours. If nothing
-  matches, the full list comes back and a warning is logged.
-- **Color Space**: filtered out of the same list. Everything past
-  `srgb_nonlinear` needs the stack around the game to have enabled it, through
-  DXVK_HDR, PROTON_ENABLE_HDR or gamescope, so on most setups this card holds
-  one entry.
-- **Transfer Function**: whether the game is shown `srgb` formats, plain
-  `unorm` ones, or float ones, filtered out of the same list again. Getting it
-  wrong looks washed out or crushed rather than broken, so set it back to
-  default if the image looks off. No preset touches it.
 - **Composite Alpha**: how the compositor treats the finished image's alpha.
   Forcing `opaque` skips compositor blending on Wayland. A value the surface
   does not report falls back to the game's own choice with a warning.
@@ -186,10 +205,23 @@ down. That clamp is correctness, not a setting.
   covers. On or off.
 
 ### Textures
-- **Texture Filtering**: retro (sharp pixels), bilinear, trilinear. A sampler
-  that matches none of the three exactly counts as the closest one below it.
-- **Mipmap Mode**: a hard cut between mip levels, or a blend across them,
-  independently of the filter choice.
+- **Magnification Filter**: how a texture is sampled where it is drawn larger
+  than its own size, which is anything close to the camera. `nearest` is sharp
+  unfiltered pixels, `linear` smooths between them. This is the one filter a
+  still screenshot shows you.
+- **Minification Filter**: the same question where the texture is drawn
+  smaller, which is most of the screen. `nearest` takes one texel and shimmers
+  as the camera moves; `linear` averages and settles. This is where mipmaps
+  and anisotropic filtering do their work, so leave it on `linear` unless you
+  want the crawl.
+- **Mipmap Mode**: a hard cut between mip levels, or a blend across them.
+
+  These are three sampler fields and so they are three settings, which means
+  every combination is reachable and none of them overrides another. The
+  classic three: retro is `nearest`/`nearest`/`nearest`, bilinear is
+  `linear`/`linear`/`nearest`, trilinear is `linear`/`linear`/`linear`. And
+  the one no single named mode ever offered: sharp pixel art without distant
+  shimmer is `nearest`/`linear`/`linear`.
 - **Anisotropic Filtering**: off up to whatever your GPU reports. The list is
   read from the device, so it holds nothing but `default` only where the device
   itself lacks `samplerAnisotropy`. volt never enables the feature: where the
@@ -210,6 +242,17 @@ down. That clamp is correctness, not a setting.
 - **Alpha To Coverage**: turn fragment alpha into coverage. Softens cutout
   edges on foliage and fences, and only does anything where the game already
   renders to an MSAA target.
+- **Alpha To One**: force fragment alpha to 1 after the shader runs. Read from
+  the device like sample shading, and volt never enables the feature: where the
+  game left it off the setting is ignored and a line is logged.
+- **Depth Clamp**: keep fragments outside the near and far planes and pin their
+  depth rather than discarding them. Stops weapon models being sliced open
+  against a wall. The same toggle covers the far plane, where geometry stops
+  disappearing and flattens onto the plane instead, so try it per game. Most
+  games never enable `depthClamp`, and volt will not enable it for them, so
+  this card does nothing in most of them and logs a line saying so. Where a
+  game did enable it, it usually wanted it for one pass, and forcing the
+  toggle applies it everywhere.
 
 ### Framerate
 - **Frame Limit**: cap the frame rate at present time, from a fixed list of
@@ -223,6 +266,27 @@ down. That clamp is correctness, not a setting.
   volt does not read your refresh rate and never shifts a cap by itself,
   since most displays are not VRR. Only does something when Frame Limit is
   set.
+- **Frame Limit Cadence**: which rate the limiter paces at. `fixed` is your
+  cap and nothing else. `smooth` paces at the slowest of the last few frames
+  instead, so the fast frames wait for the slow ones and the cadence comes
+  out even at whatever the machine is holding. `dynamic` reads exactly what
+  `smooth` reads and rounds it down to a quarter step of the cap. The steps
+  are quarter steps of the cap's frame time, so they sit close together low
+  down and far apart up top: a 60 cap steps 60, 48, 40,
+  34, 30, while a 240 cap steps 240, 192, 160, 137, 120. Both take the idea
+  from consoles, which pick a rate the machine can hold and stay on it. A
+  console gets there by dropping resolution, which volt cannot touch, so
+  frame handling is the one place the idea fits. A limiter can only make
+  frames later, which is why neither reads the average: a frame slower than
+  the average could never be paced up to it. Both climb back on their own,
+  and neither goes faster than the cap you set. The trade is frames for
+  evenness: `fixed` does nothing at all once the machine falls under the cap,
+  so what you get is whatever the machine produced, one frame long and the
+  next short. A rate sitting right on one of `dynamic`'s steps can bounce
+  between two of them, which is what rounding costs: `smooth` is the same
+  reading without it. Set `fixed` if the machine holds the cap, or if you
+  want every frame you can get for the input latency. Only does something
+  when Frame Limit is set.
 - **Frame Limit Method**: early holds the frame back so presents leave on a
   fixed cadence; late lets the present through and waits afterwards, so the
   game starts its next frame later and samples input closer to display time;
@@ -254,9 +318,9 @@ the order the layer acts:
 | Tab | Where the layer acts |
 |-----|----------------------|
 | GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups`, `vkEnumeratePhysicalDeviceGroupsKHR` |
-| Display | `vkGetPhysicalDeviceSurfaceFormats(2)KHR`, `vkGetPhysicalDeviceSurfacePresentModesKHR`, `vkGetPhysicalDeviceSurfacePresentModes2EXT`, `vkGetPhysicalDeviceSurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
+| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `vkGetPhysicalDeviceSurfacePresentModes2EXT`, `vkGetPhysicalDeviceSurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
 | Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT` |
-| Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT` |
+| Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
 | Framerate | `vkQueuePresentKHR` |
 
 Device creation is read and never modified: volt learns which features the game
@@ -264,8 +328,8 @@ enabled so a setting that needs one applies only where the game asked for it,
 and it enables nothing the game left off.
 
 Every setting is hooked on each path that reaches it, not just the obvious
-one. A game that queries formats through
-`vkGetPhysicalDeviceSurfaceFormats2KHR`, enumerates through
+one. A game that queries present modes through
+`vkGetPhysicalDeviceSurfacePresentModes2EXT`, enumerates through
 `vkEnumeratePhysicalDeviceGroups`, creates samplers inline through
 `vkWriteSamplerDescriptorsEXT` or sets alpha to coverage as dynamic state gets
 the same treatment as one that takes the core path. Where a surface
@@ -293,7 +357,8 @@ reads Apply just saves the profile, no elevated permissions, no scripts.
 | **GUI**   | Python 3.10+, PySide6 (a venv is created under `build/` by the make targets) |
 | **Flatpak bundles** | `flatpak`, `ostree` |
 | **Container release** | `podman` or `docker` |
-| **Probe** | `vkgears` from mesa-demos, required at runtime: every device backed option list is read through it |
+| **Probe** | `volt-probe`, built and installed alongside the launcher: every device backed option list is read through it |
+| **Probe build** | `libxcb` headers (`libxcb1-dev` or your distribution's equivalent) |
 
 Native aarch64 builds are not provided. See
 [FEX-Emu / Box64](#fex-emu--box64) if you are on an aarch64 host.
@@ -322,7 +387,7 @@ Everything lands under `build/`; `make clean` is a single `rm -rf`.
 | Command | What it does |
 |---------|--------------|
 | `make` | builds both layers, the `volt` launcher, the GUI and the desktop entry |
-| `make layer-64` | `build/target/x86_64-unknown-linux-gnu/release/{libvolt.so,volt}` |
+| `make layer-64` | `build/target/x86_64-unknown-linux-gnu/release/{libvolt.so,volt,volt-probe}` |
 | `make layer-32` | `build/target/i686-unknown-linux-gnu/release/libvolt.so` |
 | `make gui` | `build/bin/volt-gui` |
 | `make desktop` | `build/share/volt-gui.desktop` |
@@ -362,10 +427,9 @@ this repository with `build/` already filled in. Unpack one and `sudo make insta
 installs it without compiling anything, and `make` on top rebuilds only what you
 changed.
 
-`vkgears` from mesa-demos is not built here and is not optional at runtime.
-Nothing else reads your hardware, so without it every device backed card
-holds nothing but `default` and volt-gui says so on startup. Install your
-distribution's mesa-demos package alongside.
+`volt-probe` is built by `make` and installed by both install targets, so
+there is nothing extra to fetch at runtime. It links `libxcb`, which every
+desktop already carries.
 
 The GUI is built with PyInstaller into a single `build/bin/volt-gui`.
 
@@ -392,6 +456,7 @@ for a competing user install.
 | File | System install | User install |
 |------|----------------|--------------|
 | Launcher | `/usr/bin/volt` | `~/.local/bin/volt` |
+| Probe | `/usr/bin/volt-probe` | `~/.local/bin/volt-probe` |
 | GUI | `/usr/bin/volt-gui` | `~/.local/bin/volt-gui` |
 | Library (64-bit) | `/usr/lib/x86_64-linux-gnu/libvolt.so`, or `/usr/lib64`, or `/usr/lib` | `~/.local/lib/volt/x86_64-linux-gnu/libvolt.so` |
 | Library (32-bit) | `/usr/lib/i386-linux-gnu/libvolt.so`, or `/usr/lib32`, or `/usr/lib` | `~/.local/lib/volt/i386-linux-gnu/libvolt.so` |
@@ -492,8 +557,8 @@ both layer directories to `LD_LIBRARY_PATH` and ld.so picks the one matching the
 game. `flatpak-install-user` installs the extension bundles with
 `flatpak install --user`, which never needed root anyway.
 
-`~/.local/bin` has to be on your `PATH`, because volt-gui runs `volt` to read
-your hardware.
+`~/.local/bin` has to be on your `PATH`, because volt-gui runs `volt` and
+`volt-probe` to read your hardware.
 
 Pick one of the two installs, not both. The loader scans the system and the user
 directory alike, so two manifests naming `VK_LAYER_VOLT_settings` leave it
@@ -768,9 +833,9 @@ Presets populate the active profile with curated values, from **Quality**
 to **Potato Low Latency** (bilinear, anisotropy off, hard mip cuts, immediate
 present, 2 image swapchain).
 A preset writes every value in the profile, so anything it does not set goes
-back to default. That includes the frame limit and the colour space, transfer
-function, composite alpha and clipped settings: those depend on your display
-and your compositor, so those choices stay yours.
+back to default. That includes the frame limit, composite alpha and clipped
+presentation: those depend on your display and your compositor, so those
+choices stay yours.
 
 A preset can name something your hardware does not offer. That setting resets
 to default and volt-gui says which ones, so the rest of the preset still
@@ -790,7 +855,19 @@ volt changes what the game asks Vulkan for; it never draws. Anything that
 requires injecting shaders or processing the image is out of scope:
 
 - Sharpening, FSR or any upscaling, frame generation, post processing.
-- Forced MSAA or SSAA. Render passes and sample counts belong to the game.
+- Forced MSAA or SSAA. Adding samples means recreating every render target,
+  adding resolves and rewriting the pipelines and the shaders that read them,
+  which is the game's frame graph rather than a value passing by.
+- Colour depth, colour space or transfer function. Every ten bit surface
+  format is UNORM, so forcing eight to ten drops hardware sRGB encoding and
+  the picture comes out washed out, and a game that hardcoded its format is
+  left with image views that no longer match the swapchain. None of the three
+  makes a game render wider content either: a wider container is the whole of
+  the win, and breakage is the price. A game that genuinely wants HDR asks for
+  it itself, through DXVK_HDR, PROTON_ENABLE_HDR or gamescope.
+- Cubic filtering. It needs `VK_EXT_filter_cubic`, and it is admitted per
+  format while a sampler names no format at all, so there is no moment at
+  which volt can tell whether the filter would be legal.
 - Overlays and HUDs. Use MangoHud for that.
 - Overclocking, fan curves, power limits. That is sysfs territory, not the
   Vulkan API. Use LACT for that, or CoreCtrl if you also want CPU controls.
