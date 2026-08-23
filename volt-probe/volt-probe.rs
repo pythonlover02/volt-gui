@@ -30,6 +30,8 @@ const EXT_SURFACE: &str = "VK_KHR_surface";
 const EXT_XCB_SURFACE: &str = "VK_KHR_xcb_surface";
 const EXT_SWAPCHAIN: &str = "VK_KHR_swapchain";
 const FN_CREATE_SURFACE: &str = "vkCreateXcbSurfaceKHR";
+const FN_CREATE_SWAPCHAIN: &str = "vkCreateSwapchainKHR";
+const FN_DESTROY_SWAPCHAIN: &str = "vkDestroySwapchainKHR";
 
 const WANTED_EXTENSIONS: [&str; 2] = [EXT_SURFACE, EXT_XCB_SURFACE];
 
@@ -85,6 +87,19 @@ pub type PfnCreateXcbSurface = unsafe extern "system" fn(
     *const vk::AllocationCallbacks,
     *mut vk::SurfaceKHR,
 ) -> vk::Result;
+
+pub type PfnCreateSwapchain = unsafe extern "system" fn(
+    vk::Device,
+    *const vk::SwapchainCreateInfoKHR,
+    *const vk::AllocationCallbacks,
+    *mut vk::SwapchainKHR,
+) -> vk::Result;
+
+pub type PfnDestroySwapchain = unsafe extern "system" fn(
+    vk::Device,
+    vk::SwapchainKHR,
+    *const vk::AllocationCallbacks,
+);
 
 pub struct Window {
     pub connection: *mut XcbConnection,
@@ -364,13 +379,35 @@ fn call_surface_caps(
     unsafe { loader.get_physical_device_surface_capabilities(phys, surface) }.ok()
 }
 
+fn call_device_fn<T>(instance: &ash::Instance, device: &ash::Device, name: &str) -> Option<T> {
+    let cname = CString::new(name).ok()?;
+    unsafe { (instance.fp_v1_0().get_device_proc_addr)(device.handle(), cname.as_ptr()) }
+        .map(|found| unsafe { std::mem::transmute_copy(&found) })
+}
+
+fn call_swapchain_result(
+    result: vk::Result,
+    swapchain: vk::SwapchainKHR,
+) -> Option<vk::SwapchainKHR> {
+    match result {
+        vk::Result::SUCCESS => Some(swapchain),
+        _ => None,
+    }
+}
+
 fn call_create_swapchain(
-    loader: &ash::extensions::khr::Swapchain,
+    fp: PfnCreateSwapchain,
+    device: &ash::Device,
     surface: vk::SurfaceKHR,
     format: vk::SurfaceFormatKHR,
     caps: &vk::SurfaceCapabilitiesKHR,
 ) -> Option<vk::SwapchainKHR> {
-    unsafe { loader.create_swapchain(&swapchain_info(surface, format, caps), None) }.ok()
+    let info = swapchain_info(surface, format, caps);
+    let mut swapchain = vk::SwapchainKHR::null();
+    call_swapchain_result(
+        unsafe { fp(device.handle(), &info, std::ptr::null(), &mut swapchain) },
+        swapchain,
+    )
 }
 
 fn call_create_sampler(device: &ash::Device) -> Option<vk::Sampler> {
@@ -387,11 +424,12 @@ fn call_on_device(
     let surfaces = ash::extensions::khr::Surface::new(entry, instance);
     let caps = call_surface_caps(&surfaces, phys, surface)?;
     let format = call_first_format(&surfaces, phys, surface)?;
-    let swapchains = ash::extensions::khr::Swapchain::new(instance, device);
-    let swapchain = call_create_swapchain(&swapchains, surface, format, &caps)?;
+    let create: PfnCreateSwapchain = call_device_fn(instance, device, FN_CREATE_SWAPCHAIN)?;
+    let destroy: PfnDestroySwapchain = call_device_fn(instance, device, FN_DESTROY_SWAPCHAIN)?;
+    let swapchain = call_create_swapchain(create, device, surface, format, &caps)?;
     let sampler = call_create_sampler(device)?;
     unsafe { device.destroy_sampler(sampler, None) };
-    unsafe { swapchains.destroy_swapchain(swapchain, None) };
+    unsafe { destroy(device.handle(), swapchain, std::ptr::null()) };
     unsafe { surfaces.destroy_surface(surface, None) };
     Some(())
 }

@@ -66,7 +66,7 @@ That is a complete install for native, Steam, Wine and Proton games. Prefer a
 system wide one? `make` then `sudo make install`. Pick one of the two, never
 both.
 
-Flatpak games need one extra piece, built and installed separately — see
+Flatpak games need one extra piece, built and installed separately see
 [Flatpak](#flatpak).
 
 **Steam**, set the game Launch Options to:
@@ -160,8 +160,8 @@ profile, and still applies. Where the specification admits only what a query
 returned, a value the device did not report is not forced: volt keeps the
 game's own value and logs a warning.
 
-Where the specification bounds a value — LOD bias against the device limit,
-image count against what the surface allows — volt clamps what it passes
+Where the specification bounds a value LOD bias against the device limit,
+image count against what the surface allows volt clamps what it passes
 down. That clamp is correctness, not a setting.
 
 ### GPU
@@ -414,7 +414,7 @@ sudo make install
 ```
 
 A bare `make` builds both architectures and nothing else. The 32-bit layer is
-not an optional extra — any Steam library has 32-bit titles — so it is part of
+not an optional extra any Steam library has 32-bit titles so it is part of
 the default build; `make layer-32` exists only for building that one piece
 while you work on it, and adds the Rust target for you if it is missing. The
 Flatpak bundles are the opposite: they are optional, they are built only by
@@ -435,11 +435,11 @@ The GUI is built with PyInstaller into a single `build/bin/volt-gui`.
 
 Building with `sudo` is refused: the build targets stop with an error rather
 than leaving a root-owned `build/`. The install targets are the mirror of
-that — they only copy what is already in `build/`, and stop with an error
+that they only copy what is already in `build/`, and stop with an error
 naming what is missing if you have not built it yet. Build as your user,
 install as root. volt-gui itself also refuses to start under `sudo`.
 
-Packagers can skip root entirely — with `DESTDIR` set, `make install` stages
+Packagers can skip root entirely with `DESTDIR` set, `make install` stages
 into the given prefix without needing it:
 
 ```
@@ -648,7 +648,7 @@ make release-container CONTAINER=docker
 ```
 
 Bullseye drops the floor to glibc 2.31 but ships Python 3.9, which is below
-what the GUI needs — use it only for `make layer-64 layer-32` inside the
+what the GUI needs use it only for `make layer-64 layer-32` inside the
 container, not for a full release.
 
 ## Usage
