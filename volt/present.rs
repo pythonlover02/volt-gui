@@ -9,11 +9,15 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::Settings;
+use crate::consts::CadenceChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_NONE;
 use crate::consts::LimitStage;
 use crate::consts::MethodChoice;
 use crate::consts::NS_PER_S;
+use crate::consts::PACE_SPIKE_LIMIT;
+use crate::consts::PACE_STEPS;
+use crate::consts::PACE_WINDOW;
 use crate::consts::PacingChoice;
 use crate::consts::SLICE_MARGIN_NS;
 use crate::consts::SLICE_STEP_NS;
@@ -25,6 +29,8 @@ use crate::lists::forced;
 pub(crate) struct Timeline {
     pub(crate) target: u64,
     pub(crate) interval: u64,
+    pub(crate) last: u64,
+    pub(crate) peak: u64,
 }
 
 type TimelineMap = HashMap<u64, Timeline>;
@@ -45,7 +51,7 @@ fn overshoot_ns(now: u64, target: u64) -> u64 {
 }
 
 fn next_target_ns(now: u64, previous: u64, interval: u64, fresh: bool) -> u64 {
-    match (fresh, overshoot_ns(now, previous) >= interval) {
+    match (fresh, overshoot_ns(now, previous) > interval) {
         (false, false) => previous + interval,
         (_, _) => now + interval,
     }
@@ -63,6 +69,40 @@ fn restart_wanted(method: Option<MethodChoice>, interval_changed: bool) -> bool 
     match method {
         Some(MethodChoice::Reactive) => true,
         Some(MethodChoice::Early) | Some(MethodChoice::Late) | None => interval_changed,
+    }
+}
+
+fn observed_ns(line: Timeline, now: u64, interval: u64) -> u64 {
+    now.saturating_sub(line.last)
+        .min(interval.saturating_mul(PACE_SPIKE_LIMIT))
+}
+
+fn decayed_ns(peak: u64) -> u64 {
+    peak * (PACE_WINDOW - 1) / PACE_WINDOW
+}
+
+fn peaked_ns(previous: Option<Timeline>, now: u64, interval: u64) -> u64 {
+    match previous.filter(|line| line.interval == interval) {
+        Some(line) => observed_ns(line, now, interval).max(decayed_ns(line.peak)),
+        None => interval,
+    }
+}
+
+fn steps_needed(interval: u64, peak: u64) -> u64 {
+    peak.saturating_mul(PACE_STEPS)
+        .div_ceil(interval)
+        .max(PACE_STEPS)
+}
+
+fn stepped_ns(interval: u64, peak: u64) -> u64 {
+    interval.saturating_mul(steps_needed(interval, peak)) / PACE_STEPS
+}
+
+fn paced_ns(cadence: Option<CadenceChoice>, interval: u64, peak: u64) -> u64 {
+    match cadence {
+        Some(CadenceChoice::Smooth) => interval.max(peak),
+        Some(CadenceChoice::Dynamic) => stepped_ns(interval, peak),
+        Some(CadenceChoice::Fixed) | None => interval,
     }
 }
 
@@ -85,15 +125,20 @@ pub(crate) fn advanced(
     now: u64,
     interval: u64,
     method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
 ) -> Timeline {
+    let peak = peaked_ns(previous, now, interval);
+    let target = next_target_ns(
+        now,
+        previous_target(previous, now),
+        paced_ns(cadence, interval, peak),
+        restart_wanted(method, interval_changed(previous, interval)),
+    );
     Timeline {
-        target: next_target_ns(
-            now,
-            previous_target(previous, now),
-            interval,
-            restart_wanted(method, interval_changed(previous, interval)),
-        ),
+        target,
         interval,
+        last: now.max(target),
+        peak,
     }
 }
 
@@ -149,28 +194,50 @@ fn call_advanced_in(
     key: u64,
     interval: u64,
     method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
 ) -> u64 {
     call_stored(
         map,
         key,
-        advanced(map.get(&key).copied(), call_now_ns(), interval, method),
+        advanced(
+            map.get(&key).copied(),
+            call_now_ns(),
+            interval,
+            method,
+            cadence,
+        ),
     )
 }
 
-fn call_frame_target(key: u64, interval: u64, method: Option<MethodChoice>) -> u64 {
+fn call_frame_target(
+    key: u64,
+    interval: u64,
+    method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
+) -> u64 {
     match TIMELINES.lock() {
         Ok(mut guard) => call_advanced_in(
             guard.get_or_insert_with(HashMap::new),
             key,
             interval,
             method,
+            cadence,
         ),
         Err(_) => call_now_ns(),
     }
 }
 
-fn call_limit_to(key: u64, fps: f32, pacing: PacingChoice, method: Option<MethodChoice>) {
-    call_wait_until(call_frame_target(key, target_interval_ns(fps), method), pacing);
+fn call_limit_to(
+    key: u64,
+    fps: f32,
+    pacing: PacingChoice,
+    method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
+) {
+    call_wait_until(
+        call_frame_target(key, target_interval_ns(fps), method, cadence),
+        pacing,
+    );
 }
 
 fn pacing_or_default(pacing: Option<PacingChoice>) -> PacingChoice {
@@ -208,6 +275,7 @@ pub(crate) fn maybe_limit_frame(
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
+            s.cadence,
         ),
         None => (),
     }

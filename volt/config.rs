@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use crate::consts::ANISO_OFF;
+use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
@@ -53,6 +54,7 @@ pub(crate) struct Settings {
     pub(crate) depth_clamp: Option<u32>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) frame_limit_offset: Option<f32>,
+    pub(crate) cadence: Option<CadenceChoice>,
     pub(crate) limit_method: Option<MethodChoice>,
     pub(crate) pacing: Option<PacingChoice>,
 }
@@ -130,6 +132,15 @@ fn parse_offset(text: &str) -> Option<f32> {
 
 fn parse_gpu(text: &str) -> Option<u32> {
     parse_uint(text).filter(|v| *v >= 1)
+}
+
+fn parse_cadence(text: &str) -> Option<CadenceChoice> {
+    match text {
+        "fixed" => Some(CadenceChoice::Fixed),
+        "smooth" => Some(CadenceChoice::Smooth),
+        "dynamic" => Some(CadenceChoice::Dynamic),
+        _ => None,
+    }
 }
 
 fn parse_method(text: &str) -> Option<MethodChoice> {
@@ -211,6 +222,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         depth_clamp: field(&doc, SECTION_RENDERING, "depth_clamp", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         frame_limit_offset: field(&doc, SECTION_FRAMERATE, "frame_limit_offset", parse_offset),
+        cadence: field(&doc, SECTION_FRAMERATE, "frame_limit_cadence", parse_cadence),
         limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
         pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
     }

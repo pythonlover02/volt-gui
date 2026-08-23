@@ -47,6 +47,9 @@ pub(crate) const NS_PER_S: f64 = 1_000_000_000.0;
 pub(crate) const SPIN_MARGIN_NS: u64 = 500_000;
 pub(crate) const SLICE_MARGIN_NS: u64 = 150_000;
 pub(crate) const SLICE_STEP_NS: u64 = 1_000_000;
+pub(crate) const PACE_WINDOW: u64 = 4;
+pub(crate) const PACE_SPIKE_LIMIT: u64 = 4;
+pub(crate) const PACE_STEPS: u64 = 4;
 pub(crate) const FRAME_LIMIT_MIN: f32 = 1.0;
 pub(crate) const FRAME_LIMIT_OFFSET_NONE: f32 = 0.0;
 pub(crate) const FRAME_LIMIT_OFFSET_MAX: f32 = 10.0;
@@ -140,6 +143,13 @@ pub(crate) enum MethodChoice {
     Reactive,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CadenceChoice {
+    Fixed,
+    Smooth,
+    Dynamic,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum LimitStage {
     Before,
@@ -190,6 +200,7 @@ depth_clamp = "default"
 [framerate]
 frame_limit = "default"
 frame_limit_offset = "default"
+frame_limit_cadence = "default"
 frame_limit_method = "default"
 frame_pacing = "default"
 "#;
