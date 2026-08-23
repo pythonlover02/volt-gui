@@ -17,6 +17,8 @@ use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::FN_QUEUE_PRESENT;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
+use crate::consts::FN_SET_ALPHA_ONE;
+use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::FN_SURFACE_MODES_2;
@@ -59,6 +61,8 @@ use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_graphics_pipelines;
 use crate::pipeline::call_set_alpha_coverage;
+use crate::pipeline::call_set_alpha_one;
+use crate::pipeline::call_set_depth_clamp;
 use crate::present::call_forget_timeline;
 use crate::present::call_present_frame;
 use crate::present::maybe_limit_frame;
@@ -153,6 +157,8 @@ fn device_extension_hook(name: &str) -> Option<*mut c_void> {
         FN_SHARED_SWAPCHAINS => Some(vkCreateSharedSwapchainsKHR as *mut c_void),
         FN_WRITE_SAMPLERS => Some(vkWriteSamplerDescriptorsEXT as *mut c_void),
         FN_SET_ALPHA_COVERAGE => Some(vkCmdSetAlphaToCoverageEnableEXT as *mut c_void),
+        FN_SET_ALPHA_ONE => Some(vkCmdSetAlphaToOneEnableEXT as *mut c_void),
+        FN_SET_DEPTH_CLAMP => Some(vkCmdSetDepthClampEnableEXT as *mut c_void),
         _ => None,
     }
 }
@@ -162,6 +168,8 @@ fn device_fp_present(dev: vk::Device, name: &str) -> bool {
         (Some(d), FN_SHARED_SWAPCHAINS) => d.shared_fp.is_some(),
         (Some(d), FN_WRITE_SAMPLERS) => d.samplers_fp.is_some(),
         (Some(d), FN_SET_ALPHA_COVERAGE) => d.alpha_fp.is_some(),
+        (Some(d), FN_SET_ALPHA_ONE) => d.alpha_one_fp.is_some(),
+        (Some(d), FN_SET_DEPTH_CLAMP) => d.clamp_fp.is_some(),
         (_, _) => false,
     }
 }
@@ -462,6 +470,20 @@ unsafe extern "system" fn vkCmdSetAlphaToCoverageEnableEXT(
     enable: vk::Bool32,
 ) {
     call_set_alpha_coverage(cmdbuf_owner(buffer), buffer, enable)
+}
+
+unsafe extern "system" fn vkCmdSetAlphaToOneEnableEXT(
+    buffer: vk::CommandBuffer,
+    enable: vk::Bool32,
+) {
+    call_set_alpha_one(cmdbuf_owner(buffer), buffer, enable)
+}
+
+unsafe extern "system" fn vkCmdSetDepthClampEnableEXT(
+    buffer: vk::CommandBuffer,
+    enable: vk::Bool32,
+) {
+    call_set_depth_clamp(cmdbuf_owner(buffer), buffer, enable)
 }
 
 unsafe extern "system" fn vkAllocateCommandBuffers(
