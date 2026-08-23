@@ -11,7 +11,7 @@ path = "lib.rs"
 
 [[bin]]
 name = "volt"
-path = "main.rs"
+path = "volt.rs"
 
 [dependencies]
 libc = "0.2"
