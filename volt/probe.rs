@@ -17,11 +17,7 @@ use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
-use crate::ranks::depth_label;
-use crate::ranks::format_semantic;
-use crate::ranks::numeric_display;
 use crate::ranks::present_display;
-use crate::ranks::space_display;
 
 static WRITTEN: Once = Once::new();
 
@@ -29,9 +25,6 @@ pub(crate) struct ProbeData {
     pub(crate) index: u32,
     pub(crate) names: Vec<String>,
     pub(crate) present: Vec<String>,
-    pub(crate) depths: Vec<String>,
-    pub(crate) spaces: Vec<String>,
-    pub(crate) transfers: Vec<String>,
     pub(crate) alphas: Vec<String>,
     pub(crate) min_images: u32,
     pub(crate) max_images: u32,
@@ -40,18 +33,6 @@ pub(crate) struct ProbeData {
     pub(crate) max_lod_level: f32,
     pub(crate) anisotropy: bool,
     pub(crate) shading: bool,
-}
-
-fn unique_names(names: Vec<String>) -> Vec<String> {
-    names.into_iter().fold(Vec::new(), |mut kept, name| {
-        match kept.contains(&name) {
-            true => kept,
-            false => {
-                kept.push(name);
-                kept
-            }
-        }
-    })
 }
 
 fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
@@ -100,36 +81,6 @@ fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
         .collect()
 }
 
-fn space_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
-    unique_sorted(formats.iter().map(|f| f.color_space.as_raw() as u32).collect())
-        .into_iter()
-        .map(space_display)
-        .collect()
-}
-
-fn depth_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
-    unique_sorted(
-        formats
-            .iter()
-            .filter_map(|f| format_semantic(f.format.as_raw() as u32))
-            .map(|facts| facts.depth)
-            .collect(),
-    )
-    .into_iter()
-    .map(depth_label)
-    .collect()
-}
-
-fn transfer_names(formats: &[vk::SurfaceFormatKHR]) -> Vec<String> {
-    unique_names(
-        unique_sorted(formats.iter().map(|f| f.format.as_raw() as u32).collect())
-            .into_iter()
-            .filter_map(format_semantic)
-            .map(|facts| numeric_display(facts.numeric))
-            .collect(),
-    )
-}
-
 fn set_bits(mask: u32) -> Vec<u32> {
     (0..u32::BITS)
         .map(|shift| 1u32 << shift)
@@ -161,7 +112,6 @@ pub(crate) fn build_probe(
     dev: &VkDevState,
     supported: &[vk::PresentModeKHR],
     caps: &vk::SurfaceCapabilitiesKHR,
-    formats: &[vk::SurfaceFormatKHR],
 ) -> ProbeData {
     let all = all_devices(inst);
     let features = device_features(inst, dev.phys);
@@ -169,9 +119,6 @@ pub(crate) fn build_probe(
         index: device_index(&all, dev.phys),
         names: device_names(inst, &all),
         present: present_names(supported),
-        depths: depth_names(formats),
-        spaces: space_names(formats),
-        transfers: transfer_names(formats),
         alphas: alpha_names(caps.supported_composite_alpha.as_raw()),
         min_images: caps.min_image_count,
         max_images: caps.max_image_count,
@@ -190,9 +137,6 @@ fn render(d: &ProbeData) -> String {
         pair("device_index", &d.index.to_string()),
         pair("device_names", &joined(&d.names)),
         pair("present_modes", &joined(&d.present)),
-        pair("color_depths", &joined(&d.depths)),
-        pair("color_spaces", &joined(&d.spaces)),
-        pair("transfer_functions", &joined(&d.transfers)),
         pair("composite_alphas", &joined(&d.alphas)),
         pair("min_image_count", &d.min_images.to_string()),
         pair("max_image_count", &d.max_images.to_string()),
