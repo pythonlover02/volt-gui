@@ -33,6 +33,8 @@ pub(crate) struct ProbeData {
     pub(crate) max_lod_level: f32,
     pub(crate) anisotropy: bool,
     pub(crate) shading: bool,
+    pub(crate) alpha_one: bool,
+    pub(crate) clamp: bool,
 }
 
 fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
@@ -127,6 +129,8 @@ pub(crate) fn build_probe(
         max_lod_level: dev.caps.max_lod_level,
         anisotropy: feature_held(features.sampler_anisotropy),
         shading: feature_held(features.sample_rate_shading),
+        alpha_one: feature_held(features.alpha_to_one),
+        clamp: feature_held(features.depth_clamp),
     }
 }
 
@@ -145,6 +149,8 @@ fn render(d: &ProbeData) -> String {
         pair("max_lod_level", &d.max_lod_level.to_string()),
         pair("sampler_anisotropy", flag_text(d.anisotropy)),
         pair("sample_rate_shading", flag_text(d.shading)),
+        pair("alpha_to_one", flag_text(d.alpha_one)),
+        pair("depth_clamp", flag_text(d.clamp)),
     ]
     .concat()
 }

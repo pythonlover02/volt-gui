@@ -1,6 +1,8 @@
 use crate::config::parse_settings;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
+use crate::consts::TOGGLE_OFF;
+use crate::consts::TOGGLE_ON;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
@@ -23,6 +25,8 @@ const OPAQUE_ALPHA: u32 = 1;
 const NEAREST_FILTER: u32 = 0;
 const LINEAR_FILTER: u32 = 1;
 const FILTER_PROFILE: &str = "[textures]\nmag_filter = \"nearest\"\nmin_filter = \"linear\"\n";
+const ALPHA_ONE_PROFILE: &str = "[rendering]\nalpha_to_one = \"on\"\n";
+const CLAMP_PROFILE: &str = "[rendering]\ndepth_clamp = \"off\"\n";
 const INHERIT_ALPHA: u32 = 8;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
@@ -94,6 +98,12 @@ fn reads_the_facts_a_setting_branches_on() {
 fn forces_a_value_volt_has_no_name_for() {
     assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, Some(UNKNOWN_MODE));
     assert_eq!(parse_settings(NAMED_MODE_PROFILE).present_mode, Some(FIFO_MODE));
+}
+
+#[test]
+fn reads_the_two_feature_gated_toggles_from_a_profile() {
+    assert_eq!(parse_settings(ALPHA_ONE_PROFILE).alpha_to_one, Some(TOGGLE_ON));
+    assert_eq!(parse_settings(CLAMP_PROFILE).depth_clamp, Some(TOGGLE_OFF));
 }
 
 #[test]
