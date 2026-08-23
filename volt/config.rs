@@ -32,20 +32,13 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_parse;
-use crate::ranks::numeric_parse;
-use crate::ranks::parse_depth_label;
 use crate::ranks::present_parse;
-use crate::ranks::space_parse;
-use crate::ranks::Numeric;
 
 #[derive(Default)]
 pub(crate) struct Settings {
     pub(crate) gpu: Option<u32>,
     pub(crate) present_mode: Option<u32>,
     pub(crate) image_count: Option<u32>,
-    pub(crate) depth: Option<u32>,
-    pub(crate) color_space: Option<u32>,
-    pub(crate) transfer: Option<Numeric>,
     pub(crate) composite_alpha: Option<u32>,
     pub(crate) clipped: Option<u32>,
     pub(crate) filtering: Option<u32>,
@@ -202,9 +195,6 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
         present_mode: field(&doc, SECTION_DISPLAY, "present_mode", present_parse),
         image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
-        depth: field(&doc, SECTION_DISPLAY, "color_depth", parse_depth_label),
-        color_space: field(&doc, SECTION_DISPLAY, "color_space", space_parse),
-        transfer: field(&doc, SECTION_DISPLAY, "transfer_function", numeric_parse),
         composite_alpha: field(&doc, SECTION_DISPLAY, "composite_alpha", alpha_parse),
         clipped: field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
         filtering: field(&doc, SECTION_TEXTURES, "filtering", parse_filter),

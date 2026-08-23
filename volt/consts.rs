@@ -64,11 +64,8 @@ pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
     LATENCY_CAPABILITIES_TYPE,
 ];
 
-pub(crate) const DEPTH_SUFFIX: &str = "bit";
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
-pub(crate) const SPACE_UNKNOWN_PREFIX: &str = "color space ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
-pub(crate) const FORMAT_UNKNOWN_PREFIX: &str = "format ";
 
 pub(crate) const FILTER_RETRO: u32 = 0;
 pub(crate) const FILTER_BILINEAR: u32 = 1;
@@ -93,16 +90,7 @@ pub(crate) const UNOWNED_BUFFER_ERROR: &str = "alpha to coverage on a command bu
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
-pub(crate) const DEPTH_EMPTY_WARN: &str = "color depth selection matched no surface format, keeping every format";
-pub(crate) const SPACE_EMPTY_WARN: &str = "color space selection matched no surface format, keeping every format";
-pub(crate) const TRANSFER_EMPTY_WARN: &str = "transfer function selection matched no surface format, keeping every format";
-pub(crate) const SPACE_EXTENDED_INFO: &str = "this color space comes from a swapchain colorspace extension and only exists where the stack enabled it";
 pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
-pub(crate) const TRANSFER_ENCODED_INFO: &str = "this transfer function leaves the encoding curve to the display hardware";
-pub(crate) const TRANSFER_SHADER_INFO: &str = "this transfer function leaves the encoding curve to whatever the application does in its own shaders";
-pub(crate) const FORMAT_FORCED_WARN: &str = "the application asked for a color depth the settings exclude, leaving it alone: it may have allocated resources to match";
-pub(crate) const SPACE_FORCED_WARN: &str = "the application asked for a color space the settings exclude, leaving it alone: it may have allocated resources to match";
-pub(crate) const TRANSFER_FORCED_WARN: &str = "the application asked for a transfer function the settings exclude, leaving it alone: it may have allocated resources to match";
 
 pub(crate) const NULL_OK: [&str; 4] = [
     "vkCreateInstance",
@@ -121,7 +109,6 @@ pub(crate) const FN_QUEUE_PRESENT: &str = "vkQueuePresentKHR";
 pub(crate) const FN_DEVICE_QUEUE_2: &str = "vkGetDeviceQueue2";
 
 pub(crate) const FN_SURFACE_CAPS_2: &str = "vkGetPhysicalDeviceSurfaceCapabilities2KHR";
-pub(crate) const FN_SURFACE_FORMATS_2: &str = "vkGetPhysicalDeviceSurfaceFormats2KHR";
 pub(crate) const FN_SURFACE_MODES_2: &str = "vkGetPhysicalDeviceSurfacePresentModes2EXT";
 pub(crate) const FN_DEVICE_GROUPS: &str = "vkEnumeratePhysicalDeviceGroups";
 pub(crate) const FN_DEVICE_GROUPS_KHR: &str = "vkEnumeratePhysicalDeviceGroupsKHR";
@@ -179,9 +166,6 @@ device = "default"
 [display]
 present_mode = "default"
 image_count = "default"
-color_depth = "default"
-color_space = "default"
-transfer_function = "default"
 composite_alpha = "default"
 clipped = "default"
 
