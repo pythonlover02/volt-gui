@@ -87,16 +87,22 @@ SETTINGS_DB: Final[dict] = {
         },
     },
     "Textures": {
-        "filtering": {
+        "mag_filter": {
             "section": "textures",
-            "label": "Texture Filtering",
-            "description": "The sampler filter mode. retro gives sharp unfiltered pixels, bilinear smooths within a mip level, trilinear also blends between mip levels. All three are core Vulkan, so the list never changes.",
-            "options": (DEFAULT_VALUE, "retro", "bilinear", "trilinear"),
+            "label": "Magnification Filter",
+            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. Core Vulkan, so the list never changes. Combinations, in the order mag, min, mipmap: retro is nearest, nearest, nearest. bilinear is linear, linear, nearest. trilinear is linear, linear, linear. Sharp pixel art without distant shimmer is nearest, linear, linear.",
+            "options": (DEFAULT_VALUE, "nearest", "linear"),
+        },
+        "min_filter": {
+            "section": "textures",
+            "label": "Minification Filter",
+            "description": "How a texture is sampled when it is drawn smaller than its own size, which is most of the screen. nearest takes one texel and shimmers as the camera moves. linear averages and settles, and is where mipmaps and anisotropic filtering do their work. Core Vulkan, so the list never changes.",
+            "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
-            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, linear blends across them. Both are core Vulkan, so the list never changes. Applied after Texture Filtering, so it overrides the mip behaviour that choice implies. Only affects textures that have mips.",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, which shows as a band on the ground. linear blends across them, the third linear in trilinear. Core Vulkan, so the list never changes. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "anisotropy": {
