@@ -7,20 +7,11 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ALPHA_MISS_WARN;
 use crate::consts::ALPHA_OPAQUE_INFO;
-use crate::consts::DEPTH_EMPTY_WARN;
-use crate::consts::FORMAT_FORCED_WARN;
 use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
 use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
-use crate::consts::SPACE_EMPTY_WARN;
-use crate::consts::SPACE_EXTENDED_INFO;
-use crate::consts::SPACE_FORCED_WARN;
 use crate::consts::TOGGLE_ON;
-use crate::consts::TRANSFER_EMPTY_WARN;
-use crate::consts::TRANSFER_ENCODED_INFO;
-use crate::consts::TRANSFER_FORCED_WARN;
-use crate::consts::TRANSFER_SHADER_INFO;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
 use crate::instance::call_write_list;
@@ -28,15 +19,12 @@ use crate::instance::insts_get;
 use crate::instance::owning_instance;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
-use crate::instance::PfnSurfaceFormats2;
 use crate::instance::PfnSurfaceModes2;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
 use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
-use crate::instance::VkSurfaceFormat2;
-use crate::instance::SURFACE_FORMAT_2;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::logging::log_at;
@@ -44,44 +32,10 @@ use crate::logging::LogLevel;
 use crate::probe::build_probe;
 use crate::probe::call_write_probe;
 use crate::ranks::alpha_semantic;
-use crate::ranks::format_display;
-use crate::ranks::format_semantic;
-use crate::ranks::numeric_semantic;
 use crate::ranks::present_semantic;
-use crate::ranks::space_semantic;
-use crate::ranks::Numeric;
 
 fn mode_value(mode: &vk::PresentModeKHR) -> Option<u32> {
     Some(mode.as_raw() as u32)
-}
-
-fn depth_of(f: &vk::SurfaceFormatKHR) -> Option<u32> {
-    format_semantic(f.format.as_raw() as u32).map(|facts| facts.depth)
-}
-
-fn numeric_of(f: &vk::SurfaceFormatKHR) -> Option<Numeric> {
-    format_semantic(f.format.as_raw() as u32).map(|facts| facts.numeric)
-}
-
-fn space_of(f: &vk::SurfaceFormatKHR) -> Option<u32> {
-    Some(f.color_space.as_raw() as u32)
-}
-
-fn surface_filtered(
-    formats: Vec<vk::SurfaceFormatKHR>,
-    s: &Settings,
-) -> Vec<vk::SurfaceFormatKHR> {
-    filtered(
-        filtered(
-            filtered(formats, s.depth, depth_of, DEPTH_EMPTY_WARN),
-            s.color_space,
-            space_of,
-            SPACE_EMPTY_WARN,
-        ),
-        s.transfer,
-        numeric_of,
-        TRANSFER_EMPTY_WARN,
-    )
 }
 
 fn present_filtered(
@@ -211,13 +165,6 @@ fn log_extended(extended: bool, message: &str) {
     }
 }
 
-fn maybe_log_space(choice: Option<u32>) {
-    match choice.and_then(space_semantic) {
-        Some(facts) => log_extended(facts.extended, SPACE_EXTENDED_INFO),
-        None => (),
-    }
-}
-
 fn maybe_log_present(choice: Option<u32>) {
     match choice.and_then(present_semantic) {
         Some(facts) => log_extended(facts.extended, PRESENT_EXTENDED_INFO),
@@ -236,60 +183,6 @@ fn maybe_log_alpha(choice: Option<u32>) {
     match choice.and_then(alpha_semantic) {
         Some(facts) => log_blending(facts.blends),
         None => (),
-    }
-}
-
-fn log_encoding(encoded: bool) {
-    match encoded {
-        true => log_at(LogLevel::Info, TRANSFER_ENCODED_INFO),
-        false => log_at(LogLevel::Info, TRANSFER_SHADER_INFO),
-    }
-}
-
-fn maybe_log_transfer(choice: Option<Numeric>) {
-    match choice.and_then(numeric_semantic) {
-        Some(facts) => log_encoding(facts.encoded),
-        None => (),
-    }
-}
-
-fn excluded<V: PartialEq>(choice: Option<V>, value: Option<V>) -> bool {
-    match choice {
-        Some(wanted) => value != Some(wanted),
-        None => false,
-    }
-}
-
-fn maybe_warn(kept_out: bool, warn: &str) {
-    match kept_out {
-        true => log_at(LogLevel::Warn, warn),
-        false => (),
-    }
-}
-
-fn warn_excluded_format(kept_out: bool, format: u32) {
-    match kept_out {
-        true => log_at(
-            LogLevel::Warn,
-            &format!("{}: {}", FORMAT_FORCED_WARN, format_display(format)),
-        ),
-        false => (),
-    }
-}
-
-fn warn_excluded_choice(asked: vk::SurfaceFormatKHR, s: &Settings) {
-    warn_excluded_format(
-        excluded(s.depth, depth_of(&asked)),
-        asked.format.as_raw() as u32,
-    );
-    maybe_warn(excluded(s.color_space, space_of(&asked)), SPACE_FORCED_WARN);
-    maybe_warn(excluded(s.transfer, numeric_of(&asked)), TRANSFER_FORCED_WARN);
-}
-
-fn asked_format(original: &vk::SwapchainCreateInfoKHR) -> vk::SurfaceFormatKHR {
-    vk::SurfaceFormatKHR {
-        format: original.image_format,
-        color_space: original.image_color_space,
     }
 }
 
@@ -346,52 +239,6 @@ fn call_query_surface_caps(
             max_image_count: 0,
             ..caps
         },
-    }
-}
-
-pub(crate) fn call_query_surface_formats_all(
-    inst: &VkInstState,
-    phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
-) -> Vec<vk::SurfaceFormatKHR> {
-    let mut n: u32 = 0;
-    let r1 = unsafe {
-        (inst.surface_fp.get_physical_device_surface_formats_khr)(phys, surface, &mut n, ptr::null_mut())
-    };
-    let mut v = vec![vk::SurfaceFormatKHR::default(); n as usize];
-    let r2 = unsafe {
-        (inst.surface_fp.get_physical_device_surface_formats_khr)(phys, surface, &mut n, v.as_mut_ptr())
-    };
-    match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
-        (_, _) => Vec::new(),
-    }
-}
-
-fn call_filtered_formats(
-    inst: &VkInstState,
-    phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
-    s: &Settings,
-) -> Vec<vk::SurfaceFormatKHR> {
-    maybe_log_space(s.color_space);
-    maybe_log_transfer(s.transfer);
-    surface_filtered(call_query_surface_formats_all(inst, phys, surface), s)
-}
-
-pub(crate) fn call_surface_formats(
-    phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
-    count: *mut u32,
-    formats: *mut vk::SurfaceFormatKHR,
-) -> vk::Result {
-    match owning_instance(phys) {
-        None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some((_, inst)) => call_write_list(
-            &call_filtered_formats(&inst, phys, surface, ensure_settings()),
-            count,
-            formats,
-        ),
     }
 }
 
@@ -536,144 +383,6 @@ pub(crate) fn call_surface_capabilities2(
     }
 }
 
-fn empty_format2() -> VkSurfaceFormat2 {
-    VkSurfaceFormat2 {
-        s_type: vk::StructureType::from_raw(SURFACE_FORMAT_2 as i32),
-        p_next: ptr::null_mut(),
-        surface_format: vk::SurfaceFormatKHR::default(),
-    }
-}
-
-fn unwrapped_formats(wrapped: Vec<VkSurfaceFormat2>) -> Vec<vk::SurfaceFormatKHR> {
-    wrapped.into_iter().map(|one| one.surface_format).collect()
-}
-
-fn call_query_formats2_all(
-    fp: PfnSurfaceFormats2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-) -> Vec<vk::SurfaceFormatKHR> {
-    let mut n: u32 = 0;
-    let r1 = unsafe { fp(phys, info, &mut n, ptr::null_mut()) };
-    let mut v = vec![empty_format2(); n as usize];
-    let r2 = unsafe { fp(phys, info, &mut n, v.as_mut_ptr()) };
-    match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => unwrapped_formats(v),
-        (_, _) => Vec::new(),
-    }
-}
-
-fn completed(written: usize, available: usize) -> vk::Result {
-    match written == available {
-        true => vk::Result::SUCCESS,
-        false => vk::Result::INCOMPLETE,
-    }
-}
-
-fn call_write_formats2(
-    asked: u32,
-    kept_formats: &[vk::SurfaceFormatKHR],
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    let written = (asked as usize).min(kept_formats.len());
-    (0..written).for_each(|at| unsafe { (*out.add(at)).surface_format = kept_formats[at] });
-    unsafe { *count = written as u32 };
-    completed(written, kept_formats.len())
-}
-
-fn call_filled_formats2(
-    queried: vk::Result,
-    asked: u32,
-    kept_formats: &[vk::SurfaceFormatKHR],
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    match queried {
-        vk::Result::SUCCESS | vk::Result::INCOMPLETE => {
-            call_write_formats2(asked, kept_formats, count, out)
-        }
-        e => e,
-    }
-}
-
-fn call_formats2_into(
-    fp: PfnSurfaceFormats2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    kept_formats: &[vk::SurfaceFormatKHR],
-    asked: u32,
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    call_filled_formats2(
-        unsafe { fp(phys, info, count, out) },
-        asked,
-        kept_formats,
-        count,
-        out,
-    )
-}
-
-fn call_formats2_count(kept_formats: &[vk::SurfaceFormatKHR], count: *mut u32) -> vk::Result {
-    unsafe { *count = kept_formats.len() as u32 };
-    vk::Result::SUCCESS
-}
-
-fn call_formats2_answer(
-    fp: PfnSurfaceFormats2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    kept_formats: &[vk::SurfaceFormatKHR],
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    match out.is_null() {
-        true => call_formats2_count(kept_formats, count),
-        false => call_formats2_into(
-            fp,
-            phys,
-            info,
-            kept_formats,
-            unsafe { *count },
-            count,
-            out,
-        ),
-    }
-}
-
-fn call_formats2_through(
-    fp: PfnSurfaceFormats2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-    s: &Settings,
-) -> vk::Result {
-    maybe_log_space(s.color_space);
-    maybe_log_transfer(s.transfer);
-    call_formats2_answer(
-        fp,
-        phys,
-        info,
-        &surface_filtered(call_query_formats2_all(fp, phys, info), s),
-        count,
-        out,
-    )
-}
-
-pub(crate) fn call_surface_formats2(
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    out: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    match owning_instance(phys).and_then(|(_, inst)| inst.formats2_fp) {
-        None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(fp) => call_formats2_through(fp, phys, info, count, out, ensure_settings()),
-    }
-}
-
 fn call_query_modes2_all(
     fp: PfnSurfaceModes2,
     phys: vk::PhysicalDevice,
@@ -711,18 +420,11 @@ pub(crate) fn call_surface_present_modes2(
 fn maybe_probe(
     inst: &VkInstState,
     dev: &VkDevState,
-    surface: vk::SurfaceKHR,
     supported: &[vk::PresentModeKHR],
     caps: &vk::SurfaceCapabilitiesKHR,
 ) {
     match env_probe_active() {
-        true => call_write_probe(build_probe(
-            inst,
-            dev,
-            supported,
-            caps,
-            &call_query_surface_formats_all(inst, dev.phys, surface),
-        )),
+        true => call_write_probe(build_probe(inst, dev, supported, caps)),
         false => (),
     }
 }
@@ -745,9 +447,8 @@ fn call_prepared_ci(
 ) -> vk::SwapchainCreateInfoKHR {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
-    maybe_probe(inst, dev, original.surface, &supported, &caps);
+    maybe_probe(inst, dev, &supported, &caps);
     maybe_log_alpha(s.composite_alpha);
-    warn_excluded_choice(asked_format(original), s);
     patched_swapchain_ci(
         original,
         pick_present_mode(s.present_mode, &supported, original.present_mode),
