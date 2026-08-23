@@ -12,7 +12,6 @@ use crate::config::ensure_settings;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
-use crate::consts::FN_SURFACE_FORMATS_2;
 use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::GROUP_EMPTY_WARN;
@@ -21,19 +20,10 @@ use crate::lists::kept;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-pub(crate) const SURFACE_FORMAT_2: u32 = 1000119002;
-
 pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
     vk::PhysicalDevice,
     *const VkPhysicalDeviceSurfaceInfo2,
     *mut VkSurfaceCapabilities2,
-) -> vk::Result;
-
-pub(crate) type PfnSurfaceFormats2 = unsafe extern "system" fn(
-    vk::PhysicalDevice,
-    *const VkPhysicalDeviceSurfaceInfo2,
-    *mut u32,
-    *mut VkSurfaceFormat2,
 ) -> vk::Result;
 
 pub(crate) type PfnSurfaceModes2 = unsafe extern "system" fn(
@@ -107,14 +97,6 @@ pub(crate) struct VkSurfaceCapabilities2 {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub(crate) struct VkSurfaceFormat2 {
-    pub(crate) s_type: vk::StructureType,
-    pub(crate) p_next: *mut c_void,
-    pub(crate) surface_format: vk::SurfaceFormatKHR,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
 pub(crate) struct VkChainNode {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *mut c_void,
@@ -135,7 +117,6 @@ pub(crate) struct VkInstState {
     pub(crate) gipa: vk::PFN_vkGetInstanceProcAddr,
     pub(crate) surface_fp: vk::KhrSurfaceFn,
     pub(crate) caps2_fp: Option<PfnSurfaceCaps2>,
-    pub(crate) formats2_fp: Option<PfnSurfaceFormats2>,
     pub(crate) modes2_fp: Option<PfnSurfaceModes2>,
     pub(crate) groups_fp: Option<PfnDeviceGroups>,
     pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
@@ -459,7 +440,6 @@ fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) 
             gipa,
             surface_fp: load_surface_fp(gipa, handle),
             caps2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_CAPS_2),
-            formats2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_FORMATS_2),
             modes2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_MODES_2),
             groups_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS),
             groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),

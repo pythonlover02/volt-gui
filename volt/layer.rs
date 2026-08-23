@@ -19,7 +19,6 @@ use crate::consts::FN_QUEUE_PRESENT;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_SURFACE_CAPS_2;
-use crate::consts::FN_SURFACE_FORMATS_2;
 use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::LAYER_DATA_CALLBACK;
@@ -55,7 +54,6 @@ use crate::instance::insts_del;
 use crate::instance::insts_get;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
 use crate::instance::VkSurfaceCapabilities2;
-use crate::instance::VkSurfaceFormat2;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -70,8 +68,6 @@ use crate::swapchain::call_create_shared_swapchains;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_capabilities2;
-use crate::swapchain::call_surface_formats;
-use crate::swapchain::call_surface_formats2;
 use crate::swapchain::call_surface_present_modes;
 use crate::swapchain::call_surface_present_modes2;
 
@@ -104,7 +100,6 @@ fn instance_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
-        "vkGetPhysicalDeviceSurfaceFormatsKHR" => Some(vkGetPhysicalDeviceSurfaceFormatsKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
         "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
         _ => None,
@@ -132,7 +127,6 @@ fn device_symbol(name: &str) -> Option<*mut c_void> {
 fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
     match name {
         FN_SURFACE_CAPS_2 => Some(vkGetPhysicalDeviceSurfaceCapabilities2KHR as *mut c_void),
-        FN_SURFACE_FORMATS_2 => Some(vkGetPhysicalDeviceSurfaceFormats2KHR as *mut c_void),
         FN_SURFACE_MODES_2 => Some(vkGetPhysicalDeviceSurfacePresentModes2EXT as *mut c_void),
         FN_DEVICE_GROUPS => Some(vkEnumeratePhysicalDeviceGroups as *mut c_void),
         FN_DEVICE_GROUPS_KHR => Some(vkEnumeratePhysicalDeviceGroupsKHR as *mut c_void),
@@ -143,7 +137,6 @@ fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
 fn instance_fp_present(inst: vk::Instance, name: &str) -> bool {
     match (insts_get(inst.as_raw()), name) {
         (Some(st), FN_SURFACE_CAPS_2) => st.caps2_fp.is_some(),
-        (Some(st), FN_SURFACE_FORMATS_2) => st.formats2_fp.is_some(),
         (Some(st), FN_SURFACE_MODES_2) => st.modes2_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS) => st.groups_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS_KHR) => st.groups_khr_fp.is_some(),
@@ -566,24 +559,6 @@ unsafe extern "system" fn vkDestroySwapchainKHR(
         }
         None => (),
     }
-}
-
-unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormatsKHR(
-    phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
-    count: *mut u32,
-    formats: *mut vk::SurfaceFormatKHR,
-) -> vk::Result {
-    call_surface_formats(phys, surface, count, formats)
-}
-
-unsafe extern "system" fn vkGetPhysicalDeviceSurfaceFormats2KHR(
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    formats: *mut VkSurfaceFormat2,
-) -> vk::Result {
-    call_surface_formats2(phys, info, count, formats)
 }
 
 unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(
