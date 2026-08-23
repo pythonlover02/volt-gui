@@ -1,4 +1,5 @@
 use crate::config::parse_settings;
+use crate::consts::CadenceChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
 use crate::consts::TOGGLE_OFF;
@@ -42,6 +43,17 @@ const OFFSET_MIN: f32 = -10.0;
 const REFRESH_FPS: f32 = 144.0;
 const UNDER_REFRESH_FPS: f32 = 138.0;
 const OFFSET_PROFILE: &str = "[framerate]\nframe_limit_offset = \"-6\"\n";
+const FIXED_PROFILE: &str = "[framerate]\nframe_limit_cadence = \"fixed\"\n";
+const DYNAMIC_PROFILE: &str = "[framerate]\nframe_limit_cadence = \"dynamic\"\n";
+const PEAK_START_NS: u64 = 2_000;
+const SLOW_FRAME_NS: u64 = 1_600;
+const SMOOTH_TARGET_NS: u64 = 11_600;
+const DYNAMIC_TARGET_NS: u64 = 11_750;
+const FAST_FRAME_NS: u64 = 500;
+const DECAY_FROM_NS: u64 = 4_000;
+const DECAY_TO_NS: u64 = 3_000;
+const SPIKE_PEAK_NS: u64 = 4_000;
+const HITCH_NS: u64 = 100_000;
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
@@ -120,10 +132,18 @@ fn turns_a_frame_rate_into_an_interval() {
 #[test]
 fn starts_the_timeline_one_interval_after_the_first_frame() {
     assert_eq!(
-        advanced(None, LIMIT_START_NS, LIMIT_INTERVAL_NS, Some(MethodChoice::Early)),
+        advanced(
+            None,
+            LIMIT_START_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            None,
+        ),
         Timeline {
             target: LIMIT_START_NS + LIMIT_INTERVAL_NS,
             interval: LIMIT_INTERVAL_NS,
+            last: LIMIT_START_NS + LIMIT_INTERVAL_NS,
+            peak: LIMIT_INTERVAL_NS,
         }
     );
 }
@@ -132,10 +152,16 @@ fn starts_the_timeline_one_interval_after_the_first_frame() {
 fn holds_the_cadence_when_a_frame_runs_a_little_late() {
     assert_eq!(
         advanced(
-            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
             LIMIT_START_NS + LATE_NS,
             LIMIT_INTERVAL_NS,
             Some(MethodChoice::Early),
+            None,
         )
         .target,
         LIMIT_START_NS + LIMIT_INTERVAL_NS
@@ -146,10 +172,16 @@ fn holds_the_cadence_when_a_frame_runs_a_little_late() {
 fn never_chases_a_slow_frame_with_a_fast_one() {
     assert_eq!(
         advanced(
-            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
             LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS,
             LIMIT_INTERVAL_NS,
             Some(MethodChoice::Early),
+            None,
         )
         .target,
         LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS
@@ -160,10 +192,16 @@ fn never_chases_a_slow_frame_with_a_fast_one() {
 fn measures_a_reactive_interval_from_the_frame_just_shown() {
     assert_eq!(
         advanced(
-            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
             LIMIT_START_NS + LATE_NS,
             LIMIT_INTERVAL_NS,
             Some(MethodChoice::Reactive),
+            None,
         )
         .target,
         LIMIT_START_NS + LATE_NS + LIMIT_INTERVAL_NS
@@ -174,14 +212,22 @@ fn measures_a_reactive_interval_from_the_frame_just_shown() {
 fn restarts_the_timeline_when_the_frame_limit_changes() {
     assert_eq!(
         advanced(
-            Some(Timeline { target: LIMIT_START_NS, interval: LIMIT_INTERVAL_NS }),
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
             LIMIT_START_NS + LATE_NS,
             OTHER_INTERVAL_NS,
             Some(MethodChoice::Late),
+            None,
         ),
         Timeline {
             target: LIMIT_START_NS + LATE_NS + OTHER_INTERVAL_NS,
             interval: OTHER_INTERVAL_NS,
+            last: LIMIT_START_NS + LATE_NS + OTHER_INTERVAL_NS,
+            peak: OTHER_INTERVAL_NS,
         }
     );
 }
@@ -200,4 +246,161 @@ fn never_shifts_a_cap_below_one_frame_a_second() {
 #[test]
 fn reads_a_frame_limit_offset_from_a_profile() {
     assert_eq!(parse_settings(OFFSET_PROFILE).frame_limit_offset, Some(OFFSET_DOWN));
+}
+
+#[test]
+fn reads_a_frame_limit_cadence_from_a_profile() {
+    assert_eq!(parse_settings(FIXED_PROFILE).cadence, Some(CadenceChoice::Fixed));
+    assert_eq!(parse_settings(DYNAMIC_PROFILE).cadence, Some(CadenceChoice::Dynamic));
+}
+
+#[test]
+fn times_production_from_the_release_of_the_last_frame() {
+    assert_eq!(
+        advanced(
+            None,
+            LIMIT_START_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Smooth),
+        )
+        .last,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn a_fixed_cadence_paces_at_the_cap() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
+            LIMIT_START_NS + FAST_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Fixed),
+        )
+        .target,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn smooth_paces_at_the_worst_recent_frame() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: PEAK_START_NS,
+            }),
+            LIMIT_START_NS + SLOW_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Smooth),
+        )
+        .target,
+        SMOOTH_TARGET_NS
+    );
+}
+
+#[test]
+fn dynamic_rounds_the_pace_to_a_quarter_step() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: PEAK_START_NS,
+            }),
+            LIMIT_START_NS + SLOW_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Dynamic),
+        )
+        .target,
+        DYNAMIC_TARGET_NS
+    );
+}
+
+#[test]
+fn neither_cadence_paces_faster_than_the_cap() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: FAST_FRAME_NS,
+            }),
+            LIMIT_START_NS + FAST_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Smooth),
+        )
+        .target,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS
+    );
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: FAST_FRAME_NS,
+            }),
+            LIMIT_START_NS + FAST_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Dynamic),
+        )
+        .target,
+        LIMIT_START_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn the_peak_decays_so_the_pace_climbs_back() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: DECAY_FROM_NS,
+            }),
+            LIMIT_START_NS + LIMIT_INTERVAL_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Smooth),
+        )
+        .peak,
+        DECAY_TO_NS
+    );
+}
+
+#[test]
+fn a_hitch_cannot_set_the_peak_past_the_spike_limit() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
+            LIMIT_START_NS + HITCH_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            Some(CadenceChoice::Smooth),
+        )
+        .peak,
+        SPIKE_PEAK_NS
+    );
 }
