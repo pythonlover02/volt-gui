@@ -64,10 +64,11 @@ export CARGO_TARGET_DIR
 LAYER_64 := $(TARGET_DIR)/$(TRIPLE_64)/release/libvolt.so
 LAYER_32 := $(TARGET_DIR)/$(TRIPLE_32)/release/libvolt.so
 LAUNCHER := $(TARGET_DIR)/$(TRIPLE_64)/release/volt
+PROBE    := $(TARGET_DIR)/$(TRIPLE_64)/release/volt-probe
 GUI_BIN  := $(BIN_DIR)/volt-gui
 DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
-RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs)
+RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs) $(wildcard volt-probe/*.rs)
 GUI_SOURCES  := $(wildcard volt-gui/*.py)
 VENV_STAMP   := $(OUT)/.venv
 
@@ -94,7 +95,7 @@ CONTAINER_STAMP := $(OUT)/.container-image
 
 NO_SUDO = @test -z "$$SUDO_USER" || { echo "error: do not build with sudo — run 'make' as your user, then 'sudo make install'"; exit 1; }
 
-DIST_TREES := volt volt-gui images flatpak container .github
+DIST_TREES := volt volt-probe volt-gui images flatpak container .github
 
 ifeq ($(DESTDIR),)
 ROOT_GUARD := check-root
@@ -110,6 +111,7 @@ USER_MANIFEST_HOME = $${SUDO_USER:+$$(getent passwd "$$SUDO_USER" | cut -d: -f6)
 
 INSTALL_FILES := \
   $(DESTDIR)$(bindir)/volt \
+  $(DESTDIR)$(bindir)/volt-probe \
   $(DESTDIR)$(bindir)/volt-gui \
   $(DESTDIR)$(LIBDIR_64)/libvolt.so \
   $(DESTDIR)$(LIBDIR_32)/libvolt.so \
@@ -128,6 +130,7 @@ USER_STATE     := $(USER_DATA)/volt
 
 USER_FILES := \
   $(USER_BIN)/volt \
+  $(USER_BIN)/volt-probe \
   $(USER_BIN)/volt-gui \
   $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so \
   $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so \
@@ -135,7 +138,7 @@ USER_FILES := \
   $(USER_DESK_DIR)/$(DESKTOP_FILE) \
   $(USER_ICON_DIR)/$(ICON_FILE)
 
-BUILT_ARTIFACTS := $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
+BUILT_ARTIFACTS := $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(PROBE) $(GUI_BIN) $(DESKTOP)
 
 .DELETE_ON_ERROR:
 
@@ -145,9 +148,9 @@ BUILT_ARTIFACTS := $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
         uninstall clean help check-root check-sudo-user check-not-root \
         check-no-user-layer check-no-system-layer check-built check-bundles
 
-all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(GUI_BIN) $(DESKTOP)
+all: $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(PROBE) $(GUI_BIN) $(DESKTOP)
 
-layer-64:        $(LAYER_64) $(LAUNCHER)
+layer-64:        $(LAYER_64) $(LAUNCHER) $(PROBE)
 layer-32:        $(LAYER_32)
 gui:             $(GUI_BIN)
 desktop:         $(DESKTOP)
@@ -159,7 +162,7 @@ container-image: $(CONTAINER_STAMP)
 $(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller:
 	@mkdir -p $@
 
-$(LAYER_64) $(LAUNCHER) &: $(RUST_SOURCES)
+$(LAYER_64) $(LAUNCHER) $(PROBE) &: $(RUST_SOURCES)
 	$(NO_SUDO)
 	cd volt && $(CARGO) build --release --target $(TRIPLE_64)
 
@@ -167,7 +170,7 @@ $(LAYER_32): $(RUST_SOURCES)
 	$(NO_SUDO)
 	-@$(RUSTUP) target add $(TRIPLE_32)
 	cd volt && CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
-	  $(CARGO) build --release --target $(TRIPLE_32)
+	  $(CARGO) build --release --lib --target $(TRIPLE_32)
 
 $(VENV_STAMP): requirements.txt | $(OUT)
 	$(NO_SUDO)
@@ -213,12 +216,13 @@ $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
 	rm -rf $(OUT)/flatpak.$*
 
 $(DIST_STAMP): $(GUI_BIN) \
-    $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(DESKTOP) $(FLATPAK_BUNDLES) \
+    $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(PROBE) $(DESKTOP) $(FLATPAK_BUNDLES) \
     $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(OUT)
 	rm -rf $(DIST)
 	install -Dm755 $(GUI_BIN) $(DIST)/build/bin/volt-gui
 	install -Dm755 $(LAYER_64) $(DIST)/build/target/$(TRIPLE_64)/release/libvolt.so
 	install -Dm755 $(LAUNCHER) $(DIST)/build/target/$(TRIPLE_64)/release/volt
+	install -Dm755 $(PROBE) $(DIST)/build/target/$(TRIPLE_64)/release/volt-probe
 	install -Dm755 $(LAYER_32) $(DIST)/build/target/$(TRIPLE_32)/release/libvolt.so
 	install -Dm644 $(DESKTOP) $(DIST)/build/share/$(DESKTOP_FILE)
 	install -Dm644 $(MANIFEST) $(DIST)/$(MANIFEST)
@@ -251,6 +255,7 @@ release-container: $(CONTAINER_STAMP)
 
 install: | $(ROOT_GUARD) check-built $(LAYER_GUARD)
 	install -Dm755 $(LAUNCHER)    $(DESTDIR)$(bindir)/volt
+	install -Dm755 $(PROBE)       $(DESTDIR)$(bindir)/volt-probe
 	install -Dm755 $(GUI_BIN)     $(DESTDIR)$(bindir)/volt-gui
 	install -Dm755 $(LAYER_64)    $(DESTDIR)$(LIBDIR_64)/libvolt.so
 	install -Dm755 $(LAYER_32)    $(DESTDIR)$(LIBDIR_32)/libvolt.so
@@ -280,6 +285,7 @@ flatpak-install: | check-root check-sudo-user check-bundles
 
 install-user: | check-not-root check-built check-no-system-layer
 	install -Dm755 $(LAUNCHER)    $(USER_BIN)/volt
+	install -Dm755 $(PROBE)       $(USER_BIN)/volt-probe
 	install -Dm755 $(GUI_BIN)     $(USER_BIN)/volt-gui
 	install -Dm755 $(LAYER_64)    $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so
 	install -Dm755 $(LAYER_32)    $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so
@@ -371,7 +377,7 @@ check-no-system-layer:
 
 help:
 	@echo "make                    layer (64 + 32), launcher, gui, desktop entry"
-	@echo "make layer-64           64-bit layer and the volt launcher"
+	@echo "make layer-64           64-bit layer, the volt launcher and volt-probe"
 	@echo "make layer-32           32-bit layer"
 	@echo "make gui                gui binary via PyInstaller"
 	@echo "make desktop            desktop entry only"
