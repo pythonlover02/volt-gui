@@ -14,13 +14,16 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QComboBox
 from PySide6.QtWidgets import QDialogButtonBox
+from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QHBoxLayout
 from PySide6.QtWidgets import QInputDialog
+from PySide6.QtWidgets import QLabel
 from PySide6.QtWidgets import QListView
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtWidgets import QMenu
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QSizePolicy
 from PySide6.QtWidgets import QStackedWidget
 from PySide6.QtWidgets import QSystemTrayIcon
 from PySide6.QtWidgets import QVBoxLayout
@@ -54,6 +57,7 @@ from themes import get_standard_button_height
 from themes import get_standard_button_width
 from themes import process_theme_application
 from ui import create_code_block_widget
+from ui import create_combo_widget
 from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
 from ui import build_sidebar_container_widget
@@ -183,10 +187,6 @@ def is_option_enabled(main_window, option_key: str) -> bool:
 
 
 def create_options_tab_widget() -> dict:
-    from PySide6.QtWidgets import QFrame
-    from PySide6.QtWidgets import QLabel
-    from PySide6.QtWidgets import QSizePolicy
-    from ui import create_combo_widget
     widget = QWidget()
     options_widgets = {}
     main_layout = QVBoxLayout(widget)
