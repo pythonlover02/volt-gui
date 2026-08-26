@@ -75,7 +75,7 @@ PREVIEW_STOP_MS: Final[int] = 1500
 BUNDLE_ATTR: Final[str] = "_MEIPASS"
 BUNDLE_VARS: Final[tuple] = ("LD_LIBRARY_PATH", "LD_PRELOAD")
 PATH_VAR: Final[str] = "PATH"
-PROBE_FAILED_ERROR: Final[str] = "Could not probe this device.\n\nvolt-probe failed to run, so volt-gui has nothing to read your hardware with. Every setting fed by the device holds nothing but default until it does, because volt-gui offers no option it has not read.\n\nvolt-probe installs alongside volt and volt-gui, so check that the directory holding them is on your PATH, then restart volt-gui."
+PROBE_FAILED_ERROR: Final[str] = "volt-probe failed to run.\n\nWithout it volt-gui cannot read your hardware, so every setting fed by the device holds nothing but default.\n\nvolt-probe installs next to volt and volt-gui. Check that their directory is on your PATH, then restart volt-gui."
 
 
 def build_preview_args(profile_name: str) -> list:
