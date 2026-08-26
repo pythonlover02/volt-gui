@@ -32,7 +32,7 @@ SETTINGS_DB: Final[dict] = {
         "device": {
             "section": "gpu",
             "label": "Physical Device",
-            "description": "Which GPU the game sees, listed by name as this machine reports them. The layer hides every other device from enumeration, so a game that takes the first one it is offered gets yours. If your choice matches nothing, the full list comes back and a warning is logged.",
+            "description": "Which GPU the game sees. The layer hides every other device from enumeration, so a game that takes the first one it is offered gets yours. If nothing matches, the full list comes back and a warning is logged.",
             "options": (DEFAULT_VALUE,),
         },
     },
@@ -40,19 +40,19 @@ SETTINGS_DB: Final[dict] = {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. The layer hides every other mode from the list the game is shown, so a game's own vsync menu cannot offer one you ruled out, whatever route it takes to ask. A mode the surface does not support falls back to the game's own choice with a warning.",
+            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. Every other mode is hidden from the game, so its own vsync menu cannot offer one you ruled out. A mode the surface lacks falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
         },
         "image_count": {
             "section": "display",
             "label": "Swapchain Images",
-            "description": "How many images the swapchain holds. This is the frames in flight control, and the closest thing here to an anti-lag setting: more images let the game run further ahead of the GPU, which smooths frame delivery and costs input lag, while fewer hold it closer to the display. The list is what this surface allows, and the choice is reported back to the game as well, so a game that picks its count from what the surface offers honours it on its own.",
+            "description": "How many images the swapchain holds, which is the frames in flight control and the closest thing here to an anti-lag setting. More lets the game run further ahead of the GPU, smoothing frame delivery and costing input lag. Fewer holds it closer to the display. The list is what this surface allows.",
             "options": (DEFAULT_VALUE,),
         },
         "composite_alpha": {
             "section": "display",
             "label": "Composite Alpha",
-            "description": "How the compositor treats the alpha channel of the finished image. opaque tells the compositor to skip blending the window altogether, which is the cheapest path on Wayland. The list is what this surface allows, and a value the surface turns down falls back to the game's own choice with a warning.",
+            "description": "How the compositor treats the alpha channel of the finished image. opaque skips blending the window altogether, the cheapest path on Wayland. A value the surface turns down falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
         },
         "clipped": {
@@ -66,31 +66,31 @@ SETTINGS_DB: Final[dict] = {
         "frame_limit": {
             "section": "framerate",
             "label": "Frame Limit",
-            "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. This one is volt's own, so the list is fixed rather than read from the device. Past about 500 the interval gets shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
+            "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. Past about 500 the interval is shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
             "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
         },
         "frame_limit_offset": {
             "section": "framerate",
             "label": "Frame Limit Offset",
-            "description": "Shift the frame limit a few frames up or down, in steps of two. VRR displays want the cap sitting just under refresh: pick 144, set this to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR. This one is volt's own, so the list is fixed. Only does something when Frame Limit is set.",
+            "description": "Shift the frame limit up or down, in steps of two. VRR displays want the cap sitting just under refresh: pick 144, set this to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"),
         },
         "frame_limit_cadence": {
             "section": "framerate",
             "label": "Frame Limit Cadence",
-            "description": "Which rate the limiter paces at. fixed uses your cap and nothing else. smooth paces at the slowest of the last few frames instead, so the fast frames wait for the slow ones and the cadence comes out even at whatever the machine is holding. dynamic reads exactly what smooth reads and then rounds it down to a quarter step of your cap, so it sits on a set rate rather than following the load. The steps are quarter steps of your cap's frame time, so they sit close together low down and far apart up top: a 60 cap steps 60, 48, 40, 34, 30, while a 240 cap steps 240, 192, 160, 137, 120. Both take the idea from consoles, which pick a rate the machine can hold and stay on it instead of letting frame time wander with the load. A limiter can only make frames later, which is why neither reads the average: a frame slower than the average could never be paced up to it. Both climb back on their own, and neither goes faster than your cap. The trade is frames for evenness: fixed does nothing at all once the machine falls under the cap, so what you get is whatever the machine produced, one frame long and the next short. smooth and dynamic hold the short frames back to match the long ones, which costs you the frames you would have seen and buys you even spacing. dynamic changing step is visible, but it is one change rather than a different frame time every frame. Set fixed if the machine holds the cap, or if you want every frame you can get for the input latency. Nothing here comes from the device, so the list never changes. Only does something when Frame Limit is set.",
+            "description": "Which rate the limiter paces at. fixed uses your cap and nothing else. smooth paces at the slowest of the last few frames, so the fast frames wait for the slow ones and the cadence comes out even at whatever the machine is holding. dynamic reads the same and rounds it down to a quarter step of your cap, so it sits on a set rate: a 60 cap steps 60, 48, 40, 34, 30. Both trade frames for even spacing, and neither goes faster than your cap. Set fixed if the machine holds the cap, or if you want every frame you can get for the input latency. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "fixed", "smooth", "dynamic"),
         },
         "frame_limit_method": {
             "section": "framerate",
             "label": "Frame Limit Method",
-            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through right away and waits before handing control back, so the game starts its next frame later and reads input closer to display time. reactive waits where early does, but measures each interval from the frame just shown rather than from a fixed timeline, so a slow frame is never chased with a fast one. late is the equivalent of Reflex and Anti-Lag here, since holding the next frame back is the mechanism those use too. Going further would need to know when the GPU actually finished a frame, which core Vulkan does not report, so there is nothing above late. Only does something when Frame Limit is set.",
+            "description": "When the limiter waits. early holds the frame back so presents leave on a fixed cadence. late lets the present through and waits before handing control back, so the game reads input closer to display time, which is what Reflex and Anti-Lag do. reactive waits where early does but measures from the frame just shown, so a slow frame is never chased with a fast one. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "early", "late", "reactive"),
         },
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
-            "description": "How the limiter waits, from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and re-checks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole thing, which is the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
+            "description": "How the limiter waits, cheapest to tightest. sleep hands the whole wait to the kernel. sliced sleeps in short steps and re-checks the clock, correcting for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits throughout, the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
         },
     },
@@ -98,7 +98,7 @@ SETTINGS_DB: Final[dict] = {
         "mag_filter": {
             "section": "textures",
             "label": "Magnification Filter",
-            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. Core Vulkan, so the list never changes. Combinations, in the order mag, min, mipmap: retro is nearest, nearest, nearest. bilinear is linear, linear, nearest. trilinear is linear, linear, linear. Sharp pixel art without distant shimmer is nearest, linear, linear.",
+            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. This is the one filter a still screenshot shows you. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "min_filter": {
@@ -116,13 +116,13 @@ SETTINGS_DB: Final[dict] = {
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
-            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. This list is read from the device, so it holds nothing but default only where the device itself lacks samplerAnisotropy. volt never enables a feature the game left off: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Nearly every game asks for it.",
+            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. volt never enables the feature: where the game left it off the setting is ignored and a line is logged. Nearly every game asks for it.",
             "options": (DEFAULT_VALUE,),
         },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative values sharpen at the cost of shimmer, positive values blur but render faster. A negative bias is the nearest volt gets to sharpening textures seen at a steep angle. The list runs in steps of 0.2 across the range your GPU reports, and volt clamps what it passes down to that range.",
+            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_floor": {
@@ -142,7 +142,7 @@ SETTINGS_DB: Final[dict] = {
         "sample_shading": {
             "section": "rendering",
             "label": "Sample Shading",
-            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. The list runs in steps of 0.2. This list is read from the device, so it holds nothing but default only where the device itself lacks sampleRateShading. volt never enables a feature the game left off: most modern renderers are deferred and never ask, and where the game did not ask the setting is ignored and the layer logs a line saying so. Only does something in a game already using MSAA.",
+            "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. volt never enables the feature: most modern renderers are deferred and never ask, and where the game left it off the setting is ignored and a line is logged.",
             "options": (DEFAULT_VALUE,),
         },
         "alpha_to_coverage": {
@@ -154,13 +154,13 @@ SETTINGS_DB: Final[dict] = {
         "alpha_to_one": {
             "section": "rendering",
             "label": "Alpha To One",
-            "description": "Force fragment alpha to 1 after the shader runs. This list is read from the device, so it holds nothing but default only where the device itself lacks alphaToOne. volt never enables a feature the game left off: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Only does something where the game already renders to an MSAA target.",
+            "description": "Force fragment alpha to 1 after the shader runs. volt never enables the feature: where the game left it off the setting is ignored and a line is logged. Only does something where the game already renders to an MSAA target.",
             "options": (DEFAULT_VALUE,),
         },
         "depth_clamp": {
             "section": "rendering",
             "label": "Depth Clamp",
-            "description": "Keep fragments outside the near and far planes and pin their depth to the plane instead of discarding them. Stops weapon models being sliced open when the camera backs into a wall. The same toggle covers the far plane, where distant geometry stops disappearing and flattens onto the plane instead, which can look worse, so try it per game. This list is read from the device, so it holds nothing but default only where the device itself lacks depthClamp. volt never enables it: where the game did not ask for it the setting is ignored and the layer logs a line saying so. Most games never ask for it, so expect that line more often than not, and expect the card to do nothing in those games. Where a game did ask, it usually asked for one pass such as shadow rendering, and forcing the toggle applies it to every pipeline instead. Run with VOLT_LOG=info to see which case you are in.",
+            "description": "Keep fragments outside the near and far planes and pin their depth to the plane instead of discarding them. Stops weapon models being sliced open when the camera backs into a wall. The same toggle covers the far plane, where distant geometry flattens onto it instead of disappearing, which can look worse, so try it per game. volt never enables the feature, and most games leave it off, so expect this to do nothing in most of them. Run with VOLT_LOG=info to see which case you are in.",
             "options": (DEFAULT_VALUE,),
         },
     },
