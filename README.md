@@ -1,3 +1,6 @@
+> [!NOTE]
+> Bug reports and pull requests are welcome, but please understand that development happens in my free time and progress may be slow at times. The project is still maintained even if the last commit was made a while ago.
+
 # volt-gui
 
 Control panel for Vulkan games on Linux. Settings are applied by **volt**, an implicit Vulkan layer written in Rust, so they work on every driver: RADV, ANV, NVK, AMDVLK, NVIDIA proprietary.
@@ -7,9 +10,6 @@ Vulkan 1.0 only. The layer requests nothing beyond `VK_KHR_swapchain`, so behavi
 ![](/images/1.png)
 ![](/images/2.png)
 ![](/images/3.png)
-
-> [!NOTE]
-> Bug reports and PRs welcome, but this is free-time work and progress can be slow. Still maintained even if the last commit is old.
 
 ## Quick Start
 
