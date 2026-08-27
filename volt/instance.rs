@@ -183,6 +183,17 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
     phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
 }
 
+pub(crate) fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
+    call_owned_devices(&inst.instance)
+}
+
+pub(crate) fn device_index(all: &[vk::PhysicalDevice], phys: vk::PhysicalDevice) -> u32 {
+    all.iter()
+        .position(|device| *device == phys)
+        .map(|at| at as u32 + 1)
+        .unwrap_or(1)
+}
+
 fn indexed(devices: Vec<vk::PhysicalDevice>) -> Vec<(usize, vk::PhysicalDevice)> {
     devices.into_iter().enumerate().collect()
 }
@@ -351,10 +362,7 @@ fn call_query_groups(
 }
 
 fn call_allowed_devices(st: &VkInstState) -> Vec<vk::PhysicalDevice> {
-    gpu_filtered(
-        unsafe { st.instance.enumerate_physical_devices() }.unwrap_or_default(),
-        ensure_settings().gpu,
-    )
+    gpu_filtered(all_devices(st), ensure_settings().gpu)
 }
 
 fn call_groups_through(

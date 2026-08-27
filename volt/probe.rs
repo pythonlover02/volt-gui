@@ -13,6 +13,8 @@ use crate::consts::PROBE_SECTION;
 use crate::consts::PROBE_SEP;
 use crate::consts::PROBE_WRITE_INFO;
 use crate::device::VkDevState;
+use crate::instance::all_devices;
+use crate::instance::device_index;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -43,10 +45,6 @@ fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
     values
 }
 
-fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
-    unsafe { inst.instance.enumerate_physical_devices() }.unwrap_or_default()
-}
-
 fn device_features(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
@@ -67,13 +65,6 @@ fn device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
 
 fn device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
     all.iter().map(|p| device_name(inst, *p)).collect()
-}
-
-fn device_index(all: &[vk::PhysicalDevice], phys: vk::PhysicalDevice) -> u32 {
-    all.iter()
-        .position(|p| *p == phys)
-        .map(|at| at as u32 + 1)
-        .unwrap_or(1)
 }
 
 fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
