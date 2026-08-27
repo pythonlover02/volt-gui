@@ -1,7 +1,15 @@
+use std::sync::RwLock;
+
 use crate::config::parse_settings;
 use crate::consts::CadenceChoice;
+use crate::consts::FEATURE_ANISOTROPY;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
+use crate::consts::NOTE_NOT_SET;
+use crate::consts::SETTING_ANISOTROPY;
+use crate::consts::SETTING_FRAME_LIMIT;
+use crate::consts::SETTING_PRESENT_MODE;
+use crate::consts::TEXT_LINEAR;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::lists::filtered;
@@ -17,6 +25,14 @@ use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
 use crate::ranks::present_parse;
 use crate::ranks::present_semantic;
+use crate::report::call_claim;
+use crate::report::call_forget;
+use crate::report::feature_note;
+use crate::report::filter_text;
+use crate::report::forced_text;
+use crate::report::number_text;
+use crate::report::report_line;
+use crate::report::ReportMap;
 
 const UNKNOWN_MODE: u32 = 4242;
 const UNKNOWN_ALPHA: u32 = 16;
@@ -54,6 +70,20 @@ const DECAY_FROM_NS: u64 = 4_000;
 const DECAY_TO_NS: u64 = 3_000;
 const SPIKE_PEAK_NS: u64 = 4_000;
 const HITCH_NS: u64 = 100_000;
+const ASKED_MODE: &str = "fifo";
+const FORCED_MODE: &str = "mailbox";
+const ASKED_ANISO: &str = "off";
+const FORCED_LIMIT: &str = "60";
+const ASKED_LINE: &str = "present_mode: asked fifo";
+const BOTH_LINE: &str = "present_mode: asked fifo, forced mailbox";
+const FORCED_LINE: &str = "frame_limit: forced 60";
+const UNSET_LINE: &str = "frame_limit: the profile did not set it";
+const BLOCKED_LINE: &str = "anisotropy: asked off; the application did not enable samplerAnisotropy";
+const ANISO_SIXTEEN: f32 = 16.0;
+const ANISO_SIXTEEN_TEXT: &str = "16";
+const BIAS_DOWN_TEXT: &str = "-0.6";
+const OWNER_ONE: u64 = 1;
+const OWNER_TWO: u64 = 2;
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
@@ -403,4 +433,79 @@ fn a_hitch_cannot_set_the_peak_past_the_spike_limit() {
         .peak,
         SPIKE_PEAK_NS
     );
+}
+
+#[test]
+fn writes_only_the_parts_a_setting_line_has() {
+    assert_eq!(
+        report_line(SETTING_PRESENT_MODE, Some(ASKED_MODE.into()), None, None),
+        ASKED_LINE
+    );
+    assert_eq!(
+        report_line(
+            SETTING_PRESENT_MODE,
+            Some(ASKED_MODE.into()),
+            Some(FORCED_MODE.into()),
+            None,
+        ),
+        BOTH_LINE
+    );
+    assert_eq!(
+        report_line(SETTING_FRAME_LIMIT, None, Some(FORCED_LIMIT.into()), None),
+        FORCED_LINE
+    );
+    assert_eq!(
+        report_line(SETTING_FRAME_LIMIT, None, None, Some(NOTE_NOT_SET.into())),
+        UNSET_LINE
+    );
+    assert_eq!(
+        report_line(
+            SETTING_ANISOTROPY,
+            Some(ASKED_ANISO.into()),
+            None,
+            feature_note(true, false, FEATURE_ANISOTROPY),
+        ),
+        BLOCKED_LINE
+    );
+}
+
+#[test]
+fn names_a_forced_value_only_where_the_profile_set_one() {
+    assert_eq!(
+        forced_text(true, NEAREST_FILTER, NEAREST_FILTER, filter_text),
+        None
+    );
+    assert_eq!(
+        forced_text(true, NEAREST_FILTER, LINEAR_FILTER, filter_text),
+        Some(TEXT_LINEAR.into())
+    );
+    assert_eq!(
+        forced_text(false, NEAREST_FILTER, LINEAR_FILTER, filter_text),
+        None
+    );
+}
+
+#[test]
+fn notes_a_feature_only_where_the_profile_set_the_setting() {
+    assert!(feature_note(true, false, FEATURE_ANISOTROPY).is_some());
+    assert!(feature_note(false, false, FEATURE_ANISOTROPY).is_none());
+    assert!(feature_note(true, true, FEATURE_ANISOTROPY).is_none());
+}
+
+#[test]
+fn writes_a_number_the_way_a_profile_writes_it() {
+    assert_eq!(number_text(ANISO_SIXTEEN), ANISO_SIXTEEN_TEXT);
+    assert_eq!(number_text(OFFSET_DOWN / 10.0), BIAS_DOWN_TEXT);
+}
+
+#[test]
+fn reports_a_setting_once_per_device_until_the_device_dies() {
+    let store: RwLock<Option<ReportMap>> = RwLock::new(None);
+    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
+    assert!(!call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
+    assert!(call_claim(&store, OWNER_ONE, SETTING_ANISOTROPY));
+    assert!(call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
+    call_forget(&store, OWNER_ONE);
+    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
+    assert!(!call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
 }
