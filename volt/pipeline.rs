@@ -1,19 +1,30 @@
 use std::sync::Arc;
 
 use ash::vk;
+use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::ALPHA_ONE_ABSENT_INFO;
-use crate::consts::CLAMP_ABSENT_INFO;
-use crate::consts::SHADING_ABSENT_INFO;
+use crate::consts::FEATURE_ALPHA_ONE;
+use crate::consts::FEATURE_DEPTH_CLAMP;
+use crate::consts::FEATURE_SHADING;
+use crate::consts::SETTING_ALPHA_COVERAGE;
+use crate::consts::SETTING_ALPHA_ONE;
+use crate::consts::SETTING_DEPTH_CLAMP;
+use crate::consts::SETTING_SAMPLE_SHADING;
 use crate::consts::SHADING_OFF;
+use crate::consts::TEXT_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::UNOWNED_BUFFER_ERROR;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
+use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::report::call_report_value;
+use crate::report::feature_note;
+use crate::report::number_text;
+use crate::report::toggle_text;
 
 fn toggle_vk(value: u32) -> vk::Bool32 {
     match value {
@@ -29,34 +40,19 @@ fn pick_coverage(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
     }
 }
 
-fn shading_absent() -> Option<f32> {
-    log_at(LogLevel::Info, SHADING_ABSENT_INFO);
-    None
-}
-
-fn alpha_one_absent() -> Option<u32> {
-    log_at(LogLevel::Info, ALPHA_ONE_ABSENT_INFO);
-    None
-}
-
 fn alpha_one_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
     match (choice, caps.alpha_to_one) {
         (None, _) => None,
         (Some(value), true) => Some(value),
-        (Some(_), false) => alpha_one_absent(),
+        (Some(_), false) => None,
     }
-}
-
-fn clamp_absent() -> Option<u32> {
-    log_at(LogLevel::Info, CLAMP_ABSENT_INFO);
-    None
 }
 
 fn clamp_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
     match (choice, caps.depth_clamp) {
         (None, _) => None,
         (Some(value), true) => Some(value),
-        (Some(_), false) => clamp_absent(),
+        (Some(_), false) => None,
     }
 }
 
@@ -64,7 +60,235 @@ fn shading_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
     match (choice, caps.sample_rate_shading) {
         (None, _) => None,
         (Some(rate), true) => Some(rate),
-        (Some(_), false) => shading_absent(),
+        (Some(_), false) => None,
+    }
+}
+
+fn shading_text(rate: f32) -> String {
+    match rate > SHADING_OFF {
+        true => number_text(rate),
+        false => TEXT_OFF.into(),
+    }
+}
+
+fn shading_of(enable: vk::Bool32, rate: f32) -> f32 {
+    match enable == vk::TRUE {
+        true => rate,
+        false => SHADING_OFF,
+    }
+}
+
+fn call_coverage_line(owner: u64, s: &Settings, asked: vk::Bool32, held: vk::Bool32) {
+    call_report_value(
+        owner,
+        SETTING_ALPHA_COVERAGE,
+        s.alpha_coverage.is_some(),
+        asked,
+        held,
+        toggle_text,
+        None,
+    );
+}
+
+fn call_alpha_one_line(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: vk::Bool32,
+    held: vk::Bool32,
+) {
+    call_report_value(
+        owner,
+        SETTING_ALPHA_ONE,
+        s.alpha_to_one.is_some(),
+        asked,
+        held,
+        toggle_text,
+        feature_note(s.alpha_to_one.is_some(), caps.alpha_to_one, FEATURE_ALPHA_ONE),
+    );
+}
+
+fn call_clamp_line(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: vk::Bool32,
+    held: vk::Bool32,
+) {
+    call_report_value(
+        owner,
+        SETTING_DEPTH_CLAMP,
+        s.depth_clamp.is_some(),
+        asked,
+        held,
+        toggle_text,
+        feature_note(
+            s.depth_clamp.is_some(),
+            caps.depth_clamp,
+            FEATURE_DEPTH_CLAMP,
+        ),
+    );
+}
+
+fn call_shading_line(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: &vk::PipelineMultisampleStateCreateInfo,
+    held: &vk::PipelineMultisampleStateCreateInfo,
+) {
+    call_report_value(
+        owner,
+        SETTING_SAMPLE_SHADING,
+        s.sample_shading.is_some(),
+        shading_of(asked.sample_shading_enable, asked.min_sample_shading),
+        shading_of(held.sample_shading_enable, held.min_sample_shading),
+        shading_text,
+        feature_note(
+            s.sample_shading.is_some(),
+            caps.sample_rate_shading,
+            FEATURE_SHADING,
+        ),
+    );
+}
+
+fn call_multisample_lines(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: &vk::PipelineMultisampleStateCreateInfo,
+    held: &vk::PipelineMultisampleStateCreateInfo,
+) {
+    call_shading_line(owner, s, caps, asked, held);
+    call_coverage_line(
+        owner,
+        s,
+        asked.alpha_to_coverage_enable,
+        held.alpha_to_coverage_enable,
+    );
+    call_alpha_one_line(
+        owner,
+        s,
+        caps,
+        asked.alpha_to_one_enable,
+        held.alpha_to_one_enable,
+    );
+}
+
+fn call_report_multisample(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    original: *const vk::PipelineMultisampleStateCreateInfo,
+    patched: &Option<vk::PipelineMultisampleStateCreateInfo>,
+) {
+    match (unsafe { original.as_ref() }, patched) {
+        (Some(asked), Some(held)) => call_multisample_lines(owner, s, caps, asked, held),
+        (_, _) => (),
+    }
+}
+
+fn call_report_rasterization(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    original: *const vk::PipelineRasterizationStateCreateInfo,
+    patched: &Option<vk::PipelineRasterizationStateCreateInfo>,
+) {
+    match (unsafe { original.as_ref() }, patched) {
+        (Some(asked), Some(held)) => call_clamp_line(
+            owner,
+            s,
+            caps,
+            asked.depth_clamp_enable,
+            held.depth_clamp_enable,
+        ),
+        (_, _) => (),
+    }
+}
+
+fn call_report_one(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    original: &vk::GraphicsPipelineCreateInfo,
+    multisample: &Option<vk::PipelineMultisampleStateCreateInfo>,
+    rasterization: &Option<vk::PipelineRasterizationStateCreateInfo>,
+) {
+    call_report_multisample(owner, s, caps, original.p_multisample_state, multisample);
+    call_report_rasterization(
+        owner,
+        s,
+        caps,
+        original.p_rasterization_state,
+        rasterization,
+    );
+}
+
+fn call_report_each(
+    dev: &VkDevState,
+    s: &Settings,
+    originals: &[vk::GraphicsPipelineCreateInfo],
+    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo>],
+    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo>],
+) {
+    originals
+        .iter()
+        .zip(multisamples.iter())
+        .zip(rasterizations.iter())
+        .for_each(|((ci, m), r)| {
+            call_report_one(dev.device.handle().as_raw(), s, &dev.caps, ci, m, r)
+        });
+}
+
+fn call_report_pipelines(
+    dev: &VkDevState,
+    s: &Settings,
+    originals: &[vk::GraphicsPipelineCreateInfo],
+    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo>],
+    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo>],
+) {
+    match info_wanted() {
+        true => call_report_each(dev, s, originals, multisamples, rasterizations),
+        false => (),
+    }
+}
+
+fn call_report_coverage(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
+    match info_wanted() {
+        true => call_coverage_line(
+            dev.device.handle().as_raw(),
+            ensure_settings(),
+            asked,
+            held,
+        ),
+        false => (),
+    }
+}
+
+fn call_report_alpha_one(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
+    match info_wanted() {
+        true => call_alpha_one_line(
+            dev.device.handle().as_raw(),
+            ensure_settings(),
+            &dev.caps,
+            asked,
+            held,
+        ),
+        false => (),
+    }
+}
+
+fn call_report_clamp(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
+    match info_wanted() {
+        true => call_clamp_line(
+            dev.device.handle().as_raw(),
+            ensure_settings(),
+            &dev.caps,
+            asked,
+            held,
+        ),
+        false => (),
     }
 }
 
@@ -164,10 +388,10 @@ fn patched_ci(
 }
 
 fn call_forward_coverage(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::Bool32) {
+    let held = pick_coverage(ensure_settings().alpha_coverage, enable);
+    call_report_coverage(dev, enable, held);
     match dev.alpha_fp {
-        Some(fp) => unsafe {
-            fp(buffer, pick_coverage(ensure_settings().alpha_coverage, enable))
-        },
+        Some(fp) => unsafe { fp(buffer, held) },
         None => (),
     }
 }
@@ -184,16 +408,13 @@ pub(crate) fn call_set_alpha_coverage(
 }
 
 fn call_forward_alpha_one(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::Bool32) {
+    let held = pick_coverage(
+        alpha_one_allowed(ensure_settings().alpha_to_one, &dev.caps),
+        enable,
+    );
+    call_report_alpha_one(dev, enable, held);
     match dev.alpha_one_fp {
-        Some(fp) => unsafe {
-            fp(
-                buffer,
-                pick_coverage(
-                    alpha_one_allowed(ensure_settings().alpha_to_one, &dev.caps),
-                    enable,
-                ),
-            )
-        },
+        Some(fp) => unsafe { fp(buffer, held) },
         None => (),
     }
 }
@@ -210,16 +431,13 @@ pub(crate) fn call_set_alpha_one(
 }
 
 fn call_forward_clamp(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::Bool32) {
+    let held = pick_coverage(
+        clamp_allowed(ensure_settings().depth_clamp, &dev.caps),
+        enable,
+    );
+    call_report_clamp(dev, enable, held);
     match dev.clamp_fp {
-        Some(fp) => unsafe {
-            fp(
-                buffer,
-                pick_coverage(
-                    clamp_allowed(ensure_settings().depth_clamp, &dev.caps),
-                    enable,
-                ),
-            )
-        },
+        Some(fp) => unsafe { fp(buffer, held) },
         None => (),
     }
 }
@@ -254,6 +472,7 @@ pub(crate) fn call_create_graphics_pipelines(
         .iter()
         .map(|ci| patched_rasterization(s, &dev.caps, ci.p_rasterization_state))
         .collect();
+    call_report_pipelines(dev, s, &originals, &multisamples, &rasterizations);
     let patched: Vec<vk::GraphicsPipelineCreateInfo> = originals
         .iter()
         .zip(multisamples.iter())
