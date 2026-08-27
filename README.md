@@ -360,6 +360,34 @@ VOLT_LOG=info volt -- ./game
 
 Every line is prefixed `[volt]` and goes to stderr.
 
+At `info` every setting gets a line, naming what the game asked for and what
+volt wrote in its place.
+
+```
+[volt] gpu device: asked 2
+[volt] present_mode: asked fifo, forced mailbox
+[volt] image_count: asked 3
+[volt] mag_filter: asked linear, forced nearest
+[volt] anisotropy: asked off, forced 16
+[volt] depth_clamp: asked off; the application did not enable depthClamp
+[volt] frame_limit: forced 60
+[volt] frame_pacing: the profile did not set it
+```
+
+No forced value means volt left that setting alone, either because it is
+`default` or because the game already asked for what you picked. The forced
+value is the one volt wrote, so a setting the device clamped shows what
+landed rather than what the profile says.
+
+The five Framerate settings have no asked value, since a game never tells
+Vulkan what frame rate it wants. They report what volt forced, or say the
+profile did not set them.
+
+The GPU line reports the device id as `forced N` when the profile sets a gpu, and `asked N` when it does not.
+
+Each setting prints once per device, so 21 lines at most however many
+samplers, pipelines or swapchains the game creates.
+
 ## Environment Variables
 
 | Variable | Purpose | Values | Default |
