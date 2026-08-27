@@ -1,19 +1,32 @@
 use std::ffi::c_void;
 
 use ash::vk;
+use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
-use crate::consts::ANISO_ABSENT_INFO;
 use crate::consts::ANISO_OFF;
+use crate::consts::FEATURE_ANISOTROPY;
 use crate::consts::FILTER_LINEAR;
 use crate::consts::MIPMAP_LINEAR;
+use crate::consts::SETTING_ANISOTROPY;
+use crate::consts::SETTING_LOD_BIAS;
+use crate::consts::SETTING_MAG_FILTER;
+use crate::consts::SETTING_MIN_FILTER;
+use crate::consts::SETTING_MIP_CEILING;
+use crate::consts::SETTING_MIP_FLOOR;
+use crate::consts::SETTING_MIPMAP_MODE;
+use crate::consts::TEXT_OFF;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::instance::PfnWriteSamplers;
 use crate::lists::forced;
-use crate::logging::log_at;
-use crate::logging::LogLevel;
+use crate::logging::info_wanted;
+use crate::report::call_report_value;
+use crate::report::feature_note;
+use crate::report::filter_text;
+use crate::report::mipmap_text;
+use crate::report::number_text;
 
 fn filter_vk(value: u32) -> vk::Filter {
     match value {
@@ -43,16 +56,11 @@ fn pick_mipmap(choice: Option<u32>, original: vk::SamplerMipmapMode) -> vk::Samp
     }
 }
 
-fn aniso_absent() -> Option<f32> {
-    log_at(LogLevel::Info, ANISO_ABSENT_INFO);
-    None
-}
-
 fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
     match (choice, caps.sampler_anisotropy) {
         (None, _) => None,
         (Some(level), true) => Some(level.min(caps.max_anisotropy)),
-        (Some(_), false) => aniso_absent(),
+        (Some(_), false) => None,
     }
 }
 
@@ -108,6 +116,145 @@ fn patched_ci(
     }
 }
 
+fn aniso_text(level: f32) -> String {
+    match level > ANISO_OFF {
+        true => number_text(level),
+        false => TEXT_OFF.into(),
+    }
+}
+
+fn aniso_of(enable: vk::Bool32, level: f32) -> f32 {
+    match enable == vk::TRUE {
+        true => level,
+        false => ANISO_OFF,
+    }
+}
+
+fn call_report_fields(
+    owner: u64,
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: &vk::SamplerCreateInfo,
+    held: &vk::SamplerCreateInfo,
+) {
+    call_report_value(
+        owner,
+        SETTING_MAG_FILTER,
+        s.mag_filter.is_some(),
+        asked.mag_filter.as_raw() as u32,
+        held.mag_filter.as_raw() as u32,
+        filter_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_MIN_FILTER,
+        s.min_filter.is_some(),
+        asked.min_filter.as_raw() as u32,
+        held.min_filter.as_raw() as u32,
+        filter_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_MIPMAP_MODE,
+        s.mipmap.is_some(),
+        asked.mipmap_mode.as_raw() as u32,
+        held.mipmap_mode.as_raw() as u32,
+        mipmap_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_ANISOTROPY,
+        s.anisotropy.is_some(),
+        aniso_of(asked.anisotropy_enable, asked.max_anisotropy),
+        aniso_of(held.anisotropy_enable, held.max_anisotropy),
+        aniso_text,
+        feature_note(
+            s.anisotropy.is_some(),
+            caps.sampler_anisotropy,
+            FEATURE_ANISOTROPY,
+        ),
+    );
+    call_report_value(
+        owner,
+        SETTING_LOD_BIAS,
+        s.lod_bias.is_some(),
+        asked.mip_lod_bias,
+        held.mip_lod_bias,
+        number_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_MIP_FLOOR,
+        s.mip_floor.is_some(),
+        asked.min_lod,
+        held.min_lod,
+        number_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_MIP_CEILING,
+        s.mip_ceiling.is_some(),
+        asked.max_lod,
+        held.max_lod,
+        number_text,
+        None,
+    );
+}
+
+fn call_report_one(
+    dev: &VkDevState,
+    asked: &vk::SamplerCreateInfo,
+    held: &vk::SamplerCreateInfo,
+) {
+    call_report_fields(
+        dev.device.handle().as_raw(),
+        ensure_settings(),
+        &dev.caps,
+        asked,
+        held,
+    );
+}
+
+fn call_report_sampler(
+    dev: &VkDevState,
+    asked: &vk::SamplerCreateInfo,
+    held: &vk::SamplerCreateInfo,
+) {
+    match info_wanted() {
+        true => call_report_one(dev, asked, held),
+        false => (),
+    }
+}
+
+fn call_report_each(
+    dev: &VkDevState,
+    cis: *const vk::SamplerCreateInfo,
+    count: u32,
+    held: &[vk::SamplerCreateInfo],
+) {
+    unsafe { std::slice::from_raw_parts(cis, count as usize) }
+        .iter()
+        .zip(held.iter())
+        .for_each(|(asked, one)| call_report_one(dev, asked, one));
+}
+
+fn call_report_samplers(
+    dev: &VkDevState,
+    cis: *const vk::SamplerCreateInfo,
+    count: u32,
+    held: &[vk::SamplerCreateInfo],
+) {
+    match info_wanted() {
+        true => call_report_each(dev, cis, count, held),
+        false => (),
+    }
+}
+
 fn patched_list(
     s: &Settings,
     caps: &DeviceCaps,
@@ -127,6 +274,7 @@ pub(crate) fn call_create_sampler(
     out: *mut vk::Sampler,
 ) -> vk::Result {
     let patched = patched_ci(ensure_settings(), &dev.caps, unsafe { &*ci });
+    call_report_sampler(dev, unsafe { &*ci }, &patched);
     match unsafe { dev.device.create_sampler(&patched, alloc.as_ref()) } {
         Ok(sampler) => {
             unsafe { *out = sampler };
@@ -145,6 +293,7 @@ fn call_samplers_through(
     descriptors: *const c_void,
 ) -> vk::Result {
     let patched = patched_list(ensure_settings(), &dev.caps, cis, count);
+    call_report_samplers(dev, cis, count, &patched);
     unsafe { fp(handle, count, patched.as_ptr(), descriptors) }
 }
 

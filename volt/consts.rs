@@ -98,7 +98,6 @@ pub(crate) const PACING_PRECISE: &str = "precise";
 pub(crate) const PACING_SPIN: &str = "spin";
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
-pub(crate) const ANISO_ABSENT_INFO: &str = "the application did not enable samplerAnisotropy, leaving anisotropic filtering alone";
 pub(crate) const SHADING_ABSENT_INFO: &str = "the application did not enable sampleRateShading, leaving sample shading alone";
 pub(crate) const ALPHA_ONE_ABSENT_INFO: &str = "the application did not enable alphaToOne, leaving alpha to one alone";
 pub(crate) const CLAMP_ABSENT_INFO: &str = "the application did not enable depthClamp, leaving depth clamp alone";
