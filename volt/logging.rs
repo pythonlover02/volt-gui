@@ -47,6 +47,10 @@ fn call_write_log(s: &str) {
     unsafe { libc::write(LOG_FD, s.as_ptr() as *const c_void, s.len()) };
 }
 
+pub(crate) fn info_wanted() -> bool {
+    should_emit(level_num(&LogLevel::Info), LEVEL.load(Ordering::Relaxed))
+}
+
 pub(crate) fn log_at(level: LogLevel, msg: &str) {
     match should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
         true => call_write_log(&format!("[volt] {}\n", msg)),
