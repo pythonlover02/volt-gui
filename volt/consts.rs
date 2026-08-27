@@ -79,6 +79,24 @@ pub(crate) const MIPMAP_LINEAR: u32 = 1;
 pub(crate) const TOGGLE_OFF: u32 = 0;
 pub(crate) const TOGGLE_ON: u32 = 1;
 
+pub(crate) const TEXT_NEAREST: &str = "nearest";
+pub(crate) const TEXT_LINEAR: &str = "linear";
+pub(crate) const TEXT_OFF: &str = "off";
+pub(crate) const TEXT_ON: &str = "on";
+pub(crate) const FILTER_UNKNOWN_PREFIX: &str = "filter ";
+pub(crate) const MIPMAP_UNKNOWN_PREFIX: &str = "mipmap mode ";
+
+pub(crate) const CADENCE_FIXED: &str = "fixed";
+pub(crate) const CADENCE_SMOOTH: &str = "smooth";
+pub(crate) const CADENCE_DYNAMIC: &str = "dynamic";
+pub(crate) const METHOD_EARLY: &str = "early";
+pub(crate) const METHOD_LATE: &str = "late";
+pub(crate) const METHOD_REACTIVE: &str = "reactive";
+pub(crate) const PACING_SLEEP: &str = "sleep";
+pub(crate) const PACING_SLICED: &str = "sliced";
+pub(crate) const PACING_PRECISE: &str = "precise";
+pub(crate) const PACING_SPIN: &str = "spin";
+
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const ANISO_ABSENT_INFO: &str = "the application did not enable samplerAnisotropy, leaving anisotropic filtering alone";
 pub(crate) const SHADING_ABSENT_INFO: &str = "the application did not enable sampleRateShading, leaving sample shading alone";
@@ -94,7 +112,43 @@ pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
 pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
+pub(crate) const GPU_MISS_WARN: &str = "gpu selection did not take, the application kept the device it picked";
 pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
+
+pub(crate) const REPORT_MARK: &str = ": ";
+pub(crate) const REPORT_SEP: &str = ", ";
+pub(crate) const REPORT_NOTE: &str = "; ";
+pub(crate) const REPORT_ASKED: &str = "asked ";
+pub(crate) const REPORT_FORCED: &str = "forced ";
+pub(crate) const NOTE_NOT_ENABLED: &str = "the application did not enable ";
+pub(crate) const NOTE_NOT_SET: &str = "the profile did not set it";
+
+pub(crate) const FEATURE_ANISOTROPY: &str = "samplerAnisotropy";
+pub(crate) const FEATURE_SHADING: &str = "sampleRateShading";
+pub(crate) const FEATURE_ALPHA_ONE: &str = "alphaToOne";
+pub(crate) const FEATURE_DEPTH_CLAMP: &str = "depthClamp";
+
+pub(crate) const SETTING_GPU: &str = "gpu device";
+pub(crate) const SETTING_PRESENT_MODE: &str = "present_mode";
+pub(crate) const SETTING_IMAGE_COUNT: &str = "image_count";
+pub(crate) const SETTING_COMPOSITE_ALPHA: &str = "composite_alpha";
+pub(crate) const SETTING_CLIPPED: &str = "clipped";
+pub(crate) const SETTING_MAG_FILTER: &str = "mag_filter";
+pub(crate) const SETTING_MIN_FILTER: &str = "min_filter";
+pub(crate) const SETTING_MIPMAP_MODE: &str = "mipmap_mode";
+pub(crate) const SETTING_ANISOTROPY: &str = "anisotropy";
+pub(crate) const SETTING_LOD_BIAS: &str = "lod_bias";
+pub(crate) const SETTING_MIP_FLOOR: &str = "mip_floor";
+pub(crate) const SETTING_MIP_CEILING: &str = "mip_ceiling";
+pub(crate) const SETTING_SAMPLE_SHADING: &str = "sample_shading";
+pub(crate) const SETTING_ALPHA_COVERAGE: &str = "alpha_to_coverage";
+pub(crate) const SETTING_ALPHA_ONE: &str = "alpha_to_one";
+pub(crate) const SETTING_DEPTH_CLAMP: &str = "depth_clamp";
+pub(crate) const SETTING_FRAME_LIMIT: &str = "frame_limit";
+pub(crate) const SETTING_FRAME_LIMIT_OFFSET: &str = "frame_limit_offset";
+pub(crate) const SETTING_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
+pub(crate) const SETTING_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
+pub(crate) const SETTING_FRAME_PACING: &str = "frame_pacing";
 
 pub(crate) const NULL_OK: [&str; 4] = [
     "vkCreateInstance",

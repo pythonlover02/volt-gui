@@ -3,6 +3,9 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use crate::consts::ANISO_OFF;
+use crate::consts::CADENCE_DYNAMIC;
+use crate::consts::CADENCE_FIXED;
+use crate::consts::CADENCE_SMOOTH;
 use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_LINEAR;
@@ -11,9 +14,16 @@ use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
 use crate::consts::HOME_UNSET_WARN;
+use crate::consts::METHOD_EARLY;
+use crate::consts::METHOD_LATE;
+use crate::consts::METHOD_REACTIVE;
 use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
+use crate::consts::PACING_PRECISE;
+use crate::consts::PACING_SLEEP;
+use crate::consts::PACING_SLICED;
+use crate::consts::PACING_SPIN;
 use crate::consts::PacingChoice;
 use crate::consts::RESERVED_PROFILES;
 use crate::consts::SECTION_DISPLAY;
@@ -24,6 +34,10 @@ use crate::consts::SECTION_TEXTURES;
 use crate::consts::SETTINGS_FROZEN_INFO;
 use crate::consts::SHADING_MAX;
 use crate::consts::SHADING_OFF;
+use crate::consts::TEXT_LINEAR;
+use crate::consts::TEXT_NEAREST;
+use crate::consts::TEXT_OFF;
+use crate::consts::TEXT_ON;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::env::env_config_name;
@@ -86,38 +100,38 @@ fn parse_uint(text: &str) -> Option<u32> {
 
 fn parse_filter(text: &str) -> Option<u32> {
     match text {
-        "nearest" => Some(FILTER_NEAREST),
-        "linear" => Some(FILTER_LINEAR),
+        TEXT_NEAREST => Some(FILTER_NEAREST),
+        TEXT_LINEAR => Some(FILTER_LINEAR),
         _ => None,
     }
 }
 
 fn parse_mipmap(text: &str) -> Option<u32> {
     match text {
-        "nearest" => Some(MIPMAP_NEAREST),
-        "linear" => Some(MIPMAP_LINEAR),
+        TEXT_NEAREST => Some(MIPMAP_NEAREST),
+        TEXT_LINEAR => Some(MIPMAP_LINEAR),
         _ => None,
     }
 }
 
 fn parse_toggle(text: &str) -> Option<u32> {
     match text {
-        "off" => Some(TOGGLE_OFF),
-        "on" => Some(TOGGLE_ON),
+        TEXT_OFF => Some(TOGGLE_OFF),
+        TEXT_ON => Some(TOGGLE_ON),
         _ => None,
     }
 }
 
 fn parse_aniso(text: &str) -> Option<f32> {
     match text {
-        "off" => Some(ANISO_OFF),
+        TEXT_OFF => Some(ANISO_OFF),
         other => parse_float(other).filter(|v| *v >= ANISO_OFF),
     }
 }
 
 fn parse_shading(text: &str) -> Option<f32> {
     match text {
-        "off" => Some(SHADING_OFF),
+        TEXT_OFF => Some(SHADING_OFF),
         other => parse_float(other).filter(|v| (SHADING_OFF..=SHADING_MAX).contains(v)),
     }
 }
@@ -136,28 +150,28 @@ fn parse_gpu(text: &str) -> Option<u32> {
 
 fn parse_cadence(text: &str) -> Option<CadenceChoice> {
     match text {
-        "fixed" => Some(CadenceChoice::Fixed),
-        "smooth" => Some(CadenceChoice::Smooth),
-        "dynamic" => Some(CadenceChoice::Dynamic),
+        CADENCE_FIXED => Some(CadenceChoice::Fixed),
+        CADENCE_SMOOTH => Some(CadenceChoice::Smooth),
+        CADENCE_DYNAMIC => Some(CadenceChoice::Dynamic),
         _ => None,
     }
 }
 
 fn parse_method(text: &str) -> Option<MethodChoice> {
     match text {
-        "early" => Some(MethodChoice::Early),
-        "late" => Some(MethodChoice::Late),
-        "reactive" => Some(MethodChoice::Reactive),
+        METHOD_EARLY => Some(MethodChoice::Early),
+        METHOD_LATE => Some(MethodChoice::Late),
+        METHOD_REACTIVE => Some(MethodChoice::Reactive),
         _ => None,
     }
 }
 
 fn parse_pacing(text: &str) -> Option<PacingChoice> {
     match text {
-        "sleep" => Some(PacingChoice::Sleep),
-        "sliced" => Some(PacingChoice::Sliced),
-        "precise" => Some(PacingChoice::Precise),
-        "spin" => Some(PacingChoice::Spin),
+        PACING_SLEEP => Some(PacingChoice::Sleep),
+        PACING_SLICED => Some(PacingChoice::Sliced),
+        PACING_PRECISE => Some(PacingChoice::Precise),
+        PACING_SPIN => Some(PacingChoice::Spin),
         _ => None,
     }
 }

@@ -4,6 +4,7 @@ mod consts;
 mod logging;
 mod lists;
 mod ranks;
+mod report;
 mod env;
 mod config;
 mod instance;
