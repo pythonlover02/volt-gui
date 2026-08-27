@@ -75,6 +75,10 @@ def get_welcome_settings() -> dict:
             "Seeing What Applied": (
                 ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
+                ("text", "Every setting gets a line, naming the value the game asked for and the value volt wrote in its place. No forced value means volt left that setting alone, either because it is default or because the game already asked for what you picked. The forced value is the one volt wrote, so a setting the device clamped shows what landed rather than what you picked."),
+                ("text", "A setting that needs a device feature the game left clear names that feature instead. The Framerate settings have no asked value, since a game never tells Vulkan what frame rate it wants, so they report what volt forced or say the profile did not set them."),
+                ("text", "The GPU line reports the device id as `forced N` when you set a gpu, and `asked N` when you don't."),
+                ("text", "Each setting prints once per device, so 21 lines at most however many samplers, pipelines or swapchains the game creates."),
             ),
             "The Probe": (
                 ("text", "volt-gui runs volt-probe under the profile you are editing. It is what fills the setting lists with your hardware. Pressing Apply runs it again so those lists match the values you just saved, and switching profiles runs it again too."),
