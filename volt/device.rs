@@ -8,6 +8,7 @@ use std::sync::RwLock;
 use ash::vk;
 use ash::vk::Handle;
 
+use crate::config::ensure_settings;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::FN_PRESENT_RECTANGLES;
@@ -16,8 +17,12 @@ use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
+use crate::consts::GPU_MISS_WARN;
+use crate::consts::SETTING_GPU;
+use crate::instance::all_devices;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
+use crate::instance::device_index;
 use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCmdSetAlphaToOne;
@@ -28,8 +33,13 @@ use crate::instance::PfnWriteSamplers;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkLayerLinkInfo;
+use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::report::call_forget_reports;
+use crate::report::call_report_choice;
+use crate::report::call_report_reading;
+use crate::report::count_text;
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct DeviceCaps {
@@ -105,6 +115,7 @@ fn cmdbuf_dev_forget(dev: u64) {
 pub(crate) fn devs_del(h: u64) -> Option<Arc<VkDevState>> {
     queue_dev_forget(h);
     cmdbuf_dev_forget(h);
+    call_forget_reports(h);
     DEVS.write()
         .ok()
         .and_then(|mut g| g.as_mut().and_then(|m| m.remove(&h)))
@@ -318,6 +329,56 @@ pub(crate) fn call_destroy_command_pool(
     unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
 }
 
+fn call_gpu_missed(chosen: u32, id: u32) {
+    match chosen == id {
+        true => (),
+        false => log_at(LogLevel::Warn, GPU_MISS_WARN),
+    }
+}
+
+fn call_gpu_warned(id: u32, chosen: Option<u32>) {
+    match chosen {
+        Some(value) => call_gpu_missed(value, id),
+        None => (),
+    }
+}
+
+fn call_gpu_reported(id: u32, owner: u64, chosen: Option<u32>) {
+    match info_wanted() {
+        true => match chosen {
+            Some(forced) => call_report_choice(owner, SETTING_GPU, Some(count_text(forced))),
+            None => call_report_reading(owner, SETTING_GPU, count_text(id)),
+        },
+        false => (),
+    }
+}
+
+fn call_gpu_lines(
+    inst: &VkInstState,
+    phys: vk::PhysicalDevice,
+    owner: u64,
+    chosen: Option<u32>,
+) {
+    let id = device_index(&all_devices(inst), phys);
+    call_gpu_warned(id, chosen);
+    call_gpu_reported(id, owner, chosen);
+}
+
+fn gpu_line_wanted(chosen: Option<u32>) -> bool {
+    match chosen {
+        Some(_) => true,
+        None => info_wanted(),
+    }
+}
+
+fn call_report_gpu(inst: &VkInstState, phys: vk::PhysicalDevice, handle: vk::Device) {
+    let chosen = ensure_settings().gpu;
+    match gpu_line_wanted(chosen) {
+        true => call_gpu_lines(inst, phys, handle.as_raw(), chosen),
+        false => (),
+    }
+}
+
 fn register_device(
     gdpa: vk::PFN_vkGetDeviceProcAddr,
     loader_data: Option<PfnSetDeviceLoaderData>,
@@ -349,6 +410,7 @@ fn register_device(
             instance_handle: inst_handle,
         },
     );
+    call_report_gpu(inst, phys, handle);
     log_at(LogLevel::Info, "vk device registered");
 }
 
