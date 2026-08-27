@@ -9,15 +9,25 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::Settings;
+use crate::consts::CADENCE_DYNAMIC;
+use crate::consts::CADENCE_FIXED;
+use crate::consts::CADENCE_SMOOTH;
 use crate::consts::CadenceChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_NONE;
 use crate::consts::LimitStage;
+use crate::consts::METHOD_EARLY;
+use crate::consts::METHOD_LATE;
+use crate::consts::METHOD_REACTIVE;
 use crate::consts::MethodChoice;
 use crate::consts::NS_PER_S;
 use crate::consts::PACE_SPIKE_LIMIT;
 use crate::consts::PACE_STEPS;
 use crate::consts::PACE_WINDOW;
+use crate::consts::PACING_PRECISE;
+use crate::consts::PACING_SLEEP;
+use crate::consts::PACING_SLICED;
+use crate::consts::PACING_SPIN;
 use crate::consts::PacingChoice;
 use crate::consts::SLICE_MARGIN_NS;
 use crate::consts::SLICE_STEP_NS;
@@ -44,6 +54,31 @@ fn call_now_ns() -> u64 {
 
 pub(crate) fn target_interval_ns(fps: f32) -> u64 {
     (NS_PER_S / fps as f64) as u64
+}
+
+pub(crate) fn cadence_display(cadence: CadenceChoice) -> String {
+    match cadence {
+        CadenceChoice::Fixed => CADENCE_FIXED.into(),
+        CadenceChoice::Smooth => CADENCE_SMOOTH.into(),
+        CadenceChoice::Dynamic => CADENCE_DYNAMIC.into(),
+    }
+}
+
+pub(crate) fn method_display(method: MethodChoice) -> String {
+    match method {
+        MethodChoice::Early => METHOD_EARLY.into(),
+        MethodChoice::Late => METHOD_LATE.into(),
+        MethodChoice::Reactive => METHOD_REACTIVE.into(),
+    }
+}
+
+pub(crate) fn pacing_display(pacing: PacingChoice) -> String {
+    match pacing {
+        PacingChoice::Sleep => PACING_SLEEP.into(),
+        PacingChoice::Sliced => PACING_SLICED.into(),
+        PacingChoice::Precise => PACING_PRECISE.into(),
+        PacingChoice::Spin => PACING_SPIN.into(),
+    }
 }
 
 fn overshoot_ns(now: u64, target: u64) -> u64 {

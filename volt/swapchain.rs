@@ -2,6 +2,7 @@ use std::ffi::c_void;
 use std::ptr;
 
 use ash::vk;
+use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
@@ -11,6 +12,15 @@ use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
 use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
+use crate::consts::SETTING_CLIPPED;
+use crate::consts::SETTING_COMPOSITE_ALPHA;
+use crate::consts::SETTING_FRAME_LIMIT;
+use crate::consts::SETTING_FRAME_LIMIT_CADENCE;
+use crate::consts::SETTING_FRAME_LIMIT_METHOD;
+use crate::consts::SETTING_FRAME_LIMIT_OFFSET;
+use crate::consts::SETTING_FRAME_PACING;
+use crate::consts::SETTING_IMAGE_COUNT;
+use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::TOGGLE_ON;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
@@ -27,12 +37,23 @@ use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::lists::filtered;
 use crate::lists::forced;
+use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::present::cadence_display;
+use crate::present::method_display;
+use crate::present::pacing_display;
 use crate::probe::build_probe;
 use crate::probe::call_write_probe;
+use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
+use crate::ranks::present_display;
 use crate::ranks::present_semantic;
+use crate::report::call_report_choice;
+use crate::report::call_report_value;
+use crate::report::count_text;
+use crate::report::number_text;
+use crate::report::toggle_text;
 
 fn mode_value(mode: &vk::PresentModeKHR) -> Option<u32> {
     Some(mode.as_raw() as u32)
@@ -183,6 +204,92 @@ fn maybe_log_alpha(choice: Option<u32>) {
     match choice.and_then(alpha_semantic) {
         Some(facts) => log_blending(facts.blends),
         None => (),
+    }
+}
+
+fn call_report_display(
+    owner: u64,
+    s: &Settings,
+    asked: &vk::SwapchainCreateInfoKHR,
+    held: &vk::SwapchainCreateInfoKHR,
+) {
+    call_report_value(
+        owner,
+        SETTING_PRESENT_MODE,
+        s.present_mode.is_some(),
+        asked.present_mode.as_raw() as u32,
+        held.present_mode.as_raw() as u32,
+        present_display,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_IMAGE_COUNT,
+        s.image_count.is_some(),
+        asked.min_image_count,
+        held.min_image_count,
+        count_text,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_COMPOSITE_ALPHA,
+        s.composite_alpha.is_some(),
+        asked.composite_alpha.as_raw(),
+        held.composite_alpha.as_raw(),
+        alpha_display,
+        None,
+    );
+    call_report_value(
+        owner,
+        SETTING_CLIPPED,
+        s.clipped.is_some(),
+        asked.clipped,
+        held.clipped,
+        toggle_text,
+        None,
+    );
+}
+
+fn call_report_framerate(owner: u64, s: &Settings) {
+    call_report_choice(owner, SETTING_FRAME_LIMIT, s.frame_limit.map(number_text));
+    call_report_choice(
+        owner,
+        SETTING_FRAME_LIMIT_OFFSET,
+        s.frame_limit_offset.map(number_text),
+    );
+    call_report_choice(
+        owner,
+        SETTING_FRAME_LIMIT_CADENCE,
+        s.cadence.map(cadence_display),
+    );
+    call_report_choice(
+        owner,
+        SETTING_FRAME_LIMIT_METHOD,
+        s.limit_method.map(method_display),
+    );
+    call_report_choice(owner, SETTING_FRAME_PACING, s.pacing.map(pacing_display));
+}
+
+fn call_report_fields(
+    owner: u64,
+    s: &Settings,
+    asked: &vk::SwapchainCreateInfoKHR,
+    held: &vk::SwapchainCreateInfoKHR,
+) {
+    call_report_display(owner, s, asked, held);
+    call_report_framerate(owner, s);
+}
+
+fn call_report_swapchain(
+    dev: &VkDevState,
+    s: &Settings,
+    asked: &vk::SwapchainCreateInfoKHR,
+    held: &vk::SwapchainCreateInfoKHR,
+) {
+    match info_wanted() {
+        true => call_report_fields(dev.device.handle().as_raw(), s, asked, held),
+        false => (),
     }
 }
 
@@ -449,12 +556,14 @@ fn call_prepared_ci(
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
     maybe_probe(inst, dev, &supported, &caps);
     maybe_log_alpha(s.composite_alpha);
-    patched_swapchain_ci(
+    let patched = patched_swapchain_ci(
         original,
         pick_present_mode(s.present_mode, &supported, original.present_mode),
         &caps,
         s,
-    )
+    );
+    call_report_swapchain(dev, s, original, &patched);
+    patched
 }
 
 fn call_create_registered(
