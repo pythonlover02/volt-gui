@@ -43,7 +43,7 @@ DESKTOP_FILE := volt-gui.desktop
 ICON_FILE    := volt-gui.png
 ICON_SOURCE  := images/1.png
 
-VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' volt/Cargo.toml | head -n1)
+VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
 TRIPLE_64 := x86_64-unknown-linux-gnu
 TRIPLE_32 := i686-unknown-linux-gnu
 
@@ -68,7 +68,7 @@ PROBE    := $(TARGET_DIR)/$(TRIPLE_64)/release/volt-probe
 GUI_BIN  := $(BIN_DIR)/volt-gui
 DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
-RUST_SOURCES := volt/Cargo.toml volt/Cargo.lock $(wildcard volt/*.rs) $(wildcard volt-probe/*.rs)
+RUST_SOURCES := Cargo.toml Cargo.lock $(wildcard volt/*.rs) $(wildcard volt-probe/*.rs)
 GUI_SOURCES  := $(wildcard volt-gui/*.py)
 VENV_STAMP   := $(OUT)/.venv
 
@@ -95,7 +95,7 @@ CONTAINER_STAMP := $(OUT)/.container-image
 
 NO_SUDO = @test -z "$$SUDO_USER" || { echo "error: do not build with sudo — run 'make' as your user, then 'sudo make install'"; exit 1; }
 
-DIST_TREES := volt volt-probe volt-gui images flatpak container .github
+DIST_TREES := Cargo.toml Cargo.lock volt volt-probe volt-gui images flatpak container .github
 
 ifeq ($(DESTDIR),)
 ROOT_GUARD := check-root
@@ -164,12 +164,12 @@ $(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller:
 
 $(LAYER_64) $(LAUNCHER) $(PROBE) &: $(RUST_SOURCES)
 	$(NO_SUDO)
-	cd volt && $(CARGO) build --release --target $(TRIPLE_64)
+	$(CARGO) build --release --target $(TRIPLE_64)
 
 $(LAYER_32): $(RUST_SOURCES)
 	$(NO_SUDO)
 	-@$(RUSTUP) target add $(TRIPLE_32)
-	cd volt && CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
+	CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
 	  $(CARGO) build --release --lib --target $(TRIPLE_32)
 
 $(VENV_STAMP): requirements.txt | $(OUT)
@@ -217,7 +217,7 @@ $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
 
 $(DIST_STAMP): $(GUI_BIN) \
     $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(PROBE) $(DESKTOP) $(FLATPAK_BUNDLES) \
-    $(MANIFEST) Makefile LICENSE README.md requirements.txt | $(OUT)
+    $(MANIFEST) Makefile Cargo.toml Cargo.lock LICENSE README.md requirements.txt | $(OUT)
 	rm -rf $(DIST)
 	install -Dm755 $(GUI_BIN) $(DIST)/build/bin/volt-gui
 	install -Dm755 $(LAYER_64) $(DIST)/build/target/$(TRIPLE_64)/release/libvolt.so
@@ -331,7 +331,7 @@ uninstall: | $(ROOT_GUARD)
 	@echo "uninstall complete."
 
 clean:
-	rm -rf $(OUT) $(RELEASES) bin bundles py_env volt/target
+	rm -rf $(OUT) $(RELEASES) bin bundles py_env target
 
 check-root:
 	@test "$$(id -u)" -eq 0 || { echo "error: needs root — run: sudo make $(MAKECMDGOALS)"; exit 1; }
