@@ -44,7 +44,7 @@ jobs:
 
     - name: Run checks
       id: run-checks
-      run: cd volt && cargo +${{ matrix.rust }} test --target x86_64-unknown-linux-gnu
+      run: cargo +${{ matrix.rust }} test --target x86_64-unknown-linux-gnu
 
   check-gui:
     runs-on: ubuntu-22.04
@@ -72,7 +72,7 @@ jobs:
       id: check-version
       shell: bash
       run: |
-        layer=$(sed -n 's/^version = "\(.*\)"/\1/p' volt/Cargo.toml | head -n1)
+        layer=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
         gui=$(cd volt-gui && python -c "import database; print(database.APP_VERSION)")
         echo "layer=${layer} gui=${gui}"
         test "${layer}" = "${gui}"

@@ -30,7 +30,7 @@ jobs:
       shell: bash
       run: |
         echo "VERSION_NAME=${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::8}" >> $GITHUB_ENV
-        echo "VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' volt/Cargo.toml | head -n1)" >> $GITHUB_ENV
+        echo "VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> $GITHUB_ENV
 
     - name: Build layer and gui
       id: build-all
