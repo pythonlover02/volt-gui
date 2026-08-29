@@ -215,7 +215,7 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
     }
 }
 
-fn call_present_key(info: *const vk::PresentInfoKHR) -> u64 {
+fn call_present_key(info: *const vk::PresentInfoKHR<'_>) -> u64 {
     unsafe { (*(*info).p_swapchains).as_raw() }
 }
 
@@ -302,7 +302,7 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
 pub(crate) fn maybe_limit_frame(
     stage: LimitStage,
     s: &Settings,
-    info: *const vk::PresentInfoKHR,
+    info: *const vk::PresentInfoKHR<'_>,
 ) {
     match limit_fps(s, stage) {
         Some(fps) => call_limit_to(
@@ -328,7 +328,7 @@ pub(crate) fn call_forget_timeline(sc: vk::SwapchainKHR) {
 pub(crate) fn call_present_frame(
     dev: &VkDevState,
     queue: vk::Queue,
-    info: *const vk::PresentInfoKHR,
+    info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
     unsafe { (dev.swap_fp.queue_present_khr)(queue, info) }
 }

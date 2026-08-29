@@ -57,7 +57,7 @@ pub(crate) struct VkDevState {
     pub(crate) phys: vk::PhysicalDevice,
     pub(crate) gdpa: vk::PFN_vkGetDeviceProcAddr,
     pub(crate) loader_data: Option<PfnSetDeviceLoaderData>,
-    pub(crate) swap_fp: vk::KhrSwapchainFn,
+    pub(crate) swap_fp: ash::khr::swapchain::DeviceFn,
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
@@ -210,17 +210,17 @@ fn chained_features(p_next: *const c_void) -> Option<vk::PhysicalDeviceFeatures>
         non_null_node(unsafe { (**node).p_next as *const c_void })
     })
     .find(|node| unsafe { (**node).s_type } == vk::StructureType::PHYSICAL_DEVICE_FEATURES_2)
-    .map(|node| unsafe { (*(node as *const vk::PhysicalDeviceFeatures2)).features })
+    .map(|node| unsafe { (*(node as *const vk::PhysicalDeviceFeatures2<'_>)).features })
 }
 
-fn plain_features(ci: &vk::DeviceCreateInfo) -> Option<vk::PhysicalDeviceFeatures> {
+fn plain_features(ci: &vk::DeviceCreateInfo<'_>) -> Option<vk::PhysicalDeviceFeatures> {
     match ci.p_enabled_features.is_null() {
         true => None,
         false => Some(unsafe { *ci.p_enabled_features }),
     }
 }
 
-fn asked_features(ci: *const vk::DeviceCreateInfo) -> vk::PhysicalDeviceFeatures {
+fn asked_features(ci: *const vk::DeviceCreateInfo<'_>) -> vk::PhysicalDeviceFeatures {
     match chained_features(unsafe { (*ci).p_next }) {
         Some(features) => features,
         None => plain_features(unsafe { &*ci }).unwrap_or_default(),
@@ -231,8 +231,11 @@ fn name_is_device_level(name: &std::ffi::CStr) -> bool {
     name.to_str().map(|s| s != FN_PRESENT_RECTANGLES).unwrap_or(true)
 }
 
-fn load_swap_fp(gdpa: vk::PFN_vkGetDeviceProcAddr, handle: vk::Device) -> vk::KhrSwapchainFn {
-    vk::KhrSwapchainFn::load(|name| match name_is_device_level(name) {
+fn load_swap_fp(
+    gdpa: vk::PFN_vkGetDeviceProcAddr,
+    handle: vk::Device,
+) -> ash::khr::swapchain::DeviceFn {
+    ash::khr::swapchain::DeviceFn::load(|name| match name_is_device_level(name) {
         true => unsafe { mem::transmute(gdpa(handle, name.as_ptr())) },
         false => ptr::null(),
     })
@@ -268,7 +271,7 @@ pub(crate) fn call_register_queue(dev: &VkDevState, handle: vk::Device, queue: v
 fn device_caps(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
-    ci: *const vk::DeviceCreateInfo,
+    ci: *const vk::DeviceCreateInfo<'_>,
 ) -> DeviceCaps {
     build_caps(
         unsafe { &inst.instance.get_physical_device_properties(phys) },
@@ -278,7 +281,7 @@ fn device_caps(
 
 fn call_record_command_buffers(
     dev: vk::Device,
-    info: *const vk::CommandBufferAllocateInfo,
+    info: *const vk::CommandBufferAllocateInfo<'_>,
     out: *mut vk::CommandBuffer,
 ) {
     (0..unsafe { (*info).command_buffer_count } as usize).for_each(|at| {
@@ -296,7 +299,7 @@ fn call_forget_command_buffers(count: u32, buffers: *const vk::CommandBuffer) {
 pub(crate) fn call_allocate_command_buffers(
     d: &VkDevState,
     dev: vk::Device,
-    info: *const vk::CommandBufferAllocateInfo,
+    info: *const vk::CommandBufferAllocateInfo<'_>,
     out: *mut vk::CommandBuffer,
 ) -> vk::Result {
     match unsafe { (d.device.fp_v1_0().allocate_command_buffers)(dev, info, out) } {
@@ -323,7 +326,7 @@ pub(crate) fn call_destroy_command_pool(
     d: &VkDevState,
     dev: vk::Device,
     pool: vk::CommandPool,
-    alloc: *const vk::AllocationCallbacks,
+    alloc: *const vk::AllocationCallbacks<'_>,
 ) {
     cmdbuf_pool_forget(pool.as_raw());
     unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
@@ -388,9 +391,9 @@ fn register_device(
     phys: vk::PhysicalDevice,
     caps: DeviceCaps,
 ) {
-    let mut inst_fp = inst.instance.fp_v1_0().clone();
-    inst_fp.get_device_proc_addr = gdpa;
-    let device = unsafe { ash::Device::load(&inst_fp, handle) };
+    let device = unsafe {
+        ash::Device::load_with(|name| mem::transmute(gdpa(handle, name.as_ptr())), handle)
+    };
     devs_put(
         handle.as_raw(),
         VkDevState {
@@ -421,8 +424,8 @@ fn invoke_create_device(
     inst: &VkInstState,
     inst_handle: u64,
     phys: vk::PhysicalDevice,
-    ci: *const vk::DeviceCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::DeviceCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Device,
 ) -> vk::Result {
     match unsafe {
@@ -449,8 +452,8 @@ pub(crate) fn call_real_create_device(
     link: Option<VkLayerLinkInfo>,
     loader_data: Option<PfnSetDeviceLoaderData>,
     phys: vk::PhysicalDevice,
-    ci: *const vk::DeviceCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::DeviceCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Device,
 ) -> vk::Result {
     match (link, owning_instance(phys)) {

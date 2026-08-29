@@ -210,8 +210,8 @@ fn maybe_log_alpha(choice: Option<u32>) {
 fn call_report_display(
     owner: u64,
     s: &Settings,
-    asked: &vk::SwapchainCreateInfoKHR,
-    held: &vk::SwapchainCreateInfoKHR,
+    asked: &vk::SwapchainCreateInfoKHR<'_>,
+    held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
     call_report_value(
         owner,
@@ -274,8 +274,8 @@ fn call_report_framerate(owner: u64, s: &Settings) {
 fn call_report_fields(
     owner: u64,
     s: &Settings,
-    asked: &vk::SwapchainCreateInfoKHR,
-    held: &vk::SwapchainCreateInfoKHR,
+    asked: &vk::SwapchainCreateInfoKHR<'_>,
+    held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
     call_report_display(owner, s, asked, held);
     call_report_framerate(owner, s);
@@ -284,8 +284,8 @@ fn call_report_fields(
 fn call_report_swapchain(
     dev: &VkDevState,
     s: &Settings,
-    asked: &vk::SwapchainCreateInfoKHR,
-    held: &vk::SwapchainCreateInfoKHR,
+    asked: &vk::SwapchainCreateInfoKHR<'_>,
+    held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
     match info_wanted() {
         true => call_report_fields(dev.device.handle().as_raw(), s, asked, held),
@@ -293,12 +293,12 @@ fn call_report_swapchain(
     }
 }
 
-fn patched_swapchain_ci(
-    original: &vk::SwapchainCreateInfoKHR,
+fn patched_swapchain_ci<'a>(
+    original: &vk::SwapchainCreateInfoKHR<'a>,
     chosen: vk::PresentModeKHR,
     caps: &vk::SurfaceCapabilitiesKHR,
     s: &Settings,
-) -> vk::SwapchainCreateInfoKHR {
+) -> vk::SwapchainCreateInfoKHR<'a> {
     vk::SwapchainCreateInfoKHR {
         present_mode: chosen,
         min_image_count: pick_image_count(s.image_count, caps, original.min_image_count),
@@ -546,12 +546,12 @@ fn call_created_swapchain(created: vk::Result) -> vk::Result {
     }
 }
 
-fn call_prepared_ci(
+fn call_prepared_ci<'a>(
     inst: &VkInstState,
     dev: &VkDevState,
-    original: &vk::SwapchainCreateInfoKHR,
+    original: &vk::SwapchainCreateInfoKHR<'a>,
     s: &Settings,
-) -> vk::SwapchainCreateInfoKHR {
+) -> vk::SwapchainCreateInfoKHR<'a> {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
     maybe_probe(inst, dev, &supported, &caps);
@@ -570,9 +570,9 @@ fn call_create_registered(
     dev: &VkDevState,
     handle: vk::Device,
     inst: &VkInstState,
-    original: &vk::SwapchainCreateInfoKHR,
+    original: &vk::SwapchainCreateInfoKHR<'_>,
     s: &Settings,
-    alloc: *const vk::AllocationCallbacks,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     call_created_swapchain(unsafe {
@@ -588,8 +588,8 @@ fn call_create_registered(
 pub(crate) fn call_create_swapchain(
     dev: &VkDevState,
     handle: vk::Device,
-    ci: *const vk::SwapchainCreateInfoKHR,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::SwapchainCreateInfoKHR<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     let s = ensure_settings();
@@ -599,13 +599,13 @@ pub(crate) fn call_create_swapchain(
     }
 }
 
-fn call_shared_patched(
+fn call_shared_patched<'a>(
     dev: &VkDevState,
     inst: &VkInstState,
-    cis: *const vk::SwapchainCreateInfoKHR,
+    cis: *const vk::SwapchainCreateInfoKHR<'a>,
     count: u32,
     s: &Settings,
-) -> Vec<vk::SwapchainCreateInfoKHR> {
+) -> Vec<vk::SwapchainCreateInfoKHR<'a>> {
     unsafe { std::slice::from_raw_parts(cis, count as usize) }
         .iter()
         .map(|original| call_prepared_ci(inst, dev, original, s))
@@ -618,8 +618,8 @@ fn call_shared_through(
     fp: PfnCreateSharedSwapchains,
     handle: vk::Device,
     count: u32,
-    cis: *const vk::SwapchainCreateInfoKHR,
-    alloc: *const vk::AllocationCallbacks,
+    cis: *const vk::SwapchainCreateInfoKHR<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     call_created_swapchain(unsafe {
@@ -637,8 +637,8 @@ pub(crate) fn call_create_shared_swapchains(
     dev: &VkDevState,
     handle: vk::Device,
     count: u32,
-    cis: *const vk::SwapchainCreateInfoKHR,
-    alloc: *const vk::AllocationCallbacks,
+    cis: *const vk::SwapchainCreateInfoKHR<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     match (dev.shared_fp, insts_get(dev.instance_handle)) {

@@ -134,8 +134,8 @@ fn call_shading_line(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    asked: &vk::PipelineMultisampleStateCreateInfo,
-    held: &vk::PipelineMultisampleStateCreateInfo,
+    asked: &vk::PipelineMultisampleStateCreateInfo<'_>,
+    held: &vk::PipelineMultisampleStateCreateInfo<'_>,
 ) {
     call_report_value(
         owner,
@@ -156,8 +156,8 @@ fn call_multisample_lines(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    asked: &vk::PipelineMultisampleStateCreateInfo,
-    held: &vk::PipelineMultisampleStateCreateInfo,
+    asked: &vk::PipelineMultisampleStateCreateInfo<'_>,
+    held: &vk::PipelineMultisampleStateCreateInfo<'_>,
 ) {
     call_shading_line(owner, s, caps, asked, held);
     call_coverage_line(
@@ -179,8 +179,8 @@ fn call_report_multisample(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    original: *const vk::PipelineMultisampleStateCreateInfo,
-    patched: &Option<vk::PipelineMultisampleStateCreateInfo>,
+    original: *const vk::PipelineMultisampleStateCreateInfo<'_>,
+    patched: &Option<vk::PipelineMultisampleStateCreateInfo<'_>>,
 ) {
     match (unsafe { original.as_ref() }, patched) {
         (Some(asked), Some(held)) => call_multisample_lines(owner, s, caps, asked, held),
@@ -192,8 +192,8 @@ fn call_report_rasterization(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    original: *const vk::PipelineRasterizationStateCreateInfo,
-    patched: &Option<vk::PipelineRasterizationStateCreateInfo>,
+    original: *const vk::PipelineRasterizationStateCreateInfo<'_>,
+    patched: &Option<vk::PipelineRasterizationStateCreateInfo<'_>>,
 ) {
     match (unsafe { original.as_ref() }, patched) {
         (Some(asked), Some(held)) => call_clamp_line(
@@ -211,9 +211,9 @@ fn call_report_one(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    original: &vk::GraphicsPipelineCreateInfo,
-    multisample: &Option<vk::PipelineMultisampleStateCreateInfo>,
-    rasterization: &Option<vk::PipelineRasterizationStateCreateInfo>,
+    original: &vk::GraphicsPipelineCreateInfo<'_>,
+    multisample: &Option<vk::PipelineMultisampleStateCreateInfo<'_>>,
+    rasterization: &Option<vk::PipelineRasterizationStateCreateInfo<'_>>,
 ) {
     call_report_multisample(owner, s, caps, original.p_multisample_state, multisample);
     call_report_rasterization(
@@ -228,9 +228,9 @@ fn call_report_one(
 fn call_report_each(
     dev: &VkDevState,
     s: &Settings,
-    originals: &[vk::GraphicsPipelineCreateInfo],
-    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo>],
-    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo>],
+    originals: &[vk::GraphicsPipelineCreateInfo<'_>],
+    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo<'_>>],
+    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo<'_>>],
 ) {
     originals
         .iter()
@@ -244,9 +244,9 @@ fn call_report_each(
 fn call_report_pipelines(
     dev: &VkDevState,
     s: &Settings,
-    originals: &[vk::GraphicsPipelineCreateInfo],
-    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo>],
-    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo>],
+    originals: &[vk::GraphicsPipelineCreateInfo<'_>],
+    multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo<'_>>],
+    rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo<'_>>],
 ) {
     match info_wanted() {
         true => call_report_each(dev, s, originals, multisamples, rasterizations),
@@ -310,11 +310,11 @@ fn pick_shading(
     }
 }
 
-fn rebuilt_multisample(
+fn rebuilt_multisample<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    original: &vk::PipelineMultisampleStateCreateInfo,
-) -> vk::PipelineMultisampleStateCreateInfo {
+    original: &vk::PipelineMultisampleStateCreateInfo<'a>,
+) -> vk::PipelineMultisampleStateCreateInfo<'a> {
     let (shading_enable, shading_rate) = pick_shading(
         s.sample_shading,
         caps,
@@ -332,11 +332,11 @@ fn rebuilt_multisample(
     }
 }
 
-fn rebuilt_rasterization(
+fn rebuilt_rasterization<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    original: &vk::PipelineRasterizationStateCreateInfo,
-) -> vk::PipelineRasterizationStateCreateInfo {
+    original: &vk::PipelineRasterizationStateCreateInfo<'a>,
+) -> vk::PipelineRasterizationStateCreateInfo<'a> {
     vk::PipelineRasterizationStateCreateInfo {
         depth_clamp_enable: pick_coverage(
             clamp_allowed(s.depth_clamp, caps),
@@ -346,22 +346,22 @@ fn rebuilt_rasterization(
     }
 }
 
-fn patched_rasterization(
+fn patched_rasterization<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    p: *const vk::PipelineRasterizationStateCreateInfo,
-) -> Option<vk::PipelineRasterizationStateCreateInfo> {
+    p: *const vk::PipelineRasterizationStateCreateInfo<'a>,
+) -> Option<vk::PipelineRasterizationStateCreateInfo<'a>> {
     match p.is_null() {
         true => None,
         false => Some(rebuilt_rasterization(s, caps, unsafe { &*p })),
     }
 }
 
-fn patched_multisample(
+fn patched_multisample<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    p: *const vk::PipelineMultisampleStateCreateInfo,
-) -> Option<vk::PipelineMultisampleStateCreateInfo> {
+    p: *const vk::PipelineMultisampleStateCreateInfo<'a>,
+) -> Option<vk::PipelineMultisampleStateCreateInfo<'a>> {
     match p.is_null() {
         true => None,
         false => Some(rebuilt_multisample(s, caps, unsafe { &*p })),
@@ -375,11 +375,11 @@ fn state_ptr<T>(owned: &Option<T>, original: *const T) -> *const T {
     }
 }
 
-fn patched_ci(
-    original: &vk::GraphicsPipelineCreateInfo,
-    multisample: &Option<vk::PipelineMultisampleStateCreateInfo>,
-    rasterization: &Option<vk::PipelineRasterizationStateCreateInfo>,
-) -> vk::GraphicsPipelineCreateInfo {
+fn patched_ci<'a>(
+    original: &vk::GraphicsPipelineCreateInfo<'a>,
+    multisample: &'a Option<vk::PipelineMultisampleStateCreateInfo<'a>>,
+    rasterization: &'a Option<vk::PipelineRasterizationStateCreateInfo<'a>>,
+) -> vk::GraphicsPipelineCreateInfo<'a> {
     vk::GraphicsPipelineCreateInfo {
         p_multisample_state: state_ptr(multisample, original.p_multisample_state),
         p_rasterization_state: state_ptr(rasterization, original.p_rasterization_state),
@@ -457,23 +457,23 @@ pub(crate) fn call_create_graphics_pipelines(
     dev: &VkDevState,
     cache: vk::PipelineCache,
     count: u32,
-    cis: *const vk::GraphicsPipelineCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    cis: *const vk::GraphicsPipelineCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Pipeline,
 ) -> vk::Result {
     let s = ensure_settings();
-    let originals: Vec<vk::GraphicsPipelineCreateInfo> =
+    let originals: Vec<vk::GraphicsPipelineCreateInfo<'_>> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
-    let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo>> = originals
+    let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo<'_>>> = originals
         .iter()
         .map(|ci| patched_multisample(s, &dev.caps, ci.p_multisample_state))
         .collect();
-    let rasterizations: Vec<Option<vk::PipelineRasterizationStateCreateInfo>> = originals
+    let rasterizations: Vec<Option<vk::PipelineRasterizationStateCreateInfo<'_>>> = originals
         .iter()
         .map(|ci| patched_rasterization(s, &dev.caps, ci.p_rasterization_state))
         .collect();
     call_report_pipelines(dev, s, &originals, &multisamples, &rasterizations);
-    let patched: Vec<vk::GraphicsPipelineCreateInfo> = originals
+    let patched: Vec<vk::GraphicsPipelineCreateInfo<'_>> = originals
         .iter()
         .zip(multisamples.iter())
         .zip(rasterizations.iter())

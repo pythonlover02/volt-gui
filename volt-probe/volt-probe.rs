@@ -84,21 +84,21 @@ pub struct VkXcbSurfaceCreateInfo {
 pub type PfnCreateXcbSurface = unsafe extern "system" fn(
     vk::Instance,
     *const VkXcbSurfaceCreateInfo,
-    *const vk::AllocationCallbacks,
+    *const vk::AllocationCallbacks<'_>,
     *mut vk::SurfaceKHR,
 ) -> vk::Result;
 
 pub type PfnCreateSwapchain = unsafe extern "system" fn(
     vk::Device,
-    *const vk::SwapchainCreateInfoKHR,
-    *const vk::AllocationCallbacks,
+    *const vk::SwapchainCreateInfoKHR<'_>,
+    *const vk::AllocationCallbacks<'_>,
     *mut vk::SwapchainKHR,
 ) -> vk::Result;
 
 pub type PfnDestroySwapchain = unsafe extern "system" fn(
     vk::Device,
     vk::SwapchainKHR,
-    *const vk::AllocationCallbacks,
+    *const vk::AllocationCallbacks<'_>,
 );
 
 pub struct Window {
@@ -140,8 +140,7 @@ fn available_name(one: &vk::ExtensionProperties) -> Option<String> {
 }
 
 fn available_names(entry: &ash::Entry) -> Vec<String> {
-    entry
-        .enumerate_instance_extension_properties(None)
+    unsafe { entry.enumerate_instance_extension_properties(None) }
         .unwrap_or_default()
         .iter()
         .filter_map(available_name)
@@ -189,7 +188,7 @@ fn swapchain_info(
     surface: vk::SurfaceKHR,
     format: vk::SurfaceFormatKHR,
     caps: &vk::SurfaceCapabilitiesKHR,
-) -> vk::SwapchainCreateInfoKHR {
+) -> vk::SwapchainCreateInfoKHR<'static> {
     vk::SwapchainCreateInfoKHR {
         surface,
         min_image_count: caps.min_image_count,
@@ -207,7 +206,7 @@ fn swapchain_info(
     }
 }
 
-fn sampler_info() -> vk::SamplerCreateInfo {
+fn sampler_info() -> vk::SamplerCreateInfo<'static> {
     vk::SamplerCreateInfo {
         mag_filter: vk::Filter::LINEAR,
         min_filter: vk::Filter::LINEAR,
@@ -362,7 +361,7 @@ fn call_create_device(
 }
 
 fn call_first_format(
-    loader: &ash::extensions::khr::Surface,
+    loader: &ash::khr::surface::Instance,
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
 ) -> Option<vk::SurfaceFormatKHR> {
@@ -372,7 +371,7 @@ fn call_first_format(
 }
 
 fn call_surface_caps(
-    loader: &ash::extensions::khr::Surface,
+    loader: &ash::khr::surface::Instance,
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
 ) -> Option<vk::SurfaceCapabilitiesKHR> {
@@ -421,7 +420,7 @@ fn call_on_device(
     surface: vk::SurfaceKHR,
     device: &ash::Device,
 ) -> Option<()> {
-    let surfaces = ash::extensions::khr::Surface::new(entry, instance);
+    let surfaces = ash::khr::surface::Instance::new(entry, instance);
     let caps = call_surface_caps(&surfaces, phys, surface)?;
     let format = call_first_format(&surfaces, phys, surface)?;
     let create: PfnCreateSwapchain = call_device_fn(instance, device, FN_CREATE_SWAPCHAIN)?;

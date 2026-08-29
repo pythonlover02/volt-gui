@@ -240,7 +240,7 @@ fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
     }
 }
 
-fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
+fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
     match call_next_gipa(gipa, inst, "vkDestroyInstance") {
         Some(d) => unsafe {
             let df: vk::PFN_vkDestroyInstance = mem::transmute(d);
@@ -258,7 +258,7 @@ fn call_unowned_present() -> vk::Result {
 fn call_forward_present(
     owner: Option<Arc<VkDevState>>,
     queue: vk::Queue,
-    info: *const vk::PresentInfoKHR,
+    info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
     match owner {
         Some(d) => call_present_frame(&d, queue, info),
@@ -269,7 +269,7 @@ fn call_forward_present(
 fn call_after_present(
     presented: vk::Result,
     s: &Settings,
-    info: *const vk::PresentInfoKHR,
+    info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
     maybe_limit_frame(LimitStage::After, s, info);
     presented
@@ -278,7 +278,7 @@ fn call_after_present(
 fn call_limited_present(
     owner: Option<Arc<VkDevState>>,
     queue: vk::Queue,
-    info: *const vk::PresentInfoKHR,
+    info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
     let s = ensure_settings();
     maybe_limit_frame(LimitStage::Before, s, info);
@@ -340,7 +340,7 @@ unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: 
     }
 }
 
-unsafe extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk::DeviceQueueInfo2, out: *mut vk::Queue) {
+unsafe extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk::DeviceQueueInfo2<'_>, out: *mut vk::Queue) {
     match devs_get(dev.as_raw()) {
         Some(d) => {
             let q = d.device.get_device_queue2(&*info);
@@ -370,8 +370,8 @@ unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_ch
 }
 
 unsafe extern "system" fn vkCreateInstance(
-    ci: *const vk::InstanceCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::InstanceCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Instance,
 ) -> vk::Result {
     init_log_level();
@@ -387,7 +387,7 @@ unsafe extern "system" fn vkCreateInstance(
     )
 }
 
-unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks) {
+unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
     let st = insts_get(inst.as_raw());
     insts_del(inst.as_raw());
     match st {
@@ -407,7 +407,7 @@ unsafe extern "system" fn vkEnumeratePhysicalDevices(
 unsafe extern "system" fn vkEnumeratePhysicalDeviceGroups(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties,
+    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
 ) -> vk::Result {
     call_filtered_groups(inst, count, groups)
 }
@@ -415,15 +415,15 @@ unsafe extern "system" fn vkEnumeratePhysicalDeviceGroups(
 unsafe extern "system" fn vkEnumeratePhysicalDeviceGroupsKHR(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties,
+    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
 ) -> vk::Result {
     call_filtered_groups_khr(inst, count, groups)
 }
 
 unsafe extern "system" fn vkCreateDevice(
     phys: vk::PhysicalDevice,
-    ci: *const vk::DeviceCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::DeviceCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Device,
 ) -> vk::Result {
     call_real_create_device(
@@ -444,7 +444,7 @@ unsafe extern "system" fn vkCreateDevice(
     )
 }
 
-unsafe extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::AllocationCallbacks) {
+unsafe extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::AllocationCallbacks<'_>) {
     match devs_del(dev.as_raw()) {
         Some(d) => d.device.destroy_device(alloc.as_ref()),
         None => (),
@@ -455,8 +455,8 @@ unsafe extern "system" fn vkCreateGraphicsPipelines(
     dev: vk::Device,
     cache: vk::PipelineCache,
     count: u32,
-    cis: *const vk::GraphicsPipelineCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    cis: *const vk::GraphicsPipelineCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Pipeline,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -488,7 +488,7 @@ unsafe extern "system" fn vkCmdSetDepthClampEnableEXT(
 
 unsafe extern "system" fn vkAllocateCommandBuffers(
     dev: vk::Device,
-    info: *const vk::CommandBufferAllocateInfo,
+    info: *const vk::CommandBufferAllocateInfo<'_>,
     out: *mut vk::CommandBuffer,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -512,7 +512,7 @@ unsafe extern "system" fn vkFreeCommandBuffers(
 unsafe extern "system" fn vkDestroyCommandPool(
     dev: vk::Device,
     pool: vk::CommandPool,
-    alloc: *const vk::AllocationCallbacks,
+    alloc: *const vk::AllocationCallbacks<'_>,
 ) {
     match devs_get(dev.as_raw()) {
         Some(d) => call_destroy_command_pool(&d, dev, pool, alloc),
@@ -522,8 +522,8 @@ unsafe extern "system" fn vkDestroyCommandPool(
 
 unsafe extern "system" fn vkCreateSampler(
     dev: vk::Device,
-    ci: *const vk::SamplerCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::SamplerCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Sampler,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -535,7 +535,7 @@ unsafe extern "system" fn vkCreateSampler(
 unsafe extern "system" fn vkWriteSamplerDescriptorsEXT(
     dev: vk::Device,
     count: u32,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'_>,
     descriptors: *const c_void,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -546,8 +546,8 @@ unsafe extern "system" fn vkWriteSamplerDescriptorsEXT(
 
 unsafe extern "system" fn vkCreateSwapchainKHR(
     dev: vk::Device,
-    ci: *const vk::SwapchainCreateInfoKHR,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::SwapchainCreateInfoKHR<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -559,8 +559,8 @@ unsafe extern "system" fn vkCreateSwapchainKHR(
 unsafe extern "system" fn vkCreateSharedSwapchainsKHR(
     dev: vk::Device,
     count: u32,
-    cis: *const vk::SwapchainCreateInfoKHR,
-    alloc: *const vk::AllocationCallbacks,
+    cis: *const vk::SwapchainCreateInfoKHR<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
     match devs_get(dev.as_raw()) {
@@ -572,7 +572,7 @@ unsafe extern "system" fn vkCreateSharedSwapchainsKHR(
 unsafe extern "system" fn vkDestroySwapchainKHR(
     dev: vk::Device,
     sc: vk::SwapchainKHR,
-    alloc: *const vk::AllocationCallbacks,
+    alloc: *const vk::AllocationCallbacks<'_>,
 ) {
     match devs_get(dev.as_raw()) {
         Some(d) => {
@@ -617,7 +617,7 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilities2KHR(
     call_surface_capabilities2(phys, info, caps)
 }
 
-unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR) -> vk::Result {
+unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR<'_>) -> vk::Result {
     call_limited_present(queue_owner(queue), queue, info)
 }
 

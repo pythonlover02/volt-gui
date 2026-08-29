@@ -92,11 +92,11 @@ fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
     (low.min(high), high.max(low))
 }
 
-fn patched_ci(
+fn patched_ci<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    original: &vk::SamplerCreateInfo,
-) -> vk::SamplerCreateInfo {
+    original: &vk::SamplerCreateInfo<'a>,
+) -> vk::SamplerCreateInfo<'a> {
     let (aniso_enable, aniso_max) = pick_aniso(
         s.anisotropy,
         caps,
@@ -134,8 +134,8 @@ fn call_report_fields(
     owner: u64,
     s: &Settings,
     caps: &DeviceCaps,
-    asked: &vk::SamplerCreateInfo,
-    held: &vk::SamplerCreateInfo,
+    asked: &vk::SamplerCreateInfo<'_>,
+    held: &vk::SamplerCreateInfo<'_>,
 ) {
     call_report_value(
         owner,
@@ -208,8 +208,8 @@ fn call_report_fields(
 
 fn call_report_one(
     dev: &VkDevState,
-    asked: &vk::SamplerCreateInfo,
-    held: &vk::SamplerCreateInfo,
+    asked: &vk::SamplerCreateInfo<'_>,
+    held: &vk::SamplerCreateInfo<'_>,
 ) {
     call_report_fields(
         dev.device.handle().as_raw(),
@@ -222,8 +222,8 @@ fn call_report_one(
 
 fn call_report_sampler(
     dev: &VkDevState,
-    asked: &vk::SamplerCreateInfo,
-    held: &vk::SamplerCreateInfo,
+    asked: &vk::SamplerCreateInfo<'_>,
+    held: &vk::SamplerCreateInfo<'_>,
 ) {
     match info_wanted() {
         true => call_report_one(dev, asked, held),
@@ -233,9 +233,9 @@ fn call_report_sampler(
 
 fn call_report_each(
     dev: &VkDevState,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'_>,
     count: u32,
-    held: &[vk::SamplerCreateInfo],
+    held: &[vk::SamplerCreateInfo<'_>],
 ) {
     unsafe { std::slice::from_raw_parts(cis, count as usize) }
         .iter()
@@ -245,9 +245,9 @@ fn call_report_each(
 
 fn call_report_samplers(
     dev: &VkDevState,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'_>,
     count: u32,
-    held: &[vk::SamplerCreateInfo],
+    held: &[vk::SamplerCreateInfo<'_>],
 ) {
     match info_wanted() {
         true => call_report_each(dev, cis, count, held),
@@ -255,12 +255,12 @@ fn call_report_samplers(
     }
 }
 
-fn patched_list(
+fn patched_list<'a>(
     s: &Settings,
     caps: &DeviceCaps,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'a>,
     count: u32,
-) -> Vec<vk::SamplerCreateInfo> {
+) -> Vec<vk::SamplerCreateInfo<'a>> {
     unsafe { std::slice::from_raw_parts(cis, count as usize) }
         .iter()
         .map(|original| patched_ci(s, caps, original))
@@ -269,8 +269,8 @@ fn patched_list(
 
 pub(crate) fn call_create_sampler(
     dev: &VkDevState,
-    ci: *const vk::SamplerCreateInfo,
-    alloc: *const vk::AllocationCallbacks,
+    ci: *const vk::SamplerCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Sampler,
 ) -> vk::Result {
     let patched = patched_ci(ensure_settings(), &dev.caps, unsafe { &*ci });
@@ -289,7 +289,7 @@ fn call_samplers_through(
     fp: PfnWriteSamplers,
     handle: vk::Device,
     count: u32,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'_>,
     descriptors: *const c_void,
 ) -> vk::Result {
     let patched = patched_list(ensure_settings(), &dev.caps, cis, count);
@@ -301,7 +301,7 @@ pub(crate) fn call_write_sampler_descriptors(
     dev: &VkDevState,
     handle: vk::Device,
     count: u32,
-    cis: *const vk::SamplerCreateInfo,
+    cis: *const vk::SamplerCreateInfo<'_>,
     descriptors: *const c_void,
 ) -> vk::Result {
     match dev.samplers_fp {
