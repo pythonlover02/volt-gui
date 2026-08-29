@@ -1,2 +1,2 @@
-pyinstaller==6.19.0
-PySide6==6.11.0
+pyinstaller==6.22.2
+PySide6==6.11.2
