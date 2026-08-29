@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::c_void;
 use std::mem;
-use std::ptr;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -11,7 +10,6 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_DEVICE_QUEUE_2;
-use crate::consts::FN_PRESENT_RECTANGLES;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
@@ -227,17 +225,12 @@ fn asked_features(ci: *const vk::DeviceCreateInfo<'_>) -> vk::PhysicalDeviceFeat
     }
 }
 
-fn name_is_device_level(name: &std::ffi::CStr) -> bool {
-    name.to_str().map(|s| s != FN_PRESENT_RECTANGLES).unwrap_or(true)
-}
-
 fn load_swap_fp(
     gdpa: vk::PFN_vkGetDeviceProcAddr,
     handle: vk::Device,
 ) -> ash::khr::swapchain::DeviceFn {
-    ash::khr::swapchain::DeviceFn::load(|name| match name_is_device_level(name) {
-        true => unsafe { mem::transmute(gdpa(handle, name.as_ptr())) },
-        false => ptr::null(),
+    ash::khr::swapchain::DeviceFn::load(|name| unsafe {
+        mem::transmute(gdpa(handle, name.as_ptr()))
     })
 }
 

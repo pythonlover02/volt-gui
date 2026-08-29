@@ -155,8 +155,6 @@ pub(crate) const NULL_OK: [&str; 4] = [
 
 pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n\nsettings are read once when the application starts and never change while it\nruns: edit the profile, then start the application again\n";
 
-pub(crate) const FN_PRESENT_RECTANGLES: &str = "vkGetPhysicalDevicePresentRectanglesKHR";
-
 pub(crate) const FN_CREATE_SWAPCHAIN: &str = "vkCreateSwapchainKHR";
 pub(crate) const FN_DESTROY_SWAPCHAIN: &str = "vkDestroySwapchainKHR";
 pub(crate) const FN_QUEUE_PRESENT: &str = "vkQueuePresentKHR";
