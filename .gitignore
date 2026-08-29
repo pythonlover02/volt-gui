@@ -10,7 +10,7 @@ build/
 *.onefile-build/
 
 # Rust
-volt/target/
+target/
 
 # Build outputs
 bin/
