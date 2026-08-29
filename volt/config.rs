@@ -75,9 +75,8 @@ pub(crate) struct Settings {
 
 static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
-fn table_value<'a>(doc: &'a toml::Value, section: &str, key: &str) -> Option<&'a str> {
-    doc.as_table()
-        .and_then(|t| t.get(section))
+fn table_value<'a>(doc: &'a toml::Table, section: &str, key: &str) -> Option<&'a str> {
+    doc.get(section)
         .and_then(|v| v.as_table())
         .and_then(|t| t.get(key))
         .and_then(|v| v.as_str())
@@ -192,7 +191,7 @@ fn checked<T>(section: &str, key: &str, text: &str, value: Option<T>) -> Option<
     }
 }
 
-fn field<T, F>(doc: &toml::Value, section: &str, key: &str, parse: F) -> Option<T>
+fn field<T, F>(doc: &toml::Table, section: &str, key: &str, parse: F) -> Option<T>
 where
     F: Fn(&str) -> Option<T>,
 {
@@ -202,15 +201,15 @@ where
     }
 }
 
-fn parse_doc(text: &str) -> toml::Value {
-    match text.parse::<toml::Value>() {
+fn parse_doc(text: &str) -> toml::Table {
+    match text.parse::<toml::Table>() {
         Ok(d) => d,
         Err(e) => {
             log_at(
                 LogLevel::Warn,
                 &format!("config parse failed: {}, using defaults", e),
             );
-            toml::Value::Table(toml::map::Map::new())
+            toml::Table::new()
         }
     }
 }

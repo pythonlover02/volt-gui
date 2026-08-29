@@ -19,7 +19,7 @@ path = "volt-probe/volt-probe.rs"
 
 [dependencies]
 libc = "0.2"
-toml = "0.8"
+toml = "1.1.4"
 ash = "0.38"
 
 [profile.release]
