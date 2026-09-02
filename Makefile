@@ -38,7 +38,8 @@ VK_LAYER_DIR := $(datadir)/vulkan/implicit_layer.d
 DESKTOP_DIR  := $(datadir)/applications
 ICON_DIR     := $(datadir)/icons/hicolor/256x256/apps
 STATE_DIR    := /var/lib/volt
-MANIFEST     := VkLayer_volt.json
+MANIFEST     := M_volt.json
+MANIFEST_SRC := VkLayer_volt.json
 DESKTOP_FILE := volt-gui.desktop
 ICON_FILE    := volt-gui.png
 ICON_SOURCE  := images/1.png
@@ -53,9 +54,9 @@ BUNDLE_DIR := $(OUT)/bundles
 SHARE_DIR  := $(OUT)/share
 VENV       := $(OUT)/py_env
 
-DIST_DIR  := $(OUT)/dist
-DIST_NAME := volt-gui-$(VERSION)
-DIST      := $(DIST_DIR)/$(DIST_NAME)
+DIST_DIR   := $(OUT)/dist
+DIST_NAME  := volt-gui-$(VERSION)
+DIST       := $(DIST_DIR)/$(DIST_NAME)
 DIST_STAMP := $(OUT)/.dist
 
 CARGO_TARGET_DIR := $(abspath $(TARGET_DIR))
@@ -119,21 +120,30 @@ INSTALL_FILES := \
   $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE) \
   $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 
-USER_PREFIX    ?= $(HOME)/.local
+USER_PREFIX ?= $(HOME)/.local
+
+# Respect XDG Base Directory specifications with standard ~/.local fallbacks
+XDG_DATA_HOME  ?= $(USER_PREFIX)/share
+XDG_STATE_HOME ?= $(USER_PREFIX)/state
+
 USER_BIN       := $(USER_PREFIX)/bin
+USER_DATA      := $(XDG_DATA_HOME)
+USER_STATE     := $(XDG_STATE_HOME)/volt
+
 USER_LIB       := $(USER_PREFIX)/lib/volt
-USER_DATA      := $(USER_PREFIX)/share
+USER_LIBDIR_64 := $(USER_LIB)/$(LIBDIR_64_ARCH)
+USER_LIBDIR_32 := $(USER_LIB)/$(LIBDIR_32_ARCH)
+
 USER_LAYER_DIR := $(USER_DATA)/vulkan/implicit_layer.d
 USER_DESK_DIR  := $(USER_DATA)/applications
 USER_ICON_DIR  := $(USER_DATA)/icons/hicolor/256x256/apps
-USER_STATE     := $(USER_DATA)/volt
 
 USER_FILES := \
   $(USER_BIN)/volt \
   $(USER_BIN)/volt-probe \
   $(USER_BIN)/volt-gui \
-  $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so \
-  $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so \
+  $(USER_LIBDIR_64)/libvolt.so \
+  $(USER_LIBDIR_32)/libvolt.so \
   $(USER_LAYER_DIR)/$(MANIFEST) \
   $(USER_DESK_DIR)/$(DESKTOP_FILE) \
   $(USER_ICON_DIR)/$(ICON_FILE)
@@ -162,11 +172,11 @@ container-image: $(CONTAINER_STAMP)
 $(OUT) $(BIN_DIR) $(BUNDLE_DIR) $(SHARE_DIR) $(RELEASES) $(OUT)/pyinstaller:
 	@mkdir -p $@
 
-$(LAYER_64) $(LAUNCHER) $(PROBE) &: $(RUST_SOURCES)
+$(LAYER_64) $(LAUNCHER) $(PROBE) &: $(RUST_SOURCES) | $(OUT)
 	$(NO_SUDO)
 	$(CARGO) build --release --target $(TRIPLE_64)
 
-$(LAYER_32): $(RUST_SOURCES)
+$(LAYER_32): $(RUST_SOURCES) | $(OUT)
 	$(NO_SUDO)
 	-@$(RUSTUP) target add $(TRIPLE_32)
 	CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=$(CC32) \
@@ -201,11 +211,11 @@ $(DESKTOP): Makefile | $(SHARE_DIR)
 	  'StartupWMClass=volt-gui' > $@
 
 $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
-    $(MANIFEST) LICENSE flatpak/volt-flatpak flatpak/commit.py | $(BUNDLE_DIR)
+    $(MANIFEST_SRC) LICENSE flatpak/volt-flatpak flatpak/commit.py | $(BUNDLE_DIR)
 	rm -rf $(OUT)/flatpak.$*
 	install -Dm755 $(LAYER_64) $(OUT)/flatpak.$*/stage/files/lib/x86_64-linux-gnu/libvolt.so
 	install -Dm755 $(LAYER_32) $(OUT)/flatpak.$*/stage/files/lib/i386-linux-gnu/libvolt.so
-	install -Dm644 $(MANIFEST) $(OUT)/flatpak.$*/stage/files/share/vulkan/implicit_layer.d/$(MANIFEST)
+	install -Dm644 $(MANIFEST_SRC) $(OUT)/flatpak.$*/stage/files/share/vulkan/implicit_layer.d/$(MANIFEST)
 	install -Dm644 LICENSE $(OUT)/flatpak.$*/stage/files/share/doc/volt/LICENSE
 	install -Dm755 flatpak/volt-flatpak $(OUT)/flatpak.$*/stage/files/bin/volt-flatpak
 	install -Dm755 $(LAUNCHER) $(OUT)/flatpak.$*/stage/files/bin/volt
@@ -217,7 +227,7 @@ $(BUNDLE_DIR)/$(FLATPAK_EXT_ID)-%.flatpak: $(LAYER_64) $(LAYER_32) $(LAUNCHER) \
 
 $(DIST_STAMP): $(GUI_BIN) \
     $(LAYER_64) $(LAYER_32) $(LAUNCHER) $(PROBE) $(DESKTOP) $(FLATPAK_BUNDLES) \
-    $(MANIFEST) Makefile Cargo.toml Cargo.lock LICENSE README.md requirements.txt | $(OUT)
+    $(MANIFEST_SRC) Makefile Cargo.toml Cargo.lock LICENSE README.md requirements.txt | $(OUT)
 	rm -rf $(DIST)
 	install -Dm755 $(GUI_BIN) $(DIST)/build/bin/volt-gui
 	install -Dm755 $(LAYER_64) $(DIST)/build/target/$(TRIPLE_64)/release/libvolt.so
@@ -225,7 +235,7 @@ $(DIST_STAMP): $(GUI_BIN) \
 	install -Dm755 $(PROBE) $(DIST)/build/target/$(TRIPLE_64)/release/volt-probe
 	install -Dm755 $(LAYER_32) $(DIST)/build/target/$(TRIPLE_32)/release/libvolt.so
 	install -Dm644 $(DESKTOP) $(DIST)/build/share/$(DESKTOP_FILE)
-	install -Dm644 $(MANIFEST) $(DIST)/$(MANIFEST)
+	install -Dm644 $(MANIFEST_SRC) $(DIST)/$(MANIFEST_SRC)
 	install -Dm644 Makefile $(DIST)/Makefile
 	install -Dm644 LICENSE $(DIST)/LICENSE
 	install -Dm644 README.md $(DIST)/README.md
@@ -254,24 +264,21 @@ release-container: $(CONTAINER_STAMP)
 	  $(CONTAINER_IMAGE) make release OUT=$(CONTAINER_OUT)
 
 install: | $(ROOT_GUARD) check-built $(LAYER_GUARD)
-	install -Dm755 $(LAUNCHER)    $(DESTDIR)$(bindir)/volt
-	install -Dm755 $(PROBE)       $(DESTDIR)$(bindir)/volt-probe
-	install -Dm755 $(GUI_BIN)     $(DESTDIR)$(bindir)/volt-gui
-	install -Dm755 $(LAYER_64)    $(DESTDIR)$(LIBDIR_64)/libvolt.so
-	install -Dm755 $(LAYER_32)    $(DESTDIR)$(LIBDIR_32)/libvolt.so
-	install -Dm644 $(MANIFEST)    $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST)
-	install -Dm644 $(DESKTOP)     $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE)
-	install -Dm644 $(ICON_SOURCE) $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
+	rm -f $(DESTDIR)$(datadir)/vulkan/implicit_layer.d/VkLayer_volt.json
+	rm -f $(DESTDIR)$(datadir)/vulkan/explicit_layer.d/00_volt.json
+	rm -f $(DESTDIR)$(datadir)/vulkan/explicit_layer.d/VkLayer_volt.json
+	install -Dm755 $(LAUNCHER)     $(DESTDIR)$(bindir)/volt
+	install -Dm755 $(PROBE)        $(DESTDIR)$(bindir)/volt-probe
+	install -Dm755 $(GUI_BIN)      $(DESTDIR)$(bindir)/volt-gui
+	install -Dm755 $(LAYER_64)     $(DESTDIR)$(LIBDIR_64)/libvolt.so
+	install -Dm755 $(LAYER_32)     $(DESTDIR)$(LIBDIR_32)/libvolt.so
+	install -Dm644 $(MANIFEST_SRC) $(DESTDIR)$(VK_LAYER_DIR)/$(MANIFEST)
+	install -Dm644 $(DESKTOP)      $(DESTDIR)$(DESKTOP_DIR)/$(DESKTOP_FILE)
+	install -Dm644 $(ICON_SOURCE)  $(DESTDIR)$(ICON_DIR)/$(ICON_FILE)
 	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || gtk-update-icon-cache -qtf $(datadir)/icons/hicolor 2>/dev/null || true
 	@echo "install complete."
-	@echo "  bin:       $(bindir)"
-	@echo "  lib (64):  $(LIBDIR_64)"
-	@echo "  lib (32):  $(LIBDIR_32)"
-	@echo "  manifest:  $(VK_LAYER_DIR)"
-	@echo "  launcher:  $(DESKTOP_DIR)/$(DESKTOP_FILE)"
-	@echo "  icon:      $(ICON_DIR)/$(ICON_FILE)"
 
 flatpak-install: | check-root check-sudo-user check-bundles
 	@for b in $(FLATPAK_BUNDLES); do \
@@ -284,19 +291,19 @@ flatpak-install: | check-root check-sudo-user check-bundles
 	@echo "flatpak extensions installed."
 
 install-user: | check-not-root check-built check-no-system-layer
-	install -Dm755 $(LAUNCHER)    $(USER_BIN)/volt
-	install -Dm755 $(PROBE)       $(USER_BIN)/volt-probe
-	install -Dm755 $(GUI_BIN)     $(USER_BIN)/volt-gui
-	install -Dm755 $(LAYER_64)    $(USER_LIB)/$(LIBDIR_64_ARCH)/libvolt.so
-	install -Dm755 $(LAYER_32)    $(USER_LIB)/$(LIBDIR_32_ARCH)/libvolt.so
-	install -Dm644 $(MANIFEST)    $(USER_LAYER_DIR)/$(MANIFEST)
-	install -Dm644 $(DESKTOP)     $(USER_DESK_DIR)/$(DESKTOP_FILE)
-	install -Dm644 $(ICON_SOURCE) $(USER_ICON_DIR)/$(ICON_FILE)
+	rm -f $(USER_LAYER_DIR)/VkLayer_volt.json
+	rm -f $(USER_DATA)/vulkan/explicit_layer.d/00_volt.json
+	rm -f $(USER_DATA)/vulkan/explicit_layer.d/VkLayer_volt.json
+	install -Dm755 $(LAUNCHER)      $(USER_BIN)/volt
+	install -Dm755 $(PROBE)         $(USER_BIN)/volt-probe
+	install -Dm755 $(GUI_BIN)       $(USER_BIN)/volt-gui
+	install -Dm755 $(LAYER_64)     $(USER_LIBDIR_64)/libvolt.so
+	install -Dm755 $(LAYER_32)     $(USER_LIBDIR_32)/libvolt.so
+	install -Dm644 $(MANIFEST_SRC) $(USER_LAYER_DIR)/$(MANIFEST)
+	sed -i 's|"library_path": "libvolt.so"|"library_path": "$(USER_LIBDIR_64)/libvolt.so"|g' $(USER_LAYER_DIR)/$(MANIFEST)
+	install -Dm644 $(DESKTOP)      $(USER_DESK_DIR)/$(DESKTOP_FILE)
+	install -Dm644 $(ICON_SOURCE)  $(USER_ICON_DIR)/$(ICON_FILE)
 	@echo "user install complete, no root used."
-	@echo "  bin:       $(USER_BIN)"
-	@echo "  lib:       $(USER_LIB)"
-	@echo "  manifest:  $(USER_LAYER_DIR)"
-	@echo "$(USER_BIN) must be on PATH: volt-gui runs volt to read your hardware."
 
 flatpak-install-user: | check-not-root check-bundles
 	@for b in $(FLATPAK_BUNDLES); do \
@@ -313,13 +320,17 @@ setup-user: install-user flatpak-install-user
 
 uninstall-user: | check-not-root
 	rm -f $(USER_FILES)
+	rm -f $(USER_LAYER_DIR)/VkLayer_volt.json
+	rm -f $(USER_DATA)/vulkan/explicit_layer.d/VkLayer_volt.json
 	rm -rf $(USER_STATE)
 	$(FLATPAK) uninstall --user -y $(FLATPAK_EXT_ID) 2>/dev/null || true
-	rm -rf "$(HOME)/.config/volt-gui"
+	rm -rf "$${XDG_CONFIG_HOME:-$(HOME)/.config}/volt-gui"
 	@echo "user uninstall complete."
 
 uninstall: | $(ROOT_GUARD)
 	rm -f $(INSTALL_FILES)
+	rm -f $(DESTDIR)$(datadir)/vulkan/implicit_layer.d/VkLayer_volt.json
+	rm -f $(DESTDIR)$(datadir)/vulkan/explicit_layer.d/VkLayer_volt.json
 	@test -z "$(LIVE_SYSTEM)" || rm -rf $(STATE_DIR)
 	@test -z "$(LIVE_SYSTEM)" || ldconfig 2>/dev/null || true
 	@test -z "$(LIVE_SYSTEM)" || update-desktop-database $(DESKTOP_DIR) 2>/dev/null || true
