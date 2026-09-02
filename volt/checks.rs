@@ -52,6 +52,7 @@ const LIMIT_START_NS: u64 = 10_000;
 const LIMIT_INTERVAL_NS: u64 = 1_000;
 const OTHER_INTERVAL_NS: u64 = 2_000;
 const LATE_NS: u64 = 100;
+const LATE_FRAME_NS: u64 = 1_500;
 const TWO_HUNDRED_FPS: f32 = 200.0;
 const TWO_HUNDRED_FPS_NS: u64 = 5_000_000;
 const OFFSET_DOWN: f32 = -6.0;
@@ -214,7 +215,27 @@ fn never_chases_a_slow_frame_with_a_fast_one() {
             None,
         )
         .target,
-        LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS
+        LIMIT_START_NS + LIMIT_INTERVAL_NS + LIMIT_INTERVAL_NS
+    );
+}
+
+#[test]
+fn a_frame_past_its_deadline_leaves_without_waiting() {
+    assert_eq!(
+        advanced(
+            Some(Timeline {
+                target: LIMIT_START_NS,
+                interval: LIMIT_INTERVAL_NS,
+                last: LIMIT_START_NS,
+                peak: LIMIT_INTERVAL_NS,
+            }),
+            LIMIT_START_NS + LATE_FRAME_NS,
+            LIMIT_INTERVAL_NS,
+            Some(MethodChoice::Early),
+            None,
+        )
+        .target,
+        LIMIT_START_NS + LATE_FRAME_NS
     );
 }
 

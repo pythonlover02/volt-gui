@@ -81,14 +81,10 @@ pub(crate) fn pacing_display(pacing: PacingChoice) -> String {
     }
 }
 
-fn overshoot_ns(now: u64, target: u64) -> u64 {
-    now.saturating_sub(target)
-}
-
 fn next_target_ns(now: u64, previous: u64, interval: u64, fresh: bool) -> u64 {
-    match (fresh, overshoot_ns(now, previous) > interval) {
-        (false, false) => previous + interval,
-        (_, _) => now + interval,
+    match fresh {
+        true => now.saturating_add(interval),
+        false => previous.saturating_add(interval).max(now),
     }
 }
 
