@@ -62,6 +62,7 @@ from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
 from ui import build_sidebar_container_widget
 from ui import get_header_vertical_margin
+from ui import process_combo_wheel_block
 from welcome import create_welcome_window_widget
 
 SINGLETON_PORT: Final[int] = 47832
@@ -779,12 +780,14 @@ def create_main_window_widget(singleton_socket):
     preset_combo.setView(QListView())
     preset_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
     preset_combo.setFocusPolicy(Qt.ClickFocus)
+    process_combo_wheel_block(preset_combo)
     window.preset_selector = preset_combo
     build_preset_combo_items(preset_combo)
     profile_combo = QComboBox()
     profile_combo.setView(QListView())
     profile_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
     profile_combo.setFocusPolicy(Qt.ClickFocus)
+    process_combo_wheel_block(profile_combo)
     window.profile_selector = profile_combo
     apply_button = QPushButton("Apply")
     apply_button.setFixedSize(get_standard_button_width(), get_standard_button_height())

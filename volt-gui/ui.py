@@ -41,12 +41,23 @@ def get_combo_minimum_width() -> int:
     return 104
 
 
+def process_combo_wheel_ignore(wheel_event) -> None:
+    wheel_event.ignore()
+    return None
+
+
+def process_combo_wheel_block(combo) -> None:
+    combo.wheelEvent = process_combo_wheel_ignore
+    return None
+
+
 def create_combo_widget(options: tuple) -> QComboBox:
     combo = QComboBox()
     combo.setView(QListView())
     combo.setFixedHeight(get_standard_button_height())
     combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     combo.setFocusPolicy(Qt.ClickFocus)
+    process_combo_wheel_block(combo)
     for value, label in options:
         combo.addItem(label, value)
     combo.setCurrentIndex(0)
