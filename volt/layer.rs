@@ -214,10 +214,10 @@ fn forward_device_proc(dev: vk::Device, name: &str) -> vk::PFN_vkVoidFunction {
 }
 
 fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
-    match insts_get(inst.as_raw()) {
-        Some(st) => call_next_gipa(st.gipa, inst, name),
-        None => None,
+    if let Some(st) = insts_get(inst.as_raw()) {
+        return call_next_gipa(st.gipa, inst, name);
     }
+    None
 }
 
 fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
@@ -234,9 +234,12 @@ fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
 }
 
 fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
-    match null_ok_name(name) {
-        true => unsafe { mem::transmute(null_ok_ptr(name)) },
-        false => None,
+    if null_ok_name(name) {
+        unsafe { mem::transmute(null_ok_ptr(name)) }
+    } else {
+        instance_symbol(name)
+            .map(|p| unsafe { mem::transmute(p) })
+            .unwrap_or(None)
     }
 }
 
