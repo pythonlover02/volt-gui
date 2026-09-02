@@ -128,7 +128,7 @@ Three sampler fields, three settings, so every combination is reachable. Retro i
 
 Most limiters give you a cap and a method. volt gives you five settings. Nothing else on Linux covers all five.
 
-**Frame Limit** cap at present time. Deadlines follow a fixed timeline rather than the last present, so scheduler jitter doesn't drift you below the rate you asked for. Kept per swapchain.
+**Frame Limit** cap at present time. Deadlines follow a fixed timeline rather than the last present, so scheduler jitter doesn't drift you below the rate you asked for. A frame that misses its deadline by more than one interval is released at once and the timeline reanchors from there, instead of waiting out the rest of the interval it already missed. Kept per swapchain.
 
 **Frame Limit Offset** shift the cap by -10 to 10 in steps of two. VRR displays want the cap just under refresh: pick 144, set -6, land on 138. volt never shifts a cap on its own since most displays aren't VRR.
 
