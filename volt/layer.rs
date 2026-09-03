@@ -235,9 +235,11 @@ fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
 }
 
 fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
-    match null_ok_name(name) {
-        true => unsafe { mem::transmute(null_ok_ptr(name)) },
-        false => None,
+    match (null_ok_name(name), instance_symbol(name), device_symbol(name)) {
+        (true, _, _) => unsafe { mem::transmute(null_ok_ptr(name)) },
+        (false, Some(p), _) => unsafe { mem::transmute(p) },
+        (false, None, Some(p)) => unsafe { mem::transmute(p) },
+        (false, None, None) => None,
     }
 }
 
