@@ -194,6 +194,7 @@ fn device_gated_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
 
 fn null_ok_ptr(name: &str) -> *mut c_void {
     match name {
+        "vkGetInstanceProcAddr" => vkGetInstanceProcAddr as *mut c_void,
         "vkCreateInstance" => vkCreateInstance as *mut c_void,
         "vkEnumerateInstanceExtensionProperties" => volt_EnumerateInstanceExtensionProperties as *mut c_void,
         "vkEnumerateInstanceLayerProperties" => volt_EnumerateInstanceLayerProperties as *mut c_void,

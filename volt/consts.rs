@@ -146,7 +146,8 @@ pub(crate) const SETTING_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
 pub(crate) const SETTING_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
 pub(crate) const SETTING_FRAME_PACING: &str = "frame_pacing";
 
-pub(crate) const NULL_OK: [&str; 4] = [
+pub(crate) const NULL_OK: [&str; 5] = [
+    "vkGetInstanceProcAddr",
     "vkCreateInstance",
     "vkEnumerateInstanceVersion",
     "vkEnumerateInstanceExtensionProperties",
