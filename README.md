@@ -205,7 +205,6 @@ For a flake setup, add volt-gui as an input:
 ```nix
 inputs.volt-gui = {
   url = "github:pythonlover02/volt-gui";
-  inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
 
