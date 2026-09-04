@@ -3,14 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    volt-src = {
-      url = "github:pythonlover02/volt-gui";
-      flake = false;
-    };
   };
 
-  outputs = { self, nixpkgs, volt-src }:
+  outputs = { nixpkgs, ... }:
     let
       system = "x86_64-linux";
 
@@ -22,7 +17,7 @@
 
       cargoToml =
         builtins.fromTOML
-          (builtins.readFile (volt-src + "/Cargo.toml"));
+          (builtins.readFile ./Cargo.toml);
 
       version = cargoToml.package.version;
 
@@ -30,10 +25,10 @@
         pname = "volt";
         inherit version;
 
-        src = volt-src;
+        src = ./.;
 
         cargoLock = {
-          lockFile = volt-src + "/Cargo.lock";
+          lockFile = ./Cargo.lock;
         };
 
         doCheck = false;
@@ -101,7 +96,7 @@
         pname = "volt-gui";
         inherit version;
 
-        src = volt-src;
+        src = ./.;
 
         nativeBuildInputs = [
           pkgs.makeWrapper
