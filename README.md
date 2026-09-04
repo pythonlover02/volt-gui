@@ -190,6 +190,31 @@ There's an unofficial [volt-gui](https://aur.archlinux.org/packages/volt-gui) pa
 
 Read the `PKGBUILD` first. Not because of the packager, but because the AUR lets anyone submit anything.
 
+### NixOS
+
+The repository includes a flake for NixOS.
+
+To install it into your user profile:
+
+```sh
+nix profile install github:pythonlover02/volt-gui
+```
+
+For a flake setup, add volt-gui as an input:
+
+```nix
+inputs.volt-gui = {
+  url = "github:pythonlover02/volt-gui";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+
+Then add the package through NixOS or Home Manager:
+
+```nix
+inputs.volt-gui.packages.${pkgs.system}.default
+```
+
 ### From source
 
 Every build target is a file, so make only rebuilds what changed. Everything lands under `build/`.
