@@ -1,0 +1,44 @@
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1788316716,
+        "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "3ed67ec0a4d3c7ab4ae1f04f8ee8df07bfa506a2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "nixpkgs": "nixpkgs",
+        "volt-src": "volt-src"
+      }
+    },
+    "volt-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788426368,
+        "narHash": "sha256-KUne5KbziyADVtVSWBagOv0pes91Phmb6b5tpLafjOY=",
+        "owner": "pythonlover02",
+        "repo": "volt-gui",
+        "rev": "16e8e78b15d2a210257c3f23cb394b9b797da987",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pythonlover02",
+        "repo": "volt-gui",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
