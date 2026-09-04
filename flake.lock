@@ -18,24 +18,7 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
-        "volt-src": "volt-src"
-      }
-    },
-    "volt-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1788426368,
-        "narHash": "sha256-KUne5KbziyADVtVSWBagOv0pes91Phmb6b5tpLafjOY=",
-        "owner": "pythonlover02",
-        "repo": "volt-gui",
-        "rev": "16e8e78b15d2a210257c3f23cb394b9b797da987",
-        "type": "github"
-      },
-      "original": {
-        "owner": "pythonlover02",
-        "repo": "volt-gui",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
