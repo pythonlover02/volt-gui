@@ -190,6 +190,12 @@ There's an unofficial [volt-gui](https://aur.archlinux.org/packages/volt-gui) pa
 
 Read the `PKGBUILD` first. Not because of the packager, but because the AUR lets anyone submit anything.
 
+### NixOS
+
+There's an unofficial [volt-gui-nix](https://github.com/keygenesis/volt-gui-nix) flake. I don't maintain it either, but the packaging was well put together when it was offered here, so I won't steer you away.
+
+Read the `flake.nix` first. Not because of the packager, but because the same applies to any packaging you didn't write or doesn't come from your distro repo.
+
 ### From source
 
 Every build target is a file, so make only rebuilds what changed. Everything lands under `build/`.
