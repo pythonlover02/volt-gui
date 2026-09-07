@@ -171,6 +171,25 @@ def calculate_initial_scale() -> None:
     return None
 
 
+def build_platform_chain(platform: str) -> str:
+    match platform:
+        case "xcb":
+            return "xcb;wayland"
+        case "wayland":
+            return "wayland;xcb"
+        case other:
+            return other
+
+
+def calculate_initial_platform() -> None:
+    match get_persisted_option_resolved("qt_platform"):
+        case "":
+            return None
+        case platform:
+            os.environ.setdefault("QT_QPA_PLATFORM", build_platform_chain(platform))
+            return None
+
+
 def get_widget_option_text(main_window, option_key: str) -> str:
     match main_window.options_widgets.get(option_key):
         case None:
@@ -858,6 +877,7 @@ def main() -> None:
             pass
     os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.theme.gnome=false")
     call_clean_environment()
+    calculate_initial_platform()
     calculate_initial_scale()
     application = QApplication(sys.argv)
     application.setStyle("Fusion")

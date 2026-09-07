@@ -173,6 +173,12 @@ OPTIONS_DB: Final[dict] = {
         "options": (DEFAULT_VALUE, "cachyos", "amd", "intel", "nvidia"),
         "fallback": "cachyos",
     },
+    "qt_platform": {
+        "label": "Display Backend Preference",
+        "description": "Which Qt platform plugin the interface prefers. default lets Qt pick: wayland on a Wayland session, xcb on X11. Either choice falls back to the other where the one you pick is unavailable, so xcb on a session without XWayland still opens a window. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "xcb", "wayland"),
+        "fallback": "",
+    },
     "window_transparency": {
         "label": "Window Transparency",
         "description": "Window background transparency. default is off. Takes effect on program restart.",

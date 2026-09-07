@@ -472,7 +472,7 @@ Your home directory is mounted into the sandbox, so profiles apply unchanged.
 
 **Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. Frame limit, composite alpha and clipped presentation are left alone since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
 
-**Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
+**Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, display backend, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
 
 ## What volt will never do
 
