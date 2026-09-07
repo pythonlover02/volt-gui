@@ -78,7 +78,9 @@ PREVIEW_POLL_MS: Final[int] = 750
 PREVIEW_START_MS: Final[int] = 300
 PREVIEW_STOP_MS: Final[int] = 1500
 BUNDLE_ATTR: Final[str] = "_MEIPASS"
-BUNDLE_VARS: Final[tuple] = ("LD_LIBRARY_PATH", "LD_PRELOAD")
+LIB_PATH_VAR: Final[str] = "LD_LIBRARY_PATH"
+LIB_PATH_ORIG: Final[str] = "LD_LIBRARY_PATH_ORIG"
+PRELOAD_VAR: Final[str] = "LD_PRELOAD"
 PATH_VAR: Final[str] = "PATH"
 PROBE_FAILED_ERROR: Final[str] = "volt-probe failed to run.\n\nWithout it volt-gui cannot read your hardware, so every setting fed by the device holds nothing but default.\n\nvolt-probe installs next to volt and volt-gui. Check that their directory is on your PATH, then restart volt-gui."
 
@@ -139,9 +141,18 @@ def _cleaned_path(value: str, bundle: str) -> str:
         entry for entry in value.split(os.pathsep) if _outside_bundle(entry, bundle))
 
 
+def call_restore_lib_path() -> None:
+    match os.environ.pop(LIB_PATH_ORIG, ""):
+        case "":
+            os.environ.pop(LIB_PATH_VAR, None)
+        case original:
+            os.environ[LIB_PATH_VAR] = original
+    return None
+
+
 def call_drop_bundle_vars() -> None:
-    for name in BUNDLE_VARS:
-        os.environ.pop(name, None)
+    call_restore_lib_path()
+    os.environ.pop(PRELOAD_VAR, None)
     return None
 
 
