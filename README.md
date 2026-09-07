@@ -74,13 +74,13 @@ Settings are read once at game start. Press Apply, then restart the game.
 
 ### The probe
 
-volt-gui runs `volt-probe` under the profile you are editing. It opens a 1px window that is never mapped, creates a surface, swapchain and sampler, records what the device reported, and exits. Nothing appears on screen.
+volt-gui runs `volt-probe` under the profile you are editing. For each backend it can reach it opens a 1px window that is never mapped and creates a surface and swapchain; it creates one sampler, records what the device reported, and exits. Nothing appears on screen.
 
 ```
 volt --probe myprofile -- volt-probe
 ```
 
-It uses X11, which every desktop has through XWayland. Games may open Wayland or gamescope surfaces instead, and the profile is written before volt knows which. This only affects present modes, image counts and alpha modes, and the lists mostly agree. Where they don't, the layer handles it at runtime: image count is clamped against the real surface, and a rejected present or alpha mode leaves the game's value with a warning.
+It opens X11 and Wayland, each through a library loaded at runtime, so a machine missing one reports the other and a machine missing both leaves those settings on `default`. This only affects present modes, image counts and alpha modes. The file carries one section per backend that opened, and the card offers the union with every value naming the backends that reported it: `mailbox (xcb, wayland)`, `immediate (xcb)`. The tag is a label only, profiles store the value. Games may open gamescope or a Flatpak surface instead, and where the game's surface refuses a value the layer handles it at runtime: image count is clamped against the real surface, and a rejected present or alpha mode leaves the game's value with a warning.
 
 ### GPU
 
@@ -178,7 +178,7 @@ volt-gui is the PySide6 front end. Apply just saves the profile. No elevated per
 | GUI | Python 3.10+, PySide6 |
 | Flatpak bundles | `flatpak`, `ostree` |
 | Container release | `podman` or `docker` |
-| Probe build | `libxcb` headers |
+| Probe | `libxcb` or `libwayland-client` at runtime, neither required |
 
 No native aarch64 build. See [FEX-Emu / Box64](#fex-emu--box64).
 
@@ -416,7 +416,7 @@ There's no environment override for the settings themselves. A profile file is t
 |------|------------|
 | `~/.config/volt-gui/default.toml` | default profile |
 | `~/.config/volt-gui/<name>.toml` | named profiles |
-| `~/.config/volt-gui/probe.toml` | what the last probe read |
+| `~/.config/volt-gui/probe.toml` | what the last probe read, one section per backend |
 | `~/.config/volt-gui/options.toml` | volt-gui preferences and last active profile |
 
 Profiles are plain TOML, one section per tab and one string per setting, so you can edit them by hand or keep them in a dotfiles repo. `probe.toml` is written by the layer and watched by the GUI, so a freshly probed device fills the panel without a restart. Deleting it costs a re-probe.
@@ -472,7 +472,7 @@ Your home directory is mounted into the sandbox, so profiles apply unchanged.
 
 **Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. Frame limit, composite alpha and clipped presentation are left alone since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
 
-**Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
+**Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, display backend, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
 
 ## What volt will never do
 

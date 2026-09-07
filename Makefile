@@ -68,8 +68,8 @@ PROBE    := $(TARGET_DIR)/$(TRIPLE_64)/release/volt-probe
 GUI_BIN  := $(BIN_DIR)/volt-gui
 DESKTOP  := $(SHARE_DIR)/$(DESKTOP_FILE)
 
-RUST_SOURCES := Cargo.toml Cargo.lock $(wildcard volt/*.rs) $(wildcard volt-probe/*.rs)
-GUI_SOURCES  := $(wildcard volt-gui/*.py)
+RUST_SOURCES := Cargo.toml Cargo.lock $(wildcard src/volt/*.rs) $(wildcard src/volt-probe/*.rs)
+GUI_SOURCES  := $(wildcard src/volt-gui/*.py)
 VENV_STAMP   := $(OUT)/.venv
 
 DESKTOP_NAME     := volt-gui
@@ -95,7 +95,7 @@ CONTAINER_STAMP := $(OUT)/.container-image
 
 NO_SUDO = @test -z "$$SUDO_USER" || { echo "error: do not build with sudo — run 'make' as your user, then 'sudo make install'"; exit 1; }
 
-DIST_TREES := Cargo.toml Cargo.lock volt volt-probe volt-gui images flatpak container .github
+DIST_TREES := Cargo.toml Cargo.lock src images flatpak container .github
 
 ifeq ($(DESTDIR),)
 ROOT_GUARD := check-root
@@ -183,7 +183,7 @@ $(GUI_BIN): $(GUI_SOURCES) $(VENV_STAMP) | $(BIN_DIR) $(OUT)/pyinstaller
 	$(NO_SUDO)
 	$(VENV)/bin/pyinstaller --onefile --name=$(@F) -y --log-level WARN \
 	  --distpath $(BIN_DIR) --workpath $(OUT)/pyinstaller --specpath $(OUT)/pyinstaller \
-	  volt-gui/volt-gui.py
+	  src/volt-gui/volt-gui.py
 
 $(DESKTOP): Makefile | $(SHARE_DIR)
 	@printf '%s\n' \
@@ -231,7 +231,7 @@ $(DIST_STAMP): $(GUI_BIN) \
 	install -Dm644 README.md $(DIST)/README.md
 	install -Dm644 requirements.txt $(DIST)/requirements.txt
 	cp -r $(DIST_TREES) $(DIST)/
-	rm -rf $(DIST)/volt/target
+	rm -rf $(DIST)/src/volt/target
 	mkdir -p $(DIST)/build/bundles
 	cp $(FLATPAK_BUNDLES) $(DIST)/build/bundles/
 	touch $(DIST)/build/.venv

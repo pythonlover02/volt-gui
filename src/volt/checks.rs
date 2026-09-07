@@ -19,6 +19,8 @@ use crate::present::advanced;
 use crate::present::shifted_fps;
 use crate::present::target_interval_ns;
 use crate::present::Timeline;
+use crate::probe::render_surface;
+use crate::probe::SurfaceFacts;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_parse;
 use crate::ranks::alpha_semantic;
@@ -85,6 +87,12 @@ const ANISO_SIXTEEN_TEXT: &str = "16";
 const BIAS_DOWN_TEXT: &str = "-0.6";
 const OWNER_ONE: u64 = 1;
 const OWNER_TWO: u64 = 2;
+const SURFACE_TAG: &str = "wayland";
+const SURFACE_PRESENT: [&str; 2] = ["mailbox", "fifo"];
+const SURFACE_ALPHA: [&str; 1] = ["opaque"];
+const SURFACE_MIN_IMAGES: u32 = 4;
+const SURFACE_MAX_IMAGES: u32 = 0;
+const SURFACE_SECTION: &str = "[wayland]\npresent_modes = \"mailbox;fifo\"\ncomposite_alphas = \"opaque\"\nmin_image_count = \"4\"\nmax_image_count = \"0\"\n";
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
@@ -529,4 +537,20 @@ fn reports_a_setting_once_per_device_until_the_device_dies() {
     call_forget(&store, OWNER_ONE);
     assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
     assert!(!call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
+}
+
+#[test]
+fn heads_a_surface_section_with_the_backend_that_read_it() {
+    assert_eq!(
+        render_surface(
+            SURFACE_TAG,
+            &SurfaceFacts {
+                present: SURFACE_PRESENT.iter().map(|name| (*name).into()).collect(),
+                alphas: SURFACE_ALPHA.iter().map(|name| (*name).into()).collect(),
+                min_images: SURFACE_MIN_IMAGES,
+                max_images: SURFACE_MAX_IMAGES,
+            },
+        ),
+        SURFACE_SECTION
+    );
 }

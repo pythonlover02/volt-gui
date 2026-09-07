@@ -15,7 +15,7 @@ from probe import present_options
 from probe import shading_options
 
 
-APP_VERSION: Final[str] = "2.1.1"
+APP_VERSION: Final[str] = "2.2.0"
 APP_AUTHOR: Final[str] = "pythonlover02"
 APP_LICENSE: Final[str] = "GPL 3.0 License"
 APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alternative"
@@ -173,9 +173,15 @@ OPTIONS_DB: Final[dict] = {
         "options": (DEFAULT_VALUE, "cachyos", "amd", "intel", "nvidia"),
         "fallback": "cachyos",
     },
+    "qt_platform": {
+        "label": "Display Backend Preference",
+        "description": "Which Qt platform plugin the interface prefers. default lets Qt pick: wayland on a Wayland session, xcb on X11. Either choice falls back to the other where the one you pick is unavailable, so xcb on a session without XWayland still opens a window. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE, "xcb", "wayland"),
+        "fallback": "",
+    },
     "window_transparency": {
         "label": "Window Transparency",
-        "description": "Window background transparency. default is off. Takes effect on program restart.",
+        "description": "Window background transparency. default is off. Only does something under xcb: Wayland has no window opacity protocol, so set Display Backend Preference to xcb for this to land. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
     },

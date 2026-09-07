@@ -78,7 +78,9 @@ PREVIEW_POLL_MS: Final[int] = 750
 PREVIEW_START_MS: Final[int] = 300
 PREVIEW_STOP_MS: Final[int] = 1500
 BUNDLE_ATTR: Final[str] = "_MEIPASS"
-BUNDLE_VARS: Final[tuple] = ("LD_LIBRARY_PATH", "LD_PRELOAD")
+LIB_PATH_VAR: Final[str] = "LD_LIBRARY_PATH"
+LIB_PATH_ORIG: Final[str] = "LD_LIBRARY_PATH_ORIG"
+PRELOAD_VAR: Final[str] = "LD_PRELOAD"
 PATH_VAR: Final[str] = "PATH"
 PROBE_FAILED_ERROR: Final[str] = "volt-probe failed to run.\n\nWithout it volt-gui cannot read your hardware, so every setting fed by the device holds nothing but default.\n\nvolt-probe installs next to volt and volt-gui. Check that their directory is on your PATH, then restart volt-gui."
 
@@ -139,9 +141,18 @@ def _cleaned_path(value: str, bundle: str) -> str:
         entry for entry in value.split(os.pathsep) if _outside_bundle(entry, bundle))
 
 
+def call_restore_lib_path() -> None:
+    match os.environ.pop(LIB_PATH_ORIG, ""):
+        case "":
+            os.environ.pop(LIB_PATH_VAR, None)
+        case original:
+            os.environ[LIB_PATH_VAR] = original
+    return None
+
+
 def call_drop_bundle_vars() -> None:
-    for name in BUNDLE_VARS:
-        os.environ.pop(name, None)
+    call_restore_lib_path()
+    os.environ.pop(PRELOAD_VAR, None)
     return None
 
 
@@ -169,6 +180,25 @@ def calculate_initial_scale() -> None:
     os.environ["QT_SCALE_FACTOR"] = resolve_scale_factor(
         get_persisted_option_resolved("interface_scale_factor"))
     return None
+
+
+def build_platform_chain(platform: str) -> str:
+    match platform:
+        case "xcb":
+            return "xcb;wayland"
+        case "wayland":
+            return "wayland;xcb"
+        case other:
+            return other
+
+
+def calculate_initial_platform() -> None:
+    match get_persisted_option_resolved("qt_platform"):
+        case "":
+            return None
+        case platform:
+            os.environ.setdefault("QT_QPA_PLATFORM", build_platform_chain(platform))
+            return None
 
 
 def get_widget_option_text(main_window, option_key: str) -> str:
@@ -466,10 +496,11 @@ def process_tray_option_update(main_window, tray_enabled: bool) -> None:
 
 def process_options_application(main_window) -> None:
     process_theme_application(QApplication.instance(), get_resolved_option_value(main_window, "application_theme"))
-    match is_option_enabled(main_window, "window_transparency"):
-        case True:
+    match (is_option_enabled(main_window, "window_transparency"),
+           QApplication.instance().platformName()):
+        case (True, "xcb"):
             main_window.setWindowOpacity(0.95)
-        case False:
+        case _:
             main_window.setWindowOpacity(1.0)
     process_tray_option_update(main_window, is_option_enabled(main_window, "system_tray_behavior"))
     main_window.start_minimized = is_option_enabled(main_window, "start_window_minimized")
@@ -611,12 +642,16 @@ def process_probe_rebuild(main_window) -> None:
 
 
 def process_probe_poll(main_window) -> None:
-    match call_probe_stamp():
-        case stamp if stamp == main_window.probe_stamp:
-            return None
-        case stamp:
+    match (call_probe_stamp(), main_window.probe_stamp, main_window.probe_settled):
+        case (stamp, seen, _) if stamp != seen:
             main_window.probe_stamp = stamp
+            main_window.probe_settled = False
+            return None
+        case (_, _, False):
+            main_window.probe_settled = True
             process_probe_rebuild(main_window)
+            return None
+        case _:
             return None
 
 
@@ -737,6 +772,7 @@ def create_main_window_widget(singleton_socket):
     window.preview_process = None
     window.probe_error_shown = False
     window.probe_stamp = call_probe_stamp()
+    window.probe_settled = True
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(620, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
@@ -853,6 +889,7 @@ def main() -> None:
             pass
     os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.theme.gnome=false")
     call_clean_environment()
+    calculate_initial_platform()
     calculate_initial_scale()
     application = QApplication(sys.argv)
     application.setStyle("Fusion")

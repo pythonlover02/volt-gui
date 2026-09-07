@@ -11,6 +11,10 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::FN_CREATE_SWAPCHAIN;
+use crate::consts::FN_CREATE_WAYLAND_SURFACE;
+use crate::consts::FN_CREATE_XCB_SURFACE;
+use crate::consts::FN_CREATE_XLIB_SURFACE;
+use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DESTROY_SWAPCHAIN;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
@@ -30,6 +34,8 @@ use crate::consts::LAYER_LINK_INFO;
 use crate::consts::LAYER_NAME;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
+use crate::consts::TAG_WAYLAND;
+use crate::consts::TAG_XCB;
 use crate::consts::UNOWNED_QUEUE_ERROR;
 use crate::device::call_allocate_command_buffers;
 use crate::device::call_destroy_command_pool;
@@ -44,6 +50,8 @@ use crate::device::queue_dev_put;
 use crate::device::queue_owner;
 use crate::device::VkDevState;
 use crate::instance::call_advance_chain;
+use crate::instance::call_create_tagged_surface;
+use crate::instance::call_destroy_tagged_surface;
 use crate::instance::call_filtered_enumerate;
 use crate::instance::call_filtered_groups;
 use crate::instance::call_filtered_groups_khr;
@@ -134,6 +142,10 @@ fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
         FN_SURFACE_MODES_2 => Some(vkGetPhysicalDeviceSurfacePresentModes2EXT as *mut c_void),
         FN_DEVICE_GROUPS => Some(vkEnumeratePhysicalDeviceGroups as *mut c_void),
         FN_DEVICE_GROUPS_KHR => Some(vkEnumeratePhysicalDeviceGroupsKHR as *mut c_void),
+        FN_CREATE_XCB_SURFACE => Some(vkCreateXcbSurfaceKHR as *mut c_void),
+        FN_CREATE_XLIB_SURFACE => Some(vkCreateXlibSurfaceKHR as *mut c_void),
+        FN_CREATE_WAYLAND_SURFACE => Some(vkCreateWaylandSurfaceKHR as *mut c_void),
+        FN_DESTROY_SURFACE => Some(vkDestroySurfaceKHR as *mut c_void),
         _ => None,
     }
 }
@@ -144,6 +156,8 @@ fn instance_fp_present(inst: vk::Instance, name: &str) -> bool {
         (Some(st), FN_SURFACE_MODES_2) => st.modes2_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS) => st.groups_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS_KHR) => st.groups_khr_fp.is_some(),
+        (Some(st), FN_DESTROY_SURFACE) => st.destroy_surface_fp.is_some(),
+        (Some(st), other) => st.surface_fps.contains_key(other),
         (_, _) => false,
     }
 }
@@ -584,6 +598,41 @@ unsafe extern "system" fn vkDestroySwapchainKHR(
         }
         None => (),
     }
+}
+
+unsafe extern "system" fn vkCreateXcbSurfaceKHR(
+    inst: vk::Instance,
+    ci: *const c_void,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::SurfaceKHR,
+) -> vk::Result {
+    call_create_tagged_surface(FN_CREATE_XCB_SURFACE, TAG_XCB, inst, ci, alloc, out)
+}
+
+unsafe extern "system" fn vkCreateXlibSurfaceKHR(
+    inst: vk::Instance,
+    ci: *const c_void,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::SurfaceKHR,
+) -> vk::Result {
+    call_create_tagged_surface(FN_CREATE_XLIB_SURFACE, TAG_XCB, inst, ci, alloc, out)
+}
+
+unsafe extern "system" fn vkCreateWaylandSurfaceKHR(
+    inst: vk::Instance,
+    ci: *const c_void,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::SurfaceKHR,
+) -> vk::Result {
+    call_create_tagged_surface(FN_CREATE_WAYLAND_SURFACE, TAG_WAYLAND, inst, ci, alloc, out)
+}
+
+unsafe extern "system" fn vkDestroySurfaceKHR(
+    inst: vk::Instance,
+    surface: vk::SurfaceKHR,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
+    call_destroy_tagged_surface(inst, surface, alloc)
 }
 
 unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(

@@ -1,21 +1,21 @@
 [package]
 name = "volt"
-version = "2.1.1"
+version = "2.2.0"
 edition = "2021"
 rust-version = "1.85.1"
 
 [lib]
 name = "volt"
 crate-type = ["cdylib", "rlib"]
-path = "volt/lib.rs"
+path = "src/volt/lib.rs"
 
 [[bin]]
 name = "volt"
-path = "volt/volt.rs"
+path = "src/volt/volt.rs"
 
 [[bin]]
 name = "volt-probe"
-path = "volt-probe/volt-probe.rs"
+path = "src/volt-probe/volt-probe.rs"
 
 [dependencies]
 libc = "0.2"

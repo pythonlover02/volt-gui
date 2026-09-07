@@ -1,5 +1,8 @@
+mod dl;
+mod wayland;
+mod xcb;
+
 use std::ffi::c_char;
-use std::ffi::c_int;
 use std::ffi::c_void;
 use std::ffi::CStr;
 use std::ffi::CString;
@@ -13,123 +16,49 @@ const API_PATCH: u32 = 0;
 const API_VARIANT: u32 = 0;
 const EXIT_OK: i32 = 0;
 const EXIT_FAIL: i32 = 1;
-const WINDOW_EDGE: u16 = 1;
-const WINDOW_ORIGIN: i16 = 0;
-const WINDOW_BORDER: u16 = 0;
-const WINDOW_INPUT_OUTPUT: u16 = 1;
-const COPY_FROM_PARENT: u8 = 0;
-const NO_VALUES: u32 = 0;
-const NO_FLAGS: u32 = 0;
-const NO_ERROR: c_int = 0;
 const IMAGE_LAYERS: u32 = 1;
 const QUEUE_COUNT: u32 = 1;
 const QUEUE_PRIORITY: f32 = 1.0;
-const SURFACE_TYPE: i32 = 1000005000;
 
 const EXT_SURFACE: &str = "VK_KHR_surface";
-const EXT_XCB_SURFACE: &str = "VK_KHR_xcb_surface";
 const EXT_SWAPCHAIN: &str = "VK_KHR_swapchain";
-const FN_CREATE_SURFACE: &str = "vkCreateXcbSurfaceKHR";
 const FN_CREATE_SWAPCHAIN: &str = "vkCreateSwapchainKHR";
 const FN_DESTROY_SWAPCHAIN: &str = "vkDestroySwapchainKHR";
 
-const WANTED_EXTENSIONS: [&str; 2] = [EXT_SURFACE, EXT_XCB_SURFACE];
+pub(crate) const WINDOW_EDGE: u16 = 1;
 
-#[repr(C)]
-pub struct XcbConnection {
-    _opaque: [u8; 0],
+pub(crate) struct Handles {
+    pub(crate) display: *mut c_void,
+    pub(crate) window: u64,
 }
 
-#[repr(C)]
-pub struct XcbSetup {
-    _opaque: [u8; 0],
+pub(crate) struct Backend {
+    pub(crate) extension: &'static str,
+    pub(crate) open: fn() -> Option<Handles>,
+    pub(crate) create_surface:
+        fn(&ash::Entry, &ash::Instance, &Handles) -> Option<vk::SurfaceKHR>,
+    pub(crate) close: fn(&Handles),
 }
 
-#[repr(C)]
-pub struct XcbScreen {
-    pub root: u32,
-    pub default_colormap: u32,
-    pub white_pixel: u32,
-    pub black_pixel: u32,
-    pub current_input_masks: u32,
-    pub width_in_pixels: u16,
-    pub height_in_pixels: u16,
-    pub width_in_millimeters: u16,
-    pub height_in_millimeters: u16,
-    pub min_installed_maps: u16,
-    pub max_installed_maps: u16,
-    pub root_visual: u32,
-    pub backing_stores: u8,
-    pub save_unders: u8,
-    pub root_depth: u8,
-    pub allowed_depths_len: u8,
-}
+const BACKENDS: [Backend; 2] = [xcb::BACKEND, wayland::BACKEND];
 
-#[repr(C)]
-pub struct XcbScreenIterator {
-    pub data: *mut XcbScreen,
-    pub rem: c_int,
-    pub index: c_int,
-}
-
-#[repr(C)]
-pub struct VkXcbSurfaceCreateInfo {
-    pub s_type: vk::StructureType,
-    pub p_next: *const c_void,
-    pub flags: u32,
-    pub connection: *mut XcbConnection,
-    pub window: u32,
-}
-
-pub type PfnCreateXcbSurface = unsafe extern "system" fn(
-    vk::Instance,
-    *const VkXcbSurfaceCreateInfo,
-    *const vk::AllocationCallbacks<'_>,
-    *mut vk::SurfaceKHR,
-) -> vk::Result;
-
-pub type PfnCreateSwapchain = unsafe extern "system" fn(
+type PfnCreateSwapchain = unsafe extern "system" fn(
     vk::Device,
     *const vk::SwapchainCreateInfoKHR<'_>,
     *const vk::AllocationCallbacks<'_>,
     *mut vk::SwapchainKHR,
 ) -> vk::Result;
 
-pub type PfnDestroySwapchain = unsafe extern "system" fn(
+type PfnDestroySwapchain = unsafe extern "system" fn(
     vk::Device,
     vk::SwapchainKHR,
     *const vk::AllocationCallbacks<'_>,
 );
 
-pub struct Window {
-    pub connection: *mut XcbConnection,
-    pub handle: u32,
-}
-
-#[link(name = "xcb")]
-extern "C" {
-    fn xcb_connect(name: *const c_char, screen: *mut c_int) -> *mut XcbConnection;
-    fn xcb_disconnect(connection: *mut XcbConnection);
-    fn xcb_connection_has_error(connection: *mut XcbConnection) -> c_int;
-    fn xcb_get_setup(connection: *mut XcbConnection) -> *const XcbSetup;
-    fn xcb_setup_roots_iterator(setup: *const XcbSetup) -> XcbScreenIterator;
-    fn xcb_generate_id(connection: *mut XcbConnection) -> u32;
-    fn xcb_create_window(
-        connection: *mut XcbConnection,
-        depth: u8,
-        window: u32,
-        parent: u32,
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
-        border: u16,
-        class: u16,
-        visual: u32,
-        mask: u32,
-        values: *const u32,
-    ) -> u32;
-    fn xcb_flush(connection: *mut XcbConnection) -> c_int;
+fn wanted_extensions() -> Vec<&'static str> {
+    std::iter::once(EXT_SURFACE)
+        .chain(BACKENDS.iter().map(|backend| backend.extension))
+        .collect()
 }
 
 fn available_name(one: &vk::ExtensionProperties) -> Option<String> {
@@ -149,10 +78,10 @@ fn available_names(entry: &ash::Entry) -> Vec<String> {
 
 fn enabled_names(entry: &ash::Entry) -> Vec<CString> {
     let available = available_names(entry);
-    WANTED_EXTENSIONS
-        .iter()
-        .filter(|name| available.iter().any(|one| one == *name))
-        .filter_map(|name| CString::new(*name).ok())
+    wanted_extensions()
+        .into_iter()
+        .filter(|name| available.iter().any(|one| one.as_str() == *name))
+        .filter_map(|name| CString::new(name).ok())
         .collect()
 }
 
@@ -215,70 +144,6 @@ fn sampler_info() -> vk::SamplerCreateInfo<'static> {
     }
 }
 
-fn surface_info(window: &Window) -> VkXcbSurfaceCreateInfo {
-    VkXcbSurfaceCreateInfo {
-        s_type: vk::StructureType::from_raw(SURFACE_TYPE),
-        p_next: std::ptr::null(),
-        flags: NO_FLAGS,
-        connection: window.connection,
-        window: window.handle,
-    }
-}
-
-fn call_connected(connection: *mut XcbConnection) -> Option<*mut XcbConnection> {
-    match unsafe { xcb_connection_has_error(connection) } {
-        NO_ERROR => Some(connection),
-        _ => None,
-    }
-}
-
-fn call_open_connection() -> Option<*mut XcbConnection> {
-    call_connected(unsafe { xcb_connect(std::ptr::null(), std::ptr::null_mut()) })
-}
-
-fn call_root_screen(connection: *mut XcbConnection) -> Option<*mut XcbScreen> {
-    match unsafe { xcb_setup_roots_iterator(xcb_get_setup(connection)) }.data {
-        screen if screen.is_null() => None,
-        screen => Some(screen),
-    }
-}
-
-fn call_place_window(connection: *mut XcbConnection, screen: *mut XcbScreen) -> u32 {
-    let handle = unsafe { xcb_generate_id(connection) };
-    unsafe {
-        xcb_create_window(
-            connection,
-            COPY_FROM_PARENT,
-            handle,
-            (*screen).root,
-            WINDOW_ORIGIN,
-            WINDOW_ORIGIN,
-            WINDOW_EDGE,
-            WINDOW_EDGE,
-            WINDOW_BORDER,
-            WINDOW_INPUT_OUTPUT,
-            (*screen).root_visual,
-            NO_VALUES,
-            std::ptr::null(),
-        )
-    };
-    unsafe { xcb_flush(connection) };
-    handle
-}
-
-fn call_open_window() -> Option<Window> {
-    let connection = call_open_connection()?;
-    let screen = call_root_screen(connection)?;
-    Some(Window {
-        connection,
-        handle: call_place_window(connection, screen),
-    })
-}
-
-fn call_close_window(window: &Window) {
-    unsafe { xcb_disconnect(window.connection) };
-}
-
 fn call_entry() -> Option<ash::Entry> {
     unsafe { ash::Entry::load() }.ok()
 }
@@ -297,33 +162,6 @@ fn call_create_instance(entry: &ash::Entry) -> Option<ash::Instance> {
         ..Default::default()
     };
     unsafe { entry.create_instance(&info, None) }.ok()
-}
-
-fn call_surface_fn(entry: &ash::Entry, instance: &ash::Instance) -> Option<PfnCreateXcbSurface> {
-    let name = CString::new(FN_CREATE_SURFACE).ok()?;
-    unsafe { entry.get_instance_proc_addr(instance.handle(), name.as_ptr()) }
-        .map(|found| unsafe { std::mem::transmute(found) })
-}
-
-fn call_surface_result(result: vk::Result, surface: vk::SurfaceKHR) -> Option<vk::SurfaceKHR> {
-    match result {
-        vk::Result::SUCCESS => Some(surface),
-        _ => None,
-    }
-}
-
-fn call_create_surface(
-    entry: &ash::Entry,
-    instance: &ash::Instance,
-    window: &Window,
-) -> Option<vk::SurfaceKHR> {
-    let create = call_surface_fn(entry, instance)?;
-    let info = surface_info(window);
-    let mut surface = vk::SurfaceKHR::null();
-    call_surface_result(
-        unsafe { create(instance.handle(), &info, std::ptr::null(), &mut surface) },
-        surface,
-    )
 }
 
 fn call_first_physical(instance: &ash::Instance) -> Option<vk::PhysicalDevice> {
@@ -413,23 +251,75 @@ fn call_create_sampler(device: &ash::Device) -> Option<vk::Sampler> {
     unsafe { device.create_sampler(&sampler_info(), None) }.ok()
 }
 
+fn call_exercise_sampler(device: &ash::Device) -> Option<()> {
+    let sampler = call_create_sampler(device)?;
+    unsafe { device.destroy_sampler(sampler, None) };
+    Some(())
+}
+
+fn call_on_swapchain(
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    device: &ash::Device,
+    surfaces: &ash::khr::surface::Instance,
+    surface: vk::SurfaceKHR,
+) -> Option<()> {
+    let caps = call_surface_caps(surfaces, phys, surface)?;
+    let format = call_first_format(surfaces, phys, surface)?;
+    let create: PfnCreateSwapchain = call_device_fn(instance, device, FN_CREATE_SWAPCHAIN)?;
+    let destroy: PfnDestroySwapchain = call_device_fn(instance, device, FN_DESTROY_SWAPCHAIN)?;
+    let swapchain = call_create_swapchain(create, device, surface, format, &caps)?;
+    unsafe { destroy(device.handle(), swapchain, std::ptr::null()) };
+    Some(())
+}
+
+fn call_on_surface(
+    entry: &ash::Entry,
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    device: &ash::Device,
+    backend: &Backend,
+    handles: &Handles,
+) -> Option<()> {
+    let surfaces = ash::khr::surface::Instance::new(entry, instance);
+    let surface = (backend.create_surface)(entry, instance, handles)?;
+    let done = call_on_swapchain(instance, phys, device, &surfaces, surface);
+    unsafe { surfaces.destroy_surface(surface, None) };
+    done
+}
+
+fn call_on_backend(
+    entry: &ash::Entry,
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    device: &ash::Device,
+    backend: &Backend,
+) -> Option<()> {
+    let handles = (backend.open)()?;
+    let done = call_on_surface(entry, instance, phys, device, backend, &handles);
+    (backend.close)(&handles);
+    done
+}
+
+fn call_every_backend(
+    entry: &ash::Entry,
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    device: &ash::Device,
+) {
+    BACKENDS.iter().for_each(|backend| {
+        let _ = call_on_backend(entry, instance, phys, device, backend);
+    });
+}
+
 fn call_on_device(
     entry: &ash::Entry,
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
     device: &ash::Device,
 ) -> Option<()> {
-    let surfaces = ash::khr::surface::Instance::new(entry, instance);
-    let caps = call_surface_caps(&surfaces, phys, surface)?;
-    let format = call_first_format(&surfaces, phys, surface)?;
-    let create: PfnCreateSwapchain = call_device_fn(instance, device, FN_CREATE_SWAPCHAIN)?;
-    let destroy: PfnDestroySwapchain = call_device_fn(instance, device, FN_DESTROY_SWAPCHAIN)?;
-    let swapchain = call_create_swapchain(create, device, surface, format, &caps)?;
-    let sampler = call_create_sampler(device)?;
-    unsafe { device.destroy_sampler(sampler, None) };
-    unsafe { destroy(device.handle(), swapchain, std::ptr::null()) };
-    unsafe { surfaces.destroy_surface(surface, None) };
+    call_exercise_sampler(device)?;
+    call_every_backend(entry, instance, phys, device);
     Some(())
 }
 
@@ -437,33 +327,26 @@ fn call_with_device(
     entry: &ash::Entry,
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
 ) -> Option<()> {
     let device = call_create_device(instance, phys, call_graphics_family(instance, phys)?)?;
-    let done = call_on_device(entry, instance, phys, surface, &device);
+    let done = call_on_device(entry, instance, phys, &device);
     unsafe { device.destroy_device(None) };
     done
 }
 
-fn call_exercise(entry: &ash::Entry, instance: &ash::Instance, window: &Window) -> Option<()> {
-    let surface = call_create_surface(entry, instance, window)?;
-    let phys = call_first_physical(instance)?;
-    call_with_device(entry, instance, phys, surface)
+fn call_on_instance(entry: &ash::Entry, instance: &ash::Instance) -> Option<()> {
+    call_with_device(entry, instance, call_first_physical(instance)?)
 }
 
-fn call_with_instance(entry: &ash::Entry, window: &Window) -> Option<()> {
+fn call_with_instance(entry: &ash::Entry) -> Option<()> {
     let instance = call_create_instance(entry)?;
-    let done = call_exercise(entry, &instance, window);
+    let done = call_on_instance(entry, &instance);
     unsafe { instance.destroy_instance(None) };
     done
 }
 
 fn call_probe() -> Option<()> {
-    let entry = call_entry()?;
-    let window = call_open_window()?;
-    let done = call_with_instance(&entry, &window);
-    call_close_window(&window);
-    done
+    call_with_instance(&call_entry()?)
 }
 
 fn call_status() -> i32 {

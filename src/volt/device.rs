@@ -17,6 +17,7 @@ use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
+use crate::env::env_probe_active;
 use crate::instance::all_devices;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
@@ -34,6 +35,8 @@ use crate::instance::VkLayerLinkInfo;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::probe::build_device;
+use crate::probe::call_record_device;
 use crate::report::call_forget_reports;
 use crate::report::call_report_choice;
 use crate::report::call_report_reading;
@@ -367,6 +370,13 @@ fn gpu_line_wanted(chosen: Option<u32>) -> bool {
     }
 }
 
+fn maybe_probe_device(inst: &VkInstState, phys: vk::PhysicalDevice, caps: &DeviceCaps) {
+    match env_probe_active() {
+        true => call_record_device(build_device(inst, phys, caps)),
+        false => (),
+    }
+}
+
 fn call_report_gpu(inst: &VkInstState, phys: vk::PhysicalDevice, handle: vk::Device) {
     let chosen = ensure_settings().gpu;
     match gpu_line_wanted(chosen) {
@@ -406,6 +416,7 @@ fn register_device(
             instance_handle: inst_handle,
         },
     );
+    maybe_probe_device(inst, phys, &caps);
     call_report_gpu(inst, phys, handle);
     log_at(LogLevel::Info, "vk device registered");
 }
