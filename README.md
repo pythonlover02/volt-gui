@@ -402,7 +402,7 @@ samplers, pipelines or swapchains the game creates.
 |----------|---------|--------|---------|
 | `VOLT_CONFIG_NAME` | which profile to load | any profile name | `default` |
 | `VOLT_LOG` | log verbosity, to stderr | `off`, `error`, `warn`, `info` | `warn` |
-| `VOLT_PROBE` | write `probe.toml` on first swapchain | any non-empty value | unset |
+| `VOLT_PROBE` | write `probe.toml` from this device and its surfaces | any non-empty value | unset |
 | `VOLT_ENABLE` | activates the layer | `1` | unset |
 | `VOLT_DISABLE` | the loader's off switch | `1` | unset |
 
