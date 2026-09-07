@@ -611,12 +611,16 @@ def process_probe_rebuild(main_window) -> None:
 
 
 def process_probe_poll(main_window) -> None:
-    match call_probe_stamp():
-        case stamp if stamp == main_window.probe_stamp:
-            return None
-        case stamp:
+    match (call_probe_stamp(), main_window.probe_stamp, main_window.probe_settled):
+        case (stamp, seen, _) if stamp != seen:
             main_window.probe_stamp = stamp
+            main_window.probe_settled = False
+            return None
+        case (_, _, False):
+            main_window.probe_settled = True
             process_probe_rebuild(main_window)
+            return None
+        case _:
             return None
 
 
@@ -737,6 +741,7 @@ def create_main_window_widget(singleton_socket):
     window.preview_process = None
     window.probe_error_shown = False
     window.probe_stamp = call_probe_stamp()
+    window.probe_settled = True
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(620, 380)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
