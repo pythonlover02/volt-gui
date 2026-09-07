@@ -1,4 +1,5 @@
 mod dl;
+mod wayland;
 mod xcb;
 
 use std::ffi::c_char;
@@ -39,7 +40,7 @@ pub(crate) struct Backend {
     pub(crate) close: fn(&Handles),
 }
 
-const BACKENDS: [Backend; 1] = [xcb::BACKEND];
+const BACKENDS: [Backend; 2] = [xcb::BACKEND, wayland::BACKEND];
 
 type PfnCreateSwapchain = unsafe extern "system" fn(
     vk::Device,
