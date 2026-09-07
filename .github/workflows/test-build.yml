@@ -62,17 +62,17 @@ jobs:
 
     - name: Compile sources
       id: compile-sources
-      run: python -m compileall -q volt-gui
+      run: python -m compileall -q src/volt-gui
 
     - name: Import pure modules
       id: import-modules
-      run: cd volt-gui && python -c "import probe, profiles, presets, database"
+      run: cd src/volt-gui && python -c "import probe, profiles, presets, database"
 
     - name: Check version sync
       id: check-version
       shell: bash
       run: |
         layer=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
-        gui=$(cd volt-gui && python -c "import database; print(database.APP_VERSION)")
+        gui=$(cd src/volt-gui && python -c "import database; print(database.APP_VERSION)")
         echo "layer=${layer} gui=${gui}"
         test "${layer}" = "${gui}"
