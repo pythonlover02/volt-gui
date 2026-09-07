@@ -33,7 +33,8 @@ pub(crate) const PROBE_ON: &str = "on";
 pub(crate) const PROBE_OFF: &str = "off";
 pub(crate) const PROBE_UNSET: &str = "";
 pub(crate) const PROBE_WRITE_INFO: &str = "probe written to the config directory";
-pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps its built in lists";
+pub(crate) const PROBE_FAIL_WARN: &str =
+    "probe write failed, the interface keeps its built in lists";
 
 pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
@@ -65,10 +66,7 @@ pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
 
 pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
 pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;
-pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
-    MODE_COMPATIBILITY_TYPE,
-    LATENCY_CAPABILITIES_TYPE,
-];
+pub(crate) const MODE_LIST_TYPES: [u32; 2] = [MODE_COMPATIBILITY_TYPE, LATENCY_CAPABILITIES_TYPE];
 
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
@@ -100,18 +98,26 @@ pub(crate) const PACING_SLICED: &str = "sliced";
 pub(crate) const PACING_PRECISE: &str = "precise";
 pub(crate) const PACING_SPIN: &str = "spin";
 
-pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
-pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
-pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
+pub(crate) const SETTINGS_FROZEN_INFO: &str =
+    "settings loaded and frozen for the life of the process";
+pub(crate) const PRESENT_MISS_WARN: &str =
+    "the surface does not support the present mode setting, keeping application choice";
+pub(crate) const PRESENT_EMPTY_WARN: &str =
+    "present mode selection matched no supported mode, keeping every mode";
 
-pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
-pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
+pub(crate) const PRESENT_EXTENDED_INFO: &str =
+    "this present mode comes from an extension and only exists where the application enabled it";
+pub(crate) const ALPHA_MISS_WARN: &str =
+    "the surface does not support the composite alpha setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
-pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer with no registered device";
+pub(crate) const UNOWNED_BUFFER_ERROR: &str =
+    "dynamic state on a command buffer with no registered device";
 
 pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
-pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
-pub(crate) const GPU_MISS_WARN: &str = "gpu selection did not take, the application kept the device it picked";
+pub(crate) const GROUP_EMPTY_WARN: &str =
+    "gpu selection matched no device group, keeping every group";
+pub(crate) const GPU_MISS_WARN: &str =
+    "gpu selection did not take, the application kept the device it picked";
 pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
 
 pub(crate) const REPORT_MARK: &str = ": ";

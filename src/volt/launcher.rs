@@ -13,12 +13,12 @@ use crate::consts::ENABLE_VALUE;
 use crate::consts::ENV_CONFIG_NAME;
 use crate::consts::ENV_ENABLE;
 use crate::consts::ENV_LIB_PATH;
+use crate::consts::ENV_PROBE;
 use crate::consts::EXIT_EXEC_FAILED;
 use crate::consts::EXIT_OK;
 use crate::consts::EXIT_USAGE;
 use crate::consts::FLATPAK_CMD;
 use crate::consts::FLATPAK_INJECT;
-use crate::consts::ENV_PROBE;
 use crate::consts::FLATPAK_RUN;
 use crate::consts::LIB_DIR_32;
 use crate::consts::LIB_DIR_64;
@@ -37,7 +37,9 @@ fn is_help_flag(a: &str) -> bool {
 }
 
 fn wants_help(args: &[String]) -> bool {
-    args.iter().take_while(|a| **a != "--").any(|a| is_help_flag(a))
+    args.iter()
+        .take_while(|a| **a != "--")
+        .any(|a| is_help_flag(a))
 }
 
 fn is_probe_flag(a: &str) -> bool {
@@ -81,8 +83,7 @@ fn is_flatpak_bin(name: &str) -> bool {
 }
 
 fn is_flatpak_run(cmd: &[String]) -> bool {
-    cmd.first().map(|s| is_flatpak_bin(s)).unwrap_or(false)
-        && cmd.iter().any(|a| a == FLATPAK_RUN)
+    cmd.first().map(|s| is_flatpak_bin(s)).unwrap_or(false) && cmd.iter().any(|a| a == FLATPAK_RUN)
 }
 
 fn flatpak_run_pos(cmd: &[String]) -> Option<usize> {

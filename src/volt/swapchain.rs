@@ -68,7 +68,10 @@ fn present_filtered(
 }
 
 fn supported_mode(supported: &[vk::PresentModeKHR], value: u32) -> Option<vk::PresentModeKHR> {
-    supported.iter().copied().find(|m| m.as_raw() as u32 == value)
+    supported
+        .iter()
+        .copied()
+        .find(|m| m.as_raw() as u32 == value)
 }
 
 fn logged_mode_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
@@ -146,11 +149,7 @@ fn caps_upper(caps_max: u32) -> u32 {
     }
 }
 
-fn pick_image_count(
-    choice: Option<u32>,
-    caps: &vk::SurfaceCapabilitiesKHR,
-    original: u32,
-) -> u32 {
+fn pick_image_count(choice: Option<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
     forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
 }
 
@@ -181,30 +180,26 @@ fn clamped_caps(
 }
 
 fn log_extended(extended: bool, message: &str) {
-    match extended {
-        true => log_at(LogLevel::Info, message),
-        false => (),
+    if extended {
+        log_at(LogLevel::Info, message)
     }
 }
 
 fn maybe_log_present(choice: Option<u32>) {
-    match choice.and_then(present_semantic) {
-        Some(facts) => log_extended(facts.extended, PRESENT_EXTENDED_INFO),
-        None => (),
+    if let Some(facts) = choice.and_then(present_semantic) {
+        log_extended(facts.extended, PRESENT_EXTENDED_INFO)
     }
 }
 
 fn log_blending(blends: bool) {
-    match blends {
-        false => log_at(LogLevel::Info, ALPHA_OPAQUE_INFO),
-        true => (),
+    if !blends {
+        log_at(LogLevel::Info, ALPHA_OPAQUE_INFO)
     }
 }
 
 fn maybe_log_alpha(choice: Option<u32>) {
-    match choice.and_then(alpha_semantic) {
-        Some(facts) => log_blending(facts.blends),
-        None => (),
+    if let Some(facts) = choice.and_then(alpha_semantic) {
+        log_blending(facts.blends)
     }
 }
 
@@ -288,9 +283,8 @@ fn call_report_swapchain(
     asked: &vk::SwapchainCreateInfoKHR<'_>,
     held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
-    match info_wanted() {
-        true => call_report_fields(dev.device.handle().as_raw(), s, asked, held),
-        false => (),
+    if info_wanted() {
+        call_report_fields(dev.device.handle().as_raw(), s, asked, held)
     }
 }
 
@@ -320,11 +314,19 @@ pub(crate) fn call_query_present_modes(
 ) -> Vec<vk::PresentModeKHR> {
     let mut n: u32 = 0;
     let r1 = unsafe {
-        (inst.surface_fp.get_physical_device_surface_present_modes_khr)(phys, surface, &mut n, ptr::null_mut())
+        (inst
+            .surface_fp
+            .get_physical_device_surface_present_modes_khr)(
+            phys, surface, &mut n, ptr::null_mut()
+        )
     };
     let mut v = vec![vk::PresentModeKHR::FIFO; n as usize];
     let r2 = unsafe {
-        (inst.surface_fp.get_physical_device_surface_present_modes_khr)(phys, surface, &mut n, v.as_mut_ptr())
+        (inst
+            .surface_fp
+            .get_physical_device_surface_present_modes_khr)(
+            phys, surface, &mut n, v.as_mut_ptr()
+        )
     };
     match (r1, r2) {
         (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
@@ -530,9 +532,8 @@ fn maybe_probe(
     supported: &[vk::PresentModeKHR],
     caps: &vk::SurfaceCapabilitiesKHR,
 ) {
-    match (env_probe_active(), tag) {
-        (true, Some(name)) => call_record_surface(name, build_surface(supported, caps)),
-        (_, _) => (),
+    if let (true, Some(name)) = (env_probe_active(), tag) {
+        call_record_surface(name, build_surface(supported, caps))
     }
 }
 
@@ -612,6 +613,7 @@ fn call_shared_patched<'a>(
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn call_shared_through(
     dev: &VkDevState,
     inst: &VkInstState,

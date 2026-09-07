@@ -35,8 +35,7 @@ pub(crate) struct Handles {
 pub(crate) struct Backend {
     pub(crate) extension: &'static str,
     pub(crate) open: fn() -> Option<Handles>,
-    pub(crate) create_surface:
-        fn(&ash::Entry, &ash::Instance, &Handles) -> Option<vk::SurfaceKHR>,
+    pub(crate) create_surface: fn(&ash::Entry, &ash::Instance, &Handles) -> Option<vk::SurfaceKHR>,
     pub(crate) close: fn(&Handles),
 }
 
@@ -49,11 +48,8 @@ type PfnCreateSwapchain = unsafe extern "system" fn(
     *mut vk::SwapchainKHR,
 ) -> vk::Result;
 
-type PfnDestroySwapchain = unsafe extern "system" fn(
-    vk::Device,
-    vk::SwapchainKHR,
-    *const vk::AllocationCallbacks<'_>,
-);
+type PfnDestroySwapchain =
+    unsafe extern "system" fn(vk::Device, vk::SwapchainKHR, *const vk::AllocationCallbacks<'_>);
 
 fn wanted_extensions() -> Vec<&'static str> {
     std::iter::once(EXT_SURFACE)

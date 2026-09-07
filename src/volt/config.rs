@@ -2,11 +2,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use crate::consts::CadenceChoice;
+use crate::consts::MethodChoice;
+use crate::consts::PacingChoice;
 use crate::consts::ANISO_OFF;
 use crate::consts::CADENCE_DYNAMIC;
 use crate::consts::CADENCE_FIXED;
 use crate::consts::CADENCE_SMOOTH;
-use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
@@ -17,14 +19,12 @@ use crate::consts::HOME_UNSET_WARN;
 use crate::consts::METHOD_EARLY;
 use crate::consts::METHOD_LATE;
 use crate::consts::METHOD_REACTIVE;
-use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
 use crate::consts::PACING_PRECISE;
 use crate::consts::PACING_SLEEP;
 use crate::consts::PACING_SLICED;
 use crate::consts::PACING_SPIN;
-use crate::consts::PacingChoice;
 use crate::consts::RESERVED_PROFILES;
 use crate::consts::SECTION_DISPLAY;
 use crate::consts::SECTION_FRAMERATE;
@@ -235,7 +235,12 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         depth_clamp: field(&doc, SECTION_RENDERING, "depth_clamp", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
         frame_limit_offset: field(&doc, SECTION_FRAMERATE, "frame_limit_offset", parse_offset),
-        cadence: field(&doc, SECTION_FRAMERATE, "frame_limit_cadence", parse_cadence),
+        cadence: field(
+            &doc,
+            SECTION_FRAMERATE,
+            "frame_limit_cadence",
+            parse_cadence,
+        ),
         limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
         pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
     }
@@ -255,7 +260,10 @@ pub(crate) fn sanitize_name(raw: &str) -> String {
     match name_is_valid(raw) {
         true => raw.into(),
         false => {
-            log_at(LogLevel::Warn, "invalid profile name, using default profile");
+            log_at(
+                LogLevel::Warn,
+                "invalid profile name, using default profile",
+            );
             DEFAULT_PROFILE.into()
         }
     }

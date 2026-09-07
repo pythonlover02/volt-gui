@@ -9,17 +9,18 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::Settings;
+use crate::consts::CadenceChoice;
+use crate::consts::LimitStage;
+use crate::consts::MethodChoice;
+use crate::consts::PacingChoice;
 use crate::consts::CADENCE_DYNAMIC;
 use crate::consts::CADENCE_FIXED;
 use crate::consts::CADENCE_SMOOTH;
-use crate::consts::CadenceChoice;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_NONE;
-use crate::consts::LimitStage;
 use crate::consts::METHOD_EARLY;
 use crate::consts::METHOD_LATE;
 use crate::consts::METHOD_REACTIVE;
-use crate::consts::MethodChoice;
 use crate::consts::NS_PER_S;
 use crate::consts::PACE_SPIKE_LIMIT;
 use crate::consts::PACE_STEPS;
@@ -28,7 +29,6 @@ use crate::consts::PACING_PRECISE;
 use crate::consts::PACING_SLEEP;
 use crate::consts::PACING_SLICED;
 use crate::consts::PACING_SPIN;
-use crate::consts::PacingChoice;
 use crate::consts::SLICE_MARGIN_NS;
 use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
@@ -191,7 +191,10 @@ fn call_sleep_until(target: u64) {
 }
 
 fn call_precise_until(target: u64) {
-    call_sleep_ns(wait_deficit_ns(call_now_ns(), target.saturating_sub(SPIN_MARGIN_NS)));
+    call_sleep_ns(wait_deficit_ns(
+        call_now_ns(),
+        target.saturating_sub(SPIN_MARGIN_NS),
+    ));
     call_spin_until(target);
 }
 
@@ -300,24 +303,20 @@ pub(crate) fn maybe_limit_frame(
     s: &Settings,
     info: *const vk::PresentInfoKHR<'_>,
 ) {
-    match limit_fps(s, stage) {
-        Some(fps) => call_limit_to(
+    if let Some(fps) = limit_fps(s, stage) {
+        call_limit_to(
             call_present_key(info),
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
             s.cadence,
-        ),
-        None => (),
+        )
     }
 }
 
 pub(crate) fn call_forget_timeline(sc: vk::SwapchainKHR) {
-    match TIMELINES.lock() {
-        Ok(mut guard) => {
-            guard.get_or_insert_with(HashMap::new).remove(&sc.as_raw());
-        }
-        Err(_) => (),
+    if let Ok(mut guard) = TIMELINES.lock() {
+        guard.get_or_insert_with(HashMap::new).remove(&sc.as_raw());
     }
 }
 

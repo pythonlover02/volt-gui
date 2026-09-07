@@ -1,21 +1,21 @@
 #![allow(non_snake_case)]
 
+mod config;
 mod consts;
-mod logging;
+mod device;
+mod env;
+mod instance;
+mod launcher;
+mod layer;
 mod lists;
+mod logging;
+mod pipeline;
+mod present;
+mod probe;
 mod ranks;
 mod report;
-mod env;
-mod config;
-mod instance;
-mod device;
-mod layer;
-mod swapchain;
-mod probe;
-mod present;
 mod sampler;
-mod pipeline;
-mod launcher;
+mod swapchain;
 
 #[cfg(test)]
 mod checks;

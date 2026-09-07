@@ -26,12 +26,7 @@ where
     restored(wanted, rest, warn)
 }
 
-pub(crate) fn filtered<T, V, F>(
-    items: Vec<T>,
-    choice: Option<V>,
-    value_of: F,
-    warn: &str,
-) -> Vec<T>
+pub(crate) fn filtered<T, V, F>(items: Vec<T>, choice: Option<V>, value_of: F, warn: &str) -> Vec<T>
 where
     V: PartialEq + Copy,
     F: Fn(&T) -> Option<V>,

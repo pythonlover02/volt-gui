@@ -10,6 +10,7 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::LimitStage;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_CREATE_WAYLAND_SURFACE;
 use crate::consts::FN_CREATE_XCB_SURFACE;
@@ -32,7 +33,6 @@ use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_LINK_INFO;
 use crate::consts::LAYER_NAME;
-use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::consts::TAG_WAYLAND;
 use crate::consts::TAG_XCB;
@@ -112,8 +112,12 @@ fn instance_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
-        "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
-        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
+        "vkGetPhysicalDeviceSurfacePresentModesKHR" => {
+            Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void)
+        }
+        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => {
+            Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void)
+        }
         _ => None,
     }
 }
@@ -210,15 +214,22 @@ fn null_ok_ptr(name: &str) -> *mut c_void {
     match name {
         "vkGetInstanceProcAddr" => vkGetInstanceProcAddr as *mut c_void,
         "vkCreateInstance" => vkCreateInstance as *mut c_void,
-        "vkEnumerateInstanceExtensionProperties" => volt_EnumerateInstanceExtensionProperties as *mut c_void,
-        "vkEnumerateInstanceLayerProperties" => volt_EnumerateInstanceLayerProperties as *mut c_void,
+        "vkEnumerateInstanceExtensionProperties" => {
+            volt_EnumerateInstanceExtensionProperties as *mut c_void
+        }
+        "vkEnumerateInstanceLayerProperties" => {
+            volt_EnumerateInstanceLayerProperties as *mut c_void
+        }
         "vkEnumerateInstanceVersion" => volt_EnumerateInstanceVersion as *mut c_void,
         _ => ptr::null_mut(),
     }
 }
 
 fn copy_cstr(dst: &mut [c_char], s: &str) {
-    s.bytes().take(dst.len() - 1).enumerate().for_each(|(i, b)| dst[i] = b as c_char);
+    s.bytes()
+        .take(dst.len() - 1)
+        .enumerate()
+        .for_each(|(i, b)| dst[i] = b as c_char);
 }
 
 fn forward_device_proc(dev: vk::Device, name: &str) -> vk::PFN_vkVoidFunction {
@@ -235,35 +246,46 @@ fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
     }
 }
 
+fn as_void_proc(p: *mut c_void) -> vk::PFN_vkVoidFunction {
+    unsafe { mem::transmute::<*mut c_void, vk::PFN_vkVoidFunction>(p) }
+}
+
 fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
     match (
         instance_symbol(name),
         device_symbol(name),
         instance_hooked_symbol(inst, name),
     ) {
-        (Some(p), _, _) => unsafe { mem::transmute(p) },
-        (None, Some(p), _) => unsafe { mem::transmute(p) },
-        (None, None, Some(p)) => unsafe { mem::transmute(p) },
+        (Some(p), _, _) => as_void_proc(p),
+        (None, Some(p), _) => as_void_proc(p),
+        (None, None, Some(p)) => as_void_proc(p),
         (None, None, None) => forward_instance_proc(inst, name),
     }
 }
 
 fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
-    match (null_ok_name(name), instance_symbol(name), device_symbol(name)) {
-        (true, _, _) => unsafe { mem::transmute(null_ok_ptr(name)) },
-        (false, Some(p), _) => unsafe { mem::transmute(p) },
-        (false, None, Some(p)) => unsafe { mem::transmute(p) },
+    match (
+        null_ok_name(name),
+        instance_symbol(name),
+        device_symbol(name),
+    ) {
+        (true, _, _) => as_void_proc(null_ok_ptr(name)),
+        (false, Some(p), _) => as_void_proc(p),
+        (false, None, Some(p)) => as_void_proc(p),
         (false, None, None) => None,
     }
 }
 
-fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
-    match call_next_gipa(gipa, inst, "vkDestroyInstance") {
-        Some(d) => unsafe {
+fn call_chain_destroy_instance(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    inst: vk::Instance,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
+    if let Some(d) = call_next_gipa(gipa, inst, "vkDestroyInstance") {
+        unsafe {
             let df: vk::PFN_vkDestroyInstance = mem::transmute(d);
             df(inst, alloc);
-        },
-        None => (),
+        }
     }
 }
 
@@ -307,12 +329,14 @@ unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(
     count: *mut u32,
     _props: *mut vk::ExtensionProperties,
 ) -> vk::Result {
-    match cstr_to_str(layer) == LAYER_NAME {
-        true => {
-            *count = 0;
-            vk::Result::SUCCESS
+    unsafe {
+        match cstr_to_str(layer) == LAYER_NAME {
+            true => {
+                *count = 0;
+                vk::Result::SUCCESS
+            }
+            false => vk::Result::ERROR_LAYER_NOT_PRESENT,
         }
-        false => vk::Result::ERROR_LAYER_NOT_PRESENT,
     }
 }
 
@@ -320,56 +344,76 @@ unsafe extern "system" fn volt_EnumerateInstanceLayerProperties(
     count: *mut u32,
     props: *mut vk::LayerProperties,
 ) -> vk::Result {
-    match props.is_null() {
-        true => {
-            *count = 1;
-            vk::Result::SUCCESS
-        }
-        false => {
-            let mut p = vk::LayerProperties {
-                spec_version: vk::make_api_version(0, 1, 0, 0),
-                implementation_version: 1,
-                ..Default::default()
-            };
-            copy_cstr(&mut p.layer_name, LAYER_NAME);
-            copy_cstr(&mut p.description, LAYER_DESC);
-            *count = 1;
-            *props = p;
-            vk::Result::SUCCESS
+    unsafe {
+        match props.is_null() {
+            true => {
+                *count = 1;
+                vk::Result::SUCCESS
+            }
+            false => {
+                let mut p = vk::LayerProperties {
+                    spec_version: vk::make_api_version(0, 1, 0, 0),
+                    implementation_version: 1,
+                    ..Default::default()
+                };
+                copy_cstr(&mut p.layer_name, LAYER_NAME);
+                copy_cstr(&mut p.description, LAYER_DESC);
+                *count = 1;
+                *props = p;
+                vk::Result::SUCCESS
+            }
         }
     }
 }
 
 unsafe extern "system" fn volt_EnumerateInstanceVersion(v: *mut u32) -> vk::Result {
-    *v = vk::make_api_version(0, 1, 0, 0);
-    vk::Result::SUCCESS
-}
-
-unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, out: *mut vk::Queue) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => {
-            let q = d.device.get_device_queue(qfam, qidx);
-            call_register_queue(&d, dev, q);
-            queue_dev_put(q.as_raw(), dev.as_raw());
-            *out = q;
-        }
-        None => log_at(LogLevel::Warn, "GetDeviceQueue on unregistered device"),
+    unsafe {
+        *v = vk::make_api_version(0, 1, 0, 0);
+        vk::Result::SUCCESS
     }
 }
 
-unsafe extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk::DeviceQueueInfo2<'_>, out: *mut vk::Queue) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => {
-            let q = d.device.get_device_queue2(&*info);
-            call_register_queue(&d, dev, q);
-            queue_dev_put(q.as_raw(), dev.as_raw());
-            *out = q;
+unsafe extern "system" fn volt_GetDeviceQueue(
+    dev: vk::Device,
+    qfam: u32,
+    qidx: u32,
+    out: *mut vk::Queue,
+) {
+    unsafe {
+        match devs_get(dev.as_raw()) {
+            Some(d) => {
+                let q = d.device.get_device_queue(qfam, qidx);
+                call_register_queue(&d, dev, q);
+                queue_dev_put(q.as_raw(), dev.as_raw());
+                *out = q;
+            }
+            None => log_at(LogLevel::Warn, "GetDeviceQueue on unregistered device"),
         }
-        None => log_at(LogLevel::Warn, "GetDeviceQueue2 on unregistered device"),
     }
 }
 
-unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const c_char) -> vk::PFN_vkVoidFunction {
+unsafe extern "system" fn volt_GetDeviceQueue2(
+    dev: vk::Device,
+    info: *const vk::DeviceQueueInfo2<'_>,
+    out: *mut vk::Queue,
+) {
+    unsafe {
+        match devs_get(dev.as_raw()) {
+            Some(d) => {
+                let q = d.device.get_device_queue2(&*info);
+                call_register_queue(&d, dev, q);
+                queue_dev_put(q.as_raw(), dev.as_raw());
+                *out = q;
+            }
+            None => log_at(LogLevel::Warn, "GetDeviceQueue2 on unregistered device"),
+        }
+    }
+}
+
+unsafe extern "system" fn vkGetInstanceProcAddr(
+    inst: vk::Instance,
+    name: *const c_char,
+) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
     match inst == vk::Instance::null() {
         true => resolve_null_instance_proc(n),
@@ -377,11 +421,14 @@ unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const
     }
 }
 
-unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_char) -> vk::PFN_vkVoidFunction {
+unsafe extern "system" fn vkGetDeviceProcAddr(
+    dev: vk::Device,
+    name: *const c_char,
+) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
     match (device_gated_symbol(dev, n), device_hooked_symbol(dev, n)) {
-        (Some(p), _) => mem::transmute(p),
-        (None, Some(p)) => mem::transmute(p),
+        (Some(p), _) => as_void_proc(p),
+        (None, Some(p)) => as_void_proc(p),
         (None, None) => forward_device_proc(dev, n),
     }
 }
@@ -391,25 +438,29 @@ unsafe extern "system" fn vkCreateInstance(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Instance,
 ) -> vk::Result {
-    init_log_level();
-    call_real_create_instance(
-        call_advance_chain(chain_layer_info(
-            (*ci).p_next,
-            vk::StructureType::LOADER_INSTANCE_CREATE_INFO,
-            LAYER_LINK_INFO,
-        )),
-        ci,
-        alloc,
-        out,
-    )
+    unsafe {
+        init_log_level();
+        call_real_create_instance(
+            call_advance_chain(chain_layer_info(
+                (*ci).p_next,
+                vk::StructureType::LOADER_INSTANCE_CREATE_INFO,
+                LAYER_LINK_INFO,
+            )),
+            ci,
+            alloc,
+            out,
+        )
+    }
 }
 
-unsafe extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
+unsafe extern "system" fn vkDestroyInstance(
+    inst: vk::Instance,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
     let st = insts_get(inst.as_raw());
     insts_del(inst.as_raw());
-    match st {
-        Some(s) => call_chain_destroy_instance(s.gipa, inst, alloc),
-        None => (),
+    if let Some(s) = st {
+        call_chain_destroy_instance(s.gipa, inst, alloc)
     }
 }
 
@@ -443,28 +494,34 @@ unsafe extern "system" fn vkCreateDevice(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Device,
 ) -> vk::Result {
-    call_real_create_device(
-        call_advance_chain(chain_layer_info(
-            (*ci).p_next,
-            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
-            LAYER_LINK_INFO,
-        )),
-        call_loader_data_fn(chain_layer_info(
-            (*ci).p_next,
-            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
-            LAYER_DATA_CALLBACK,
-        )),
-        phys,
-        ci,
-        alloc,
-        out,
-    )
+    unsafe {
+        call_real_create_device(
+            call_advance_chain(chain_layer_info(
+                (*ci).p_next,
+                vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+                LAYER_LINK_INFO,
+            )),
+            call_loader_data_fn(chain_layer_info(
+                (*ci).p_next,
+                vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+                LAYER_DATA_CALLBACK,
+            )),
+            phys,
+            ci,
+            alloc,
+            out,
+        )
+    }
 }
 
-unsafe extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::AllocationCallbacks<'_>) {
-    match devs_del(dev.as_raw()) {
-        Some(d) => d.device.destroy_device(alloc.as_ref()),
-        None => (),
+unsafe extern "system" fn vkDestroyDevice(
+    dev: vk::Device,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
+    unsafe {
+        if let Some(d) = devs_del(dev.as_raw()) {
+            d.device.destroy_device(alloc.as_ref())
+        }
     }
 }
 
@@ -520,9 +577,8 @@ unsafe extern "system" fn vkFreeCommandBuffers(
     count: u32,
     buffers: *const vk::CommandBuffer,
 ) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => call_free_command_buffers(&d, dev, pool, count, buffers),
-        None => (),
+    if let Some(d) = devs_get(dev.as_raw()) {
+        call_free_command_buffers(&d, dev, pool, count, buffers)
     }
 }
 
@@ -531,9 +587,8 @@ unsafe extern "system" fn vkDestroyCommandPool(
     pool: vk::CommandPool,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => call_destroy_command_pool(&d, dev, pool, alloc),
-        None => (),
+    if let Some(d) = devs_get(dev.as_raw()) {
+        call_destroy_command_pool(&d, dev, pool, alloc)
     }
 }
 
@@ -591,12 +646,11 @@ unsafe extern "system" fn vkDestroySwapchainKHR(
     sc: vk::SwapchainKHR,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => {
+    unsafe {
+        if let Some(d) = devs_get(dev.as_raw()) {
             call_forget_timeline(sc);
             (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc);
         }
-        None => (),
     }
 }
 
@@ -669,16 +723,21 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilities2KHR(
     call_surface_capabilities2(phys, info, caps)
 }
 
-unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::PresentInfoKHR<'_>) -> vk::Result {
+unsafe extern "system" fn vkQueuePresentKHR(
+    queue: vk::Queue,
+    info: *const vk::PresentInfoKHR<'_>,
+) -> vk::Result {
     call_limited_present(queue_owner(queue), queue, info)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "system" fn vkNegotiateLoaderLayerInterfaceVersion(p: *mut c_void) -> vk::Result {
-    let iface = p as *mut VkNegotiateLayerInterface;
-    (*iface).loader_layer_interface_version = LAYER_IFACE_VERSION;
-    (*iface).pfn_get_instance_proc_addr = Some(vkGetInstanceProcAddr);
-    (*iface).pfn_get_device_proc_addr = Some(vkGetDeviceProcAddr);
-    (*iface).pfn_get_physical_device_proc_addr = None;
-    vk::Result::SUCCESS
+    unsafe {
+        let iface = p as *mut VkNegotiateLayerInterface;
+        (*iface).loader_layer_interface_version = LAYER_IFACE_VERSION;
+        (*iface).pfn_get_instance_proc_addr = Some(vkGetInstanceProcAddr);
+        (*iface).pfn_get_device_proc_addr = Some(vkGetDeviceProcAddr);
+        (*iface).pfn_get_physical_device_proc_addr = None;
+        vk::Result::SUCCESS
+    }
 }

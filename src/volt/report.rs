@@ -44,11 +44,8 @@ pub(crate) fn call_claim(
 }
 
 pub(crate) fn call_forget(store: &RwLock<Option<ReportMap>>, owner: u64) {
-    match store.write() {
-        Ok(mut guard) => {
-            guard.get_or_insert_with(HashMap::new).remove(&owner);
-        }
-        Err(_) => (),
+    if let Ok(mut guard) = store.write() {
+        guard.get_or_insert_with(HashMap::new).remove(&owner);
     }
 }
 
@@ -57,9 +54,8 @@ fn call_claim_report(owner: u64, name: &'static str) -> bool {
 }
 
 pub(crate) fn call_forget_reports(owner: u64) {
-    match info_wanted() {
-        true => call_forget(&REPORTS, owner),
-        false => (),
+    if info_wanted() {
+        call_forget(&REPORTS, owner)
     }
 }
 
@@ -68,11 +64,14 @@ fn labelled(label: &str, text: Option<String>) -> Option<String> {
 }
 
 fn values(asked: Option<String>, forced: Option<String>) -> String {
-    [labelled(REPORT_ASKED, asked), labelled(REPORT_FORCED, forced)]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<String>>()
-        .join(REPORT_SEP)
+    [
+        labelled(REPORT_ASKED, asked),
+        labelled(REPORT_FORCED, forced),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<String>>()
+    .join(REPORT_SEP)
 }
 
 fn noted(body: String, note: Option<String>) -> String {
@@ -141,29 +140,26 @@ pub(crate) fn call_report_value<T: Copy + PartialEq>(
     text: fn(T) -> String,
     note: Option<String>,
 ) {
-    match call_claim_report(owner, name) {
-        true => call_report_setting(
+    if call_claim_report(owner, name) {
+        call_report_setting(
             name,
             Some(text(asked)),
             forced_text(set, asked, held, text),
             note,
-        ),
-        false => (),
+        )
     }
 }
 
 pub(crate) fn call_report_choice(owner: u64, name: &'static str, forced: Option<String>) {
     let note = missing_note(&forced);
-    match call_claim_report(owner, name) {
-        true => call_report_setting(name, None, forced, note),
-        false => (),
+    if call_claim_report(owner, name) {
+        call_report_setting(name, None, forced, note)
     }
 }
 
 pub(crate) fn call_report_reading(owner: u64, name: &'static str, asked: String) {
-    match call_claim_report(owner, name) {
-        true => call_report_setting(name, Some(asked), None, None),
-        false => (),
+    if call_claim_report(owner, name) {
+        call_report_setting(name, Some(asked), None, None)
     }
 }
 

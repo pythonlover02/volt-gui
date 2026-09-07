@@ -38,11 +38,17 @@ fn parse_unknown(prefix: &str, text: &str) -> Option<u32> {
 }
 
 fn present_row(value: u32) -> Option<(u32, &'static str, bool)> {
-    PRESENT_MODES.iter().copied().find(|(known, _, _)| *known == value)
+    PRESENT_MODES
+        .iter()
+        .copied()
+        .find(|(known, _, _)| *known == value)
 }
 
 fn alpha_row(value: u32) -> Option<(u32, &'static str, bool)> {
-    COMPOSITE_ALPHAS.iter().copied().find(|(known, _, _)| *known == value)
+    COMPOSITE_ALPHAS
+        .iter()
+        .copied()
+        .find(|(known, _, _)| *known == value)
 }
 
 pub(crate) fn present_display(value: u32) -> String {

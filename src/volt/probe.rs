@@ -64,10 +64,7 @@ fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
     values
 }
 
-fn device_features(
-    inst: &VkInstState,
-    phys: vk::PhysicalDevice,
-) -> vk::PhysicalDeviceFeatures {
+fn device_features(inst: &VkInstState, phys: vk::PhysicalDevice) -> vk::PhysicalDeviceFeatures {
     unsafe { inst.instance.get_physical_device_features(phys) }
 }
 
@@ -239,13 +236,10 @@ fn call_stored<F>(update: F)
 where
     F: FnOnce(ProbeState) -> ProbeState,
 {
-    match STATE.lock() {
-        Ok(mut guard) => {
-            let next = update(guard.take().unwrap_or_else(empty_state));
-            call_write_file(&render(&next));
-            *guard = Some(next);
-        }
-        Err(_) => (),
+    if let Ok(mut guard) = STATE.lock() {
+        let next = update(guard.take().unwrap_or_else(empty_state));
+        call_write_file(&render(&next));
+        *guard = Some(next);
     }
 }
 

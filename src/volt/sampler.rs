@@ -13,9 +13,9 @@ use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_LOD_BIAS;
 use crate::consts::SETTING_MAG_FILTER;
 use crate::consts::SETTING_MIN_FILTER;
+use crate::consts::SETTING_MIPMAP_MODE;
 use crate::consts::SETTING_MIP_CEILING;
 use crate::consts::SETTING_MIP_FLOOR;
-use crate::consts::SETTING_MIPMAP_MODE;
 use crate::consts::TEXT_OFF;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
@@ -225,9 +225,8 @@ fn call_report_sampler(
     asked: &vk::SamplerCreateInfo<'_>,
     held: &vk::SamplerCreateInfo<'_>,
 ) {
-    match info_wanted() {
-        true => call_report_one(dev, asked, held),
-        false => (),
+    if info_wanted() {
+        call_report_one(dev, asked, held)
     }
 }
 
@@ -249,9 +248,8 @@ fn call_report_samplers(
     count: u32,
     held: &[vk::SamplerCreateInfo<'_>],
 ) {
-    match info_wanted() {
-        true => call_report_each(dev, cis, count, held),
-        false => (),
+    if info_wanted() {
+        call_report_each(dev, cis, count, held)
     }
 }
 

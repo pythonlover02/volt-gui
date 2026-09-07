@@ -178,16 +178,13 @@ fn call_windowed(xcb: &Xcb, connection: *mut c_void) -> Option<Handles> {
 
 fn call_open() -> Option<Handles> {
     let xcb = xcb()?;
-    let connection = call_connected(xcb, unsafe {
-        (xcb.connect)(ptr::null(), ptr::null_mut())
-    })?;
+    let connection = call_connected(xcb, unsafe { (xcb.connect)(ptr::null(), ptr::null_mut()) })?;
     call_windowed(xcb, connection)
 }
 
 fn call_close(handles: &Handles) {
-    match xcb() {
-        Some(xcb) => unsafe { (xcb.disconnect)(handles.display) },
-        None => (),
+    if let Some(xcb) = xcb() {
+        unsafe { (xcb.disconnect)(handles.display) };
     }
 }
 

@@ -87,29 +87,22 @@ pub(crate) fn devs_gdpa(h: u64) -> Option<vk::PFN_vkGetDeviceProcAddr> {
 }
 
 pub(crate) fn devs_put(h: u64, v: VkDevState) {
-    match DEVS.write() {
-        Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).insert(h, Arc::new(v));
-        }
-        Err(_) => (),
+    if let Ok(mut g) = DEVS.write() {
+        g.get_or_insert_with(HashMap::new).insert(h, Arc::new(v));
     }
 }
 
 fn queue_dev_forget(dev: u64) {
-    match QUEUE_TO_DEV.write() {
-        Ok(mut g) => g
-            .iter_mut()
-            .for_each(|m| m.retain(|_, owner| *owner != dev)),
-        Err(_) => (),
+    if let Ok(mut g) = QUEUE_TO_DEV.write() {
+        g.iter_mut()
+            .for_each(|m| m.retain(|_, owner| *owner != dev))
     }
 }
 
 fn cmdbuf_dev_forget(dev: u64) {
-    match CMDBUF_TO_DEV.write() {
-        Ok(mut g) => g
-            .iter_mut()
-            .for_each(|m| m.retain(|_, owner| owner.0 != dev)),
-        Err(_) => (),
+    if let Ok(mut g) = CMDBUF_TO_DEV.write() {
+        g.iter_mut()
+            .for_each(|m| m.retain(|_, owner| owner.0 != dev))
     }
 }
 
@@ -130,11 +123,8 @@ fn queue_dev_get(q: u64) -> Option<u64> {
 }
 
 pub(crate) fn queue_dev_put(q: u64, d: u64) {
-    match QUEUE_TO_DEV.write() {
-        Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).insert(q, d);
-        }
-        Err(_) => (),
+    if let Ok(mut g) = QUEUE_TO_DEV.write() {
+        g.get_or_insert_with(HashMap::new).insert(q, d);
     }
 }
 
@@ -150,29 +140,21 @@ fn cmdbuf_dev_get(c: u64) -> Option<u64> {
 }
 
 fn cmdbuf_dev_put(c: u64, owner: (u64, u64)) {
-    match CMDBUF_TO_DEV.write() {
-        Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).insert(c, owner);
-        }
-        Err(_) => (),
+    if let Ok(mut g) = CMDBUF_TO_DEV.write() {
+        g.get_or_insert_with(HashMap::new).insert(c, owner);
     }
 }
 
 fn cmdbuf_dev_del(c: u64) {
-    match CMDBUF_TO_DEV.write() {
-        Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).remove(&c);
-        }
-        Err(_) => (),
+    if let Ok(mut g) = CMDBUF_TO_DEV.write() {
+        g.get_or_insert_with(HashMap::new).remove(&c);
     }
 }
 
 fn cmdbuf_pool_forget(pool: u64) {
-    match CMDBUF_TO_DEV.write() {
-        Ok(mut g) => g
-            .iter_mut()
-            .for_each(|m| m.retain(|_, owner| owner.1 != pool)),
-        Err(_) => (),
+    if let Ok(mut g) = CMDBUF_TO_DEV.write() {
+        g.iter_mut()
+            .for_each(|m| m.retain(|_, owner| owner.1 != pool))
     }
 }
 
@@ -245,11 +227,7 @@ fn call_typed_device_fp<T>(
     call_next_gdpa(gdpa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
-fn call_resolved(
-    gdpa: vk::PFN_vkGetDeviceProcAddr,
-    handle: vk::Device,
-    name: &str,
-) -> bool {
+fn call_resolved(gdpa: vk::PFN_vkGetDeviceProcAddr, handle: vk::Device, name: &str) -> bool {
     call_next_gdpa(gdpa, handle, name).is_some()
 }
 
@@ -258,9 +236,8 @@ fn call_loader_data(fp: PfnSetDeviceLoaderData, handle: vk::Device, queue: vk::Q
 }
 
 pub(crate) fn call_register_queue(dev: &VkDevState, handle: vk::Device, queue: vk::Queue) {
-    match dev.loader_data {
-        Some(fp) => call_loader_data(fp, handle, queue),
-        None => (),
+    if let Some(fp) = dev.loader_data {
+        call_loader_data(fp, handle, queue)
     }
 }
 
@@ -269,10 +246,8 @@ fn device_caps(
     phys: vk::PhysicalDevice,
     ci: *const vk::DeviceCreateInfo<'_>,
 ) -> DeviceCaps {
-    build_caps(
-        unsafe { &inst.instance.get_physical_device_properties(phys) },
-        &asked_features(ci),
-    )
+    let props = unsafe { inst.instance.get_physical_device_properties(phys) };
+    build_caps(&props, &asked_features(ci))
 }
 
 fn call_record_command_buffers(
@@ -336,28 +311,21 @@ fn call_gpu_missed(chosen: u32, id: u32) {
 }
 
 fn call_gpu_warned(id: u32, chosen: Option<u32>) {
-    match chosen {
-        Some(value) => call_gpu_missed(value, id),
-        None => (),
+    if let Some(value) = chosen {
+        call_gpu_missed(value, id)
     }
 }
 
 fn call_gpu_reported(id: u32, owner: u64, chosen: Option<u32>) {
-    match info_wanted() {
-        true => match chosen {
+    if info_wanted() {
+        match chosen {
             Some(forced) => call_report_choice(owner, SETTING_GPU, Some(count_text(forced))),
             None => call_report_reading(owner, SETTING_GPU, count_text(id)),
-        },
-        false => (),
+        }
     }
 }
 
-fn call_gpu_lines(
-    inst: &VkInstState,
-    phys: vk::PhysicalDevice,
-    owner: u64,
-    chosen: Option<u32>,
-) {
+fn call_gpu_lines(inst: &VkInstState, phys: vk::PhysicalDevice, owner: u64, chosen: Option<u32>) {
     let id = device_index(&all_devices(inst), phys);
     call_gpu_warned(id, chosen);
     call_gpu_reported(id, owner, chosen);
@@ -371,17 +339,15 @@ fn gpu_line_wanted(chosen: Option<u32>) -> bool {
 }
 
 fn maybe_probe_device(inst: &VkInstState, phys: vk::PhysicalDevice, caps: &DeviceCaps) {
-    match env_probe_active() {
-        true => call_record_device(build_device(inst, phys, caps)),
-        false => (),
+    if env_probe_active() {
+        call_record_device(build_device(inst, phys, caps))
     }
 }
 
 fn call_report_gpu(inst: &VkInstState, phys: vk::PhysicalDevice, handle: vk::Device) {
     let chosen = ensure_settings().gpu;
-    match gpu_line_wanted(chosen) {
-        true => call_gpu_lines(inst, phys, handle.as_raw(), chosen),
-        false => (),
+    if gpu_line_wanted(chosen) {
+        call_gpu_lines(inst, phys, handle.as_raw(), chosen)
     }
 }
 
@@ -421,6 +387,7 @@ fn register_device(
     log_at(LogLevel::Info, "vk device registered");
 }
 
+#[allow(clippy::too_many_arguments)]
 fn invoke_create_device(
     create_fn: unsafe extern "system" fn(),
     link: &VkLayerLinkInfo,

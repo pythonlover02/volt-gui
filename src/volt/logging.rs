@@ -52,18 +52,14 @@ pub(crate) fn info_wanted() -> bool {
 }
 
 pub(crate) fn log_at(level: LogLevel, msg: &str) {
-    match should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
-        true => call_write_log(&format!("[volt] {}\n", msg)),
-        false => (),
+    if should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
+        call_write_log(&format!("[volt] {}\n", msg))
     }
 }
 
 pub(crate) fn init_log_level() {
     match LEVEL_SET.swap(true, Ordering::Relaxed) {
         true => (),
-        false => LEVEL.store(
-            level_num(&parse_level(&env_log_level())),
-            Ordering::Relaxed,
-        ),
+        false => LEVEL.store(level_num(&parse_level(&env_log_level())), Ordering::Relaxed),
     }
 }

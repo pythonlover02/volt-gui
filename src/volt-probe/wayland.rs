@@ -137,10 +137,11 @@ unsafe extern "C" fn on_global(
     interface: *const c_char,
     _version: u32,
 ) {
-    let state = &mut *(data as *mut BindState);
-    match CStr::from_ptr(interface).to_bytes() == COMPOSITOR_NAME {
-        true => state.compositor = call_bind(state.wl, registry, name),
-        false => (),
+    unsafe {
+        let state = &mut *(data as *mut BindState);
+        if CStr::from_ptr(interface).to_bytes() == COMPOSITOR_NAME {
+            state.compositor = call_bind(state.wl, registry, name);
+        }
     }
 }
 
@@ -242,9 +243,8 @@ fn call_teardown(wl: &Wl, handles: &Handles) {
 }
 
 fn call_close(handles: &Handles) {
-    match wayland() {
-        Some(wl) => call_teardown(wl, handles),
-        None => (),
+    if let Some(wl) = wayland() {
+        call_teardown(wl, handles);
     }
 }
 

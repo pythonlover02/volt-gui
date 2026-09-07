@@ -104,7 +104,11 @@ fn call_alpha_one_line(
         asked,
         held,
         toggle_text,
-        feature_note(s.alpha_to_one.is_some(), caps.alpha_to_one, FEATURE_ALPHA_ONE),
+        feature_note(
+            s.alpha_to_one.is_some(),
+            caps.alpha_to_one,
+            FEATURE_ALPHA_ONE,
+        ),
     );
 }
 
@@ -182,9 +186,8 @@ fn call_report_multisample(
     original: *const vk::PipelineMultisampleStateCreateInfo<'_>,
     patched: &Option<vk::PipelineMultisampleStateCreateInfo<'_>>,
 ) {
-    match (unsafe { original.as_ref() }, patched) {
-        (Some(asked), Some(held)) => call_multisample_lines(owner, s, caps, asked, held),
-        (_, _) => (),
+    if let (Some(asked), Some(held)) = (unsafe { original.as_ref() }, patched) {
+        call_multisample_lines(owner, s, caps, asked, held)
     }
 }
 
@@ -195,15 +198,14 @@ fn call_report_rasterization(
     original: *const vk::PipelineRasterizationStateCreateInfo<'_>,
     patched: &Option<vk::PipelineRasterizationStateCreateInfo<'_>>,
 ) {
-    match (unsafe { original.as_ref() }, patched) {
-        (Some(asked), Some(held)) => call_clamp_line(
+    if let (Some(asked), Some(held)) = (unsafe { original.as_ref() }, patched) {
+        call_clamp_line(
             owner,
             s,
             caps,
             asked.depth_clamp_enable,
             held.depth_clamp_enable,
-        ),
-        (_, _) => (),
+        )
     }
 }
 
@@ -248,47 +250,38 @@ fn call_report_pipelines(
     multisamples: &[Option<vk::PipelineMultisampleStateCreateInfo<'_>>],
     rasterizations: &[Option<vk::PipelineRasterizationStateCreateInfo<'_>>],
 ) {
-    match info_wanted() {
-        true => call_report_each(dev, s, originals, multisamples, rasterizations),
-        false => (),
+    if info_wanted() {
+        call_report_each(dev, s, originals, multisamples, rasterizations)
     }
 }
 
 fn call_report_coverage(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
-    match info_wanted() {
-        true => call_coverage_line(
-            dev.device.handle().as_raw(),
-            ensure_settings(),
-            asked,
-            held,
-        ),
-        false => (),
+    if info_wanted() {
+        call_coverage_line(dev.device.handle().as_raw(), ensure_settings(), asked, held)
     }
 }
 
 fn call_report_alpha_one(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
-    match info_wanted() {
-        true => call_alpha_one_line(
+    if info_wanted() {
+        call_alpha_one_line(
             dev.device.handle().as_raw(),
             ensure_settings(),
             &dev.caps,
             asked,
             held,
-        ),
-        false => (),
+        )
     }
 }
 
 fn call_report_clamp(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
-    match info_wanted() {
-        true => call_clamp_line(
+    if info_wanted() {
+        call_clamp_line(
             dev.device.handle().as_raw(),
             ensure_settings(),
             &dev.caps,
             asked,
             held,
-        ),
-        false => (),
+        )
     }
 }
 
@@ -323,7 +316,10 @@ fn rebuilt_multisample<'a>(
     vk::PipelineMultisampleStateCreateInfo {
         sample_shading_enable: shading_enable,
         min_sample_shading: shading_rate,
-        alpha_to_coverage_enable: pick_coverage(s.alpha_coverage, original.alpha_to_coverage_enable),
+        alpha_to_coverage_enable: pick_coverage(
+            s.alpha_coverage,
+            original.alpha_to_coverage_enable,
+        ),
         alpha_to_one_enable: pick_coverage(
             alpha_one_allowed(s.alpha_to_one, caps),
             original.alpha_to_one_enable,
@@ -390,9 +386,8 @@ fn patched_ci<'a>(
 fn call_forward_coverage(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::Bool32) {
     let held = pick_coverage(ensure_settings().alpha_coverage, enable);
     call_report_coverage(dev, enable, held);
-    match dev.alpha_fp {
-        Some(fp) => unsafe { fp(buffer, held) },
-        None => (),
+    if let Some(fp) = dev.alpha_fp {
+        unsafe { fp(buffer, held) }
     }
 }
 
@@ -413,9 +408,8 @@ fn call_forward_alpha_one(dev: &VkDevState, buffer: vk::CommandBuffer, enable: v
         enable,
     );
     call_report_alpha_one(dev, enable, held);
-    match dev.alpha_one_fp {
-        Some(fp) => unsafe { fp(buffer, held) },
-        None => (),
+    if let Some(fp) = dev.alpha_one_fp {
+        unsafe { fp(buffer, held) }
     }
 }
 
@@ -436,9 +430,8 @@ fn call_forward_clamp(dev: &VkDevState, buffer: vk::CommandBuffer, enable: vk::B
         enable,
     );
     call_report_clamp(dev, enable, held);
-    match dev.clamp_fp {
-        Some(fp) => unsafe { fp(buffer, held) },
-        None => (),
+    if let Some(fp) = dev.clamp_fp {
+        unsafe { fp(buffer, held) }
     }
 }
 
