@@ -170,6 +170,19 @@ pub(crate) const FN_WRITE_SAMPLERS: &str = "vkWriteSamplerDescriptorsEXT";
 pub(crate) const FN_SET_ALPHA_COVERAGE: &str = "vkCmdSetAlphaToCoverageEnableEXT";
 pub(crate) const FN_SET_ALPHA_ONE: &str = "vkCmdSetAlphaToOneEnableEXT";
 pub(crate) const FN_SET_DEPTH_CLAMP: &str = "vkCmdSetDepthClampEnableEXT";
+pub(crate) const FN_CREATE_XCB_SURFACE: &str = "vkCreateXcbSurfaceKHR";
+pub(crate) const FN_CREATE_XLIB_SURFACE: &str = "vkCreateXlibSurfaceKHR";
+pub(crate) const FN_CREATE_WAYLAND_SURFACE: &str = "vkCreateWaylandSurfaceKHR";
+pub(crate) const FN_DESTROY_SURFACE: &str = "vkDestroySurfaceKHR";
+
+pub(crate) const TAG_XCB: &str = "xcb";
+pub(crate) const TAG_WAYLAND: &str = "wayland";
+
+pub(crate) const SURFACE_CREATORS: [(&str, &str); 3] = [
+    (FN_CREATE_XCB_SURFACE, TAG_XCB),
+    (FN_CREATE_XLIB_SURFACE, TAG_XCB),
+    (FN_CREATE_WAYLAND_SURFACE, TAG_WAYLAND),
+];
 
 pub(crate) const SECTION_GPU: &str = "gpu";
 pub(crate) const SECTION_DISPLAY: &str = "display";

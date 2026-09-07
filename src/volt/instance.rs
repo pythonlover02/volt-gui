@@ -9,12 +9,14 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::GROUP_EMPTY_WARN;
+use crate::consts::SURFACE_CREATORS;
 use crate::lists::filtered;
 use crate::lists::kept;
 use crate::logging::log_at;
@@ -65,6 +67,19 @@ pub(crate) type PfnCmdSetDepthClamp =
 
 pub(crate) type PfnSetDeviceLoaderData =
     unsafe extern "system" fn(vk::Device, *mut c_void) -> vk::Result;
+
+pub(crate) type PfnCreateSurface = unsafe extern "system" fn(
+    vk::Instance,
+    *const c_void,
+    *const vk::AllocationCallbacks<'_>,
+    *mut vk::SurfaceKHR,
+) -> vk::Result;
+
+pub(crate) type PfnDestroySurface = unsafe extern "system" fn(
+    vk::Instance,
+    vk::SurfaceKHR,
+    *const vk::AllocationCallbacks<'_>,
+);
 
 #[repr(C)]
 pub(crate) struct VkLayerLink {
@@ -126,10 +141,13 @@ pub(crate) struct VkInstState {
     pub(crate) modes2_fp: Option<PfnSurfaceModes2>,
     pub(crate) groups_fp: Option<PfnDeviceGroups>,
     pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
+    pub(crate) surface_fps: HashMap<&'static str, PfnCreateSurface>,
+    pub(crate) destroy_surface_fp: Option<PfnDestroySurface>,
 }
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
 static PHYS_OWNER: RwLock<Option<HashMap<u64, u64>>> = RwLock::new(None);
+static SURFACE_TAGS: RwLock<Option<HashMap<u64, (u64, &'static str)>>> = RwLock::new(None);
 
 fn phys_owner_get(phys: u64) -> Option<u64> {
     PHYS_OWNER
@@ -171,6 +189,7 @@ pub(crate) fn insts_put(h: u64, v: VkInstState) {
 
 pub(crate) fn insts_del(h: u64) {
     phys_owner_forget(h);
+    surface_tags_forget(h);
     match INSTS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).remove(&h);
@@ -181,6 +200,81 @@ pub(crate) fn insts_del(h: u64) {
 
 pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstState)> {
     phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
+}
+
+fn surface_tag_put(surface: u64, inst: u64, tag: &'static str) {
+    match SURFACE_TAGS.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).insert(surface, (inst, tag));
+        }
+        Err(_) => (),
+    }
+}
+
+fn surface_tag_del(surface: u64) {
+    match SURFACE_TAGS.write() {
+        Ok(mut g) => {
+            g.get_or_insert_with(HashMap::new).remove(&surface);
+        }
+        Err(_) => (),
+    }
+}
+
+fn surface_tags_forget(inst: u64) {
+    match SURFACE_TAGS.write() {
+        Ok(mut g) => g
+            .iter_mut()
+            .for_each(|m| m.retain(|_, owner| owner.0 != inst)),
+        Err(_) => (),
+    }
+}
+
+pub(crate) fn surface_tag(surface: vk::SurfaceKHR) -> Option<&'static str> {
+    SURFACE_TAGS.read().ok().and_then(|g| {
+        g.as_ref()
+            .and_then(|m| m.get(&surface.as_raw()).map(|owner| owner.1))
+    })
+}
+
+fn call_tagged_result(
+    result: vk::Result,
+    inst: vk::Instance,
+    tag: &'static str,
+    out: *mut vk::SurfaceKHR,
+) -> vk::Result {
+    match result {
+        vk::Result::SUCCESS => {
+            surface_tag_put(unsafe { (*out).as_raw() }, inst.as_raw(), tag);
+            vk::Result::SUCCESS
+        }
+        e => e,
+    }
+}
+
+pub(crate) fn call_create_tagged_surface(
+    name: &'static str,
+    tag: &'static str,
+    inst: vk::Instance,
+    ci: *const c_void,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::SurfaceKHR,
+) -> vk::Result {
+    match insts_get(inst.as_raw()).and_then(|st| st.surface_fps.get(name).copied()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(fp) => call_tagged_result(unsafe { fp(inst, ci, alloc, out) }, inst, tag, out),
+    }
+}
+
+pub(crate) fn call_destroy_tagged_surface(
+    inst: vk::Instance,
+    surface: vk::SurfaceKHR,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
+    surface_tag_del(surface.as_raw());
+    match insts_get(inst.as_raw()).and_then(|st| st.destroy_surface_fp) {
+        Some(fp) => unsafe { fp(inst, surface, alloc) },
+        None => (),
+    }
 }
 
 pub(crate) fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
@@ -448,6 +542,18 @@ fn call_remember_owner(handle: vk::Instance, devices: Vec<vk::PhysicalDevice>) {
         .for_each(|phys| phys_owner_put(phys.as_raw(), handle.as_raw()));
 }
 
+fn call_surface_creators(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    handle: vk::Instance,
+) -> HashMap<&'static str, PfnCreateSurface> {
+    SURFACE_CREATORS
+        .iter()
+        .filter_map(|(name, _)| {
+            call_typed_instance_fp::<PfnCreateSurface>(gipa, handle, name).map(|fp| (*name, fp))
+        })
+        .collect()
+}
+
 fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) {
     let static_fn = ash::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
@@ -462,6 +568,8 @@ fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) 
             modes2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_MODES_2),
             groups_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS),
             groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),
+            surface_fps: call_surface_creators(gipa, handle),
+            destroy_surface_fp: call_typed_instance_fp(gipa, handle, FN_DESTROY_SURFACE),
         },
     );
     log_at(LogLevel::Info, "vk instance registered");
