@@ -27,6 +27,7 @@ use crate::env::env_probe_active;
 use crate::instance::call_write_list;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
+use crate::instance::surface_tag;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
 use crate::instance::PfnSurfaceModes2;
@@ -43,8 +44,8 @@ use crate::logging::LogLevel;
 use crate::present::cadence_display;
 use crate::present::method_display;
 use crate::present::pacing_display;
-use crate::probe::build_probe;
-use crate::probe::call_write_probe;
+use crate::probe::build_surface;
+use crate::probe::call_record_surface;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
@@ -525,14 +526,13 @@ pub(crate) fn call_surface_present_modes2(
 }
 
 fn maybe_probe(
-    inst: &VkInstState,
-    dev: &VkDevState,
+    tag: Option<&'static str>,
     supported: &[vk::PresentModeKHR],
     caps: &vk::SurfaceCapabilitiesKHR,
 ) {
-    match env_probe_active() {
-        true => call_write_probe(build_probe(inst, dev, supported, caps)),
-        false => (),
+    match (env_probe_active(), tag) {
+        (true, Some(name)) => call_record_surface(name, build_surface(supported, caps)),
+        (_, _) => (),
     }
 }
 
@@ -554,7 +554,7 @@ fn call_prepared_ci<'a>(
 ) -> vk::SwapchainCreateInfoKHR<'a> {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
-    maybe_probe(inst, dev, &supported, &caps);
+    maybe_probe(surface_tag(original.surface), &supported, &caps);
     maybe_log_alpha(s.composite_alpha);
     let patched = patched_swapchain_ci(
         original,
