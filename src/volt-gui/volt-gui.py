@@ -485,10 +485,11 @@ def process_tray_option_update(main_window, tray_enabled: bool) -> None:
 
 def process_options_application(main_window) -> None:
     process_theme_application(QApplication.instance(), get_resolved_option_value(main_window, "application_theme"))
-    match is_option_enabled(main_window, "window_transparency"):
-        case True:
+    match (is_option_enabled(main_window, "window_transparency"),
+           QApplication.instance().platformName()):
+        case (True, "xcb"):
             main_window.setWindowOpacity(0.95)
-        case False:
+        case _:
             main_window.setWindowOpacity(1.0)
     process_tray_option_update(main_window, is_option_enabled(main_window, "system_tray_behavior"))
     main_window.start_minimized = is_option_enabled(main_window, "start_window_minimized")

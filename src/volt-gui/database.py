@@ -181,7 +181,7 @@ OPTIONS_DB: Final[dict] = {
     },
     "window_transparency": {
         "label": "Window Transparency",
-        "description": "Window background transparency. default is off. Takes effect on program restart.",
+        "description": "Window background transparency. default is off. Only does something under xcb: Wayland has no window opacity protocol, so set Display Backend Preference to xcb for this to land. Takes effect on program restart.",
         "options": (DEFAULT_VALUE, "on", "off"),
         "fallback": "off",
     },
