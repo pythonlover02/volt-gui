@@ -68,7 +68,9 @@ from welcome import create_welcome_window_widget
 SINGLETON_PORT: Final[int] = 47832
 OPTIONS_SAVE_DEBOUNCE_MS: Final[int] = 500
 NEW_PROFILE_LABEL: Final[str] = "New Profile..."
+SUBMENU_TITLE: Final[str] = "Apply Profile   "
 DELETE_PROFILE_LABEL: Final[str] = "Delete Current"
+DEFAULT_PROFILE_LABEL: Final[str] = "Default"
 SCALE_MIN: Final[float] = 0.5
 SCALE_MAX: Final[float] = 3.0
 DEFAULT_SCALE: Final[str] = "1.0"
@@ -87,6 +89,22 @@ PROBE_FAILED_ERROR: Final[str] = "volt-probe failed to run.\n\nWithout it volt-g
 
 def build_preview_args(profile_name: str) -> list:
     return ["--probe", profile_name, "--", PREVIEW_TARGET]
+
+
+def build_profile_label(profile_name: str) -> str:
+    match profile_name == DEFAULT_PROFILE:
+        case True:
+            return DEFAULT_PROFILE_LABEL
+        case False:
+            return profile_name
+
+
+def resolve_profile_label(label: str) -> str:
+    match label == DEFAULT_PROFILE_LABEL:
+        case True:
+            return DEFAULT_PROFILE
+        case False:
+            return label
 
 
 def build_launch_command(profile_name: str) -> str:
@@ -251,11 +269,23 @@ def create_options_tab_widget() -> dict:
     return {"tab": widget, "widgets": options_widgets}
 
 
+def _add_named_profiles(combo_widget, profiles: tuple) -> None:
+    match len(profiles) > 1:
+        case True:
+            combo_widget.insertSeparator(combo_widget.count())
+            for profile_name in profiles[1:]:
+                combo_widget.addItem(profile_name)
+        case False:
+            pass
+    return None
+
+
 def process_profile_list_update(main_window) -> None:
+    profiles = find_all_profiles()
     main_window.profile_selector.blockSignals(True)
     main_window.profile_selector.clear()
-    for profile_name in find_all_profiles():
-        main_window.profile_selector.addItem(profile_name)
+    main_window.profile_selector.addItem(build_profile_label(profiles[0]))
+    _add_named_profiles(main_window.profile_selector, profiles)
     main_window.profile_selector.insertSeparator(main_window.profile_selector.count())
     main_window.profile_selector.addItem(NEW_PROFILE_LABEL)
     main_window.profile_selector.addItem(DELETE_PROFILE_LABEL)
@@ -265,7 +295,7 @@ def process_profile_list_update(main_window) -> None:
 
 def process_profile_selector_restore(main_window) -> None:
     main_window.profile_selector.blockSignals(True)
-    main_window.profile_selector.setCurrentText(main_window.current_profile)
+    main_window.profile_selector.setCurrentText(build_profile_label(main_window.current_profile))
     main_window.profile_selector.blockSignals(False)
     return None
 
@@ -363,7 +393,7 @@ def process_profile_combo_change(main_window, selected_text: str) -> None:
             process_profile_selector_restore(main_window)
             process_current_profile_delete(main_window)
         case s:
-            process_profile_change(main_window, s)
+            process_profile_change(main_window, resolve_profile_label(s))
     return None
 
 
@@ -396,7 +426,7 @@ def create_system_tray_widget(main_window) -> None:
             main_window.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
             menu = QMenu()
             menu.addAction(QAction("Show", main_window, triggered=lambda: process_window_show(main_window)))
-            main_window.profile_submenu = QMenu("Apply Profile", menu)
+            main_window.profile_submenu = QMenu(SUBMENU_TITLE, menu)
             process_tray_menu_update(main_window)
             menu.addMenu(main_window.profile_submenu)
             menu.addSeparator()
@@ -414,7 +444,7 @@ def process_tray_menu_update(main_window) -> None:
         case True:
             main_window.profile_submenu.clear()
             for profile_name in find_all_profiles():
-                action = QAction("Apply " + profile_name, main_window)
+                action = QAction("Apply " + build_profile_label(profile_name), main_window)
                 action.triggered.connect(lambda checked, bound_profile_name=profile_name: process_profile_apply_from_tray(main_window, bound_profile_name))
                 main_window.profile_submenu.addAction(action)
             return None
@@ -554,10 +584,10 @@ def process_application_options_load(main_window) -> None:
                 saved = parser_instance.get("Options", option_key, fallback=get_option_default_value(option_key))
                 main_window.options_widgets[option_key].setCurrentText(saved)
     last_profile = parser_instance.get("Profile", "last_active_profile", fallback=DEFAULT_PROFILE)
-    match main_window.profile_selector.findText(last_profile) >= 0:
+    match main_window.profile_selector.findText(build_profile_label(last_profile)) >= 0:
         case True:
             main_window.profile_selector.blockSignals(True)
-            main_window.profile_selector.setCurrentText(last_profile)
+            main_window.profile_selector.setCurrentText(build_profile_label(last_profile))
             main_window.profile_selector.blockSignals(False)
             main_window.current_profile = last_profile
         case False:
