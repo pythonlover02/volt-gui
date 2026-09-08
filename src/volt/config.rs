@@ -241,19 +241,32 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
     }
 }
 
+fn reserved_name(raw: &str) -> bool {
+    RESERVED_PROFILES
+        .iter()
+        .any(|name| raw.eq_ignore_ascii_case(name))
+}
+
 fn name_is_valid(raw: &str) -> bool {
     !raw.is_empty()
         && !raw.contains('/')
         && !raw.contains('\\')
         && !raw.contains("..")
         && !raw.contains('\0')
-        && !RESERVED_PROFILES.contains(&raw)
+        && !reserved_name(raw)
         && raw.chars().all(|ch| ch.is_ascii_graphic())
+}
+
+fn folded_name(raw: &str) -> String {
+    match raw.eq_ignore_ascii_case(DEFAULT_PROFILE) {
+        true => DEFAULT_PROFILE.into(),
+        false => raw.into(),
+    }
 }
 
 pub(crate) fn sanitize_name(raw: &str) -> String {
     match name_is_valid(raw) {
-        true => raw.into(),
+        true => folded_name(raw),
         false => {
             log_at(LogLevel::Warn, "invalid profile name, using default profile");
             DEFAULT_PROFILE.into()

@@ -1,7 +1,9 @@
 use std::sync::RwLock;
 
 use crate::config::parse_settings;
+use crate::config::sanitize_name;
 use crate::consts::CadenceChoice;
+use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FEATURE_ANISOTROPY;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
@@ -93,6 +95,16 @@ const SURFACE_ALPHA: [&str; 1] = ["opaque"];
 const SURFACE_MIN_IMAGES: u32 = 4;
 const SURFACE_MAX_IMAGES: u32 = 0;
 const SURFACE_SECTION: &str = "[wayland]\npresent_modes = \"mailbox;fifo\"\ncomposite_alphas = \"opaque\"\nmin_image_count = \"4\"\nmax_image_count = \"0\"\n";
+const DEFAULT_NAME_MIXED: &str = "Default";
+const RESERVED_NAME_MIXED: &str = "Probe";
+const PLAIN_NAME: &str = "myprofile";
+
+#[test]
+fn reads_one_spelling_of_the_default_profile_name() {
+    assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
+    assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
+    assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+}
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
