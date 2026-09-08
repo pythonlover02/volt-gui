@@ -68,6 +68,7 @@ from welcome import create_welcome_window_widget
 SINGLETON_PORT: Final[int] = 47832
 OPTIONS_SAVE_DEBOUNCE_MS: Final[int] = 500
 NEW_PROFILE_LABEL: Final[str] = "New Profile..."
+SUBMENU_TITLE: Final[str] = "Apply Profile   "
 DELETE_PROFILE_LABEL: Final[str] = "Delete Current"
 DEFAULT_PROFILE_LABEL: Final[str] = "Default"
 SCALE_MIN: Final[float] = 0.5
@@ -425,7 +426,7 @@ def create_system_tray_widget(main_window) -> None:
             main_window.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
             menu = QMenu()
             menu.addAction(QAction("Show", main_window, triggered=lambda: process_window_show(main_window)))
-            main_window.profile_submenu = QMenu("Apply Profile", menu)
+            main_window.profile_submenu = QMenu(SUBMENU_TITLE, menu)
             process_tray_menu_update(main_window)
             menu.addMenu(main_window.profile_submenu)
             menu.addSeparator()
