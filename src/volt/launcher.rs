@@ -17,6 +17,8 @@ use crate::consts::EXIT_EXEC_FAILED;
 use crate::consts::EXIT_OK;
 use crate::consts::EXIT_USAGE;
 use crate::consts::FLATPAK_CMD;
+use crate::consts::FLATPAK_CONFIG_RO;
+use crate::consts::FLATPAK_CONFIG_RW;
 use crate::consts::FLATPAK_INJECT;
 use crate::consts::ENV_PROBE;
 use crate::consts::FLATPAK_RUN;
@@ -120,6 +122,13 @@ fn flatpak_trailing(cmd: &[String]) -> Vec<String> {
         .unwrap_or_default()
 }
 
+fn config_share(probe: bool) -> &'static str {
+    match probe {
+        true => FLATPAK_CONFIG_RW,
+        false => FLATPAK_CONFIG_RO,
+    }
+}
+
 fn build_flatpak_args(
     profile: &str,
     app_id: &str,
@@ -133,6 +142,7 @@ fn build_flatpak_args(
             format!("--command={}", FLATPAK_INJECT),
             format!("--env={}={}", ENV_CONFIG_NAME, profile),
             format!("--env={}={}", ENV_PROBE, probe_value(probe)),
+            config_share(probe).to_string(),
         ],
         flags.to_vec(),
         vec![app_id.to_string()],

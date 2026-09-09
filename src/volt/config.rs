@@ -303,9 +303,16 @@ pub(crate) fn config_path(name: &str) -> PathBuf {
 }
 
 fn read_config(path: &PathBuf) -> Settings {
-    fs::read_to_string(path)
-        .map(|t| parse_settings(&t))
-        .unwrap_or_default()
+    match fs::read_to_string(path) {
+        Ok(text) => parse_settings(&text),
+        Err(e) => {
+            log_at(
+                LogLevel::Warn,
+                &format!("{}: {}, every setting left alone", path.display(), e),
+            );
+            Settings::default()
+        }
+    }
 }
 
 fn load_settings() -> Settings {
