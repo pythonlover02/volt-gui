@@ -470,7 +470,7 @@ Then the launch option is just the wrapper:
 /usr/lib/extensions/vulkan/volt/bin/volt-flatpak %command%
 ```
 
-Without the grant the layer still loads, it just finds no profile and leaves every setting alone. `VOLT_LOG=info` names the path it couldn't read.
+Without the grant the layer still loads, it just finds no profile and leaves every setting alone. It logs the path it couldn't read.
 
 ## Profiles, Presets & Options
 
