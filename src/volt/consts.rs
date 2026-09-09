@@ -38,6 +38,8 @@ pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keep
 pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
 pub(crate) const FLATPAK_INJECT: &str = "/usr/lib/extensions/vulkan/volt/bin/volt-flatpak";
+pub(crate) const FLATPAK_CONFIG_RO: &str = "--filesystem=xdg-config/volt-gui:ro";
+pub(crate) const FLATPAK_CONFIG_RW: &str = "--filesystem=xdg-config/volt-gui";
 
 pub(crate) const LOG_FD: i32 = 2;
 pub(crate) const LOG_LEVEL_OFF: i32 = 0;
