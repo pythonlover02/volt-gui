@@ -439,7 +439,7 @@ flatpak install --user build/bundles/org.freedesktop.Platform.VulkanLayer.volt-2
 flatpak uninstall --user org.freedesktop.Platform.VulkanLayer.volt
 ```
 
-The launcher detects `flatpak run` and routes through the in-sandbox wrapper:
+The launcher detects `flatpak run` and routes through the in-sandbox wrapper. It also mounts `~/.config/volt-gui` into the sandbox, read-only, or read-write under `--probe`:
 
 ```
 volt -- flatpak run com.example.Game
@@ -451,20 +451,26 @@ There's no Flatpak build of volt-gui itself, only the layer.
 
 ### Without the launcher
 
-Call the wrapper yourself, useful where only the extension is installed:
+Call the wrapper yourself, useful where only the extension is installed. Mount the profiles yourself too. The wrapper runs inside the sandbox and can't do it from there:
 
 ```
-flatpak run --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
-VOLT_CONFIG_NAME=myprofile flatpak run --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
+flatpak run --filesystem=xdg-config/volt-gui:ro --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
+VOLT_CONFIG_NAME=myprofile flatpak run --filesystem=xdg-config/volt-gui:ro --command=/usr/lib/extensions/vulkan/volt/bin/volt-flatpak com.example.Game
 ```
 
-Same line works as a Steam launch option for a Flatpak game:
+A Steam launch option has no room for that flag, so grant it once instead:
+
+```
+flatpak override --user --filesystem=xdg-config/volt-gui:ro com.example.Game
+```
+
+Then the launch option is just the wrapper:
 
 ```
 /usr/lib/extensions/vulkan/volt/bin/volt-flatpak %command%
 ```
 
-Your home directory is mounted into the sandbox, so profiles apply unchanged.
+Without the grant the layer still loads, it just finds no profile and leaves every setting alone. `VOLT_LOG=info` names the path it couldn't read.
 
 ## Profiles, Presets & Options
 
