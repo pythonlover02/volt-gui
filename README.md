@@ -500,4 +500,4 @@ volt changes what the game asks Vulkan for. It never draws. Anything needing sha
 
 ## Contributing
 
-Contributions welcome. The layer is plain Rust with no build scripts, the GUI is PySide6 only. Keep changes working on core Vulkan 1.0 with no extensions that floor is the point of the project.
+Contributions welcome. The layer is plain Rust with no build scripts, the GUI is PySide6 only. Keep changes working on core Vulkan 1.0 with no extensions. That floor is the point of the project.
