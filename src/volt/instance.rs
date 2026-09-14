@@ -937,41 +937,51 @@ pub(crate) struct Relinked {
     pub(crate) blocks: Vec<Vec<u64>>,
 }
 
-pub(crate) fn node_size(s_type: u32) -> Option<usize> {
-    match s_type {
-        DEVICE_GROUP_SWAPCHAIN_TYPE => Some(mem::size_of::<VkDeviceGroupSwapchainCreateInfoKHR>()),
-        IMAGE_COMPRESSION_CONTROL_TYPE => Some(mem::size_of::<VkImageCompressionControlEXT>()),
-        IMAGE_FORMAT_LIST_TYPE => Some(mem::size_of::<VkImageFormatListCreateInfo>()),
-        IMAGE_USAGE_FLAGS_2_TYPE => Some(mem::size_of::<VkImageUsageFlags2CreateInfoKHR>()),
-        SWAPCHAIN_COUNTER_TYPE => Some(mem::size_of::<VkSwapchainCounterCreateInfoEXT>()),
-        SWAPCHAIN_NATIVE_HDR_TYPE => Some(mem::size_of::<VkSwapchainDisplayNativeHdrCreateInfoAMD>()),
-        SWAPCHAIN_LATENCY_TYPE => Some(mem::size_of::<VkSwapchainLatencyCreateInfoNV>()),
-        SWAPCHAIN_PRESENT_BARRIER_TYPE => Some(mem::size_of::<VkSwapchainPresentBarrierCreateInfoNV>()),
-        SWAPCHAIN_PRESENT_SCALING_TYPE => Some(mem::size_of::<VkSwapchainPresentScalingCreateInfoKHR>()),
-        CUSTOM_RESOLVE_TYPE => Some(mem::size_of::<VkCustomResolveCreateInfoEXT>()),
-        DEBUG_UTILS_OBJECT_NAME_TYPE => Some(mem::size_of::<VkDebugUtilsObjectNameInfoEXT>()),
-        PIPELINE_ROBUSTNESS_TYPE => Some(mem::size_of::<VkPipelineRobustnessCreateInfo>()),
-        STAGE_MODULE_IDENTIFIER_TYPE => Some(mem::size_of::<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>()),
-        STAGE_SUBGROUP_SIZE_TYPE => Some(mem::size_of::<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>()),
-        SHADER_MODULE_TYPE => Some(mem::size_of::<VkShaderModuleCreateInfo>()),
-        SHADER_MODULE_CACHE_TYPE => Some(mem::size_of::<VkShaderModuleValidationCacheCreateInfoEXT>()),
-        VALIDATION_FEATURES_TYPE => Some(mem::size_of::<VkValidationFeaturesEXT>()),
-        ATTACHMENT_SAMPLE_COUNT_TYPE => Some(mem::size_of::<VkAttachmentSampleCountInfoAMD>()),
-        GRAPHICS_PIPELINE_LIBRARY_TYPE => Some(mem::size_of::<VkGraphicsPipelineLibraryCreateInfoEXT>()),
-        MULTIVIEW_PER_VIEW_TYPE => Some(mem::size_of::<VkMultiviewPerViewAttributesInfoNVX>()),
-        PIPELINE_BINARY_INFO_TYPE => Some(mem::size_of::<VkPipelineBinaryInfoKHR>()),
-        PIPELINE_COMPILER_CONTROL_TYPE => Some(mem::size_of::<VkPipelineCompilerControlCreateInfoAMD>()),
-        PIPELINE_CREATE_FLAGS_2_TYPE => Some(mem::size_of::<VkPipelineCreateFlags2CreateInfo>()),
-        PIPELINE_CREATION_FEEDBACK_TYPE => Some(mem::size_of::<VkPipelineCreationFeedbackCreateInfo>()),
-        PIPELINE_DISCARD_RECTANGLE_TYPE => Some(mem::size_of::<VkPipelineDiscardRectangleStateCreateInfoEXT>()),
-        PIPELINE_DENSITY_LAYERED_TYPE => Some(mem::size_of::<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>()),
-        PIPELINE_SHADING_RATE_ENUM_TYPE => Some(mem::size_of::<VkPipelineFragmentShadingRateEnumStateCreateInfoNV>()),
-        PIPELINE_SHADING_RATE_STATE_TYPE => Some(mem::size_of::<VkPipelineFragmentShadingRateStateCreateInfoKHR>()),
-        PIPELINE_LIBRARY_TYPE => Some(mem::size_of::<VkPipelineLibraryCreateInfoKHR>()),
-        PIPELINE_RENDERING_TYPE => Some(mem::size_of::<VkPipelineRenderingCreateInfo>()),
-        PIPELINE_REPRESENTATIVE_TYPE => Some(mem::size_of::<VkPipelineRepresentativeFragmentTestStateCreateInfoNV>()),
-        RENDERING_ATTACHMENT_LOCATION_TYPE => Some(mem::size_of::<VkRenderingAttachmentLocationInfo>()),
-        RENDERING_INPUT_ATTACHMENT_TYPE => Some(mem::size_of::<VkRenderingInputAttachmentIndexInfo>()),
+fn block_words<T>() -> usize {
+    mem::size_of::<T>().div_ceil(mem::size_of::<u64>()).max(1)
+}
+
+fn copied<T>(node: *const VkChainNode) -> Vec<u64> {
+    let mut block = vec![0u64; block_words::<T>()];
+    unsafe { ptr::write(block.as_mut_ptr() as *mut T, ptr::read(node as *const T)) };
+    block
+}
+
+pub(crate) fn copied_node(node: *const VkChainNode) -> Option<Vec<u64>> {
+    match chain_node_type(node) {
+        DEVICE_GROUP_SWAPCHAIN_TYPE => Some(copied::<VkDeviceGroupSwapchainCreateInfoKHR>(node)),
+        IMAGE_COMPRESSION_CONTROL_TYPE => Some(copied::<VkImageCompressionControlEXT>(node)),
+        IMAGE_FORMAT_LIST_TYPE => Some(copied::<VkImageFormatListCreateInfo>(node)),
+        IMAGE_USAGE_FLAGS_2_TYPE => Some(copied::<VkImageUsageFlags2CreateInfoKHR>(node)),
+        SWAPCHAIN_COUNTER_TYPE => Some(copied::<VkSwapchainCounterCreateInfoEXT>(node)),
+        SWAPCHAIN_NATIVE_HDR_TYPE => Some(copied::<VkSwapchainDisplayNativeHdrCreateInfoAMD>(node)),
+        SWAPCHAIN_LATENCY_TYPE => Some(copied::<VkSwapchainLatencyCreateInfoNV>(node)),
+        SWAPCHAIN_PRESENT_BARRIER_TYPE => Some(copied::<VkSwapchainPresentBarrierCreateInfoNV>(node)),
+        SWAPCHAIN_PRESENT_SCALING_TYPE => Some(copied::<VkSwapchainPresentScalingCreateInfoKHR>(node)),
+        CUSTOM_RESOLVE_TYPE => Some(copied::<VkCustomResolveCreateInfoEXT>(node)),
+        DEBUG_UTILS_OBJECT_NAME_TYPE => Some(copied::<VkDebugUtilsObjectNameInfoEXT>(node)),
+        PIPELINE_ROBUSTNESS_TYPE => Some(copied::<VkPipelineRobustnessCreateInfo>(node)),
+        STAGE_MODULE_IDENTIFIER_TYPE => Some(copied::<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(node)),
+        STAGE_SUBGROUP_SIZE_TYPE => Some(copied::<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>(node)),
+        SHADER_MODULE_TYPE => Some(copied::<VkShaderModuleCreateInfo>(node)),
+        SHADER_MODULE_CACHE_TYPE => Some(copied::<VkShaderModuleValidationCacheCreateInfoEXT>(node)),
+        VALIDATION_FEATURES_TYPE => Some(copied::<VkValidationFeaturesEXT>(node)),
+        ATTACHMENT_SAMPLE_COUNT_TYPE => Some(copied::<VkAttachmentSampleCountInfoAMD>(node)),
+        GRAPHICS_PIPELINE_LIBRARY_TYPE => Some(copied::<VkGraphicsPipelineLibraryCreateInfoEXT>(node)),
+        MULTIVIEW_PER_VIEW_TYPE => Some(copied::<VkMultiviewPerViewAttributesInfoNVX>(node)),
+        PIPELINE_BINARY_INFO_TYPE => Some(copied::<VkPipelineBinaryInfoKHR>(node)),
+        PIPELINE_COMPILER_CONTROL_TYPE => Some(copied::<VkPipelineCompilerControlCreateInfoAMD>(node)),
+        PIPELINE_CREATE_FLAGS_2_TYPE => Some(copied::<VkPipelineCreateFlags2CreateInfo>(node)),
+        PIPELINE_CREATION_FEEDBACK_TYPE => Some(copied::<VkPipelineCreationFeedbackCreateInfo>(node)),
+        PIPELINE_DISCARD_RECTANGLE_TYPE => Some(copied::<VkPipelineDiscardRectangleStateCreateInfoEXT>(node)),
+        PIPELINE_DENSITY_LAYERED_TYPE => Some(copied::<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>(node)),
+        PIPELINE_SHADING_RATE_ENUM_TYPE => Some(copied::<VkPipelineFragmentShadingRateEnumStateCreateInfoNV>(node)),
+        PIPELINE_SHADING_RATE_STATE_TYPE => Some(copied::<VkPipelineFragmentShadingRateStateCreateInfoKHR>(node)),
+        PIPELINE_LIBRARY_TYPE => Some(copied::<VkPipelineLibraryCreateInfoKHR>(node)),
+        PIPELINE_RENDERING_TYPE => Some(copied::<VkPipelineRenderingCreateInfo>(node)),
+        PIPELINE_REPRESENTATIVE_TYPE => Some(copied::<VkPipelineRepresentativeFragmentTestStateCreateInfoNV>(node)),
+        RENDERING_ATTACHMENT_LOCATION_TYPE => Some(copied::<VkRenderingAttachmentLocationInfo>(node)),
+        RENDERING_INPUT_ATTACHMENT_TYPE => Some(copied::<VkRenderingInputAttachmentIndexInfo>(node)),
         _ => None,
     }
 }
@@ -1007,21 +1017,8 @@ fn nodes_in_front(head: *const c_void, want: u32) -> Vec<*const VkChainNode> {
         .collect()
 }
 
-fn sized_nodes(front: Vec<*const VkChainNode>) -> Option<Vec<(*const VkChainNode, usize)>> {
-    front
-        .into_iter()
-        .map(|node| node_size(chain_node_type(node)).map(|size| (node, size)))
-        .collect()
-}
-
-fn block_words(size: usize) -> usize {
-    size.div_ceil(mem::size_of::<u64>()).max(1)
-}
-
-fn copied_block(node: *const VkChainNode, size: usize) -> Vec<u64> {
-    let mut block = vec![0u64; block_words(size)];
-    unsafe { ptr::copy_nonoverlapping(node as *const u8, block.as_mut_ptr() as *mut u8, size) };
-    block
+fn copied_nodes(front: Vec<*const VkChainNode>) -> Option<Vec<Vec<u64>>> {
+    front.into_iter().map(copied_node).collect()
 }
 
 fn chained_blocks(blocks: &mut Vec<Vec<u64>>, tail: *const c_void) -> *const c_void {
@@ -1031,14 +1028,7 @@ fn chained_blocks(blocks: &mut Vec<Vec<u64>>, tail: *const c_void) -> *const c_v
     })
 }
 
-fn relinked_from(
-    sized: Vec<(*const VkChainNode, usize)>,
-    replacement: *const c_void,
-) -> Relinked {
-    let mut blocks: Vec<Vec<u64>> = sized
-        .into_iter()
-        .map(|(node, size)| copied_block(node, size))
-        .collect();
+fn relinked_from(mut blocks: Vec<Vec<u64>>, replacement: *const c_void) -> Relinked {
     let head = chained_blocks(&mut blocks, replacement);
     Relinked { head, blocks }
 }
@@ -1053,8 +1043,8 @@ pub(crate) fn call_relinked_chain(
     target: u32,
     replacement: *const c_void,
 ) -> Option<Relinked> {
-    match sized_nodes(nodes_in_front(head, target)) {
-        Some(sized) => Some(relinked_from(sized, replacement)),
+    match copied_nodes(nodes_in_front(head, target)) {
+        Some(blocks) => Some(relinked_from(blocks, replacement)),
         None => call_undeclared_node(),
     }
 }

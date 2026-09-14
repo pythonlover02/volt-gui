@@ -24,7 +24,7 @@ use crate::consts::SOURCE_SHADER_RECORD_INDEX;
 use crate::consts::SWAPCHAIN_COUNTER_TYPE;
 use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
 use crate::instance::call_relinked_chain;
-use crate::instance::node_size;
+use crate::instance::copied_node;
 use crate::instance::VkChainNode;
 use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkSwapchainCounterCreateInfoEXT;
@@ -589,9 +589,18 @@ fn mapping_with(
 }
 
 #[test]
-fn sizes_every_chain_node_it_declares() {
-    assert!(node_size(SWAPCHAIN_COUNTER_TYPE).is_some());
-    assert!(node_size(UNKNOWN_CHAIN_TYPE).is_none());
+fn copies_every_chain_node_it_declares() {
+    let declared = VkSwapchainCounterCreateInfoEXT {
+        s_type: vk::StructureType::from_raw(SWAPCHAIN_COUNTER_TYPE as i32),
+        p_next: ptr::null(),
+        surface_counters: NO_COUNTERS,
+    };
+    let undeclared = chain_node(UNKNOWN_CHAIN_TYPE, ptr::null_mut());
+    assert!(copied_node(
+        &declared as *const VkSwapchainCounterCreateInfoEXT as *const VkChainNode
+    )
+    .is_some());
+    assert!(copied_node(&undeclared as *const VkChainNode).is_none());
 }
 
 #[test]
