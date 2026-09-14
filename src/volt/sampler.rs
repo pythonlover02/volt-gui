@@ -16,10 +16,22 @@ use crate::consts::SETTING_MIN_FILTER;
 use crate::consts::SETTING_MIP_CEILING;
 use crate::consts::SETTING_MIP_FLOOR;
 use crate::consts::SETTING_MIPMAP_MODE;
+use crate::consts::SHADER_MAPPING_INFO_TYPE;
+use crate::consts::SOURCE_CONSTANT_OFFSET;
+use crate::consts::SOURCE_INDIRECT_INDEX;
+use crate::consts::SOURCE_INDIRECT_INDEX_ARRAY;
+use crate::consts::SOURCE_PUSH_INDEX;
+use crate::consts::SOURCE_SHADER_RECORD_INDEX;
 use crate::consts::TEXT_OFF;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
+use crate::instance::call_relinked_chain;
+use crate::instance::chain_find;
 use crate::instance::PfnWriteSamplers;
+use crate::instance::Relinked;
+use crate::instance::VkDescriptorMappingSourceDataEXT;
+use crate::instance::VkDescriptorSetAndBindingMappingEXT;
+use crate::instance::VkShaderDescriptorSetAndBindingMappingInfoEXT;
 use crate::lists::forced;
 use crate::logging::info_wanted;
 use crate::report::call_report_value;
@@ -281,6 +293,228 @@ pub(crate) fn call_create_sampler(
             vk::Result::SUCCESS
         }
         Err(e) => e,
+    }
+}
+
+pub(crate) struct ChainRebuild {
+    #[allow(dead_code)]
+    samplers: Vec<Option<vk::SamplerCreateInfo<'static>>>,
+    #[allow(dead_code)]
+    mappings: Vec<VkDescriptorSetAndBindingMappingEXT>,
+    #[allow(dead_code)]
+    info: Vec<VkShaderDescriptorSetAndBindingMappingInfoEXT>,
+    #[allow(dead_code)]
+    relink: Relinked,
+    pub(crate) head: *const c_void,
+}
+
+pub(crate) struct StageRebuild {
+    #[allow(dead_code)]
+    chain: ChainRebuild,
+    pub(crate) stage: vk::PipelineShaderStageCreateInfo<'static>,
+}
+
+pub(crate) struct StagesRebuild {
+    #[allow(dead_code)]
+    each: Vec<Option<StageRebuild>>,
+    pub(crate) stages: Vec<vk::PipelineShaderStageCreateInfo<'static>>,
+}
+
+fn named_sampler(
+    mapping: &VkDescriptorSetAndBindingMappingEXT,
+) -> Option<*const vk::SamplerCreateInfo<'static>> {
+    unsafe {
+        match mapping.source {
+            SOURCE_CONSTANT_OFFSET => Some(mapping.source_data.constant_offset.p_embedded_sampler),
+            SOURCE_PUSH_INDEX => Some(mapping.source_data.push_index.p_embedded_sampler),
+            SOURCE_INDIRECT_INDEX => Some(mapping.source_data.indirect_index.p_embedded_sampler),
+            SOURCE_INDIRECT_INDEX_ARRAY => {
+                Some(mapping.source_data.indirect_index_array.p_embedded_sampler)
+            }
+            SOURCE_SHADER_RECORD_INDEX => {
+                Some(mapping.source_data.shader_record_index.p_embedded_sampler)
+            }
+            _ => None,
+        }
+    }
+}
+
+pub(crate) fn embedded_sampler(
+    mapping: &VkDescriptorSetAndBindingMappingEXT,
+) -> Option<*const vk::SamplerCreateInfo<'static>> {
+    named_sampler(mapping).filter(|held| !held.is_null())
+}
+
+fn rebuilt_data(
+    mapping: &VkDescriptorSetAndBindingMappingEXT,
+    sampler: *const vk::SamplerCreateInfo<'static>,
+) -> VkDescriptorMappingSourceDataEXT {
+    let mut data = mapping.source_data;
+    unsafe {
+        match mapping.source {
+            SOURCE_CONSTANT_OFFSET => data.constant_offset.p_embedded_sampler = sampler,
+            SOURCE_PUSH_INDEX => data.push_index.p_embedded_sampler = sampler,
+            SOURCE_INDIRECT_INDEX => data.indirect_index.p_embedded_sampler = sampler,
+            SOURCE_INDIRECT_INDEX_ARRAY => data.indirect_index_array.p_embedded_sampler = sampler,
+            SOURCE_SHADER_RECORD_INDEX => data.shader_record_index.p_embedded_sampler = sampler,
+            _ => (),
+        }
+    };
+    data
+}
+
+fn mapping_list(
+    info: *const VkShaderDescriptorSetAndBindingMappingInfoEXT,
+) -> Vec<VkDescriptorSetAndBindingMappingEXT> {
+    (0..unsafe { (*info).mapping_count } as usize)
+        .map(|at| unsafe { *(*info).p_mappings.add(at) })
+        .collect()
+}
+
+fn call_patched_embedded(
+    dev: &VkDevState,
+    original: *const vk::SamplerCreateInfo<'static>,
+) -> vk::SamplerCreateInfo<'static> {
+    let held = patched_ci(ensure_settings(), &dev.caps, unsafe { &*original });
+    call_report_sampler(dev, unsafe { &*original }, &held);
+    held
+}
+
+fn patched_embedded(
+    dev: &VkDevState,
+    mapping: &VkDescriptorSetAndBindingMappingEXT,
+) -> Option<vk::SamplerCreateInfo<'static>> {
+    embedded_sampler(mapping).map(|original| call_patched_embedded(dev, original))
+}
+
+fn patched_samplers(
+    dev: &VkDevState,
+    info: *const VkShaderDescriptorSetAndBindingMappingInfoEXT,
+) -> Vec<Option<vk::SamplerCreateInfo<'static>>> {
+    mapping_list(info)
+        .iter()
+        .map(|mapping| patched_embedded(dev, mapping))
+        .collect()
+}
+
+fn rebuilt_mapping(
+    mapping: &VkDescriptorSetAndBindingMappingEXT,
+    sampler: &Option<vk::SamplerCreateInfo<'static>>,
+) -> VkDescriptorSetAndBindingMappingEXT {
+    match sampler {
+        Some(held) => VkDescriptorSetAndBindingMappingEXT {
+            source_data: rebuilt_data(mapping, held as *const vk::SamplerCreateInfo<'static>),
+            ..*mapping
+        },
+        None => *mapping,
+    }
+}
+
+fn rebuilt_mappings(
+    info: *const VkShaderDescriptorSetAndBindingMappingInfoEXT,
+    samplers: &[Option<vk::SamplerCreateInfo<'static>>],
+) -> Vec<VkDescriptorSetAndBindingMappingEXT> {
+    mapping_list(info)
+        .iter()
+        .zip(samplers.iter())
+        .map(|(mapping, sampler)| rebuilt_mapping(mapping, sampler))
+        .collect()
+}
+
+fn rebuilt_info(
+    info: *const VkShaderDescriptorSetAndBindingMappingInfoEXT,
+    mappings: &[VkDescriptorSetAndBindingMappingEXT],
+) -> VkShaderDescriptorSetAndBindingMappingInfoEXT {
+    VkShaderDescriptorSetAndBindingMappingInfoEXT {
+        p_mappings: mappings.as_ptr(),
+        ..unsafe { *info }
+    }
+}
+
+fn built_chain(
+    head: *const c_void,
+    info: *const VkShaderDescriptorSetAndBindingMappingInfoEXT,
+    samplers: Vec<Option<vk::SamplerCreateInfo<'static>>>,
+) -> Option<ChainRebuild> {
+    let mappings = rebuilt_mappings(info, &samplers);
+    let node = vec![rebuilt_info(info, &mappings)];
+    let relink = call_relinked_chain(
+        head,
+        SHADER_MAPPING_INFO_TYPE,
+        node.as_ptr() as *const c_void,
+    )?;
+    Some(ChainRebuild {
+        head: relink.head,
+        samplers,
+        mappings,
+        info: node,
+        relink,
+    })
+}
+
+pub(crate) fn rebuilt_mapping_chain(dev: &VkDevState, head: *const c_void) -> Option<ChainRebuild> {
+    let info = chain_find(head, SHADER_MAPPING_INFO_TYPE)?
+        as *const VkShaderDescriptorSetAndBindingMappingInfoEXT;
+    let samplers = patched_samplers(dev, info);
+    match samplers.iter().any(|one| one.is_some()) {
+        true => built_chain(head, info, samplers),
+        false => None,
+    }
+}
+
+pub(crate) fn rebuilt_stage(
+    dev: &VkDevState,
+    p: *const vk::PipelineShaderStageCreateInfo<'static>,
+) -> Option<StageRebuild> {
+    let chain = rebuilt_mapping_chain(dev, unsafe { (*p).p_next })?;
+    Some(StageRebuild {
+        stage: vk::PipelineShaderStageCreateInfo {
+            p_next: chain.head,
+            ..unsafe { *p }
+        },
+        chain,
+    })
+}
+
+fn stage_values(
+    each: &[Option<StageRebuild>],
+    p: *const vk::PipelineShaderStageCreateInfo<'static>,
+) -> Vec<vk::PipelineShaderStageCreateInfo<'static>> {
+    each.iter()
+        .enumerate()
+        .map(|(at, built)| match built {
+            Some(one) => one.stage,
+            None => unsafe { *p.add(at) },
+        })
+        .collect()
+}
+
+fn built_stages(
+    each: Vec<Option<StageRebuild>>,
+    p: *const vk::PipelineShaderStageCreateInfo<'static>,
+) -> Option<StagesRebuild> {
+    match each.iter().any(|one| one.is_some()) {
+        true => Some(StagesRebuild {
+            stages: stage_values(&each, p),
+            each,
+        }),
+        false => None,
+    }
+}
+
+pub(crate) fn rebuilt_stages(
+    dev: &VkDevState,
+    p: *const vk::PipelineShaderStageCreateInfo<'static>,
+    count: u32,
+) -> Option<StagesRebuild> {
+    match p.is_null() {
+        true => None,
+        false => built_stages(
+            (0..count as usize)
+                .map(|at| rebuilt_stage(dev, unsafe { p.add(at) }))
+                .collect(),
+            p,
+        ),
     }
 }
 
