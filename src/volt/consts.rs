@@ -74,6 +74,15 @@ pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
     LATENCY_CAPABILITIES_TYPE,
 ];
 
+pub(crate) const SHADER_MAPPING_INFO_TYPE: u32 = 1000135006;
+pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
+
+pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
+pub(crate) const SOURCE_PUSH_INDEX: i32 = 1;
+pub(crate) const SOURCE_INDIRECT_INDEX: i32 = 2;
+pub(crate) const SOURCE_INDIRECT_INDEX_ARRAY: i32 = 3;
+pub(crate) const SOURCE_SHADER_RECORD_INDEX: i32 = 8;
+
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
 
@@ -180,6 +189,11 @@ pub(crate) const FN_CREATE_XCB_SURFACE: &str = "vkCreateXcbSurfaceKHR";
 pub(crate) const FN_CREATE_XLIB_SURFACE: &str = "vkCreateXlibSurfaceKHR";
 pub(crate) const FN_CREATE_WAYLAND_SURFACE: &str = "vkCreateWaylandSurfaceKHR";
 pub(crate) const FN_DESTROY_SURFACE: &str = "vkDestroySurfaceKHR";
+pub(crate) const FN_CREATE_COMPUTE_PIPELINES: &str = "vkCreateComputePipelines";
+pub(crate) const FN_CREATE_SHADERS: &str = "vkCreateShadersEXT";
+pub(crate) const FN_CREATE_RAY_TRACING_KHR: &str = "vkCreateRayTracingPipelinesKHR";
+pub(crate) const FN_CREATE_RAY_TRACING_NV: &str = "vkCreateRayTracingPipelinesNV";
+pub(crate) const FN_PIPELINE_INDIRECT_MEMORY: &str = "vkGetPipelineIndirectMemoryRequirementsNV";
 
 pub(crate) const TAG_XCB: &str = "xcb";
 pub(crate) const TAG_WAYLAND: &str = "wayland";

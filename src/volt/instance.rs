@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ffi::c_char;
 use std::ffi::c_void;
 use std::ffi::CString;
 use std::mem;
@@ -152,6 +153,239 @@ pub(crate) struct VkPresentModeList {
     pub(crate) present_mode_count: u32,
     pub(crate) p_present_modes: *mut vk::PresentModeKHR,
 }
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceConstantOffsetEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) heap_array_stride: u32,
+    pub(crate) p_embedded_sampler: *const vk::SamplerCreateInfo<'static>,
+    pub(crate) sampler_heap_offset: u32,
+    pub(crate) sampler_heap_array_stride: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourcePushIndexEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) push_offset: u32,
+    pub(crate) heap_index_stride: u32,
+    pub(crate) heap_array_stride: u32,
+    pub(crate) p_embedded_sampler: *const vk::SamplerCreateInfo<'static>,
+    pub(crate) use_combined_image_sampler_index: vk::Bool32,
+    pub(crate) sampler_heap_offset: u32,
+    pub(crate) sampler_push_offset: u32,
+    pub(crate) sampler_heap_index_stride: u32,
+    pub(crate) sampler_heap_array_stride: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceIndirectIndexEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) push_offset: u32,
+    pub(crate) address_offset: u32,
+    pub(crate) heap_index_stride: u32,
+    pub(crate) heap_array_stride: u32,
+    pub(crate) p_embedded_sampler: *const vk::SamplerCreateInfo<'static>,
+    pub(crate) use_combined_image_sampler_index: vk::Bool32,
+    pub(crate) sampler_heap_offset: u32,
+    pub(crate) sampler_push_offset: u32,
+    pub(crate) sampler_address_offset: u32,
+    pub(crate) sampler_heap_index_stride: u32,
+    pub(crate) sampler_heap_array_stride: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceIndirectIndexArrayEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) push_offset: u32,
+    pub(crate) address_offset: u32,
+    pub(crate) heap_index_stride: u32,
+    pub(crate) p_embedded_sampler: *const vk::SamplerCreateInfo<'static>,
+    pub(crate) use_combined_image_sampler_index: vk::Bool32,
+    pub(crate) sampler_heap_offset: u32,
+    pub(crate) sampler_push_offset: u32,
+    pub(crate) sampler_address_offset: u32,
+    pub(crate) sampler_heap_index_stride: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceShaderRecordIndexEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) shader_record_offset: u32,
+    pub(crate) heap_index_stride: u32,
+    pub(crate) heap_array_stride: u32,
+    pub(crate) p_embedded_sampler: *const vk::SamplerCreateInfo<'static>,
+    pub(crate) use_combined_image_sampler_index: vk::Bool32,
+    pub(crate) sampler_heap_offset: u32,
+    pub(crate) sampler_shader_record_offset: u32,
+    pub(crate) sampler_heap_index_stride: u32,
+    pub(crate) sampler_heap_array_stride: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceHeapDataEXT {
+    pub(crate) heap_offset: u32,
+    pub(crate) push_offset: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorMappingSourceIndirectAddressEXT {
+    pub(crate) push_offset: u32,
+    pub(crate) address_offset: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) union VkDescriptorMappingSourceDataEXT {
+    pub(crate) constant_offset: VkDescriptorMappingSourceConstantOffsetEXT,
+    pub(crate) push_index: VkDescriptorMappingSourcePushIndexEXT,
+    pub(crate) indirect_index: VkDescriptorMappingSourceIndirectIndexEXT,
+    pub(crate) indirect_index_array: VkDescriptorMappingSourceIndirectIndexArrayEXT,
+    pub(crate) heap_data: VkDescriptorMappingSourceHeapDataEXT,
+    pub(crate) push_data_offset: u32,
+    pub(crate) push_address_offset: u32,
+    pub(crate) indirect_address: VkDescriptorMappingSourceIndirectAddressEXT,
+    pub(crate) shader_record_index: VkDescriptorMappingSourceShaderRecordIndexEXT,
+    pub(crate) shader_record_data_offset: u32,
+    pub(crate) shader_record_address_offset: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkDescriptorSetAndBindingMappingEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) descriptor_set: u32,
+    pub(crate) first_binding: u32,
+    pub(crate) binding_count: u32,
+    pub(crate) resource_mask: vk::Flags,
+    pub(crate) source: i32,
+    pub(crate) source_data: VkDescriptorMappingSourceDataEXT,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkShaderDescriptorSetAndBindingMappingInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) mapping_count: u32,
+    pub(crate) p_mappings: *const VkDescriptorSetAndBindingMappingEXT,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkShaderCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) stage: vk::Flags,
+    pub(crate) next_stage: vk::Flags,
+    pub(crate) code_type: i32,
+    pub(crate) code_size: usize,
+    pub(crate) p_code: *const c_void,
+    pub(crate) p_name: *const c_char,
+    pub(crate) set_layout_count: u32,
+    pub(crate) p_set_layouts: *const VkHandle,
+    pub(crate) push_constant_range_count: u32,
+    pub(crate) p_push_constant_ranges: *const c_void,
+    pub(crate) p_specialization_info: *const c_void,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkGraphicsShaderGroupCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) stage_count: u32,
+    pub(crate) p_stages: *const vk::PipelineShaderStageCreateInfo<'static>,
+    pub(crate) p_vertex_input_state: *const c_void,
+    pub(crate) p_tessellation_state: *const c_void,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkGraphicsPipelineShaderGroupsCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) group_count: u32,
+    pub(crate) p_groups: *const VkGraphicsShaderGroupCreateInfoNV,
+    pub(crate) pipeline_count: u32,
+    pub(crate) p_pipelines: *const vk::Pipeline,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkRayTracingPipelineCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) stage_count: u32,
+    pub(crate) p_stages: *const vk::PipelineShaderStageCreateInfo<'static>,
+    pub(crate) group_count: u32,
+    pub(crate) p_groups: *const c_void,
+    pub(crate) max_pipeline_ray_recursion_depth: u32,
+    pub(crate) p_library_info: *const c_void,
+    pub(crate) p_library_interface: *const c_void,
+    pub(crate) p_dynamic_state: *const c_void,
+    pub(crate) layout: vk::PipelineLayout,
+    pub(crate) base_pipeline_handle: vk::Pipeline,
+    pub(crate) base_pipeline_index: i32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkRayTracingPipelineCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) stage_count: u32,
+    pub(crate) p_stages: *const vk::PipelineShaderStageCreateInfo<'static>,
+    pub(crate) group_count: u32,
+    pub(crate) p_groups: *const c_void,
+    pub(crate) max_recursion_depth: u32,
+    pub(crate) layout: vk::PipelineLayout,
+    pub(crate) base_pipeline_handle: vk::Pipeline,
+    pub(crate) base_pipeline_index: i32,
+}
+
+pub(crate) type PfnCreateShaders = unsafe extern "system" fn(
+    vk::Device,
+    u32,
+    *const VkShaderCreateInfoEXT,
+    *const vk::AllocationCallbacks<'_>,
+    *mut VkHandle,
+) -> vk::Result;
+
+pub(crate) type PfnCreateRayTracingKHR = unsafe extern "system" fn(
+    vk::Device,
+    VkHandle,
+    vk::PipelineCache,
+    u32,
+    *const VkRayTracingPipelineCreateInfoKHR,
+    *const vk::AllocationCallbacks<'_>,
+    *mut vk::Pipeline,
+) -> vk::Result;
+
+pub(crate) type PfnCreateRayTracingNV = unsafe extern "system" fn(
+    vk::Device,
+    vk::PipelineCache,
+    u32,
+    *const VkRayTracingPipelineCreateInfoNV,
+    *const vk::AllocationCallbacks<'_>,
+    *mut vk::Pipeline,
+) -> vk::Result;
+
+pub(crate) type PfnPipelineIndirectMemory = unsafe extern "system" fn(
+    vk::Device,
+    *const vk::ComputePipelineCreateInfo<'_>,
+    *mut c_void,
+);
 
 #[derive(Clone)]
 pub(crate) struct VkInstState {
