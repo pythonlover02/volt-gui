@@ -5,7 +5,7 @@
 
 Control panel for Vulkan games on Linux. Settings are applied by **volt**, an implicit Vulkan layer written in Rust, so they work on every driver: RADV, ANV, NVK, AMDVLK, NVIDIA proprietary.
 
-Vulkan 1.0 only. The layer requests nothing beyond `VK_KHR_swapchain`, so behaviour never splits between drivers.
+Vulkan 1.0+. The layer requests nothing beyond VK_KHR_swapchain, so behaviour never splits between drivers.
 
 ![](/images/1.png)
 ![](/images/2.png)
