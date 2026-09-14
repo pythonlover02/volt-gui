@@ -155,8 +155,8 @@ The layer reads `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
 | Tab | Where the layer acts |
 |-----|----------------------|
 | GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups(KHR)` |
-| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...PresentModes2EXT`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
-| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT` |
+| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
+| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV` |
 | Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
 | Framerate | `vkQueuePresentKHR` |
 
