@@ -14,6 +14,7 @@ use crate::consts::ATTACHMENT_SAMPLE_COUNT_TYPE;
 use crate::consts::CHAIN_NODE_WARN;
 use crate::consts::CUSTOM_RESOLVE_TYPE;
 use crate::consts::DEBUG_UTILS_OBJECT_NAME_TYPE;
+use crate::consts::DEVICE_GROUP_PROPERTIES_TYPE;
 use crate::consts::DEVICE_GROUP_SIZE;
 use crate::consts::DEVICE_GROUP_SWAPCHAIN_TYPE;
 use crate::consts::FN_DESTROY_SURFACE;
@@ -155,7 +156,7 @@ pub(crate) struct VkSurfaceCapabilities2 {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy)]
 pub(crate) struct VkHandle(pub(crate) u64);
 
 #[repr(C)]
@@ -319,7 +320,7 @@ pub(crate) struct VkShaderCreateInfoEXT {
     pub(crate) p_code: *const c_void,
     pub(crate) p_name: *const c_char,
     pub(crate) set_layout_count: u32,
-    pub(crate) p_set_layouts: *const VkHandle,
+    pub(crate) p_set_layouts: *const vk::DescriptorSetLayout,
     pub(crate) push_constant_range_count: u32,
     pub(crate) p_push_constant_ranges: *const c_void,
     pub(crate) p_specialization_info: *const c_void,
@@ -1133,7 +1134,7 @@ pub(crate) fn call_filtered_enumerate(
 
 fn empty_group() -> VkPhysicalDeviceGroupProperties {
     VkPhysicalDeviceGroupProperties {
-        s_type: vk::StructureType::PHYSICAL_DEVICE_GROUP_PROPERTIES,
+        s_type: vk::StructureType::from_raw(DEVICE_GROUP_PROPERTIES_TYPE as i32),
         p_next: ptr::null_mut(),
         physical_device_count: 0,
         physical_devices: [vk::PhysicalDevice::null(); DEVICE_GROUP_SIZE],

@@ -66,6 +66,7 @@ pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
 
 pub(crate) const DEVICE_GROUP_SIZE: usize = 32;
+pub(crate) const DEVICE_GROUP_PROPERTIES_TYPE: u32 = 1000070000;
 pub(crate) const DEVICE_FEATURES_2_TYPE: u32 = 1000059000;
 pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
 pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;
