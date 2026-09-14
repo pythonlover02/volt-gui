@@ -1,4 +1,9 @@
+use std::ffi::c_void;
+use std::mem;
+use std::ptr;
 use std::sync::RwLock;
+
+use ash::vk;
 
 use crate::config::parse_settings;
 use crate::config::sanitize_name;
@@ -14,6 +19,15 @@ use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::TEXT_LINEAR;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
+use crate::consts::SOURCE_PUSH_INDEX;
+use crate::consts::SOURCE_SHADER_RECORD_INDEX;
+use crate::consts::SWAPCHAIN_COUNTER_TYPE;
+use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
+use crate::instance::call_relinked_chain;
+use crate::instance::copied_node;
+use crate::instance::VkChainNode;
+use crate::instance::VkDescriptorSetAndBindingMappingEXT;
+use crate::instance::VkSwapchainCounterCreateInfoEXT;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
@@ -37,6 +51,8 @@ use crate::report::forced_text;
 use crate::report::number_text;
 use crate::report::report_line;
 use crate::report::ReportMap;
+use crate::sampler::embedded_sampler;
+use crate::swapchain::present_filtered;
 
 const UNKNOWN_MODE: u32 = 4242;
 const UNKNOWN_ALPHA: u32 = 16;
@@ -95,6 +111,10 @@ const SURFACE_ALPHA: [&str; 1] = ["opaque"];
 const SURFACE_MIN_IMAGES: u32 = 4;
 const SURFACE_MAX_IMAGES: u32 = 0;
 const SURFACE_SECTION: &str = "[wayland]\npresent_modes = \"mailbox;fifo\"\ncomposite_alphas = \"opaque\"\nmin_image_count = \"4\"\nmax_image_count = \"0\"\n";
+const UNKNOWN_CHAIN_TYPE: u32 = 424242;
+const SOURCE_PUSH_DATA: i32 = 5;
+const NO_COUNTERS: u32 = 0;
+const MAILBOX_VALUE: u32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
@@ -549,6 +569,110 @@ fn reports_a_setting_once_per_device_until_the_device_dies() {
     call_forget(&store, OWNER_ONE);
     assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
     assert!(!call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
+}
+
+fn chain_node(s_type: u32, next: *mut c_void) -> VkChainNode {
+    VkChainNode {
+        s_type: vk::StructureType::from_raw(s_type as i32),
+        p_next: next,
+    }
+}
+
+fn mapping_with(
+    source: i32,
+    sampler: *const vk::SamplerCreateInfo<'static>,
+) -> VkDescriptorSetAndBindingMappingEXT {
+    let mut mapping: VkDescriptorSetAndBindingMappingEXT = unsafe { mem::zeroed() };
+    mapping.source = source;
+    mapping.source_data.push_index.p_embedded_sampler = sampler;
+    mapping
+}
+
+#[test]
+fn copies_every_chain_node_it_declares() {
+    let declared = VkSwapchainCounterCreateInfoEXT {
+        s_type: vk::StructureType::from_raw(SWAPCHAIN_COUNTER_TYPE as i32),
+        p_next: ptr::null(),
+        surface_counters: NO_COUNTERS,
+    };
+    let undeclared = chain_node(UNKNOWN_CHAIN_TYPE, ptr::null_mut());
+    assert!(copied_node(
+        &declared as *const VkSwapchainCounterCreateInfoEXT as *const VkChainNode
+    )
+    .is_some());
+    assert!(copied_node(&undeclared as *const VkChainNode).is_none());
+}
+
+#[test]
+fn chains_its_own_copy_in_front_of_the_replacement() {
+    let mut target = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
+    let front = VkSwapchainCounterCreateInfoEXT {
+        s_type: vk::StructureType::from_raw(SWAPCHAIN_COUNTER_TYPE as i32),
+        p_next: &mut target as *mut VkChainNode as *const c_void,
+        surface_counters: NO_COUNTERS,
+    };
+    let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
+    let built = call_relinked_chain(
+        &front as *const VkSwapchainCounterCreateInfoEXT as *const c_void,
+        SWAPCHAIN_MODE_LIST_TYPE,
+        &replacement as *const VkChainNode as *const c_void,
+    )
+    .unwrap();
+    let copy = built.head as *const VkChainNode;
+    assert_ne!(
+        built.head,
+        &front as *const VkSwapchainCounterCreateInfoEXT as *const c_void
+    );
+    assert_eq!(
+        unsafe { (*copy).s_type.as_raw() as u32 },
+        SWAPCHAIN_COUNTER_TYPE
+    );
+    assert_eq!(
+        unsafe { (*copy).p_next as *const c_void },
+        &replacement as *const VkChainNode as *const c_void
+    );
+}
+
+#[test]
+fn passes_the_chain_down_when_a_node_in_front_is_undeclared() {
+    let mut target = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
+    let front = chain_node(
+        UNKNOWN_CHAIN_TYPE,
+        &mut target as *mut VkChainNode as *mut c_void,
+    );
+    let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
+    assert!(call_relinked_chain(
+        &front as *const VkChainNode as *const c_void,
+        SWAPCHAIN_MODE_LIST_TYPE,
+        &replacement as *const VkChainNode as *const c_void,
+    )
+    .is_none());
+}
+
+#[test]
+fn reads_the_sampler_only_where_the_selector_names_one() {
+    let sampler = vk::SamplerCreateInfo::default();
+    let held =
+        &sampler as *const vk::SamplerCreateInfo<'_> as *const vk::SamplerCreateInfo<'static>;
+    assert!(embedded_sampler(&mapping_with(SOURCE_PUSH_INDEX, held)).is_some());
+    assert!(embedded_sampler(&mapping_with(SOURCE_PUSH_DATA, held)).is_none());
+    assert!(embedded_sampler(&mapping_with(SOURCE_PUSH_INDEX, ptr::null())).is_none());
+    assert!(embedded_sampler(&mapping_with(SOURCE_SHADER_RECORD_INDEX, ptr::null())).is_none());
+}
+
+#[test]
+fn narrows_a_chained_mode_list_to_the_choice() {
+    assert_eq!(
+        present_filtered(
+            vec![vk::PresentModeKHR::FIFO, vk::PresentModeKHR::MAILBOX],
+            Some(MAILBOX_VALUE),
+        ),
+        vec![vk::PresentModeKHR::MAILBOX]
+    );
+    assert_eq!(
+        present_filtered(vec![vk::PresentModeKHR::FIFO], Some(MAILBOX_VALUE)),
+        vec![vk::PresentModeKHR::FIFO]
+    );
 }
 
 #[test]

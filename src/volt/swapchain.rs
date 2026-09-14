@@ -21,21 +21,25 @@ use crate::consts::SETTING_FRAME_LIMIT_OFFSET;
 use crate::consts::SETTING_FRAME_PACING;
 use crate::consts::SETTING_IMAGE_COUNT;
 use crate::consts::SETTING_PRESENT_MODE;
+use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
 use crate::consts::TOGGLE_ON;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
+use crate::instance::call_relinked_chain;
 use crate::instance::call_write_list;
+use crate::instance::chain_find;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
 use crate::instance::surface_tag;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
-use crate::instance::PfnSurfaceModes2;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::Relinked;
 use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
+use crate::instance::VkSwapchainPresentModesCreateInfoKHR;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::logging::info_wanted;
@@ -60,7 +64,7 @@ fn mode_value(mode: &vk::PresentModeKHR) -> Option<u32> {
     Some(mode.as_raw() as u32)
 }
 
-fn present_filtered(
+pub(crate) fn present_filtered(
     modes: Vec<vk::PresentModeKHR>,
     choice: Option<u32>,
 ) -> Vec<vk::PresentModeKHR> {
@@ -491,40 +495,6 @@ pub(crate) fn call_surface_capabilities2(
     }
 }
 
-fn call_query_modes2_all(
-    fp: PfnSurfaceModes2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-) -> Vec<vk::PresentModeKHR> {
-    let mut n: u32 = 0;
-    let r1 = unsafe { fp(phys, info, &mut n, ptr::null_mut()) };
-    let mut v = vec![vk::PresentModeKHR::FIFO; n as usize];
-    let r2 = unsafe { fp(phys, info, &mut n, v.as_mut_ptr()) };
-    match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
-        (_, _) => Vec::new(),
-    }
-}
-
-pub(crate) fn call_surface_present_modes2(
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    out: *mut vk::PresentModeKHR,
-) -> vk::Result {
-    match owning_instance(phys).and_then(|(_, inst)| inst.modes2_fp) {
-        None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(fp) => call_write_list(
-            &present_filtered(
-                call_query_modes2_all(fp, phys, info),
-                ensure_settings().present_mode,
-            ),
-            count,
-            out,
-        ),
-    }
-}
-
 fn maybe_probe(
     tag: Option<&'static str>,
     supported: &[vk::PresentModeKHR],
@@ -546,12 +516,87 @@ fn call_created_swapchain(created: vk::Result) -> vk::Result {
     }
 }
 
+pub(crate) struct SwapchainRebuild<'a> {
+    #[allow(dead_code)]
+    modes: Vec<vk::PresentModeKHR>,
+    #[allow(dead_code)]
+    node: Vec<VkSwapchainPresentModesCreateInfoKHR>,
+    #[allow(dead_code)]
+    relink: Option<Relinked>,
+    pub(crate) ci: vk::SwapchainCreateInfoKHR<'a>,
+}
+
+fn chained_modes(node: *const VkSwapchainPresentModesCreateInfoKHR) -> Vec<vk::PresentModeKHR> {
+    (0..unsafe { (*node).present_mode_count } as usize)
+        .map(|at| unsafe { *(*node).p_present_modes.add(at) })
+        .collect()
+}
+
+fn rebuilt_mode_node(
+    node: *const VkSwapchainPresentModesCreateInfoKHR,
+    modes: &[vk::PresentModeKHR],
+) -> VkSwapchainPresentModesCreateInfoKHR {
+    VkSwapchainPresentModesCreateInfoKHR {
+        present_mode_count: modes.len() as u32,
+        p_present_modes: modes.as_ptr(),
+        ..unsafe { *node }
+    }
+}
+
+fn plain_swapchain(patched: vk::SwapchainCreateInfoKHR<'_>) -> SwapchainRebuild<'_> {
+    SwapchainRebuild {
+        modes: Vec::new(),
+        node: Vec::new(),
+        relink: None,
+        ci: patched,
+    }
+}
+
+fn rebuilt_swapchain(
+    patched: vk::SwapchainCreateInfoKHR<'_>,
+    node: *const VkSwapchainPresentModesCreateInfoKHR,
+    choice: Option<u32>,
+) -> SwapchainRebuild<'_> {
+    let modes = present_filtered(chained_modes(node), choice);
+    let owned = vec![rebuilt_mode_node(node, &modes)];
+    match call_relinked_chain(
+        patched.p_next,
+        SWAPCHAIN_MODE_LIST_TYPE,
+        owned.as_ptr() as *const c_void,
+    ) {
+        Some(relink) => SwapchainRebuild {
+            ci: vk::SwapchainCreateInfoKHR {
+                p_next: relink.head,
+                ..patched
+            },
+            modes,
+            node: owned,
+            relink: Some(relink),
+        },
+        None => plain_swapchain(patched),
+    }
+}
+
+fn narrowed_swapchain(
+    patched: vk::SwapchainCreateInfoKHR<'_>,
+    choice: Option<u32>,
+) -> SwapchainRebuild<'_> {
+    match chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE) {
+        Some(node) => rebuilt_swapchain(
+            patched,
+            node as *const VkSwapchainPresentModesCreateInfoKHR,
+            choice,
+        ),
+        None => plain_swapchain(patched),
+    }
+}
+
 fn call_prepared_ci<'a>(
     inst: &VkInstState,
     dev: &VkDevState,
     original: &vk::SwapchainCreateInfoKHR<'a>,
     s: &Settings,
-) -> vk::SwapchainCreateInfoKHR<'a> {
+) -> SwapchainRebuild<'a> {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
     maybe_probe(surface_tag(original.surface), &supported, &caps);
@@ -563,7 +608,7 @@ fn call_prepared_ci<'a>(
         s,
     );
     call_report_swapchain(dev, s, original, &patched);
-    patched
+    narrowed_swapchain(patched, s.present_mode)
 }
 
 fn call_create_registered(
@@ -575,13 +620,9 @@ fn call_create_registered(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
+    let built = call_prepared_ci(inst, dev, original, s);
     call_created_swapchain(unsafe {
-        (dev.swap_fp.create_swapchain_khr)(
-            handle,
-            &call_prepared_ci(inst, dev, original, s),
-            alloc,
-            out,
-        )
+        (dev.swap_fp.create_swapchain_khr)(handle, &built.ci, alloc, out)
     })
 }
 
@@ -605,7 +646,7 @@ fn call_shared_patched<'a>(
     cis: *const vk::SwapchainCreateInfoKHR<'a>,
     count: u32,
     s: &Settings,
-) -> Vec<vk::SwapchainCreateInfoKHR<'a>> {
+) -> Vec<SwapchainRebuild<'a>> {
     unsafe { std::slice::from_raw_parts(cis, count as usize) }
         .iter()
         .map(|original| call_prepared_ci(inst, dev, original, s))
@@ -622,15 +663,9 @@ fn call_shared_through(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::SwapchainKHR,
 ) -> vk::Result {
-    call_created_swapchain(unsafe {
-        fp(
-            handle,
-            count,
-            call_shared_patched(dev, inst, cis, count, ensure_settings()).as_ptr(),
-            alloc,
-            out,
-        )
-    })
+    let built = call_shared_patched(dev, inst, cis, count, ensure_settings());
+    let patched: Vec<vk::SwapchainCreateInfoKHR<'_>> = built.iter().map(|one| one.ci).collect();
+    call_created_swapchain(unsafe { fp(handle, count, patched.as_ptr(), alloc, out) })
 }
 
 pub(crate) fn call_create_shared_swapchains(

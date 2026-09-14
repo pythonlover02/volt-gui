@@ -65,12 +65,61 @@ pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
 
+pub(crate) const DEVICE_GROUP_SIZE: usize = 32;
+pub(crate) const DEVICE_GROUP_PROPERTIES_TYPE: u32 = 1000070000;
+pub(crate) const DEVICE_FEATURES_2_TYPE: u32 = 1000059000;
 pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
 pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;
 pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
     MODE_COMPATIBILITY_TYPE,
     LATENCY_CAPABILITIES_TYPE,
 ];
+
+pub(crate) const SHADER_MAPPING_INFO_TYPE: u32 = 1000135006;
+pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
+
+pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
+pub(crate) const SOURCE_PUSH_INDEX: i32 = 1;
+pub(crate) const SOURCE_INDIRECT_INDEX: i32 = 2;
+pub(crate) const SOURCE_INDIRECT_INDEX_ARRAY: i32 = 3;
+pub(crate) const SOURCE_SHADER_RECORD_INDEX: i32 = 8;
+
+pub(crate) const DEVICE_GROUP_SWAPCHAIN_TYPE: u32 = 1000060012;
+pub(crate) const IMAGE_COMPRESSION_CONTROL_TYPE: u32 = 1000338001;
+pub(crate) const IMAGE_FORMAT_LIST_TYPE: u32 = 1000147000;
+pub(crate) const IMAGE_USAGE_FLAGS_2_TYPE: u32 = 1000668002;
+pub(crate) const SWAPCHAIN_COUNTER_TYPE: u32 = 1000091003;
+pub(crate) const SWAPCHAIN_NATIVE_HDR_TYPE: u32 = 1000213001;
+pub(crate) const SWAPCHAIN_LATENCY_TYPE: u32 = 1000505007;
+pub(crate) const SWAPCHAIN_PRESENT_BARRIER_TYPE: u32 = 1000292002;
+pub(crate) const SWAPCHAIN_PRESENT_SCALING_TYPE: u32 = 1000275004;
+pub(crate) const CUSTOM_RESOLVE_TYPE: u32 = 1000628002;
+pub(crate) const DEBUG_UTILS_OBJECT_NAME_TYPE: u32 = 1000128000;
+pub(crate) const PIPELINE_ROBUSTNESS_TYPE: u32 = 1000068000;
+pub(crate) const STAGE_MODULE_IDENTIFIER_TYPE: u32 = 1000462002;
+pub(crate) const STAGE_SUBGROUP_SIZE_TYPE: u32 = 1000225001;
+pub(crate) const SHADER_MODULE_TYPE: u32 = 16;
+pub(crate) const SHADER_MODULE_CACHE_TYPE: u32 = 1000160001;
+pub(crate) const VALIDATION_FEATURES_TYPE: u32 = 1000247000;
+pub(crate) const ATTACHMENT_SAMPLE_COUNT_TYPE: u32 = 1000044008;
+pub(crate) const GRAPHICS_PIPELINE_LIBRARY_TYPE: u32 = 1000320002;
+pub(crate) const MULTIVIEW_PER_VIEW_TYPE: u32 = 1000044009;
+pub(crate) const PIPELINE_BINARY_INFO_TYPE: u32 = 1000483002;
+pub(crate) const PIPELINE_COMPILER_CONTROL_TYPE: u32 = 1000183000;
+pub(crate) const PIPELINE_CREATE_FLAGS_2_TYPE: u32 = 1000470005;
+pub(crate) const PIPELINE_CREATION_FEEDBACK_TYPE: u32 = 1000192000;
+pub(crate) const PIPELINE_DISCARD_RECTANGLE_TYPE: u32 = 1000099001;
+pub(crate) const PIPELINE_DENSITY_LAYERED_TYPE: u32 = 1000611002;
+pub(crate) const PIPELINE_SHADING_RATE_ENUM_TYPE: u32 = 1000326002;
+pub(crate) const PIPELINE_SHADING_RATE_STATE_TYPE: u32 = 1000226001;
+pub(crate) const PIPELINE_LIBRARY_TYPE: u32 = 1000290000;
+pub(crate) const PIPELINE_RENDERING_TYPE: u32 = 1000044002;
+pub(crate) const PIPELINE_REPRESENTATIVE_TYPE: u32 = 1000166001;
+pub(crate) const RENDERING_ATTACHMENT_LOCATION_TYPE: u32 = 1000232001;
+pub(crate) const RENDERING_INPUT_ATTACHMENT_TYPE: u32 = 1000232002;
+
+pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
+pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
 
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
@@ -167,7 +216,6 @@ pub(crate) const FN_QUEUE_PRESENT: &str = "vkQueuePresentKHR";
 pub(crate) const FN_DEVICE_QUEUE_2: &str = "vkGetDeviceQueue2";
 
 pub(crate) const FN_SURFACE_CAPS_2: &str = "vkGetPhysicalDeviceSurfaceCapabilities2KHR";
-pub(crate) const FN_SURFACE_MODES_2: &str = "vkGetPhysicalDeviceSurfacePresentModes2EXT";
 pub(crate) const FN_DEVICE_GROUPS: &str = "vkEnumeratePhysicalDeviceGroups";
 pub(crate) const FN_DEVICE_GROUPS_KHR: &str = "vkEnumeratePhysicalDeviceGroupsKHR";
 pub(crate) const FN_SHARED_SWAPCHAINS: &str = "vkCreateSharedSwapchainsKHR";
@@ -179,6 +227,11 @@ pub(crate) const FN_CREATE_XCB_SURFACE: &str = "vkCreateXcbSurfaceKHR";
 pub(crate) const FN_CREATE_XLIB_SURFACE: &str = "vkCreateXlibSurfaceKHR";
 pub(crate) const FN_CREATE_WAYLAND_SURFACE: &str = "vkCreateWaylandSurfaceKHR";
 pub(crate) const FN_DESTROY_SURFACE: &str = "vkDestroySurfaceKHR";
+pub(crate) const FN_CREATE_COMPUTE_PIPELINES: &str = "vkCreateComputePipelines";
+pub(crate) const FN_CREATE_SHADERS: &str = "vkCreateShadersEXT";
+pub(crate) const FN_CREATE_RAY_TRACING_KHR: &str = "vkCreateRayTracingPipelinesKHR";
+pub(crate) const FN_CREATE_RAY_TRACING_NV: &str = "vkCreateRayTracingPipelinesNV";
+pub(crate) const FN_PIPELINE_INDIRECT_MEMORY: &str = "vkGetPipelineIndirectMemoryRequirementsNV";
 
 pub(crate) const TAG_XCB: &str = "xcb";
 pub(crate) const TAG_WAYLAND: &str = "wayland";

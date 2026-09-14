@@ -8,13 +8,18 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::FN_CREATE_RAY_TRACING_KHR;
+use crate::consts::FN_CREATE_RAY_TRACING_NV;
+use crate::consts::FN_CREATE_SHADERS;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_DEVICE_QUEUE_2;
+use crate::consts::FN_PIPELINE_INDIRECT_MEMORY;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
+use crate::consts::DEVICE_FEATURES_2_TYPE;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
 use crate::env::env_probe_active;
@@ -26,11 +31,16 @@ use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCmdSetAlphaToOne;
 use crate::instance::PfnCmdSetDepthClamp;
+use crate::instance::PfnCreateRayTracingKHR;
+use crate::instance::PfnCreateRayTracingNV;
+use crate::instance::PfnCreateShaders;
 use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
+use crate::instance::VkPhysicalDeviceFeatures2;
 use crate::instance::VkLayerLinkInfo;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
@@ -61,6 +71,10 @@ pub(crate) struct VkDevState {
     pub(crate) swap_fp: ash::khr::swapchain::DeviceFn,
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
+    pub(crate) shaders_fp: Option<PfnCreateShaders>,
+    pub(crate) ray_khr_fp: Option<PfnCreateRayTracingKHR>,
+    pub(crate) ray_nv_fp: Option<PfnCreateRayTracingNV>,
+    pub(crate) indirect_memory_fp: Option<PfnPipelineIndirectMemory>,
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
     pub(crate) alpha_one_fp: Option<PfnCmdSetAlphaToOne>,
     pub(crate) clamp_fp: Option<PfnCmdSetDepthClamp>,
@@ -210,8 +224,8 @@ fn chained_features(p_next: *const c_void) -> Option<vk::PhysicalDeviceFeatures>
     std::iter::successors(non_null_node(p_next), |node| {
         non_null_node(unsafe { (**node).p_next as *const c_void })
     })
-    .find(|node| unsafe { (**node).s_type } == vk::StructureType::PHYSICAL_DEVICE_FEATURES_2)
-    .map(|node| unsafe { (*(node as *const vk::PhysicalDeviceFeatures2<'_>)).features })
+    .find(|node| unsafe { (**node).s_type.as_raw() } as u32 == DEVICE_FEATURES_2_TYPE)
+    .map(|node| unsafe { (*(node as *const VkPhysicalDeviceFeatures2)).features })
 }
 
 fn plain_features(ci: &vk::DeviceCreateInfo<'_>) -> Option<vk::PhysicalDeviceFeatures> {
@@ -407,6 +421,10 @@ fn register_device(
             swap_fp: load_swap_fp(gdpa, handle),
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
+            shaders_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_SHADERS),
+            ray_khr_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_RAY_TRACING_KHR),
+            ray_nv_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_RAY_TRACING_NV),
+            indirect_memory_fp: call_typed_device_fp(gdpa, handle, FN_PIPELINE_INDIRECT_MEMORY),
             alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
             alpha_one_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_ONE),
             clamp_fp: call_typed_device_fp(gdpa, handle, FN_SET_DEPTH_CLAMP),
