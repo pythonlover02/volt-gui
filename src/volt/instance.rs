@@ -10,9 +10,43 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::ATTACHMENT_SAMPLE_COUNT_TYPE;
+use crate::consts::CHAIN_NODE_WARN;
+use crate::consts::CUSTOM_RESOLVE_TYPE;
+use crate::consts::DEBUG_UTILS_OBJECT_NAME_TYPE;
 use crate::consts::DEVICE_GROUP_SIZE;
+use crate::consts::DEVICE_GROUP_SWAPCHAIN_TYPE;
 use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
+use crate::consts::GRAPHICS_PIPELINE_LIBRARY_TYPE;
+use crate::consts::IMAGE_COMPRESSION_CONTROL_TYPE;
+use crate::consts::IMAGE_FORMAT_LIST_TYPE;
+use crate::consts::IMAGE_USAGE_FLAGS_2_TYPE;
+use crate::consts::MULTIVIEW_PER_VIEW_TYPE;
+use crate::consts::PIPELINE_BINARY_INFO_TYPE;
+use crate::consts::PIPELINE_COMPILER_CONTROL_TYPE;
+use crate::consts::PIPELINE_CREATE_FLAGS_2_TYPE;
+use crate::consts::PIPELINE_CREATION_FEEDBACK_TYPE;
+use crate::consts::PIPELINE_DENSITY_LAYERED_TYPE;
+use crate::consts::PIPELINE_DISCARD_RECTANGLE_TYPE;
+use crate::consts::PIPELINE_LIBRARY_TYPE;
+use crate::consts::PIPELINE_RENDERING_TYPE;
+use crate::consts::PIPELINE_REPRESENTATIVE_TYPE;
+use crate::consts::PIPELINE_ROBUSTNESS_TYPE;
+use crate::consts::PIPELINE_SHADING_RATE_ENUM_TYPE;
+use crate::consts::PIPELINE_SHADING_RATE_STATE_TYPE;
+use crate::consts::RENDERING_ATTACHMENT_LOCATION_TYPE;
+use crate::consts::RENDERING_INPUT_ATTACHMENT_TYPE;
+use crate::consts::SHADER_MODULE_CACHE_TYPE;
+use crate::consts::SHADER_MODULE_TYPE;
+use crate::consts::STAGE_MODULE_IDENTIFIER_TYPE;
+use crate::consts::STAGE_SUBGROUP_SIZE_TYPE;
+use crate::consts::SWAPCHAIN_COUNTER_TYPE;
+use crate::consts::SWAPCHAIN_LATENCY_TYPE;
+use crate::consts::SWAPCHAIN_NATIVE_HDR_TYPE;
+use crate::consts::SWAPCHAIN_PRESENT_BARRIER_TYPE;
+use crate::consts::SWAPCHAIN_PRESENT_SCALING_TYPE;
+use crate::consts::VALIDATION_FEATURES_TYPE;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::GPU_EMPTY_WARN;
@@ -891,6 +925,134 @@ pub(crate) fn chain_layer_info(
     .find(|p| unsafe { (**p).s_type == want && (**p).function == function })
     .map(|p| p as *mut VkLayerCreateInfo)
     .unwrap_or(ptr::null_mut())
+}
+
+pub(crate) struct Relinked {
+    pub(crate) head: *const c_void,
+    #[allow(dead_code)]
+    pub(crate) blocks: Vec<Vec<u64>>,
+}
+
+pub(crate) fn node_size(s_type: u32) -> Option<usize> {
+    match s_type {
+        DEVICE_GROUP_SWAPCHAIN_TYPE => Some(mem::size_of::<VkDeviceGroupSwapchainCreateInfoKHR>()),
+        IMAGE_COMPRESSION_CONTROL_TYPE => Some(mem::size_of::<VkImageCompressionControlEXT>()),
+        IMAGE_FORMAT_LIST_TYPE => Some(mem::size_of::<VkImageFormatListCreateInfo>()),
+        IMAGE_USAGE_FLAGS_2_TYPE => Some(mem::size_of::<VkImageUsageFlags2CreateInfoKHR>()),
+        SWAPCHAIN_COUNTER_TYPE => Some(mem::size_of::<VkSwapchainCounterCreateInfoEXT>()),
+        SWAPCHAIN_NATIVE_HDR_TYPE => Some(mem::size_of::<VkSwapchainDisplayNativeHdrCreateInfoAMD>()),
+        SWAPCHAIN_LATENCY_TYPE => Some(mem::size_of::<VkSwapchainLatencyCreateInfoNV>()),
+        SWAPCHAIN_PRESENT_BARRIER_TYPE => Some(mem::size_of::<VkSwapchainPresentBarrierCreateInfoNV>()),
+        SWAPCHAIN_PRESENT_SCALING_TYPE => Some(mem::size_of::<VkSwapchainPresentScalingCreateInfoKHR>()),
+        CUSTOM_RESOLVE_TYPE => Some(mem::size_of::<VkCustomResolveCreateInfoEXT>()),
+        DEBUG_UTILS_OBJECT_NAME_TYPE => Some(mem::size_of::<VkDebugUtilsObjectNameInfoEXT>()),
+        PIPELINE_ROBUSTNESS_TYPE => Some(mem::size_of::<VkPipelineRobustnessCreateInfo>()),
+        STAGE_MODULE_IDENTIFIER_TYPE => Some(mem::size_of::<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>()),
+        STAGE_SUBGROUP_SIZE_TYPE => Some(mem::size_of::<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>()),
+        SHADER_MODULE_TYPE => Some(mem::size_of::<VkShaderModuleCreateInfo>()),
+        SHADER_MODULE_CACHE_TYPE => Some(mem::size_of::<VkShaderModuleValidationCacheCreateInfoEXT>()),
+        VALIDATION_FEATURES_TYPE => Some(mem::size_of::<VkValidationFeaturesEXT>()),
+        ATTACHMENT_SAMPLE_COUNT_TYPE => Some(mem::size_of::<VkAttachmentSampleCountInfoAMD>()),
+        GRAPHICS_PIPELINE_LIBRARY_TYPE => Some(mem::size_of::<VkGraphicsPipelineLibraryCreateInfoEXT>()),
+        MULTIVIEW_PER_VIEW_TYPE => Some(mem::size_of::<VkMultiviewPerViewAttributesInfoNVX>()),
+        PIPELINE_BINARY_INFO_TYPE => Some(mem::size_of::<VkPipelineBinaryInfoKHR>()),
+        PIPELINE_COMPILER_CONTROL_TYPE => Some(mem::size_of::<VkPipelineCompilerControlCreateInfoAMD>()),
+        PIPELINE_CREATE_FLAGS_2_TYPE => Some(mem::size_of::<VkPipelineCreateFlags2CreateInfo>()),
+        PIPELINE_CREATION_FEEDBACK_TYPE => Some(mem::size_of::<VkPipelineCreationFeedbackCreateInfo>()),
+        PIPELINE_DISCARD_RECTANGLE_TYPE => Some(mem::size_of::<VkPipelineDiscardRectangleStateCreateInfoEXT>()),
+        PIPELINE_DENSITY_LAYERED_TYPE => Some(mem::size_of::<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>()),
+        PIPELINE_SHADING_RATE_ENUM_TYPE => Some(mem::size_of::<VkPipelineFragmentShadingRateEnumStateCreateInfoNV>()),
+        PIPELINE_SHADING_RATE_STATE_TYPE => Some(mem::size_of::<VkPipelineFragmentShadingRateStateCreateInfoKHR>()),
+        PIPELINE_LIBRARY_TYPE => Some(mem::size_of::<VkPipelineLibraryCreateInfoKHR>()),
+        PIPELINE_RENDERING_TYPE => Some(mem::size_of::<VkPipelineRenderingCreateInfo>()),
+        PIPELINE_REPRESENTATIVE_TYPE => Some(mem::size_of::<VkPipelineRepresentativeFragmentTestStateCreateInfoNV>()),
+        RENDERING_ATTACHMENT_LOCATION_TYPE => Some(mem::size_of::<VkRenderingAttachmentLocationInfo>()),
+        RENDERING_INPUT_ATTACHMENT_TYPE => Some(mem::size_of::<VkRenderingInputAttachmentIndexInfo>()),
+        _ => None,
+    }
+}
+
+fn const_node(p: *const c_void) -> Option<*const VkChainNode> {
+    match p.is_null() {
+        true => None,
+        false => Some(p as *const VkChainNode),
+    }
+}
+
+fn const_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
+    std::iter::successors(const_node(head), |node| {
+        const_node(unsafe { (**node).p_next as *const c_void })
+    })
+    .collect()
+}
+
+fn chain_node_type(node: *const VkChainNode) -> u32 {
+    unsafe { (*node).s_type.as_raw() as u32 }
+}
+
+pub(crate) fn chain_find(head: *const c_void, want: u32) -> Option<*const VkChainNode> {
+    const_nodes(head)
+        .into_iter()
+        .find(|node| chain_node_type(*node) == want)
+}
+
+fn nodes_in_front(head: *const c_void, want: u32) -> Vec<*const VkChainNode> {
+    const_nodes(head)
+        .into_iter()
+        .take_while(|node| chain_node_type(*node) != want)
+        .collect()
+}
+
+fn sized_nodes(front: Vec<*const VkChainNode>) -> Option<Vec<(*const VkChainNode, usize)>> {
+    front
+        .into_iter()
+        .map(|node| node_size(chain_node_type(node)).map(|size| (node, size)))
+        .collect()
+}
+
+fn block_words(size: usize) -> usize {
+    size.div_ceil(mem::size_of::<u64>()).max(1)
+}
+
+fn copied_block(node: *const VkChainNode, size: usize) -> Vec<u64> {
+    let mut block = vec![0u64; block_words(size)];
+    unsafe { ptr::copy_nonoverlapping(node as *const u8, block.as_mut_ptr() as *mut u8, size) };
+    block
+}
+
+fn chained_blocks(blocks: &mut Vec<Vec<u64>>, tail: *const c_void) -> *const c_void {
+    (0..blocks.len()).rev().fold(tail, |next, at| {
+        unsafe { (*(blocks[at].as_mut_ptr() as *mut VkChainNode)).p_next = next as *mut c_void };
+        blocks[at].as_ptr() as *const c_void
+    })
+}
+
+fn relinked_from(
+    sized: Vec<(*const VkChainNode, usize)>,
+    replacement: *const c_void,
+) -> Relinked {
+    let mut blocks: Vec<Vec<u64>> = sized
+        .into_iter()
+        .map(|(node, size)| copied_block(node, size))
+        .collect();
+    let head = chained_blocks(&mut blocks, replacement);
+    Relinked { head, blocks }
+}
+
+fn call_undeclared_node() -> Option<Relinked> {
+    log_at(LogLevel::Warn, CHAIN_NODE_WARN);
+    None
+}
+
+pub(crate) fn call_relinked_chain(
+    head: *const c_void,
+    target: u32,
+    replacement: *const c_void,
+) -> Option<Relinked> {
+    match sized_nodes(nodes_in_front(head, target)) {
+        Some(sized) => Some(relinked_from(sized, replacement)),
+        None => call_undeclared_node(),
+    }
 }
 
 pub(crate) fn call_loader_data_fn(node: *mut VkLayerCreateInfo) -> Option<PfnSetDeviceLoaderData> {
