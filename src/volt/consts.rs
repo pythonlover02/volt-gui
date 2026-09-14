@@ -118,6 +118,7 @@ pub(crate) const RENDERING_ATTACHMENT_LOCATION_TYPE: u32 = 1000232001;
 pub(crate) const RENDERING_INPUT_ATTACHMENT_TYPE: u32 = 1000232002;
 
 pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
+pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
 
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";

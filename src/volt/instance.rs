@@ -684,6 +684,15 @@ pub(crate) struct VkRenderingAttachmentLocationInfo {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkSwapchainPresentModesCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) present_mode_count: u32,
+    pub(crate) p_present_modes: *const vk::PresentModeKHR,
+}
+
+#[repr(C)]
 pub(crate) struct VkRenderingInputAttachmentIndexInfo {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *const c_void,
