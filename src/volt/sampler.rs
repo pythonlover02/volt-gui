@@ -350,15 +350,13 @@ fn rebuilt_data(
     sampler: *const vk::SamplerCreateInfo<'static>,
 ) -> VkDescriptorMappingSourceDataEXT {
     let mut data = mapping.source_data;
-    unsafe {
-        match mapping.source {
-            SOURCE_CONSTANT_OFFSET => data.constant_offset.p_embedded_sampler = sampler,
-            SOURCE_PUSH_INDEX => data.push_index.p_embedded_sampler = sampler,
-            SOURCE_INDIRECT_INDEX => data.indirect_index.p_embedded_sampler = sampler,
-            SOURCE_INDIRECT_INDEX_ARRAY => data.indirect_index_array.p_embedded_sampler = sampler,
-            SOURCE_SHADER_RECORD_INDEX => data.shader_record_index.p_embedded_sampler = sampler,
-            _ => (),
-        }
+    match mapping.source {
+        SOURCE_CONSTANT_OFFSET => data.constant_offset.p_embedded_sampler = sampler,
+        SOURCE_PUSH_INDEX => data.push_index.p_embedded_sampler = sampler,
+        SOURCE_INDIRECT_INDEX => data.indirect_index.p_embedded_sampler = sampler,
+        SOURCE_INDIRECT_INDEX_ARRAY => data.indirect_index_array.p_embedded_sampler = sampler,
+        SOURCE_SHADER_RECORD_INDEX => data.shader_record_index.p_embedded_sampler = sampler,
+        _ => (),
     };
     data
 }

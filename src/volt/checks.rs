@@ -584,7 +584,7 @@ fn mapping_with(
 ) -> VkDescriptorSetAndBindingMappingEXT {
     let mut mapping: VkDescriptorSetAndBindingMappingEXT = unsafe { mem::zeroed() };
     mapping.source = source;
-    unsafe { mapping.source_data.push_index.p_embedded_sampler = sampler };
+    mapping.source_data.push_index.p_embedded_sampler = sampler;
     mapping
 }
 
