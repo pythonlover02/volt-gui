@@ -61,6 +61,7 @@ use crate::instance::call_real_create_instance;
 use crate::instance::chain_layer_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
+use crate::instance::VkPhysicalDeviceGroupProperties;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::logging::init_log_level;
@@ -420,7 +421,7 @@ unsafe extern "system" fn vkEnumeratePhysicalDevices(
 unsafe extern "system" fn vkEnumeratePhysicalDeviceGroups(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_filtered_groups(inst, count, groups)
 }
@@ -428,7 +429,7 @@ unsafe extern "system" fn vkEnumeratePhysicalDeviceGroups(
 unsafe extern "system" fn vkEnumeratePhysicalDeviceGroupsKHR(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_filtered_groups_khr(inst, count, groups)
 }

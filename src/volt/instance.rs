@@ -9,6 +9,7 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::DEVICE_GROUP_SIZE;
 use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
@@ -27,10 +28,20 @@ pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
     *mut VkSurfaceCapabilities2,
 ) -> vk::Result;
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPhysicalDeviceGroupProperties {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) physical_device_count: u32,
+    pub(crate) physical_devices: [vk::PhysicalDevice; DEVICE_GROUP_SIZE],
+    pub(crate) subset_allocation: vk::Bool32,
+}
+
 pub(crate) type PfnDeviceGroups = unsafe extern "system" fn(
     vk::Instance,
     *mut u32,
-    *mut vk::PhysicalDeviceGroupProperties<'_>,
+    *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result;
 
 pub(crate) type PfnCreateSharedSwapchains = unsafe extern "system" fn(
@@ -313,12 +324,12 @@ fn gpu_filtered(
     ))
 }
 
-fn group_devices(group: &vk::PhysicalDeviceGroupProperties<'_>) -> Vec<vk::PhysicalDevice> {
+fn group_devices(group: &VkPhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDevice> {
     group.physical_devices[..group.physical_device_count as usize].to_vec()
 }
 
 fn group_wanted(
-    group: &vk::PhysicalDeviceGroupProperties<'_>,
+    group: &VkPhysicalDeviceGroupProperties,
     allowed: &[vk::PhysicalDevice],
 ) -> bool {
     group_devices(group)
@@ -326,11 +337,11 @@ fn group_wanted(
         .any(|device| allowed.contains(&device))
 }
 
-fn group_filtered<'a>(
-    groups: Vec<vk::PhysicalDeviceGroupProperties<'a>>,
+fn group_filtered(
+    groups: Vec<VkPhysicalDeviceGroupProperties>,
     allowed: Vec<vk::PhysicalDevice>,
     choice: Option<u32>,
-) -> Vec<vk::PhysicalDeviceGroupProperties<'a>> {
+) -> Vec<VkPhysicalDeviceGroupProperties> {
     match choice {
         Some(_) => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
         None => groups,
@@ -441,14 +452,24 @@ pub(crate) fn call_filtered_enumerate(
     }
 }
 
+fn empty_group() -> VkPhysicalDeviceGroupProperties {
+    VkPhysicalDeviceGroupProperties {
+        s_type: vk::StructureType::PHYSICAL_DEVICE_GROUP_PROPERTIES,
+        p_next: ptr::null_mut(),
+        physical_device_count: 0,
+        physical_devices: [vk::PhysicalDevice::null(); DEVICE_GROUP_SIZE],
+        subset_allocation: vk::FALSE,
+    }
+}
+
 fn call_query_groups(
     handle: vk::Instance,
     fp: PfnDeviceGroups,
-) -> Vec<vk::PhysicalDeviceGroupProperties<'static>> {
+) -> Vec<VkPhysicalDeviceGroupProperties> {
     let mut n: u32 = 0;
     let r1 = unsafe { fp(handle, &mut n, ptr::null_mut()) };
-    let mut v: Vec<vk::PhysicalDeviceGroupProperties<'static>> =
-        (0..n).map(|_| Default::default()).collect();
+    let mut v: Vec<VkPhysicalDeviceGroupProperties> =
+        (0..n).map(|_| empty_group()).collect();
     let r2 = unsafe { fp(handle, &mut n, v.as_mut_ptr()) };
     match (r1, r2) {
         (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
@@ -465,7 +486,7 @@ fn call_groups_through(
     handle: vk::Instance,
     fp: PfnDeviceGroups,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_write_list(
         &group_filtered(
@@ -482,7 +503,7 @@ fn call_groups_with(
     inst: vk::Instance,
     found: Option<(VkInstState, PfnDeviceGroups)>,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     match found {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
@@ -493,7 +514,7 @@ fn call_groups_with(
 pub(crate) fn call_filtered_groups(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_groups_with(
         inst,
@@ -506,7 +527,7 @@ pub(crate) fn call_filtered_groups(
 pub(crate) fn call_filtered_groups_khr(
     inst: vk::Instance,
     count: *mut u32,
-    groups: *mut vk::PhysicalDeviceGroupProperties<'_>,
+    groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_groups_with(
         inst,
