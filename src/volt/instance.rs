@@ -109,6 +109,16 @@ pub(crate) struct VkSurfaceCapabilities2 {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct VkHandle(pub(crate) u64);
+
+impl VkHandle {
+    pub(crate) fn null() -> Self {
+        VkHandle(0)
+    }
+}
+
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub(crate) struct VkChainNode {
     pub(crate) s_type: vk::StructureType,
