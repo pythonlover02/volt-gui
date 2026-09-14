@@ -387,6 +387,278 @@ pub(crate) type PfnPipelineIndirectMemory = unsafe extern "system" fn(
     *mut c_void,
 );
 
+#[repr(C)]
+pub(crate) struct VkDeviceGroupSwapchainCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) modes: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkImageCompressionControlEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) compression_control_plane_count: u32,
+    pub(crate) p_fixed_rate_flags: *mut vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkImageFormatListCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) view_format_count: u32,
+    pub(crate) p_view_formats: *const vk::Format,
+}
+
+#[repr(C)]
+pub(crate) struct VkImageUsageFlags2CreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) usage: u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainCounterCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) surface_counters: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainDisplayNativeHdrCreateInfoAMD {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) local_dimming_enable: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainLatencyCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) latency_mode_enable: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainPresentBarrierCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) present_barrier_enable: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainPresentScalingCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) scaling_behavior: vk::Flags,
+    pub(crate) present_gravity_x: vk::Flags,
+    pub(crate) present_gravity_y: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkCustomResolveCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) custom_resolve: vk::Bool32,
+    pub(crate) color_attachment_count: u32,
+    pub(crate) p_color_attachment_formats: *const vk::Format,
+    pub(crate) depth_attachment_format: vk::Format,
+    pub(crate) stencil_attachment_format: vk::Format,
+}
+
+#[repr(C)]
+pub(crate) struct VkDebugUtilsObjectNameInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) object_type: i32,
+    pub(crate) object_handle: u64,
+    pub(crate) p_object_name: *const c_char,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineRobustnessCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) storage_buffers: i32,
+    pub(crate) uniform_buffers: i32,
+    pub(crate) vertex_inputs: i32,
+    pub(crate) images: i32,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineShaderStageModuleIdentifierCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) identifier_size: u32,
+    pub(crate) p_identifier: *const u8,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineShaderStageRequiredSubgroupSizeCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) required_subgroup_size: u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkShaderModuleCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) code_size: usize,
+    pub(crate) p_code: *const u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkShaderModuleValidationCacheCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) validation_cache: VkHandle,
+}
+
+#[repr(C)]
+pub(crate) struct VkValidationFeaturesEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) enabled_validation_feature_count: u32,
+    pub(crate) p_enabled_validation_features: *const i32,
+    pub(crate) disabled_validation_feature_count: u32,
+    pub(crate) p_disabled_validation_features: *const i32,
+}
+
+#[repr(C)]
+pub(crate) struct VkAttachmentSampleCountInfoAMD {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) color_attachment_count: u32,
+    pub(crate) p_color_attachment_samples: *const vk::Flags,
+    pub(crate) depth_stencil_attachment_samples: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkGraphicsPipelineLibraryCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkMultiviewPerViewAttributesInfoNVX {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) per_view_attributes: vk::Bool32,
+    pub(crate) per_view_attributes_position_x_only: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineBinaryInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) binary_count: u32,
+    pub(crate) p_pipeline_binaries: *const VkHandle,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineCompilerControlCreateInfoAMD {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) compiler_control_flags: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineCreateFlags2CreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineCreationFeedbackCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) p_pipeline_creation_feedback: *mut c_void,
+    pub(crate) pipeline_stage_creation_feedback_count: u32,
+    pub(crate) p_pipeline_stage_creation_feedbacks: *mut c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineDiscardRectangleStateCreateInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) discard_rectangle_mode: i32,
+    pub(crate) discard_rectangle_count: u32,
+    pub(crate) p_discard_rectangles: *const vk::Rect2D,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineFragmentDensityMapLayeredCreateInfoVALVE {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) max_fragment_density_map_layers: u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineFragmentShadingRateEnumStateCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) shading_rate_type: i32,
+    pub(crate) shading_rate: i32,
+    pub(crate) combiner_ops: [i32; 2],
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineFragmentShadingRateStateCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) fragment_size: vk::Extent2D,
+    pub(crate) combiner_ops: [i32; 2],
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineLibraryCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) library_count: u32,
+    pub(crate) p_libraries: *const vk::Pipeline,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineRenderingCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) view_mask: u32,
+    pub(crate) color_attachment_count: u32,
+    pub(crate) p_color_attachment_formats: *const vk::Format,
+    pub(crate) depth_attachment_format: vk::Format,
+    pub(crate) stencil_attachment_format: vk::Format,
+}
+
+#[repr(C)]
+pub(crate) struct VkPipelineRepresentativeFragmentTestStateCreateInfoNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) representative_fragment_test_enable: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkRenderingAttachmentLocationInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) color_attachment_count: u32,
+    pub(crate) p_color_attachment_locations: *const u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkRenderingInputAttachmentIndexInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) color_attachment_count: u32,
+    pub(crate) p_color_attachment_input_indices: *const u32,
+    pub(crate) p_depth_input_attachment_index: *const u32,
+    pub(crate) p_stencil_input_attachment_index: *const u32,
+}
+
 #[derive(Clone)]
 pub(crate) struct VkInstState {
     pub(crate) instance: ash::Instance,
