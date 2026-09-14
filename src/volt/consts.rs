@@ -167,7 +167,6 @@ pub(crate) const FN_QUEUE_PRESENT: &str = "vkQueuePresentKHR";
 pub(crate) const FN_DEVICE_QUEUE_2: &str = "vkGetDeviceQueue2";
 
 pub(crate) const FN_SURFACE_CAPS_2: &str = "vkGetPhysicalDeviceSurfaceCapabilities2KHR";
-pub(crate) const FN_SURFACE_MODES_2: &str = "vkGetPhysicalDeviceSurfacePresentModes2EXT";
 pub(crate) const FN_DEVICE_GROUPS: &str = "vkEnumeratePhysicalDeviceGroups";
 pub(crate) const FN_DEVICE_GROUPS_KHR: &str = "vkEnumeratePhysicalDeviceGroupsKHR";
 pub(crate) const FN_SHARED_SWAPCHAINS: &str = "vkCreateSharedSwapchainsKHR";

@@ -25,7 +25,6 @@ use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_SURFACE_CAPS_2;
-use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::LAYER_DATA_CALLBACK;
 use crate::consts::LAYER_DESC;
@@ -81,7 +80,6 @@ use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_capabilities2;
 use crate::swapchain::call_surface_present_modes;
-use crate::swapchain::call_surface_present_modes2;
 
 #[repr(C)]
 struct VkNegotiateLayerInterface {
@@ -139,7 +137,6 @@ fn device_symbol(name: &str) -> Option<*mut c_void> {
 fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
     match name {
         FN_SURFACE_CAPS_2 => Some(vkGetPhysicalDeviceSurfaceCapabilities2KHR as *mut c_void),
-        FN_SURFACE_MODES_2 => Some(vkGetPhysicalDeviceSurfacePresentModes2EXT as *mut c_void),
         FN_DEVICE_GROUPS => Some(vkEnumeratePhysicalDeviceGroups as *mut c_void),
         FN_DEVICE_GROUPS_KHR => Some(vkEnumeratePhysicalDeviceGroupsKHR as *mut c_void),
         FN_CREATE_XCB_SURFACE => Some(vkCreateXcbSurfaceKHR as *mut c_void),
@@ -153,7 +150,6 @@ fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
 fn instance_fp_present(inst: vk::Instance, name: &str) -> bool {
     match (insts_get(inst.as_raw()), name) {
         (Some(st), FN_SURFACE_CAPS_2) => st.caps2_fp.is_some(),
-        (Some(st), FN_SURFACE_MODES_2) => st.modes2_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS) => st.groups_fp.is_some(),
         (Some(st), FN_DEVICE_GROUPS_KHR) => st.groups_khr_fp.is_some(),
         (Some(st), FN_DESTROY_SURFACE) => st.destroy_surface_fp.is_some(),
@@ -642,15 +638,6 @@ unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModesKHR(
     modes: *mut vk::PresentModeKHR,
 ) -> vk::Result {
     call_surface_present_modes(phys, surface, count, modes)
-}
-
-unsafe extern "system" fn vkGetPhysicalDeviceSurfacePresentModes2EXT(
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    modes: *mut vk::PresentModeKHR,
-) -> vk::Result {
-    call_surface_present_modes2(phys, info, count, modes)
 }
 
 unsafe extern "system" fn vkGetPhysicalDeviceSurfaceCapabilitiesKHR(

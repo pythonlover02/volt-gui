@@ -13,7 +13,6 @@ use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
-use crate::consts::FN_SURFACE_MODES_2;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::SURFACE_CREATORS;
@@ -26,13 +25,6 @@ pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
     vk::PhysicalDevice,
     *const VkPhysicalDeviceSurfaceInfo2,
     *mut VkSurfaceCapabilities2,
-) -> vk::Result;
-
-pub(crate) type PfnSurfaceModes2 = unsafe extern "system" fn(
-    vk::PhysicalDevice,
-    *const VkPhysicalDeviceSurfaceInfo2,
-    *mut u32,
-    *mut vk::PresentModeKHR,
 ) -> vk::Result;
 
 pub(crate) type PfnDeviceGroups = unsafe extern "system" fn(
@@ -138,7 +130,6 @@ pub(crate) struct VkInstState {
     pub(crate) gipa: vk::PFN_vkGetInstanceProcAddr,
     pub(crate) surface_fp: ash::khr::surface::InstanceFn,
     pub(crate) caps2_fp: Option<PfnSurfaceCaps2>,
-    pub(crate) modes2_fp: Option<PfnSurfaceModes2>,
     pub(crate) groups_fp: Option<PfnDeviceGroups>,
     pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
     pub(crate) surface_fps: HashMap<&'static str, PfnCreateSurface>,
@@ -565,7 +556,6 @@ fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) 
             gipa,
             surface_fp: load_surface_fp(gipa, handle),
             caps2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_CAPS_2),
-            modes2_fp: call_typed_instance_fp(gipa, handle, FN_SURFACE_MODES_2),
             groups_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS),
             groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),
             surface_fps: call_surface_creators(gipa, handle),

@@ -30,7 +30,6 @@ use crate::instance::owning_instance;
 use crate::instance::surface_tag;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
-use crate::instance::PfnSurfaceModes2;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
@@ -488,40 +487,6 @@ pub(crate) fn call_surface_capabilities2(
     match owning_instance(phys).and_then(|(_, inst)| inst.caps2_fp) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(fp) => call_caps2_through(fp, phys, info, out, ensure_settings()),
-    }
-}
-
-fn call_query_modes2_all(
-    fp: PfnSurfaceModes2,
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-) -> Vec<vk::PresentModeKHR> {
-    let mut n: u32 = 0;
-    let r1 = unsafe { fp(phys, info, &mut n, ptr::null_mut()) };
-    let mut v = vec![vk::PresentModeKHR::FIFO; n as usize];
-    let r2 = unsafe { fp(phys, info, &mut n, v.as_mut_ptr()) };
-    match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
-        (_, _) => Vec::new(),
-    }
-}
-
-pub(crate) fn call_surface_present_modes2(
-    phys: vk::PhysicalDevice,
-    info: *const VkPhysicalDeviceSurfaceInfo2,
-    count: *mut u32,
-    out: *mut vk::PresentModeKHR,
-) -> vk::Result {
-    match owning_instance(phys).and_then(|(_, inst)| inst.modes2_fp) {
-        None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(fp) => call_write_list(
-            &present_filtered(
-                call_query_modes2_all(fp, phys, info),
-                ensure_settings().present_mode,
-            ),
-            count,
-            out,
-        ),
     }
 }
 
