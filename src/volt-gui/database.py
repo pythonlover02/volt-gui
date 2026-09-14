@@ -73,7 +73,7 @@ SETTINGS_DB: Final[dict] = {
             "section": "framerate",
             "label": "Frame Limit Offset",
             "description": "Shift the frame limit up or down, in steps of two. VRR displays want the cap sitting just under refresh: pick 144, set this to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR. Only does something when Frame Limit is set.",
-            "options": (DEFAULT_VALUE, "-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"),
+            "options": (DEFAULT_VALUE, "-20", "-18", "-16", "-14", "-12", "-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20"),
         },
         "frame_limit_cadence": {
             "section": "framerate",
