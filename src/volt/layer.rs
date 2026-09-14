@@ -10,8 +10,13 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::FN_CREATE_COMPUTE_PIPELINES;
+use crate::consts::FN_CREATE_RAY_TRACING_KHR;
+use crate::consts::FN_CREATE_RAY_TRACING_NV;
+use crate::consts::FN_CREATE_SHADERS;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_CREATE_WAYLAND_SURFACE;
+use crate::consts::FN_PIPELINE_INDIRECT_MEMORY;
 use crate::consts::FN_CREATE_XCB_SURFACE;
 use crate::consts::FN_CREATE_XLIB_SURFACE;
 use crate::consts::FN_DESTROY_SURFACE;
@@ -61,13 +66,22 @@ use crate::instance::call_real_create_instance;
 use crate::instance::chain_layer_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
+use crate::instance::VkHandle;
 use crate::instance::VkPhysicalDeviceGroupProperties;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::VkRayTracingPipelineCreateInfoKHR;
+use crate::instance::VkRayTracingPipelineCreateInfoNV;
+use crate::instance::VkShaderCreateInfoEXT;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::pipeline::call_create_compute_pipelines;
 use crate::pipeline::call_create_graphics_pipelines;
+use crate::pipeline::call_create_ray_tracing_khr;
+use crate::pipeline::call_create_ray_tracing_nv;
+use crate::pipeline::call_create_shaders;
+use crate::pipeline::call_pipeline_indirect_memory;
 use crate::pipeline::call_set_alpha_coverage;
 use crate::pipeline::call_set_alpha_one;
 use crate::pipeline::call_set_depth_clamp;
@@ -122,6 +136,7 @@ fn device_symbol(name: &str) -> Option<*mut c_void> {
         "vkGetDeviceProcAddr" => Some(vkGetDeviceProcAddr as *mut c_void),
         "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
         "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
+        FN_CREATE_COMPUTE_PIPELINES => Some(vkCreateComputePipelines as *mut c_void),
         "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
         "vkAllocateCommandBuffers" => Some(vkAllocateCommandBuffers as *mut c_void),
         "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
@@ -167,6 +182,10 @@ fn device_extension_hook(name: &str) -> Option<*mut c_void> {
     match name {
         FN_SHARED_SWAPCHAINS => Some(vkCreateSharedSwapchainsKHR as *mut c_void),
         FN_WRITE_SAMPLERS => Some(vkWriteSamplerDescriptorsEXT as *mut c_void),
+        FN_CREATE_SHADERS => Some(vkCreateShadersEXT as *mut c_void),
+        FN_CREATE_RAY_TRACING_KHR => Some(vkCreateRayTracingPipelinesKHR as *mut c_void),
+        FN_CREATE_RAY_TRACING_NV => Some(vkCreateRayTracingPipelinesNV as *mut c_void),
+        FN_PIPELINE_INDIRECT_MEMORY => Some(vkGetPipelineIndirectMemoryRequirementsNV as *mut c_void),
         FN_SET_ALPHA_COVERAGE => Some(vkCmdSetAlphaToCoverageEnableEXT as *mut c_void),
         FN_SET_ALPHA_ONE => Some(vkCmdSetAlphaToOneEnableEXT as *mut c_void),
         FN_SET_DEPTH_CLAMP => Some(vkCmdSetDepthClampEnableEXT as *mut c_void),
@@ -178,6 +197,10 @@ fn device_fp_present(dev: vk::Device, name: &str) -> bool {
     match (devs_get(dev.as_raw()), name) {
         (Some(d), FN_SHARED_SWAPCHAINS) => d.shared_fp.is_some(),
         (Some(d), FN_WRITE_SAMPLERS) => d.samplers_fp.is_some(),
+        (Some(d), FN_CREATE_SHADERS) => d.shaders_fp.is_some(),
+        (Some(d), FN_CREATE_RAY_TRACING_KHR) => d.ray_khr_fp.is_some(),
+        (Some(d), FN_CREATE_RAY_TRACING_NV) => d.ray_nv_fp.is_some(),
+        (Some(d), FN_PIPELINE_INDIRECT_MEMORY) => d.indirect_memory_fp.is_some(),
         (Some(d), FN_SET_ALPHA_COVERAGE) => d.alpha_fp.is_some(),
         (Some(d), FN_SET_ALPHA_ONE) => d.alpha_one_fp.is_some(),
         (Some(d), FN_SET_DEPTH_CLAMP) => d.clamp_fp.is_some(),
@@ -476,6 +499,75 @@ unsafe extern "system" fn vkCreateGraphicsPipelines(
     match devs_get(dev.as_raw()) {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(d) => call_create_graphics_pipelines(&d, cache, count, cis, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkCreateComputePipelines(
+    dev: vk::Device,
+    cache: vk::PipelineCache,
+    count: u32,
+    cis: *const vk::ComputePipelineCreateInfo<'_>,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::Pipeline,
+) -> vk::Result {
+    match devs_get(dev.as_raw()) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some(d) => call_create_compute_pipelines(&d, cache, count, cis, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkCreateShadersEXT(
+    dev: vk::Device,
+    count: u32,
+    cis: *const VkShaderCreateInfoEXT,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut VkHandle,
+) -> vk::Result {
+    match devs_get(dev.as_raw()).and_then(|d| d.shaders_fp.map(|fp| (d, fp))) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((d, fp)) => call_create_shaders(&d, fp, dev, count, cis, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkCreateRayTracingPipelinesKHR(
+    dev: vk::Device,
+    deferred: VkHandle,
+    cache: vk::PipelineCache,
+    count: u32,
+    cis: *const VkRayTracingPipelineCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::Pipeline,
+) -> vk::Result {
+    match devs_get(dev.as_raw()).and_then(|d| d.ray_khr_fp.map(|fp| (d, fp))) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((d, fp)) => {
+            call_create_ray_tracing_khr(&d, fp, dev, deferred, cache, count, cis, alloc, out)
+        }
+    }
+}
+
+unsafe extern "system" fn vkCreateRayTracingPipelinesNV(
+    dev: vk::Device,
+    cache: vk::PipelineCache,
+    count: u32,
+    cis: *const VkRayTracingPipelineCreateInfoNV,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut vk::Pipeline,
+) -> vk::Result {
+    match devs_get(dev.as_raw()).and_then(|d| d.ray_nv_fp.map(|fp| (d, fp))) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((d, fp)) => call_create_ray_tracing_nv(&d, fp, dev, cache, count, cis, alloc, out),
+    }
+}
+
+unsafe extern "system" fn vkGetPipelineIndirectMemoryRequirementsNV(
+    dev: vk::Device,
+    ci: *const vk::ComputePipelineCreateInfo<'_>,
+    out: *mut c_void,
+) {
+    match devs_get(dev.as_raw()).and_then(|d| d.indirect_memory_fp.map(|fp| (d, fp))) {
+        None => (),
+        Some((d, fp)) => call_pipeline_indirect_memory(&d, fp, dev, ci, out),
     }
 }
 

@@ -8,8 +8,12 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::config::ensure_settings;
+use crate::consts::FN_CREATE_RAY_TRACING_KHR;
+use crate::consts::FN_CREATE_RAY_TRACING_NV;
+use crate::consts::FN_CREATE_SHADERS;
 use crate::consts::FN_CREATE_SWAPCHAIN;
 use crate::consts::FN_DEVICE_QUEUE_2;
+use crate::consts::FN_PIPELINE_INDIRECT_MEMORY;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
@@ -27,7 +31,11 @@ use crate::instance::owning_instance;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCmdSetAlphaToOne;
 use crate::instance::PfnCmdSetDepthClamp;
+use crate::instance::PfnCreateRayTracingKHR;
+use crate::instance::PfnCreateRayTracingNV;
+use crate::instance::PfnCreateShaders;
 use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
 use crate::instance::VkChainNode;
@@ -63,6 +71,10 @@ pub(crate) struct VkDevState {
     pub(crate) swap_fp: ash::khr::swapchain::DeviceFn,
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
+    pub(crate) shaders_fp: Option<PfnCreateShaders>,
+    pub(crate) ray_khr_fp: Option<PfnCreateRayTracingKHR>,
+    pub(crate) ray_nv_fp: Option<PfnCreateRayTracingNV>,
+    pub(crate) indirect_memory_fp: Option<PfnPipelineIndirectMemory>,
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
     pub(crate) alpha_one_fp: Option<PfnCmdSetAlphaToOne>,
     pub(crate) clamp_fp: Option<PfnCmdSetDepthClamp>,
@@ -409,6 +421,10 @@ fn register_device(
             swap_fp: load_swap_fp(gdpa, handle),
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
+            shaders_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_SHADERS),
+            ray_khr_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_RAY_TRACING_KHR),
+            ray_nv_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_RAY_TRACING_NV),
+            indirect_memory_fp: call_typed_device_fp(gdpa, handle, FN_PIPELINE_INDIRECT_MEMORY),
             alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
             alpha_one_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_ONE),
             clamp_fp: call_typed_device_fp(gdpa, handle, FN_SET_DEPTH_CLAMP),
