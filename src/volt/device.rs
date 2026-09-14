@@ -15,6 +15,7 @@ use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
+use crate::consts::DEVICE_FEATURES_2_TYPE;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
 use crate::env::env_probe_active;
@@ -31,6 +32,7 @@ use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
 use crate::instance::VkChainNode;
 use crate::instance::VkInstState;
+use crate::instance::VkPhysicalDeviceFeatures2;
 use crate::instance::VkLayerLinkInfo;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
@@ -210,8 +212,8 @@ fn chained_features(p_next: *const c_void) -> Option<vk::PhysicalDeviceFeatures>
     std::iter::successors(non_null_node(p_next), |node| {
         non_null_node(unsafe { (**node).p_next as *const c_void })
     })
-    .find(|node| unsafe { (**node).s_type } == vk::StructureType::PHYSICAL_DEVICE_FEATURES_2)
-    .map(|node| unsafe { (*(node as *const vk::PhysicalDeviceFeatures2<'_>)).features })
+    .find(|node| unsafe { (**node).s_type.as_raw() } as u32 == DEVICE_FEATURES_2_TYPE)
+    .map(|node| unsafe { (*(node as *const VkPhysicalDeviceFeatures2)).features })
 }
 
 fn plain_features(ci: &vk::DeviceCreateInfo<'_>) -> Option<vk::PhysicalDeviceFeatures> {

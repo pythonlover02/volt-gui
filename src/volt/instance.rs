@@ -138,6 +138,14 @@ pub(crate) struct VkChainNode {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub(crate) struct VkPhysicalDeviceFeatures2 {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) features: vk::PhysicalDeviceFeatures,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct VkPresentModeList {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *mut c_void,
