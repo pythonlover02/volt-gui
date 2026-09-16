@@ -196,6 +196,27 @@ There's an unofficial [volt-gui-nix](https://github.com/keygenesis/volt-gui-nix)
 
 Read the `flake.nix` first. Not because of the packager, but because the same applies to any packaging you didn't write or doesn't come from your distro repo.
 
+This repo also ships its own `flake.nix` (64-bit layer only):
+
+```
+nix run .
+nix build .#volt-gui
+nix profile install .
+```
+
+NixOS module (registers the implicit layer via `VK_ADD_LAYER_PATH`):
+
+```nix
+{
+  inputs.volt-gui.url = "github:pythonlover02/volt-gui";
+  # imports = [ inputs.volt-gui.nixosModules.default ];
+  # programs.volt-gui.enable = true;
+}
+```
+
+Non-NixOS: add the package to your `PATH` and export
+`VK_ADD_LAYER_PATH=<package>/share/vulkan/implicit_layer.d`.
+
 ### From source
 
 Every build target is a file, so make only rebuilds what changed. Everything lands under `build/`.
