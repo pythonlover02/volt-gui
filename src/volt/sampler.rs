@@ -7,6 +7,10 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
 use crate::consts::FEATURE_ANISOTROPY;
+use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
+use crate::consts::SAMPLER_SHAPE_LOG;
+use crate::consts::SAMPLER_SUBSAMPLED_BIT;
+use crate::consts::SAMPLER_YCBCR_CONVERSION_INFO_TYPE;
 use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_LOD_BIAS;
 use crate::consts::SETTING_MAG_FILTER;
@@ -32,6 +36,8 @@ use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkShaderDescriptorSetAndBindingMappingInfoEXT;
 use crate::lists::forced;
 use crate::logging::info_wanted;
+use crate::logging::log_at;
+use crate::logging::LogLevel;
 use crate::report::call_report_value;
 use crate::report::feature_note;
 use crate::report::filter_text;
@@ -75,24 +81,72 @@ fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
     (low.min(high), high.max(low))
 }
 
+fn restricted_shape(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.flags.as_raw() & SAMPLER_SUBSAMPLED_BIT != 0
+        || original.flags.as_raw() & SAMPLER_IMAGE_PROCESSING_BIT != 0
+        || original.unnormalized_coordinates == vk::TRUE
+        || chain_find(original.p_next, SAMPLER_YCBCR_CONVERSION_INFO_TYPE).is_some()
+}
+
+fn shape_choice<T>(choice: Option<T>, restricted: bool) -> Option<T> {
+    match restricted {
+        true => None,
+        false => choice,
+    }
+}
+
+fn call_shape_line(restricted: bool, any_set: bool) {
+    match restricted && any_set {
+        true => log_at(LogLevel::Info, SAMPLER_SHAPE_LOG),
+        false => (),
+    }
+}
+
+fn any_sampler_setting(s: &Settings) -> bool {
+    s.mag_filter.is_some()
+        || s.min_filter.is_some()
+        || s.mipmap.is_some()
+        || s.anisotropy.is_some()
+        || s.lod_bias.is_some()
+        || s.mip_floor.is_some()
+        || s.mip_ceiling.is_some()
+}
+
+fn shaped_range(s: &Settings, restricted: bool, original: (f32, f32)) -> (f32, f32) {
+    pick_lod_range(
+        &Settings {
+            mip_floor: shape_choice(s.mip_floor, restricted),
+            mip_ceiling: shape_choice(s.mip_ceiling, restricted),
+            ..Default::default()
+        },
+        original,
+    )
+}
+
 fn patched_ci<'a>(
     s: &Settings,
     caps: &DeviceCaps,
     original: &vk::SamplerCreateInfo<'a>,
 ) -> vk::SamplerCreateInfo<'a> {
+    let restricted = restricted_shape(original);
+    call_shape_line(restricted, any_sampler_setting(s));
     let (aniso_enable, aniso_max) = pick_aniso(
-        s.anisotropy,
+        shape_choice(s.anisotropy, restricted),
         caps,
         (original.anisotropy_enable, original.max_anisotropy),
     );
-    let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
+    let (lod_low, lod_high) = shaped_range(s, restricted, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
-        mag_filter: forced(s.mag_filter, original.mag_filter),
-        min_filter: forced(s.min_filter, original.min_filter),
-        mipmap_mode: forced(s.mipmap, original.mipmap_mode),
+        mag_filter: forced(shape_choice(s.mag_filter, restricted), original.mag_filter),
+        min_filter: forced(shape_choice(s.min_filter, restricted), original.min_filter),
+        mipmap_mode: forced(shape_choice(s.mipmap, restricted), original.mipmap_mode),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
-        mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
+        mip_lod_bias: pick_lod_bias(
+            shape_choice(s.lod_bias, restricted),
+            caps,
+            original.mip_lod_bias,
+        ),
         min_lod: lod_low,
         max_lod: lod_high,
         ..*original

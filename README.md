@@ -106,6 +106,8 @@ This is the only setting volt cannot force. Nothing in Vulkan names the device a
 
 **Mipmap Mode** hard cut between mip levels, or a blend.
 
+An unnormalized, subsampled, image-processing or converted sampler keeps every field its shape restricts, so the texture settings leave that sampler alone and log a line.
+
 Three sampler fields, three settings, so every combination is reachable. Retro is `nearest`/`nearest`/`nearest`. Bilinear is `linear`/`linear`/`nearest`. Trilinear is `linear`/`linear`/`linear`. Sharp pixel art without distant shimmer is `nearest`/`linear`/`linear`, which no named mode ever offered.
 
 **Anisotropic Filtering** off up to whatever your GPU reports. volt never enables `samplerAnisotropy`; where the game left it off the setting is ignored and logged. Nearly every game enables it.

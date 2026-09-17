@@ -46,6 +46,7 @@ def get_welcome_settings() -> dict:
                 ("text", "Three sampler fields, three cards. Nothing overrides anything, and every combination is reachable."),
                 ("text", "In the order magnification, minification, mipmap:\n\n- retro: nearest, nearest, nearest.\n- bilinear: linear, linear, nearest.\n- trilinear: linear, linear, linear.\n- sharp pixel art without distant shimmer: nearest, linear, linear."),
                 ("text", "Magnification is what you see up close. Minification is most of the screen, and where mipmaps and anisotropic filtering do their work. Mipmap Mode is the blend between levels."),
+                ("text", "An unnormalized, subsampled, image processing or converted sampler keeps every field its own shape restricts, so these settings leave that sampler alone and log a line."),
             ),
             "The Frame Limiter": (
                 ("text", "Frame Limit caps the rate at present time. Offset shifts that cap, Cadence sets which rate the limiter aims at, Method sets when it waits, Pacing sets how, and none of the four does anything until Limit is set."),

@@ -76,6 +76,10 @@ pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
 ];
 
 pub(crate) const SHADER_MAPPING_INFO_TYPE: u32 = 1000135006;
+pub(crate) const SAMPLER_YCBCR_CONVERSION_INFO_TYPE: u32 = 1000156001;
+pub(crate) const SAMPLER_SUBSAMPLED_BIT: u32 = 1;
+pub(crate) const SAMPLER_IMAGE_PROCESSING_BIT: u32 = 16;
+pub(crate) const SAMPLER_SHAPE_LOG: &str = "the sampler's own shape restricts this field, leaving it alone";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 
 pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
