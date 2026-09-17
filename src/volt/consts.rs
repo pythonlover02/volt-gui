@@ -63,6 +63,7 @@ pub(crate) const SHADING_MAX: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
+pub(crate) const LAYER_NEGOTIATE_INTERFACE_STRUCT: i32 = 1;
 
 pub(crate) const DEVICE_GROUP_SIZE: usize = 32;
 pub(crate) const DEVICE_GROUP_PROPERTIES_TYPE: u32 = 1000070000;

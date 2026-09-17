@@ -54,6 +54,7 @@ use crate::consts::CORE_10_DEVICE_HOOKS;
 use crate::consts::LAYER_DATA_CALLBACK;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_LINK_INFO;
+use crate::consts::LAYER_NEGOTIATE_INTERFACE_STRUCT;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::consts::TAG_WAYLAND;
@@ -120,8 +121,6 @@ use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_capabilities2;
 use crate::swapchain::call_surface_present_modes;
-
-const LAYER_NEGOTIATE_INTERFACE_STRUCT: i32 = 1;
 
 pub(crate) fn negotiated_version(offered: u32, wanted: u32) -> Option<u32> {
     match offered < wanted {
