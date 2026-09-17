@@ -144,9 +144,29 @@ fn chosen_alpha(
     value: vk::CompositeAlphaFlagsKHR,
     original: vk::CompositeAlphaFlagsKHR,
 ) -> vk::CompositeAlphaFlagsKHR {
-    match mask.as_raw() & value.as_raw() != 0 {
+    match value.as_raw() != 0 && mask.as_raw() & value.as_raw() == value.as_raw() {
         true => value,
         false => logged_alpha_miss(original),
+    }
+}
+
+fn narrowed_alpha_mask(
+    mask: vk::CompositeAlphaFlagsKHR,
+    choice: Option<vk::CompositeAlphaFlagsKHR>,
+) -> vk::CompositeAlphaFlagsKHR {
+    match choice {
+        Some(value) if mask.as_raw() & value.as_raw() == value.as_raw() => value,
+        _ => mask,
+    }
+}
+
+fn narrowed_alpha(
+    caps: vk::SurfaceCapabilitiesKHR,
+    choice: Option<vk::CompositeAlphaFlagsKHR>,
+) -> vk::SurfaceCapabilitiesKHR {
+    vk::SurfaceCapabilitiesKHR {
+        supported_composite_alpha: narrowed_alpha_mask(caps.supported_composite_alpha, choice),
+        ..caps
     }
 }
 
@@ -394,11 +414,11 @@ pub(crate) fn call_surface_present_modes(
 fn call_narrowed_result(
     queried: vk::Result,
     out: *mut vk::SurfaceCapabilitiesKHR,
-    choice: Option<u32>,
+    s: &Settings,
 ) -> vk::Result {
     match queried {
         vk::Result::SUCCESS => {
-            unsafe { *out = clamped_caps(*out, choice) };
+            unsafe { *out = narrowed_alpha(clamped_caps(*out, s.image_count), s.composite_alpha) };
             vk::Result::SUCCESS
         }
         e => e,
@@ -417,7 +437,7 @@ pub(crate) fn call_surface_capabilities(
                 (inst.surface_fp.get_physical_device_surface_capabilities_khr)(phys, surface, out)
             },
             out,
-            ensure_settings().image_count,
+            ensure_settings(),
         ),
     }
 }
@@ -475,8 +495,10 @@ fn call_caps2_through(
     match unsafe { fp(phys, info, out) } {
         vk::Result::SUCCESS => {
             unsafe {
-                (*out).surface_capabilities =
-                    clamped_caps((*out).surface_capabilities, s.image_count)
+                (*out).surface_capabilities = narrowed_alpha(
+                    clamped_caps((*out).surface_capabilities, s.image_count),
+                    s.composite_alpha,
+                )
             };
             call_filtered_chain(unsafe { (*out).p_next }, s.present_mode);
             vk::Result::SUCCESS
