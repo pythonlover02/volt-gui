@@ -45,6 +45,7 @@ use crate::instance::VkLayerLinkInfo;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
+use crate::present::call_forget_device_timelines;
 use crate::probe::build_device;
 use crate::probe::call_record_device;
 use crate::report::call_forget_reports;
@@ -131,6 +132,7 @@ pub(crate) fn devs_del(h: u64) -> Option<Arc<VkDevState>> {
     queue_dev_forget(h);
     cmdbuf_dev_forget(h);
     call_forget_reports(h);
+    call_forget_device_timelines(h);
     DEVS.write()
         .ok()
         .and_then(|mut g| g.as_mut().and_then(|m| m.remove(&h)))

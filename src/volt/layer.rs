@@ -301,12 +301,25 @@ fn call_forward_present(
     }
 }
 
+fn call_staged_limit(
+    stage: LimitStage,
+    s: &Settings,
+    dev: Option<u64>,
+    info: *const vk::PresentInfoKHR<'_>,
+) {
+    match dev {
+        Some(handle) => maybe_limit_frame(stage, s, handle, info),
+        None => (),
+    }
+}
+
 fn call_after_present(
     presented: vk::Result,
     s: &Settings,
+    dev: Option<u64>,
     info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
-    maybe_limit_frame(LimitStage::After, s, info);
+    call_staged_limit(LimitStage::After, s, dev, info);
     presented
 }
 
@@ -316,8 +329,9 @@ fn call_limited_present(
     info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
     let s = ensure_settings();
-    maybe_limit_frame(LimitStage::Before, s, info);
-    call_after_present(call_forward_present(owner, queue, info), s, info)
+    let dev = owner.as_ref().map(|d| d.device.handle().as_raw());
+    call_staged_limit(LimitStage::Before, s, dev, info);
+    call_after_present(call_forward_present(owner, queue, info), s, dev, info)
 }
 
 unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, out: *mut vk::Queue) {
@@ -637,7 +651,7 @@ unsafe extern "system" fn vkDestroySwapchainKHR(
 ) {
     match devs_get(dev.as_raw()) {
         Some(d) => {
-            call_forget_timeline(sc);
+            call_forget_timeline(dev.as_raw(), sc);
             (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc);
         }
         None => (),

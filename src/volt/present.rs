@@ -43,7 +43,7 @@ pub(crate) struct Timeline {
     pub(crate) peak: u64,
 }
 
-type TimelineMap = HashMap<u64, Timeline>;
+type TimelineMap = HashMap<(u64, u64), Timeline>;
 
 static EPOCH: OnceLock<Instant> = OnceLock::new();
 static TIMELINES: Mutex<Option<TimelineMap>> = Mutex::new(None);
@@ -215,14 +215,14 @@ fn call_present_key(info: *const vk::PresentInfoKHR<'_>) -> u64 {
     unsafe { (*(*info).p_swapchains).as_raw() }
 }
 
-fn call_stored(map: &mut TimelineMap, key: u64, next: Timeline) -> u64 {
+fn call_stored(map: &mut TimelineMap, key: (u64, u64), next: Timeline) -> u64 {
     map.insert(key, next);
     next.target
 }
 
 fn call_advanced_in(
     map: &mut TimelineMap,
-    key: u64,
+    key: (u64, u64),
     interval: u64,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
@@ -241,7 +241,7 @@ fn call_advanced_in(
 }
 
 fn call_frame_target(
-    key: u64,
+    key: (u64, u64),
     interval: u64,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
@@ -259,7 +259,7 @@ fn call_frame_target(
 }
 
 fn call_limit_to(
-    key: u64,
+    key: (u64, u64),
     fps: f32,
     pacing: PacingChoice,
     method: Option<MethodChoice>,
@@ -298,11 +298,12 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
 pub(crate) fn maybe_limit_frame(
     stage: LimitStage,
     s: &Settings,
+    dev: u64,
     info: *const vk::PresentInfoKHR<'_>,
 ) {
     match limit_fps(s, stage) {
         Some(fps) => call_limit_to(
-            call_present_key(info),
+            (dev, call_present_key(info)),
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
@@ -312,11 +313,22 @@ pub(crate) fn maybe_limit_frame(
     }
 }
 
-pub(crate) fn call_forget_timeline(sc: vk::SwapchainKHR) {
+pub(crate) fn call_forget_timeline(dev: u64, sc: vk::SwapchainKHR) {
     match TIMELINES.lock() {
         Ok(mut guard) => {
-            guard.get_or_insert_with(HashMap::new).remove(&sc.as_raw());
+            guard
+                .get_or_insert_with(HashMap::new)
+                .remove(&(dev, sc.as_raw()));
         }
+        Err(_) => (),
+    }
+}
+
+pub(crate) fn call_forget_device_timelines(dev: u64) {
+    match TIMELINES.lock() {
+        Ok(mut guard) => guard
+            .get_or_insert_with(HashMap::new)
+            .retain(|(owner, _), _| *owner != dev),
         Err(_) => (),
     }
 }

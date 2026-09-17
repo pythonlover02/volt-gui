@@ -711,7 +711,7 @@ pub(crate) struct VkInstState {
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
 static PHYS_OWNER: RwLock<Option<HashMap<u64, u64>>> = RwLock::new(None);
-static SURFACE_TAGS: RwLock<Option<HashMap<u64, (u64, &'static str)>>> = RwLock::new(None);
+static SURFACE_TAGS: RwLock<Option<HashMap<(u64, u64), &'static str>>> = RwLock::new(None);
 
 fn phys_owner_get(phys: u64) -> Option<u64> {
     PHYS_OWNER
@@ -766,19 +766,19 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
     phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
 }
 
-fn surface_tag_put(surface: u64, inst: u64, tag: &'static str) {
+fn surface_tag_put(inst: u64, surface: u64, tag: &'static str) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).insert(surface, (inst, tag));
+            g.get_or_insert_with(HashMap::new).insert((inst, surface), tag);
         }
         Err(_) => (),
     }
 }
 
-fn surface_tag_del(surface: u64) {
+fn surface_tag_del(inst: u64, surface: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).remove(&surface);
+            g.get_or_insert_with(HashMap::new).remove(&(inst, surface));
         }
         Err(_) => (),
     }
@@ -788,15 +788,15 @@ fn surface_tags_forget(inst: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => g
             .iter_mut()
-            .for_each(|m| m.retain(|_, owner| owner.0 != inst)),
+            .for_each(|m| m.retain(|(owner, _), _| *owner != inst)),
         Err(_) => (),
     }
 }
 
-pub(crate) fn surface_tag(surface: vk::SurfaceKHR) -> Option<&'static str> {
+pub(crate) fn surface_tag(inst: vk::Instance, surface: vk::SurfaceKHR) -> Option<&'static str> {
     SURFACE_TAGS.read().ok().and_then(|g| {
         g.as_ref()
-            .and_then(|m| m.get(&surface.as_raw()).map(|owner| owner.1))
+            .and_then(|m| m.get(&(inst.as_raw(), surface.as_raw())).copied())
     })
 }
 
@@ -808,7 +808,7 @@ fn call_tagged_result(
 ) -> vk::Result {
     match result {
         vk::Result::SUCCESS => {
-            surface_tag_put(unsafe { (*out).as_raw() }, inst.as_raw(), tag);
+            surface_tag_put(inst.as_raw(), unsafe { (*out).as_raw() }, tag);
             vk::Result::SUCCESS
         }
         e => e,
@@ -834,7 +834,7 @@ pub(crate) fn call_destroy_tagged_surface(
     surface: vk::SurfaceKHR,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    surface_tag_del(surface.as_raw());
+    surface_tag_del(inst.as_raw(), surface.as_raw());
     match insts_get(inst.as_raw()).and_then(|st| st.destroy_surface_fp) {
         Some(fp) => unsafe { fp(inst, surface, alloc) },
         None => (),

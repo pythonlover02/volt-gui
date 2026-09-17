@@ -590,7 +590,11 @@ fn call_prepared_ci<'a>(
 ) -> SwapchainRebuild<'a> {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
-    maybe_probe(surface_tag(original.surface), &supported, &caps);
+    maybe_probe(
+        surface_tag(vk::Instance::from_raw(dev.instance_handle), original.surface),
+        &supported,
+        &caps,
+    );
     maybe_log_alpha(s.composite_alpha);
     let patched = patched_swapchain_ci(
         original,
