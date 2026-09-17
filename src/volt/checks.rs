@@ -29,6 +29,7 @@ use crate::instance::relinked_chain;
 use crate::instance::VkChainNode;
 use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkSwapchainCounterCreateInfoEXT;
+use crate::layer::negotiated_version;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
@@ -119,6 +120,9 @@ const MAILBOX_VALUE: u32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
+const LOADER_OFFERS_LOW: u32 = 1;
+const LOADER_OFFERS_HIGH: u32 = 5;
+const LAYER_WANTS: u32 = 2;
 const NAN_TEXT: &str = "NaN";
 const INF_TEXT: &str = "inf";
 const NEG_INF_TEXT: &str = "-inf";
@@ -130,6 +134,17 @@ fn reads_one_spelling_of_the_default_profile_name() {
     assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+}
+
+#[test]
+fn negotiation_fails_where_the_loader_offers_less_than_the_layer_needs() {
+    assert_eq!(negotiated_version(LOADER_OFFERS_LOW, LAYER_WANTS), None);
+}
+
+#[test]
+fn negotiation_takes_the_lower_of_the_two_interface_versions() {
+    assert_eq!(negotiated_version(LOADER_OFFERS_HIGH, LAYER_WANTS), Some(LAYER_WANTS));
+    assert_eq!(negotiated_version(LAYER_WANTS, LAYER_WANTS), Some(LAYER_WANTS));
 }
 
 #[test]

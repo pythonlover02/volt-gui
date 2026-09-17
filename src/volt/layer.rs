@@ -94,6 +94,15 @@ use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_capabilities2;
 use crate::swapchain::call_surface_present_modes;
 
+const LAYER_NEGOTIATE_INTERFACE_STRUCT: i32 = 1;
+
+pub(crate) fn negotiated_version(offered: u32, wanted: u32) -> Option<u32> {
+    match offered < wanted {
+        true => None,
+        false => Some(wanted),
+    }
+}
+
 #[repr(C)]
 struct VkNegotiateLayerInterface {
     s_type: i32,
@@ -699,12 +708,26 @@ unsafe extern "system" fn vkQueuePresentKHR(queue: vk::Queue, info: *const vk::P
     call_limited_present(queue_owner(queue), queue, info)
 }
 
-#[no_mangle]
-pub unsafe extern "system" fn vkNegotiateLoaderLayerInterfaceVersion(p: *mut c_void) -> vk::Result {
-    let iface = p as *mut VkNegotiateLayerInterface;
-    (*iface).loader_layer_interface_version = LAYER_IFACE_VERSION;
+unsafe fn call_agreed(iface: *mut VkNegotiateLayerInterface, agreed: u32) -> vk::Result {
+    (*iface).loader_layer_interface_version = agreed;
     (*iface).pfn_get_instance_proc_addr = Some(vkGetInstanceProcAddr);
     (*iface).pfn_get_device_proc_addr = Some(vkGetDeviceProcAddr);
     (*iface).pfn_get_physical_device_proc_addr = None;
     vk::Result::SUCCESS
+}
+
+unsafe fn call_negotiated(iface: *mut VkNegotiateLayerInterface) -> vk::Result {
+    match negotiated_version((*iface).loader_layer_interface_version, LAYER_IFACE_VERSION) {
+        Some(agreed) => call_agreed(iface, agreed),
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn vkNegotiateLoaderLayerInterfaceVersion(p: *mut c_void) -> vk::Result {
+    let iface = p as *mut VkNegotiateLayerInterface;
+    match (*iface).s_type == LAYER_NEGOTIATE_INTERFACE_STRUCT {
+        true => call_negotiated(iface),
+        false => vk::Result::ERROR_INITIALIZATION_FAILED,
+    }
 }
