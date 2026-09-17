@@ -32,10 +32,8 @@ use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::LAYER_DATA_CALLBACK;
-use crate::consts::LAYER_DESC;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_LINK_INFO;
-use crate::consts::LAYER_NAME;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::consts::TAG_WAYLAND;
@@ -230,15 +228,8 @@ fn null_ok_ptr(name: &str) -> *mut c_void {
     match name {
         "vkGetInstanceProcAddr" => vkGetInstanceProcAddr as *mut c_void,
         "vkCreateInstance" => vkCreateInstance as *mut c_void,
-        "vkEnumerateInstanceExtensionProperties" => volt_EnumerateInstanceExtensionProperties as *mut c_void,
-        "vkEnumerateInstanceLayerProperties" => volt_EnumerateInstanceLayerProperties as *mut c_void,
-        "vkEnumerateInstanceVersion" => volt_EnumerateInstanceVersion as *mut c_void,
         _ => ptr::null_mut(),
     }
-}
-
-fn copy_cstr(dst: &mut [c_char], s: &str) {
-    s.bytes().take(dst.len() - 1).enumerate().for_each(|(i, b)| dst[i] = b as c_char);
 }
 
 fn forward_device_proc(dev: vk::Device, name: &str) -> vk::PFN_vkVoidFunction {
@@ -269,11 +260,9 @@ fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
 }
 
 fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
-    match (null_ok_name(name), instance_symbol(name), device_symbol(name)) {
-        (true, _, _) => unsafe { mem::transmute(null_ok_ptr(name)) },
-        (false, Some(p), _) => unsafe { mem::transmute(p) },
-        (false, None, Some(p)) => unsafe { mem::transmute(p) },
-        (false, None, None) => None,
+    match null_ok_name(name) {
+        true => unsafe { mem::transmute(null_ok_ptr(name)) },
+        false => None,
     }
 }
 
@@ -320,49 +309,6 @@ fn call_limited_present(
     let s = ensure_settings();
     maybe_limit_frame(LimitStage::Before, s, info);
     call_after_present(call_forward_present(owner, queue, info), s, info)
-}
-
-unsafe extern "system" fn volt_EnumerateInstanceExtensionProperties(
-    layer: *const c_char,
-    count: *mut u32,
-    _props: *mut vk::ExtensionProperties,
-) -> vk::Result {
-    match cstr_to_str(layer) == LAYER_NAME {
-        true => {
-            *count = 0;
-            vk::Result::SUCCESS
-        }
-        false => vk::Result::ERROR_LAYER_NOT_PRESENT,
-    }
-}
-
-unsafe extern "system" fn volt_EnumerateInstanceLayerProperties(
-    count: *mut u32,
-    props: *mut vk::LayerProperties,
-) -> vk::Result {
-    match props.is_null() {
-        true => {
-            *count = 1;
-            vk::Result::SUCCESS
-        }
-        false => {
-            let mut p = vk::LayerProperties {
-                spec_version: vk::make_api_version(0, 1, 0, 0),
-                implementation_version: 1,
-                ..Default::default()
-            };
-            copy_cstr(&mut p.layer_name, LAYER_NAME);
-            copy_cstr(&mut p.description, LAYER_DESC);
-            *count = 1;
-            *props = p;
-            vk::Result::SUCCESS
-        }
-    }
-}
-
-unsafe extern "system" fn volt_EnumerateInstanceVersion(v: *mut u32) -> vk::Result {
-    *v = vk::make_api_version(0, 1, 0, 0);
-    vk::Result::SUCCESS
 }
 
 unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, out: *mut vk::Queue) {

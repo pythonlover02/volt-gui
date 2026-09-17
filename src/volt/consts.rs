@@ -1,6 +1,3 @@
-pub(crate) const LAYER_NAME: &str = "VK_LAYER_VOLT_settings";
-pub(crate) const LAYER_DESC: &str = "Driver style Vulkan settings layer for Linux.";
-
 pub(crate) const ENABLE_VALUE: &str = "1";
 pub(crate) const DEFAULT_PROFILE: &str = "default";
 pub(crate) const RESERVED_PROFILES: [&str; 2] = ["probe", "options"];
@@ -200,13 +197,7 @@ pub(crate) const SETTING_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
 pub(crate) const SETTING_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
 pub(crate) const SETTING_FRAME_PACING: &str = "frame_pacing";
 
-pub(crate) const NULL_OK: [&str; 5] = [
-    "vkGetInstanceProcAddr",
-    "vkCreateInstance",
-    "vkEnumerateInstanceVersion",
-    "vkEnumerateInstanceExtensionProperties",
-    "vkEnumerateInstanceLayerProperties",
-];
+pub(crate) const NULL_OK: [&str; 2] = ["vkGetInstanceProcAddr", "vkCreateInstance"];
 
 pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n\nsettings are read once when the application starts and never change while it\nruns: edit the profile, then start the application again\n";
 
