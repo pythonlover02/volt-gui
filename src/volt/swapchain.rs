@@ -39,10 +39,10 @@ use crate::env::env_probe_active;
 use crate::instance::call_relinked_chain;
 use crate::instance::call_write_list;
 use crate::instance::chain_find;
+use crate::instance::filled_nodes;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
 use crate::instance::surface_tag;
-use crate::instance::walked_nodes;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
 use crate::instance::VkChainNode;
@@ -476,16 +476,12 @@ pub(crate) fn call_surface_capabilities(
     }
 }
 
-fn chain_nodes(head: *mut c_void) -> Vec<*mut VkChainNode> {
-    walked_nodes(head)
-}
-
 fn node_type(node: *mut VkChainNode) -> u32 {
     unsafe { (*node).s_type.as_raw() as u32 }
 }
 
 fn mode_lists(head: *mut c_void) -> Vec<*mut VkPresentModeList> {
-    chain_nodes(head)
+    filled_nodes(head)
         .into_iter()
         .filter(|node| MODE_LIST_TYPES.contains(&node_type(*node)))
         .map(|node| node as *mut VkPresentModeList)

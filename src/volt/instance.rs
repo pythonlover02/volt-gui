@@ -1212,6 +1212,13 @@ pub(crate) fn copied_node(node: *const VkChainNode) -> Option<Vec<u64>> {
     }
 }
 
+fn const_node(p: *const c_void) -> Option<*const VkChainNode> {
+    match p.is_null() {
+        true => None,
+        false => Some(p as *const VkChainNode),
+    }
+}
+
 fn mut_node(p: *mut c_void) -> Option<*mut VkChainNode> {
     match p.is_null() {
         true => None,
@@ -1219,17 +1226,15 @@ fn mut_node(p: *mut c_void) -> Option<*mut VkChainNode> {
     }
 }
 
-pub(crate) fn walked_nodes(head: *const c_void) -> Vec<*mut VkChainNode> {
-    std::iter::successors(mut_node(head as *mut c_void), |node| {
-        mut_node(unsafe { (**node).p_next })
+pub(crate) fn walked_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
+    std::iter::successors(const_node(head), |node| {
+        const_node(unsafe { (**node).p_next })
     })
     .collect()
 }
 
-fn const_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
-    walked_nodes(head)
-        .into_iter()
-        .map(|node| node as *const VkChainNode)
+pub(crate) fn filled_nodes(head: *mut c_void) -> Vec<*mut VkChainNode> {
+    std::iter::successors(mut_node(head), |node| mut_node(unsafe { (**node).p_next }))
         .collect()
 }
 
@@ -1238,13 +1243,13 @@ fn chain_node_type(node: *const VkChainNode) -> u32 {
 }
 
 pub(crate) fn chain_find(head: *const c_void, want: u32) -> Option<*const VkChainNode> {
-    const_nodes(head)
+    walked_nodes(head)
         .into_iter()
         .find(|node| chain_node_type(*node) == want)
 }
 
 fn nodes_in_front(head: *const c_void, want: u32) -> Vec<*const VkChainNode> {
-    const_nodes(head)
+    walked_nodes(head)
         .into_iter()
         .take_while(|node| chain_node_type(*node) != want)
         .collect()
