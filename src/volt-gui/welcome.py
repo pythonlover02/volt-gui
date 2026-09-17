@@ -33,13 +33,13 @@ def get_welcome_settings() -> dict:
         "Settings": {
             "One Value Per Setting": (
                 ("text", "Every setting is a single choice: the value volt forces, or default, which means volt does not touch what the game asked for. There is no range, no ordering between values, and nothing to get backwards."),
-                ("text", "A value volt has no name for still appears in the list, still saves to a profile, and still applies, exactly like a named one."),
+                ("text", "A card offers values core Vulkan 1.0 and VK_KHR_swapchain define and nothing else. A value above that floor is shown in a log line, never offered and never read back from a profile."),
                 ("text", "Where the specification admits only what a query returned, a value your device did not report is not forced. volt keeps the game's own value and logs a warning, so a profile written on another machine never makes a call invalid."),
                 ("text", "Where the specification bounds a value, LOD bias against your device limit and image count against what the surface allows, volt clamps what it passes down. That clamp is correctness rather than a choice, so it is not shown here."),
             ),
             "Where the Lists Come From": (
                 ("text", "Many of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, image counts and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and anisotropy, mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default, and so does every device backed card until the probe has run: volt-gui offers no option it has not read."),
-                ("text", "That means a present mode volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
+                ("text", "It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
                 ("text", "The rest carry fixed lists, because there is nothing to read. Nearest and linear are core Vulkan with no feature and no query behind them, so every driver has both and none of them says so. The Framerate settings have nothing to read at all: a game never tells Vulkan what frame rate it wants, so there is nothing on the device to ask."),
             ),
             "The Three Filter Cards": (

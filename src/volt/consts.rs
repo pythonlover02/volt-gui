@@ -124,14 +124,14 @@ pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
 
-pub(crate) const FILTER_NEAREST: u32 = 0;
-pub(crate) const FILTER_LINEAR: u32 = 1;
+pub(crate) const FILTER_NEAREST: i32 = 0;
+pub(crate) const FILTER_LINEAR: i32 = 1;
 
-pub(crate) const MIPMAP_NEAREST: u32 = 0;
-pub(crate) const MIPMAP_LINEAR: u32 = 1;
+pub(crate) const MIPMAP_NEAREST: i32 = 0;
+pub(crate) const MIPMAP_LINEAR: i32 = 1;
 
-pub(crate) const TOGGLE_OFF: u32 = 0;
-pub(crate) const TOGGLE_ON: u32 = 1;
+pub(crate) const TOGGLE_OFF: vk::Bool32 = vk::FALSE;
+pub(crate) const TOGGLE_ON: vk::Bool32 = vk::TRUE;
 
 pub(crate) const TEXT_NEAREST: &str = "nearest";
 pub(crate) const TEXT_LINEAR: &str = "linear";
@@ -155,7 +155,6 @@ pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for th
 pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
 
-pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
 pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer with no registered device";

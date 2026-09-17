@@ -57,13 +57,13 @@ use crate::report::ReportMap;
 use crate::sampler::embedded_sampler;
 use crate::swapchain::present_filtered;
 
-const UNKNOWN_MODE: u32 = 4242;
+const UNKNOWN_MODE: i32 = 4242;
 const UNKNOWN_ALPHA: u32 = 16;
-const FIFO_MODE: u32 = 2;
-const SHARED_MODE: u32 = 1000111000;
+const FIFO_MODE: i32 = 2;
+const SHARED_MODE: i32 = 1000111000;
 const OPAQUE_ALPHA: u32 = 1;
-const NEAREST_FILTER: u32 = 0;
-const LINEAR_FILTER: u32 = 1;
+const NEAREST_FILTER: i32 = 0;
+const LINEAR_FILTER: i32 = 1;
 const FILTER_PROFILE: &str = "[textures]\nmag_filter = \"nearest\"\nmin_filter = \"linear\"\n";
 const ALPHA_ONE_PROFILE: &str = "[rendering]\nalpha_to_one = \"on\"\n";
 const CLAMP_PROFILE: &str = "[rendering]\ndepth_clamp = \"off\"\n";
@@ -117,7 +117,7 @@ const SURFACE_SECTION: &str = "[wayland]\npresent_modes = \"mailbox;fifo\"\ncomp
 const UNKNOWN_CHAIN_TYPE: u32 = 424242;
 const SOURCE_PUSH_DATA: i32 = 5;
 const NO_COUNTERS: u32 = 0;
-const MAILBOX_VALUE: u32 = 1;
+const MAILBOX_VALUE: i32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
@@ -198,41 +198,64 @@ fn keeps_only_what_the_choice_names() {
 }
 
 #[test]
-fn round_trips_a_present_mode_through_its_name() {
-    assert_eq!(present_parse(&present_display(FIFO_MODE)), Some(FIFO_MODE));
-    assert_eq!(present_parse(&present_display(UNKNOWN_MODE)), Some(UNKNOWN_MODE));
+fn round_trips_a_floor_present_mode_through_its_name() {
+    let mode = vk::PresentModeKHR::from_raw(FIFO_MODE);
+    assert_eq!(present_parse(&present_display(mode)), Some(mode));
+}
+
+#[test]
+fn never_reads_a_present_mode_above_the_floor_back_from_a_profile() {
+    let mode = vk::PresentModeKHR::from_raw(UNKNOWN_MODE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(present_parse(&present_display(mode)), None);
+    assert_eq!(present_parse(&present_display(shared)), None);
 }
 
 #[test]
 fn round_trips_a_composite_alpha_through_its_name() {
-    assert_eq!(alpha_parse(&alpha_display(OPAQUE_ALPHA)), Some(OPAQUE_ALPHA));
-    assert_eq!(alpha_parse(&alpha_display(UNKNOWN_ALPHA)), Some(UNKNOWN_ALPHA));
+    let alpha = vk::CompositeAlphaFlagsKHR::from_raw(OPAQUE_ALPHA);
+    assert_eq!(alpha_parse(&alpha_display(alpha)), Some(alpha));
 }
 
+#[test]
+fn never_reads_a_composite_alpha_volt_has_no_name_for() {
+    let alpha = vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA);
+    assert_eq!(alpha_parse(&alpha_display(alpha)), None);
+}
 
 #[test]
 fn gives_each_enum_its_own_unknown_prefix() {
-    assert_ne!(present_display(UNKNOWN_MODE), alpha_display(UNKNOWN_MODE));
+    assert_ne!(
+        present_display(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)),
+        alpha_display(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_MODE as u32))
+    );
 }
 
 #[test]
 fn groups_an_unnamed_value_under_nothing() {
-    assert!(present_semantic(UNKNOWN_MODE).is_none());
-    assert!(alpha_semantic(UNKNOWN_ALPHA).is_none());
+    assert!(present_semantic(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)).is_none());
+    assert!(alpha_semantic(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA)).is_none());
 }
 
 #[test]
 fn reads_the_facts_a_setting_branches_on() {
-    assert_eq!(alpha_semantic(OPAQUE_ALPHA).map(|facts| facts.blends), Some(false));
-    assert_eq!(alpha_semantic(INHERIT_ALPHA).map(|facts| facts.blends), Some(true));
-    assert_eq!(present_semantic(FIFO_MODE).map(|facts| facts.extended), Some(false));
-    assert_eq!(present_semantic(SHARED_MODE).map(|facts| facts.extended), Some(true));
+    let opaque = vk::CompositeAlphaFlagsKHR::from_raw(OPAQUE_ALPHA);
+    let inherit = vk::CompositeAlphaFlagsKHR::from_raw(INHERIT_ALPHA);
+    let fifo = vk::PresentModeKHR::from_raw(FIFO_MODE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(alpha_semantic(opaque).map(|facts| facts.blends), Some(false));
+    assert_eq!(alpha_semantic(inherit).map(|facts| facts.blends), Some(true));
+    assert_eq!(present_semantic(fifo).map(|facts| facts.floor), Some(true));
+    assert_eq!(present_semantic(shared).map(|facts| facts.floor), Some(false));
 }
 
 #[test]
-fn forces_a_value_volt_has_no_name_for() {
-    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, Some(UNKNOWN_MODE));
-    assert_eq!(parse_settings(NAMED_MODE_PROFILE).present_mode, Some(FIFO_MODE));
+fn leaves_a_value_above_the_floor_at_default() {
+    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, None);
+    assert_eq!(
+        parse_settings(NAMED_MODE_PROFILE).present_mode,
+        Some(vk::PresentModeKHR::from_raw(FIFO_MODE))
+    );
 }
 
 #[test]
@@ -243,8 +266,14 @@ fn reads_the_two_feature_gated_toggles_from_a_profile() {
 
 #[test]
 fn reads_each_sampler_filter_on_its_own() {
-    assert_eq!(parse_settings(FILTER_PROFILE).mag_filter, Some(NEAREST_FILTER));
-    assert_eq!(parse_settings(FILTER_PROFILE).min_filter, Some(LINEAR_FILTER));
+    assert_eq!(
+        parse_settings(FILTER_PROFILE).mag_filter,
+        Some(vk::Filter::from_raw(NEAREST_FILTER))
+    );
+    assert_eq!(
+        parse_settings(FILTER_PROFILE).min_filter,
+        Some(vk::Filter::from_raw(LINEAR_FILTER))
+    );
 }
 
 #[test]
@@ -584,18 +613,14 @@ fn writes_only_the_parts_a_setting_line_has() {
 
 #[test]
 fn names_a_forced_value_only_where_the_profile_set_one() {
+    let nearest = vk::Filter::from_raw(NEAREST_FILTER);
+    let linear = vk::Filter::from_raw(LINEAR_FILTER);
+    assert_eq!(forced_text(true, nearest, nearest, filter_text), None);
     assert_eq!(
-        forced_text(true, NEAREST_FILTER, NEAREST_FILTER, filter_text),
-        None
-    );
-    assert_eq!(
-        forced_text(true, NEAREST_FILTER, LINEAR_FILTER, filter_text),
+        forced_text(true, nearest, linear, filter_text),
         Some(TEXT_LINEAR.into())
     );
-    assert_eq!(
-        forced_text(false, NEAREST_FILTER, LINEAR_FILTER, filter_text),
-        None
-    );
+    assert_eq!(forced_text(false, nearest, linear, filter_text), None);
 }
 
 #[test]
@@ -714,17 +739,33 @@ fn reads_the_sampler_only_where_the_selector_names_one() {
 
 #[test]
 fn narrows_a_chained_mode_list_to_the_choice() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
     assert_eq!(
-        present_filtered(
-            vec![vk::PresentModeKHR::FIFO, vk::PresentModeKHR::MAILBOX],
-            Some(MAILBOX_VALUE),
-        ),
-        vec![vk::PresentModeKHR::MAILBOX]
+        present_filtered(vec![vk::PresentModeKHR::FIFO, mailbox], Some(mailbox)),
+        vec![mailbox]
     );
     assert_eq!(
-        present_filtered(vec![vk::PresentModeKHR::FIFO], Some(MAILBOX_VALUE)),
+        present_filtered(vec![vk::PresentModeKHR::FIFO], Some(mailbox)),
         vec![vk::PresentModeKHR::FIFO]
     );
+}
+
+#[test]
+fn leaves_a_mode_above_the_floor_where_it_was() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(
+        present_filtered(vec![vk::PresentModeKHR::FIFO, mailbox, shared], Some(mailbox)),
+        vec![mailbox, shared]
+    );
+}
+
+#[test]
+fn restores_a_list_where_no_floor_mode_survives_beside_one_above_it() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    let modes = vec![vk::PresentModeKHR::FIFO, shared];
+    assert_eq!(present_filtered(modes.clone(), Some(mailbox)), modes);
 }
 
 #[test]

@@ -16,8 +16,8 @@ use crate::consts::SETTING_SAMPLE_SHADING;
 use crate::consts::SHADER_GROUPS_TYPE;
 use crate::consts::SHADING_OFF;
 use crate::consts::TEXT_OFF;
-use crate::consts::TOGGLE_ON;
 use crate::consts::UNOWNED_BUFFER_ERROR;
+use crate::lists::forced;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::instance::call_relinked_chain;
@@ -47,21 +47,11 @@ use crate::sampler::ChainRebuild;
 use crate::sampler::StageRebuild;
 use crate::sampler::StagesRebuild;
 
-fn toggle_vk(value: u32) -> vk::Bool32 {
-    match value {
-        TOGGLE_ON => vk::TRUE,
-        _ => vk::FALSE,
-    }
+fn pick_coverage(choice: Option<vk::Bool32>, original: vk::Bool32) -> vk::Bool32 {
+    forced(choice, original)
 }
 
-fn pick_coverage(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
-    match choice {
-        Some(value) => toggle_vk(value),
-        None => original,
-    }
-}
-
-fn alpha_one_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
+fn alpha_one_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bool32> {
     match (choice, caps.alpha_to_one) {
         (None, _) => None,
         (Some(value), true) => Some(value),
@@ -69,7 +59,7 @@ fn alpha_one_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
     }
 }
 
-fn clamp_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
+fn clamp_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bool32> {
     match (choice, caps.depth_clamp) {
         (None, _) => None,
         (Some(value), true) => Some(value),

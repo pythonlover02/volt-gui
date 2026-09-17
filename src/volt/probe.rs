@@ -23,7 +23,9 @@ use crate::instance::VkInstState;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
+use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
+use crate::ranks::present_on_floor;
 
 pub(crate) struct DeviceFacts {
     pub(crate) index: u32,
@@ -89,6 +91,8 @@ fn device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
 fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
     unique_sorted(supported.iter().map(|m| m.as_raw() as u32).collect())
         .into_iter()
+        .map(|raw| vk::PresentModeKHR::from_raw(raw as i32))
+        .filter(|mode| present_on_floor(*mode))
         .map(present_display)
         .collect()
 }
@@ -101,7 +105,12 @@ fn set_bits(mask: u32) -> Vec<u32> {
 }
 
 fn alpha_names(mask: u32) -> Vec<String> {
-    set_bits(mask).into_iter().map(alpha_display).collect()
+    set_bits(mask)
+        .into_iter()
+        .map(vk::CompositeAlphaFlagsKHR::from_raw)
+        .filter(|bit| alpha_semantic(*bit).is_some())
+        .map(alpha_display)
+        .collect()
 }
 
 fn joined(items: &[String]) -> String {

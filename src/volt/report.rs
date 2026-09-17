@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::RwLock;
 
+use ash::vk;
+
 use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
 use crate::consts::FILTER_UNKNOWN_PREFIX;
@@ -182,16 +184,16 @@ pub(crate) fn toggle_text(value: u32) -> String {
     }
 }
 
-pub(crate) fn filter_text(value: u32) -> String {
-    match value {
+pub(crate) fn filter_text(value: vk::Filter) -> String {
+    match value.as_raw() {
         FILTER_NEAREST => TEXT_NEAREST.into(),
         FILTER_LINEAR => TEXT_LINEAR.into(),
         other => format!("{}{}", FILTER_UNKNOWN_PREFIX, other),
     }
 }
 
-pub(crate) fn mipmap_text(value: u32) -> String {
-    match value {
+pub(crate) fn mipmap_text(value: vk::SamplerMipmapMode) -> String {
+    match value.as_raw() {
         MIPMAP_NEAREST => TEXT_NEAREST.into(),
         MIPMAP_LINEAR => TEXT_LINEAR.into(),
         other => format!("{}{}", MIPMAP_UNKNOWN_PREFIX, other),

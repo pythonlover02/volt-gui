@@ -2,6 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use ash::vk;
+
 use crate::consts::ANISO_OFF;
 use crate::consts::CADENCE_DYNAMIC;
 use crate::consts::CADENCE_FIXED;
@@ -51,21 +53,21 @@ use crate::ranks::present_parse;
 #[derive(Default)]
 pub(crate) struct Settings {
     pub(crate) gpu: Option<u32>,
-    pub(crate) present_mode: Option<u32>,
+    pub(crate) present_mode: Option<vk::PresentModeKHR>,
     pub(crate) image_count: Option<u32>,
-    pub(crate) composite_alpha: Option<u32>,
-    pub(crate) clipped: Option<u32>,
-    pub(crate) mag_filter: Option<u32>,
-    pub(crate) min_filter: Option<u32>,
-    pub(crate) mipmap: Option<u32>,
+    pub(crate) composite_alpha: Option<vk::CompositeAlphaFlagsKHR>,
+    pub(crate) clipped: Option<vk::Bool32>,
+    pub(crate) mag_filter: Option<vk::Filter>,
+    pub(crate) min_filter: Option<vk::Filter>,
+    pub(crate) mipmap: Option<vk::SamplerMipmapMode>,
     pub(crate) anisotropy: Option<f32>,
     pub(crate) lod_bias: Option<f32>,
     pub(crate) mip_floor: Option<f32>,
     pub(crate) mip_ceiling: Option<f32>,
     pub(crate) sample_shading: Option<f32>,
-    pub(crate) alpha_coverage: Option<u32>,
-    pub(crate) alpha_to_one: Option<u32>,
-    pub(crate) depth_clamp: Option<u32>,
+    pub(crate) alpha_coverage: Option<vk::Bool32>,
+    pub(crate) alpha_to_one: Option<vk::Bool32>,
+    pub(crate) depth_clamp: Option<vk::Bool32>,
     pub(crate) frame_limit: Option<f32>,
     pub(crate) frame_limit_offset: Option<f32>,
     pub(crate) cadence: Option<CadenceChoice>,
@@ -97,23 +99,23 @@ fn parse_uint(text: &str) -> Option<u32> {
     text.parse::<u32>().ok()
 }
 
-fn parse_filter(text: &str) -> Option<u32> {
+fn parse_filter(text: &str) -> Option<vk::Filter> {
     match text {
-        TEXT_NEAREST => Some(FILTER_NEAREST),
-        TEXT_LINEAR => Some(FILTER_LINEAR),
+        TEXT_NEAREST => Some(vk::Filter::from_raw(FILTER_NEAREST)),
+        TEXT_LINEAR => Some(vk::Filter::from_raw(FILTER_LINEAR)),
         _ => None,
     }
 }
 
-fn parse_mipmap(text: &str) -> Option<u32> {
+fn parse_mipmap(text: &str) -> Option<vk::SamplerMipmapMode> {
     match text {
-        TEXT_NEAREST => Some(MIPMAP_NEAREST),
-        TEXT_LINEAR => Some(MIPMAP_LINEAR),
+        TEXT_NEAREST => Some(vk::SamplerMipmapMode::from_raw(MIPMAP_NEAREST)),
+        TEXT_LINEAR => Some(vk::SamplerMipmapMode::from_raw(MIPMAP_LINEAR)),
         _ => None,
     }
 }
 
-fn parse_toggle(text: &str) -> Option<u32> {
+fn parse_toggle(text: &str) -> Option<vk::Bool32> {
     match text {
         TEXT_OFF => Some(TOGGLE_OFF),
         TEXT_ON => Some(TOGGLE_ON),

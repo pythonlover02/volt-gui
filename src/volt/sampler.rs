@@ -7,8 +7,6 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
 use crate::consts::FEATURE_ANISOTROPY;
-use crate::consts::FILTER_LINEAR;
-use crate::consts::MIPMAP_LINEAR;
 use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_LOD_BIAS;
 use crate::consts::SETTING_MAG_FILTER;
@@ -40,33 +38,6 @@ use crate::report::filter_text;
 use crate::report::mipmap_text;
 use crate::report::number_text;
 
-fn filter_vk(value: u32) -> vk::Filter {
-    match value {
-        FILTER_LINEAR => vk::Filter::LINEAR,
-        _ => vk::Filter::NEAREST,
-    }
-}
-
-fn pick_filter(choice: Option<u32>, original: vk::Filter) -> vk::Filter {
-    match choice {
-        Some(value) => filter_vk(value),
-        None => original,
-    }
-}
-
-fn mipmap_vk(value: u32) -> vk::SamplerMipmapMode {
-    match value {
-        MIPMAP_LINEAR => vk::SamplerMipmapMode::LINEAR,
-        _ => vk::SamplerMipmapMode::NEAREST,
-    }
-}
-
-fn pick_mipmap(choice: Option<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMipmapMode {
-    match choice {
-        Some(value) => mipmap_vk(value),
-        None => original,
-    }
-}
 
 fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
     match (choice, caps.sampler_anisotropy) {
@@ -116,9 +87,9 @@ fn patched_ci<'a>(
     );
     let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
-        mag_filter: pick_filter(s.mag_filter, original.mag_filter),
-        min_filter: pick_filter(s.min_filter, original.min_filter),
-        mipmap_mode: pick_mipmap(s.mipmap, original.mipmap_mode),
+        mag_filter: forced(s.mag_filter, original.mag_filter),
+        min_filter: forced(s.min_filter, original.min_filter),
+        mipmap_mode: forced(s.mipmap, original.mipmap_mode),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
@@ -153,8 +124,8 @@ fn call_report_fields(
         owner,
         SETTING_MAG_FILTER,
         s.mag_filter.is_some(),
-        asked.mag_filter.as_raw() as u32,
-        held.mag_filter.as_raw() as u32,
+        asked.mag_filter,
+        held.mag_filter,
         filter_text,
         None,
     );
@@ -162,8 +133,8 @@ fn call_report_fields(
         owner,
         SETTING_MIN_FILTER,
         s.min_filter.is_some(),
-        asked.min_filter.as_raw() as u32,
-        held.min_filter.as_raw() as u32,
+        asked.min_filter,
+        held.min_filter,
         filter_text,
         None,
     );
@@ -171,8 +142,8 @@ fn call_report_fields(
         owner,
         SETTING_MIPMAP_MODE,
         s.mipmap.is_some(),
-        asked.mipmap_mode.as_raw() as u32,
-        held.mipmap_mode.as_raw() as u32,
+        asked.mipmap_mode,
+        held.mipmap_mode,
         mipmap_text,
         None,
     );

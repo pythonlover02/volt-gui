@@ -10,7 +10,6 @@ use crate::consts::ALPHA_MISS_WARN;
 use crate::consts::ALPHA_OPAQUE_INFO;
 use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
-use crate::consts::PRESENT_EXTENDED_INFO;
 use crate::consts::PRESENT_MISS_WARN;
 use crate::consts::SETTING_CLIPPED;
 use crate::consts::SETTING_COMPOSITE_ALPHA;
@@ -22,7 +21,6 @@ use crate::consts::SETTING_FRAME_PACING;
 use crate::consts::SETTING_IMAGE_COUNT;
 use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
-use crate::consts::TOGGLE_ON;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
 use crate::instance::call_relinked_chain;
@@ -41,7 +39,6 @@ use crate::instance::Relinked;
 use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::instance::VkSwapchainPresentModesCreateInfoKHR;
-use crate::lists::filtered;
 use crate::lists::forced;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
@@ -54,26 +51,59 @@ use crate::probe::call_record_surface;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
-use crate::ranks::present_semantic;
+use crate::ranks::present_on_floor;
 use crate::report::call_report_choice;
 use crate::report::call_report_value;
 use crate::report::count_text;
 use crate::report::number_text;
 use crate::report::toggle_text;
 
-fn mode_value(mode: &vk::PresentModeKHR) -> Option<u32> {
-    Some(mode.as_raw() as u32)
+fn present_kept(mode: vk::PresentModeKHR, choice: vk::PresentModeKHR) -> bool {
+    match present_on_floor(mode) {
+        true => mode == choice,
+        false => true,
+    }
+}
+
+fn floor_survived(modes: &[vk::PresentModeKHR]) -> bool {
+    modes.iter().copied().any(present_on_floor)
+}
+
+fn restored_modes(
+    narrowed: Vec<vk::PresentModeKHR>,
+    modes: Vec<vk::PresentModeKHR>,
+) -> Vec<vk::PresentModeKHR> {
+    match floor_survived(&narrowed) {
+        true => narrowed,
+        false => {
+            log_at(LogLevel::Warn, PRESENT_EMPTY_WARN);
+            modes
+        }
+    }
 }
 
 pub(crate) fn present_filtered(
     modes: Vec<vk::PresentModeKHR>,
-    choice: Option<u32>,
+    choice: Option<vk::PresentModeKHR>,
 ) -> Vec<vk::PresentModeKHR> {
-    filtered(modes, choice, mode_value, PRESENT_EMPTY_WARN)
+    match choice {
+        None => modes,
+        Some(value) => restored_modes(
+            modes
+                .iter()
+                .copied()
+                .filter(|mode| present_kept(*mode, value))
+                .collect(),
+            modes,
+        ),
+    }
 }
 
-fn supported_mode(supported: &[vk::PresentModeKHR], value: u32) -> Option<vk::PresentModeKHR> {
-    supported.iter().copied().find(|m| m.as_raw() as u32 == value)
+fn supported_mode(
+    supported: &[vk::PresentModeKHR],
+    value: vk::PresentModeKHR,
+) -> Option<vk::PresentModeKHR> {
+    supported.iter().copied().find(|m| *m == value)
 }
 
 fn logged_mode_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
@@ -83,7 +113,7 @@ fn logged_mode_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
 
 fn chosen_mode(
     supported: &[vk::PresentModeKHR],
-    value: u32,
+    value: vk::PresentModeKHR,
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
     match supported_mode(supported, value) {
@@ -93,7 +123,7 @@ fn chosen_mode(
 }
 
 fn pick_present_mode(
-    choice: Option<u32>,
+    choice: Option<vk::PresentModeKHR>,
     supported: &[vk::PresentModeKHR],
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
@@ -110,17 +140,17 @@ fn logged_alpha_miss(original: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlpha
 
 fn chosen_alpha(
     mask: vk::CompositeAlphaFlagsKHR,
-    value: u32,
+    value: vk::CompositeAlphaFlagsKHR,
     original: vk::CompositeAlphaFlagsKHR,
 ) -> vk::CompositeAlphaFlagsKHR {
-    match mask.as_raw() & value != 0 {
-        true => vk::CompositeAlphaFlagsKHR::from_raw(value),
+    match mask.as_raw() & value.as_raw() != 0 {
+        true => value,
         false => logged_alpha_miss(original),
     }
 }
 
 fn pick_alpha(
-    choice: Option<u32>,
+    choice: Option<vk::CompositeAlphaFlagsKHR>,
     mask: vk::CompositeAlphaFlagsKHR,
     original: vk::CompositeAlphaFlagsKHR,
 ) -> vk::CompositeAlphaFlagsKHR {
@@ -130,18 +160,8 @@ fn pick_alpha(
     }
 }
 
-fn toggle_vk(value: u32) -> vk::Bool32 {
-    match value {
-        TOGGLE_ON => vk::TRUE,
-        _ => vk::FALSE,
-    }
-}
-
-fn pick_clipped(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
-    match choice {
-        Some(value) => toggle_vk(value),
-        None => original,
-    }
+fn pick_clipped(choice: Option<vk::Bool32>, original: vk::Bool32) -> vk::Bool32 {
+    forced(choice, original)
 }
 
 fn caps_upper(caps_max: u32) -> u32 {
@@ -185,20 +205,6 @@ fn clamped_caps(
     }
 }
 
-fn log_extended(extended: bool, message: &str) {
-    match extended {
-        true => log_at(LogLevel::Info, message),
-        false => (),
-    }
-}
-
-fn maybe_log_present(choice: Option<u32>) {
-    match choice.and_then(present_semantic) {
-        Some(facts) => log_extended(facts.extended, PRESENT_EXTENDED_INFO),
-        None => (),
-    }
-}
-
 fn log_blending(blends: bool) {
     match blends {
         false => log_at(LogLevel::Info, ALPHA_OPAQUE_INFO),
@@ -206,7 +212,7 @@ fn log_blending(blends: bool) {
     }
 }
 
-fn maybe_log_alpha(choice: Option<u32>) {
+fn maybe_log_alpha(choice: Option<vk::CompositeAlphaFlagsKHR>) {
     match choice.and_then(alpha_semantic) {
         Some(facts) => log_blending(facts.blends),
         None => (),
@@ -223,8 +229,8 @@ fn call_report_display(
         owner,
         SETTING_PRESENT_MODE,
         s.present_mode.is_some(),
-        asked.present_mode.as_raw() as u32,
-        held.present_mode.as_raw() as u32,
+        asked.present_mode,
+        held.present_mode,
         present_display,
         None,
     );
@@ -241,8 +247,8 @@ fn call_report_display(
         owner,
         SETTING_COMPOSITE_ALPHA,
         s.composite_alpha.is_some(),
-        asked.composite_alpha.as_raw(),
-        held.composite_alpha.as_raw(),
+        asked.composite_alpha,
+        held.composite_alpha,
         alpha_display,
         None,
     );
@@ -359,9 +365,8 @@ fn call_filtered_modes(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
-    choice: Option<u32>,
+    choice: Option<vk::PresentModeKHR>,
 ) -> Vec<vk::PresentModeKHR> {
-    maybe_log_present(choice);
     present_filtered(call_query_present_modes(inst, phys, surface), choice)
 }
 
@@ -442,14 +447,14 @@ fn call_write_modes(list: *mut VkPresentModeList, kept_modes: &[vk::PresentModeK
     unsafe { (*list).present_mode_count = kept_modes.len() as u32 };
 }
 
-fn call_filtered_mode_list(list: *mut VkPresentModeList, choice: Option<u32>) {
+fn call_filtered_mode_list(list: *mut VkPresentModeList, choice: Option<vk::PresentModeKHR>) {
     match unsafe { (*list).p_present_modes.is_null() } {
         true => (),
         false => call_write_modes(list, &present_filtered(call_read_modes(list), choice)),
     }
 }
 
-fn call_filtered_chain(head: *mut c_void, choice: Option<u32>) {
+fn call_filtered_chain(head: *mut c_void, choice: Option<vk::PresentModeKHR>) {
     mode_lists(head)
         .into_iter()
         .for_each(|list| call_filtered_mode_list(list, choice));
@@ -546,7 +551,7 @@ fn plain_swapchain(patched: vk::SwapchainCreateInfoKHR<'_>) -> SwapchainRebuild<
 fn rebuilt_swapchain(
     patched: vk::SwapchainCreateInfoKHR<'_>,
     node: *const VkSwapchainPresentModesCreateInfoKHR,
-    choice: Option<u32>,
+    choice: Option<vk::PresentModeKHR>,
 ) -> SwapchainRebuild<'_> {
     let modes = present_filtered(chained_modes(node), choice);
     let owned = vec![rebuilt_mode_node(node, &modes)];
@@ -570,7 +575,7 @@ fn rebuilt_swapchain(
 
 fn narrowed_swapchain(
     patched: vk::SwapchainCreateInfoKHR<'_>,
-    choice: Option<u32>,
+    choice: Option<vk::PresentModeKHR>,
 ) -> SwapchainRebuild<'_> {
     match chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE) {
         Some(node) => rebuilt_swapchain(

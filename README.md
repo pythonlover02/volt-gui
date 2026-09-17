@@ -90,7 +90,7 @@ This is the only setting volt cannot force. Nothing in Vulkan names the device a
 
 ### Display
 
-**VSync / Present Mode** `immediate` off, `mailbox` low-latency vsync, `fifo` classic vsync, `fifo_relaxed` tears below refresh. Modes you ruled out are hidden from the game, so its own vsync menu can't offer them.
+**VSync / Present Mode** `immediate` off, `mailbox` low-latency vsync, `fifo` classic vsync, `fifo_relaxed` tears below refresh. Only these four are offered or forced; the ones you ruled out are hidden from the game's own vsync menu, and a mode an extension defines is left where the driver put it.
 
 **Swapchain Images** frames in flight. More lets the game run ahead of the GPU, smoothing delivery at the cost of input lag. Fewer holds it closer to the display. This is the anti-lag setting.
 

@@ -40,7 +40,7 @@ SETTINGS_DB: Final[dict] = {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. Every other mode is hidden from the game, so its own vsync menu cannot offer one you ruled out. A mode the surface lacks falls back to the game's own choice with a warning.",
+            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. Only these four are offered or forced; a mode an extension defines is left wherever the driver reported it. A mode the surface lacks falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
         },
         "image_count": {
