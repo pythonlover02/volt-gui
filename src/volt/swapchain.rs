@@ -872,13 +872,14 @@ fn call_prepared_ci<'a>(
         caps.as_ref(),
         s,
     );
+    let landed = s.present_mode.filter(|mode| *mode == patched.present_mode);
     let applies = tie_holds
-        && s.present_mode.is_some()
+        && landed.is_some()
         && on_floor(original.present_mode)
         && call_compatible(inst, dev, original.surface, patched.present_mode);
     call_report_swapchain(dev, s, original, &patched);
     forced_of(
-        narrowed_swapchain(patched, s.present_mode, applies),
+        narrowed_swapchain(patched, landed, applies),
         applies.then_some(patched.present_mode),
     )
 }
