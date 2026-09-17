@@ -172,6 +172,14 @@ pub(crate) struct VkChainNode {
 }
 
 #[repr(C)]
+pub(crate) struct VkDeviceGroupDeviceCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) physical_device_count: u32,
+    pub(crate) p_physical_devices: *const vk::PhysicalDevice,
+}
+
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub(crate) struct VkPhysicalDeviceFeatures2 {
     pub(crate) s_type: vk::StructureType,
@@ -907,13 +915,26 @@ fn group_devices(group: &VkPhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDev
     group.physical_devices[..group.physical_device_count as usize].to_vec()
 }
 
-fn group_wanted(
-    group: &VkPhysicalDeviceGroupProperties,
+fn subset_of(kept_count: usize, original: vk::Bool32) -> vk::Bool32 {
+    match kept_count {
+        1 => vk::FALSE,
+        _ => original,
+    }
+}
+
+fn narrowed_group(
+    group: VkPhysicalDeviceGroupProperties,
     allowed: &[vk::PhysicalDevice],
-) -> bool {
-    group_devices(group)
+) -> VkPhysicalDeviceGroupProperties {
+    let held: Vec<vk::PhysicalDevice> = group_devices(&group)
         .into_iter()
-        .any(|device| allowed.contains(&device))
+        .filter(|device| allowed.contains(device))
+        .collect();
+    let mut narrowed = group;
+    narrowed.physical_device_count = held.len() as u32;
+    (0..held.len()).for_each(|at| narrowed.physical_devices[at] = held[at]);
+    narrowed.subset_allocation = subset_of(held.len(), group.subset_allocation);
+    narrowed
 }
 
 fn group_filtered(
@@ -922,7 +943,14 @@ fn group_filtered(
     choice: Option<u32>,
 ) -> Vec<VkPhysicalDeviceGroupProperties> {
     match choice {
-        Some(_) => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
+        Some(_) => kept(
+            groups
+                .into_iter()
+                .map(|group| narrowed_group(group, &allowed))
+                .collect(),
+            |group| group.physical_device_count > 0,
+            GROUP_EMPTY_WARN,
+        ),
         None => groups,
     }
 }

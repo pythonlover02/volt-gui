@@ -19,6 +19,7 @@ use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::DEVICE_FEATURES_2_TYPE;
+use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
 use crate::env::env_probe_active;
@@ -40,6 +41,7 @@ use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
 use crate::instance::walked_nodes;
+use crate::instance::VkDeviceGroupDeviceCreateInfo;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceFeatures2;
 use crate::instance::VkLayerLinkInfo;
@@ -340,16 +342,36 @@ pub(crate) fn call_destroy_command_pool(
     unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
 }
 
-fn call_gpu_missed(chosen: u32, id: u32) {
-    match chosen == id {
+fn group_create_node(p_next: *const c_void) -> Option<*const VkDeviceGroupDeviceCreateInfo> {
+    walked_nodes(p_next)
+        .into_iter()
+        .find(|node| unsafe { (**node).s_type.as_raw() } as u32 == DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE)
+        .map(|node| node as *const VkDeviceGroupDeviceCreateInfo)
+}
+
+fn group_device_ids(
+    all: &[vk::PhysicalDevice],
+    node: *const VkDeviceGroupDeviceCreateInfo,
+) -> Vec<u32> {
+    (0..unsafe { (*node).physical_device_count } as usize)
+        .map(|at| device_index(all, unsafe { *(*node).p_physical_devices.add(at) }))
+        .collect()
+}
+
+fn asked_group(ci: *const vk::DeviceCreateInfo<'_>, all: &[vk::PhysicalDevice]) -> Option<Vec<u32>> {
+    group_create_node(unsafe { (*ci).p_next }).map(|node| group_device_ids(all, node))
+}
+
+fn call_gpu_missed(ids: &[u32], chosen: u32) {
+    match ids.contains(&chosen) {
         true => (),
         false => log_at(LogLevel::Warn, GPU_MISS_WARN),
     }
 }
 
-fn call_gpu_warned(id: u32, chosen: Option<u32>) {
+fn call_gpu_warned(id: u32, chosen: Option<u32>, group: Option<Vec<u32>>) {
     match chosen {
-        Some(value) => call_gpu_missed(value, id),
+        Some(value) => call_gpu_missed(&group.unwrap_or_else(|| vec![id]), value),
         None => (),
     }
 }
@@ -367,11 +389,13 @@ fn call_gpu_reported(id: u32, owner: u64, chosen: Option<u32>) {
 fn call_gpu_lines(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
+    ci: *const vk::DeviceCreateInfo<'_>,
     owner: u64,
     chosen: Option<u32>,
 ) {
-    let id = device_index(&all_devices(inst), phys);
-    call_gpu_warned(id, chosen);
+    let all = all_devices(inst);
+    let id = device_index(&all, phys);
+    call_gpu_warned(id, chosen, asked_group(ci, &all));
     call_gpu_reported(id, owner, chosen);
 }
 
@@ -389,10 +413,15 @@ fn maybe_probe_device(inst: &VkInstState, phys: vk::PhysicalDevice, caps: &Devic
     }
 }
 
-fn call_report_gpu(inst: &VkInstState, phys: vk::PhysicalDevice, handle: vk::Device) {
+fn call_report_gpu(
+    inst: &VkInstState,
+    phys: vk::PhysicalDevice,
+    ci: *const vk::DeviceCreateInfo<'_>,
+    handle: vk::Device,
+) {
     let chosen = ensure_settings().gpu;
     match gpu_line_wanted(chosen) {
-        true => call_gpu_lines(inst, phys, handle.as_raw(), chosen),
+        true => call_gpu_lines(inst, phys, ci, handle.as_raw(), chosen),
         false => (),
     }
 }
@@ -434,7 +463,7 @@ fn register_device(
         },
     );
     maybe_probe_device(inst, phys, &caps);
-    call_report_gpu(inst, phys, handle);
+    call_report_gpu(inst, phys, ci, handle);
     log_at(LogLevel::Info, "vk device registered");
 }
 
