@@ -21,6 +21,7 @@ use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::DEVICE_FEATURES_2_TYPE;
+use crate::consts::EXT_PORTABILITY_SUBSET;
 use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
@@ -70,6 +71,7 @@ pub(crate) struct DeviceCaps {
     pub(crate) max_anisotropy: f32,
     pub(crate) max_lod_bias: f32,
     pub(crate) max_lod_level: f32,
+    pub(crate) portability_subset: bool,
 }
 
 pub(crate) struct VkDevState {
@@ -224,6 +226,7 @@ fn lod_levels_for(max_dimension: u32) -> f32 {
 fn build_caps(
     props: &vk::PhysicalDeviceProperties,
     asked: &vk::PhysicalDeviceFeatures,
+    extensions: &HashSet<String>,
 ) -> DeviceCaps {
     DeviceCaps {
         sampler_anisotropy: asked.sampler_anisotropy == vk::TRUE,
@@ -233,6 +236,7 @@ fn build_caps(
         max_anisotropy: props.limits.max_sampler_anisotropy,
         max_lod_bias: props.limits.max_sampler_lod_bias,
         max_lod_level: lod_levels_for(props.limits.max_image_dimension2_d),
+        portability_subset: extensions.contains(EXT_PORTABILITY_SUBSET),
     }
 }
 
@@ -294,6 +298,7 @@ fn device_caps(
     build_caps(
         unsafe { &inst.instance.get_physical_device_properties(phys) },
         &asked_features(ci),
+        &requested_device_extensions(ci),
     )
 }
 

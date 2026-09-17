@@ -81,6 +81,7 @@ pub(crate) const SAMPLER_SUBSAMPLED_BIT: u32 = 1;
 pub(crate) const SAMPLER_IMAGE_PROCESSING_BIT: u32 = 16;
 pub(crate) const SAMPLER_SHAPE_LOG: &str = "the sampler's own shape restricts this field, leaving it alone";
 pub(crate) const MIP_FLOOR_DROPPED_LOG: &str = "the forced mip floor would cross the ceiling beside it, keeping the application value";
+pub(crate) const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
 pub(crate) const MIP_CEILING_DROPPED_LOG: &str = "the forced mip ceiling would cross the floor beside it, keeping the application value";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 
