@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ffi::c_void;
 use std::mem;
 use std::sync::Arc;
@@ -11,8 +12,6 @@ use crate::config::ensure_settings;
 use crate::consts::FN_CREATE_RAY_TRACING_KHR;
 use crate::consts::FN_CREATE_RAY_TRACING_NV;
 use crate::consts::FN_CREATE_SHADERS;
-use crate::consts::FN_CREATE_SWAPCHAIN;
-use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::FN_PIPELINE_INDIRECT_MEMORY;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
@@ -26,8 +25,10 @@ use crate::env::env_probe_active;
 use crate::instance::all_devices;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
+use crate::instance::cstr_names;
 use crate::instance::device_index;
 use crate::instance::owning_instance;
+use crate::instance::provider_on;
 use crate::instance::PfnCmdSetAlphaToCoverage;
 use crate::instance::PfnCmdSetAlphaToOne;
 use crate::instance::PfnCmdSetDepthClamp;
@@ -79,10 +80,20 @@ pub(crate) struct VkDevState {
     pub(crate) alpha_fp: Option<PfnCmdSetAlphaToCoverage>,
     pub(crate) alpha_one_fp: Option<PfnCmdSetAlphaToOne>,
     pub(crate) clamp_fp: Option<PfnCmdSetDepthClamp>,
-    pub(crate) swapchain_held: bool,
-    pub(crate) queue2_held: bool,
     pub(crate) caps: DeviceCaps,
     pub(crate) instance_handle: u64,
+    pub(crate) api_version: u32,
+    pub(crate) extensions: HashSet<String>,
+}
+
+pub(crate) fn device_hook_on(dev: &VkDevState, command: &str) -> bool {
+    provider_on(dev.api_version, &dev.extensions, command)
+}
+
+pub(crate) fn requested_device_extensions(ci: *const vk::DeviceCreateInfo<'_>) -> HashSet<String> {
+    cstr_names(unsafe { (*ci).pp_enabled_extension_names }, unsafe {
+        (*ci).enabled_extension_count
+    })
 }
 
 static DEVS: RwLock<Option<HashMap<u64, Arc<VkDevState>>>> = RwLock::new(None);
@@ -253,13 +264,6 @@ fn call_typed_device_fp<T>(
     call_next_gdpa(gdpa, handle, name).map(|f| unsafe { mem::transmute_copy(&f) })
 }
 
-fn call_resolved(
-    gdpa: vk::PFN_vkGetDeviceProcAddr,
-    handle: vk::Device,
-    name: &str,
-) -> bool {
-    call_next_gdpa(gdpa, handle, name).is_some()
-}
 
 fn call_loader_data(fp: PfnSetDeviceLoaderData, handle: vk::Device, queue: vk::Queue) {
     let _ = unsafe { fp(handle, queue.as_raw() as usize as *mut c_void) };
@@ -401,6 +405,7 @@ fn register_device(
     inst_handle: u64,
     phys: vk::PhysicalDevice,
     caps: DeviceCaps,
+    ci: *const vk::DeviceCreateInfo<'_>,
 ) {
     let device = unsafe {
         ash::Device::load_with(|name| mem::transmute(gdpa(handle, name.as_ptr())), handle)
@@ -422,10 +427,10 @@ fn register_device(
             alpha_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_COVERAGE),
             alpha_one_fp: call_typed_device_fp(gdpa, handle, FN_SET_ALPHA_ONE),
             clamp_fp: call_typed_device_fp(gdpa, handle, FN_SET_DEPTH_CLAMP),
-            swapchain_held: call_resolved(gdpa, handle, FN_CREATE_SWAPCHAIN),
-            queue2_held: call_resolved(gdpa, handle, FN_DEVICE_QUEUE_2),
             caps,
             instance_handle: inst_handle,
+            api_version: inst.api_version,
+            extensions: requested_device_extensions(ci),
         },
     );
     maybe_probe_device(inst, phys, &caps);
@@ -457,6 +462,7 @@ fn invoke_create_device(
                 inst_handle,
                 phys,
                 device_caps(inst, phys, ci),
+                ci,
             );
             vk::Result::SUCCESS
         }

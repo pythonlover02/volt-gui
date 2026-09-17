@@ -29,6 +29,7 @@ use crate::instance::relinked_chain;
 use crate::instance::VkChainNode;
 use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkSwapchainCounterCreateInfoEXT;
+use crate::instance::provider_on;
 use crate::layer::negotiated_version;
 use crate::lists::filtered;
 use crate::lists::forced;
@@ -120,6 +121,9 @@ const MAILBOX_VALUE: u32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
+const CORE_ONE_ONE: u32 = 4198400;
+const CORE_ONE_ZERO: u32 = 4194304;
+const SURFACE_EXT_NAME: &str = "VK_KHR_surface";
 const LOADER_OFFERS_LOW: u32 = 1;
 const LOADER_OFFERS_HIGH: u32 = 5;
 const LAYER_WANTS: u32 = 2;
@@ -134,6 +138,25 @@ fn reads_one_spelling_of_the_default_profile_name() {
     assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+}
+
+#[test]
+fn hands_a_hook_out_where_any_one_provider_is_on() {
+    let none: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let surface: std::collections::HashSet<String> =
+        std::iter::once(SURFACE_EXT_NAME.to_string()).collect();
+    assert!(provider_on(CORE_ONE_ONE, &none, "vkGetDeviceQueue2"));
+    assert!(!provider_on(CORE_ONE_ZERO, &none, "vkGetDeviceQueue2"));
+    assert!(provider_on(
+        CORE_ONE_ZERO,
+        &surface,
+        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"
+    ));
+    assert!(!provider_on(
+        CORE_ONE_ZERO,
+        &none,
+        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"
+    ));
 }
 
 #[test]

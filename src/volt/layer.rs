@@ -29,8 +29,11 @@ use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
 use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
+use crate::consts::FN_SURFACE_CAPS;
 use crate::consts::FN_SURFACE_CAPS_2;
+use crate::consts::FN_SURFACE_PRESENT_MODES;
 use crate::consts::FN_WRITE_SAMPLERS;
+use crate::consts::CORE_10_DEVICE_HOOKS;
 use crate::consts::LAYER_DATA_CALLBACK;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_LINK_INFO;
@@ -45,6 +48,7 @@ use crate::device::call_free_command_buffers;
 use crate::device::call_real_create_device;
 use crate::device::call_register_queue;
 use crate::device::cmdbuf_owner;
+use crate::device::device_hook_on;
 use crate::device::devs_del;
 use crate::device::devs_gdpa;
 use crate::device::devs_get;
@@ -64,6 +68,7 @@ use crate::instance::call_real_create_instance;
 use crate::instance::chain_layer_info;
 use crate::instance::insts_del;
 use crate::instance::insts_get;
+use crate::instance::provider_on;
 use crate::instance::VkHandle;
 use crate::instance::VkPhysicalDeviceGroupProperties;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
@@ -132,10 +137,24 @@ fn instance_symbol(name: &str) -> Option<*mut c_void> {
         "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
         "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
         "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
-        "vkGetPhysicalDeviceSurfacePresentModesKHR" => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
-        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR" => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
         _ => None,
     }
+}
+
+fn instance_surface_symbol(name: &str) -> Option<*mut c_void> {
+    match name {
+        FN_SURFACE_PRESENT_MODES => Some(vkGetPhysicalDeviceSurfacePresentModesKHR as *mut c_void),
+        FN_SURFACE_CAPS => Some(vkGetPhysicalDeviceSurfaceCapabilitiesKHR as *mut c_void),
+        _ => None,
+    }
+}
+
+fn instance_gated_surface(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
+    instance_surface_symbol(name).filter(|_| {
+        insts_get(inst.as_raw())
+            .map(|st| provider_on(st.api_version, &st.extensions, name))
+            .unwrap_or(false)
+    })
 }
 
 fn device_symbol(name: &str) -> Option<*mut c_void> {
@@ -149,12 +168,26 @@ fn device_symbol(name: &str) -> Option<*mut c_void> {
         "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
         "vkDestroyCommandPool" => Some(vkDestroyCommandPool as *mut c_void),
         "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
+        _ => None,
+    }
+}
+
+fn device_provided_symbol(name: &str) -> Option<*mut c_void> {
+    match name {
         FN_DEVICE_QUEUE_2 => Some(volt_GetDeviceQueue2 as *mut c_void),
         FN_CREATE_SWAPCHAIN => Some(vkCreateSwapchainKHR as *mut c_void),
         FN_DESTROY_SWAPCHAIN => Some(vkDestroySwapchainKHR as *mut c_void),
         FN_QUEUE_PRESENT => Some(vkQueuePresentKHR as *mut c_void),
         _ => None,
     }
+}
+
+fn device_provided_hooked(dev: vk::Device, name: &str) -> Option<*mut c_void> {
+    device_provided_symbol(name).filter(|_| {
+        devs_get(dev.as_raw())
+            .map(|d| device_hook_on(&d, name))
+            .unwrap_or(false)
+    })
 }
 
 fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
@@ -170,14 +203,23 @@ fn instance_extension_hook(name: &str) -> Option<*mut c_void> {
     }
 }
 
+fn instance_pointer_present(st: &crate::instance::VkInstState, name: &str) -> bool {
+    match name {
+        FN_SURFACE_CAPS_2 => st.caps2_fp.is_some(),
+        FN_DEVICE_GROUPS => st.groups_fp.is_some(),
+        FN_DEVICE_GROUPS_KHR => st.groups_khr_fp.is_some(),
+        FN_DESTROY_SURFACE => st.destroy_surface_fp.is_some(),
+        other => st.surface_fps.contains_key(other),
+    }
+}
+
 fn instance_fp_present(inst: vk::Instance, name: &str) -> bool {
-    match (insts_get(inst.as_raw()), name) {
-        (Some(st), FN_SURFACE_CAPS_2) => st.caps2_fp.is_some(),
-        (Some(st), FN_DEVICE_GROUPS) => st.groups_fp.is_some(),
-        (Some(st), FN_DEVICE_GROUPS_KHR) => st.groups_khr_fp.is_some(),
-        (Some(st), FN_DESTROY_SURFACE) => st.destroy_surface_fp.is_some(),
-        (Some(st), other) => st.surface_fps.contains_key(other),
-        (_, _) => false,
+    match insts_get(inst.as_raw()) {
+        Some(st) => {
+            provider_on(st.api_version, &st.extensions, name)
+                && instance_pointer_present(&st, name)
+        }
+        None => false,
     }
 }
 
@@ -200,18 +242,25 @@ fn device_extension_hook(name: &str) -> Option<*mut c_void> {
     }
 }
 
+fn device_pointer_present(d: &VkDevState, name: &str) -> bool {
+    match name {
+        FN_SHARED_SWAPCHAINS => d.shared_fp.is_some(),
+        FN_WRITE_SAMPLERS => d.samplers_fp.is_some(),
+        FN_CREATE_SHADERS => d.shaders_fp.is_some(),
+        FN_CREATE_RAY_TRACING_KHR => d.ray_khr_fp.is_some(),
+        FN_CREATE_RAY_TRACING_NV => d.ray_nv_fp.is_some(),
+        FN_PIPELINE_INDIRECT_MEMORY => d.indirect_memory_fp.is_some(),
+        FN_SET_ALPHA_COVERAGE => d.alpha_fp.is_some(),
+        FN_SET_ALPHA_ONE => d.alpha_one_fp.is_some(),
+        FN_SET_DEPTH_CLAMP => d.clamp_fp.is_some(),
+        _ => false,
+    }
+}
+
 fn device_fp_present(dev: vk::Device, name: &str) -> bool {
-    match (devs_get(dev.as_raw()), name) {
-        (Some(d), FN_SHARED_SWAPCHAINS) => d.shared_fp.is_some(),
-        (Some(d), FN_WRITE_SAMPLERS) => d.samplers_fp.is_some(),
-        (Some(d), FN_CREATE_SHADERS) => d.shaders_fp.is_some(),
-        (Some(d), FN_CREATE_RAY_TRACING_KHR) => d.ray_khr_fp.is_some(),
-        (Some(d), FN_CREATE_RAY_TRACING_NV) => d.ray_nv_fp.is_some(),
-        (Some(d), FN_PIPELINE_INDIRECT_MEMORY) => d.indirect_memory_fp.is_some(),
-        (Some(d), FN_SET_ALPHA_COVERAGE) => d.alpha_fp.is_some(),
-        (Some(d), FN_SET_ALPHA_ONE) => d.alpha_one_fp.is_some(),
-        (Some(d), FN_SET_DEPTH_CLAMP) => d.clamp_fp.is_some(),
-        (_, _) => false,
+    match devs_get(dev.as_raw()) {
+        Some(d) => device_hook_on(&d, name) && device_pointer_present(&d, name),
+        None => false,
     }
 }
 
@@ -219,18 +268,8 @@ fn device_hooked_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
     device_extension_hook(name).filter(|_| device_fp_present(dev, name))
 }
 
-fn device_gate(dev: vk::Device, name: &str) -> bool {
-    match (devs_get(dev.as_raw()), name) {
-        (Some(d), FN_CREATE_SWAPCHAIN) => d.swapchain_held,
-        (Some(d), FN_DESTROY_SWAPCHAIN) => d.swapchain_held,
-        (Some(d), FN_QUEUE_PRESENT) => d.swapchain_held,
-        (Some(d), FN_DEVICE_QUEUE_2) => d.queue2_held,
-        (_, _) => true,
-    }
-}
-
-fn device_gated_symbol(dev: vk::Device, name: &str) -> Option<*mut c_void> {
-    device_symbol(name).filter(|_| device_gate(dev, name))
+fn device_core_symbol(name: &str) -> Option<*mut c_void> {
+    device_symbol(name).filter(|_| CORE_10_DEVICE_HOOKS.contains(&name))
 }
 
 fn null_ok_ptr(name: &str) -> *mut c_void {
@@ -255,16 +294,28 @@ fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
     }
 }
 
-fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
+fn instance_path_symbol(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
     match (
         instance_symbol(name),
-        device_symbol(name),
+        device_core_symbol_by_name(name),
+        instance_gated_surface(inst, name),
         instance_hooked_symbol(inst, name),
     ) {
-        (Some(p), _, _) => unsafe { mem::transmute(p) },
-        (None, Some(p), _) => unsafe { mem::transmute(p) },
-        (None, None, Some(p)) => unsafe { mem::transmute(p) },
-        (None, None, None) => forward_instance_proc(inst, name),
+        (Some(p), _, _, _) => Some(p),
+        (None, Some(p), _, _) => Some(p),
+        (None, None, Some(p), _) => Some(p),
+        (None, None, None, found) => found,
+    }
+}
+
+fn device_core_symbol_by_name(name: &str) -> Option<*mut c_void> {
+    device_core_symbol(name)
+}
+
+fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
+    match instance_path_symbol(inst, name) {
+        Some(p) => unsafe { mem::transmute(p) },
+        None => forward_instance_proc(inst, name),
     }
 }
 
@@ -368,10 +419,15 @@ unsafe extern "system" fn vkGetInstanceProcAddr(inst: vk::Instance, name: *const
 
 unsafe extern "system" fn vkGetDeviceProcAddr(dev: vk::Device, name: *const c_char) -> vk::PFN_vkVoidFunction {
     let n = cstr_to_str(name);
-    match (device_gated_symbol(dev, n), device_hooked_symbol(dev, n)) {
-        (Some(p), _) => mem::transmute(p),
-        (None, Some(p)) => mem::transmute(p),
-        (None, None) => forward_device_proc(dev, n),
+    match (
+        device_core_symbol(n),
+        device_provided_hooked(dev, n),
+        device_hooked_symbol(dev, n),
+    ) {
+        (Some(p), _, _) => mem::transmute(p),
+        (None, Some(p), _) => mem::transmute(p),
+        (None, None, Some(p)) => mem::transmute(p),
+        (None, None, None) => forward_device_proc(dev, n),
     }
 }
 

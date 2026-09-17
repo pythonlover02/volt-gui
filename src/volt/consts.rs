@@ -1,3 +1,5 @@
+use ash::vk;
+
 pub(crate) const ENABLE_VALUE: &str = "1";
 pub(crate) const DEFAULT_PROFILE: &str = "default";
 pub(crate) const RESERVED_PROFILES: [&str; 2] = ["probe", "options"];
@@ -226,6 +228,82 @@ pub(crate) const FN_PIPELINE_INDIRECT_MEMORY: &str = "vkGetPipelineIndirectMemor
 
 pub(crate) const TAG_XCB: &str = "xcb";
 pub(crate) const TAG_WAYLAND: &str = "wayland";
+
+pub(crate) const FN_GET_INSTANCE_PROC_ADDR: &str = "vkGetInstanceProcAddr";
+pub(crate) const FN_GET_DEVICE_PROC_ADDR: &str = "vkGetDeviceProcAddr";
+pub(crate) const FN_CREATE_INSTANCE: &str = "vkCreateInstance";
+pub(crate) const FN_DESTROY_INSTANCE: &str = "vkDestroyInstance";
+pub(crate) const FN_CREATE_DEVICE: &str = "vkCreateDevice";
+pub(crate) const FN_DESTROY_DEVICE: &str = "vkDestroyDevice";
+pub(crate) const FN_ENUMERATE_DEVICES: &str = "vkEnumeratePhysicalDevices";
+pub(crate) const FN_CREATE_GRAPHICS_PIPELINES: &str = "vkCreateGraphicsPipelines";
+pub(crate) const FN_CREATE_SAMPLER: &str = "vkCreateSampler";
+pub(crate) const FN_ALLOCATE_COMMAND_BUFFERS: &str = "vkAllocateCommandBuffers";
+pub(crate) const FN_FREE_COMMAND_BUFFERS: &str = "vkFreeCommandBuffers";
+pub(crate) const FN_DESTROY_COMMAND_POOL: &str = "vkDestroyCommandPool";
+pub(crate) const FN_DEVICE_QUEUE: &str = "vkGetDeviceQueue";
+pub(crate) const FN_SURFACE_PRESENT_MODES: &str = "vkGetPhysicalDeviceSurfacePresentModesKHR";
+pub(crate) const FN_SURFACE_CAPS: &str = "vkGetPhysicalDeviceSurfaceCapabilitiesKHR";
+
+pub(crate) const EXT_SURFACE: &str = "VK_KHR_surface";
+pub(crate) const EXT_SWAPCHAIN: &str = "VK_KHR_swapchain";
+pub(crate) const EXT_DISPLAY_SWAPCHAIN: &str = "VK_KHR_display_swapchain";
+pub(crate) const EXT_DESCRIPTOR_HEAP: &str = "VK_EXT_descriptor_heap";
+pub(crate) const EXT_SHADER_OBJECT: &str = "VK_EXT_shader_object";
+pub(crate) const EXT_RAY_TRACING_PIPELINE: &str = "VK_KHR_ray_tracing_pipeline";
+pub(crate) const EXT_NV_RAY_TRACING: &str = "VK_NV_ray_tracing";
+pub(crate) const EXT_NV_GENERATED_COMPUTE: &str = "VK_NV_device_generated_commands_compute";
+pub(crate) const EXT_DYNAMIC_STATE_3: &str = "VK_EXT_extended_dynamic_state3";
+pub(crate) const EXT_DEVICE_GROUP_CREATION: &str = "VK_KHR_device_group_creation";
+pub(crate) const EXT_GET_SURFACE_CAPS_2: &str = "VK_KHR_get_surface_capabilities2";
+pub(crate) const EXT_XCB_SURFACE: &str = "VK_KHR_xcb_surface";
+pub(crate) const EXT_XLIB_SURFACE: &str = "VK_KHR_xlib_surface";
+pub(crate) const EXT_WAYLAND_SURFACE: &str = "VK_KHR_wayland_surface";
+
+pub(crate) enum Provider {
+    Version(u32),
+    Ext(&'static str),
+}
+
+pub(crate) const HOOK_PROVIDERS: &[(&str, Provider)] = &[
+    (FN_SURFACE_PRESENT_MODES, Provider::Ext(EXT_SURFACE)),
+    (FN_SURFACE_CAPS, Provider::Ext(EXT_SURFACE)),
+    (FN_DESTROY_SURFACE, Provider::Ext(EXT_SURFACE)),
+    (FN_SURFACE_CAPS_2, Provider::Ext(EXT_GET_SURFACE_CAPS_2)),
+    (FN_DEVICE_GROUPS, Provider::Version(vk::API_VERSION_1_1)),
+    (FN_DEVICE_GROUPS_KHR, Provider::Ext(EXT_DEVICE_GROUP_CREATION)),
+    (FN_CREATE_XCB_SURFACE, Provider::Ext(EXT_XCB_SURFACE)),
+    (FN_CREATE_XLIB_SURFACE, Provider::Ext(EXT_XLIB_SURFACE)),
+    (FN_CREATE_WAYLAND_SURFACE, Provider::Ext(EXT_WAYLAND_SURFACE)),
+    (FN_CREATE_SWAPCHAIN, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_DESTROY_SWAPCHAIN, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_QUEUE_PRESENT, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_DEVICE_QUEUE_2, Provider::Version(vk::API_VERSION_1_1)),
+    (FN_SHARED_SWAPCHAINS, Provider::Ext(EXT_DISPLAY_SWAPCHAIN)),
+    (FN_WRITE_SAMPLERS, Provider::Ext(EXT_DESCRIPTOR_HEAP)),
+    (FN_CREATE_SHADERS, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_CREATE_RAY_TRACING_KHR, Provider::Ext(EXT_RAY_TRACING_PIPELINE)),
+    (FN_CREATE_RAY_TRACING_NV, Provider::Ext(EXT_NV_RAY_TRACING)),
+    (FN_PIPELINE_INDIRECT_MEMORY, Provider::Ext(EXT_NV_GENERATED_COMPUTE)),
+    (FN_SET_ALPHA_COVERAGE, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_ALPHA_COVERAGE, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_SET_ALPHA_ONE, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_ALPHA_ONE, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_SHADER_OBJECT)),
+];
+
+pub(crate) const CORE_10_DEVICE_HOOKS: [&str; 9] = [
+    FN_GET_DEVICE_PROC_ADDR,
+    FN_DESTROY_DEVICE,
+    FN_CREATE_GRAPHICS_PIPELINES,
+    FN_CREATE_COMPUTE_PIPELINES,
+    FN_CREATE_SAMPLER,
+    FN_ALLOCATE_COMMAND_BUFFERS,
+    FN_FREE_COMMAND_BUFFERS,
+    FN_DESTROY_COMMAND_POOL,
+    FN_DEVICE_QUEUE,
+];
 
 pub(crate) const SURFACE_CREATORS: [(&str, &str); 3] = [
     (FN_CREATE_XCB_SURFACE, TAG_XCB),

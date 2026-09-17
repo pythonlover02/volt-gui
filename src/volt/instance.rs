@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ffi::c_char;
 use std::ffi::c_void;
+use std::ffi::CStr;
 use std::ffi::CString;
+use std::sync::Arc;
 use std::mem;
 use std::ptr;
 use std::sync::RwLock;
@@ -51,6 +54,8 @@ use crate::consts::VALIDATION_FEATURES_TYPE;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::GPU_EMPTY_WARN;
+use crate::consts::HOOK_PROVIDERS;
+use crate::consts::Provider;
 use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::SURFACE_CREATORS;
 use crate::lists::filtered;
@@ -707,6 +712,28 @@ pub(crate) struct VkInstState {
     pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
     pub(crate) surface_fps: HashMap<&'static str, PfnCreateSurface>,
     pub(crate) destroy_surface_fp: Option<PfnDestroySurface>,
+    pub(crate) api_version: u32,
+    pub(crate) extensions: Arc<HashSet<String>>,
+}
+
+pub(crate) fn provider_on(api_version: u32, extensions: &HashSet<String>, command: &str) -> bool {
+    HOOK_PROVIDERS
+        .iter()
+        .filter(|(name, _)| *name == command)
+        .any(|(_, provider)| match provider {
+            Provider::Version(least) => api_version >= *least,
+            Provider::Ext(name) => extensions.contains(*name),
+        })
+}
+
+pub(crate) fn cstr_names(names: *const *const c_char, count: u32) -> HashSet<String> {
+    (0..count as usize)
+        .map(|at| {
+            unsafe { CStr::from_ptr(*names.add(at)) }
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect()
 }
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
@@ -1259,7 +1286,28 @@ fn call_surface_creators(
         .collect()
 }
 
-fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) {
+fn requested_api_version(ci: *const vk::InstanceCreateInfo<'_>) -> u32 {
+    match unsafe { (*ci).p_application_info.as_ref() } {
+        None => vk::API_VERSION_1_0,
+        Some(info) => match info.api_version {
+            0 => vk::API_VERSION_1_0,
+            asked => asked,
+        },
+    }
+}
+
+fn requested_instance_extensions(ci: *const vk::InstanceCreateInfo<'_>) -> HashSet<String> {
+    cstr_names(unsafe { (*ci).pp_enabled_extension_names }, unsafe {
+        (*ci).enabled_extension_count
+    })
+}
+
+fn register_instance(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    handle: vk::Instance,
+    api_version: u32,
+    extensions: HashSet<String>,
+) {
     let static_fn = ash::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
     call_remember_owner(handle, call_owned_devices(&instance));
@@ -1274,6 +1322,8 @@ fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) 
             groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),
             surface_fps: call_surface_creators(gipa, handle),
             destroy_surface_fp: call_typed_instance_fp(gipa, handle, FN_DESTROY_SURFACE),
+            api_version,
+            extensions: Arc::new(extensions),
         },
     );
     log_at(LogLevel::Info, "vk instance registered");
@@ -1291,7 +1341,12 @@ fn invoke_create_instance(
         cf(ci, alloc, out)
     } {
         vk::Result::SUCCESS => {
-            register_instance(gipa, unsafe { *out });
+            register_instance(
+                gipa,
+                unsafe { *out },
+                requested_api_version(ci),
+                requested_instance_extensions(ci),
+            );
             vk::Result::SUCCESS
         }
         e => e,
