@@ -14,7 +14,7 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::consts::ATTACHMENT_SAMPLE_COUNT_TYPE;
-use crate::consts::CHAIN_NODE_WARN;
+use crate::consts::CHAIN_NODE_REASON;
 use crate::consts::CUSTOM_RESOLVE_TYPE;
 use crate::consts::DEBUG_UTILS_OBJECT_NAME_TYPE;
 use crate::consts::DEVICE_GROUP_PROPERTIES_TYPE;
@@ -1278,11 +1278,15 @@ pub(crate) fn call_relinked_chain(
     head: *const c_void,
     target: u32,
     replacement: *const c_void,
+    setting: &'static str,
 ) -> Option<Relinked> {
     match relinked_chain(head, target, replacement) {
         Some(built) => Some(built),
         None => {
-            log_at(LogLevel::Warn, CHAIN_NODE_WARN);
+            log_at(
+                LogLevel::Warn,
+                &format!("{}: {}", setting, CHAIN_NODE_REASON),
+            );
             None
         }
     }

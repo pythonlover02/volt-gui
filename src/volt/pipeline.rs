@@ -451,7 +451,12 @@ fn linked_groups(
         .map(|(group, built)| rebuilt_group(group, built))
         .collect();
     let owned = vec![rebuilt_groups_node(node, &groups)];
-    let relink = call_relinked_chain(head, SHADER_GROUPS_TYPE, owned.as_ptr() as *const c_void)?;
+    let relink = call_relinked_chain(
+        head,
+        SHADER_GROUPS_TYPE,
+        owned.as_ptr() as *const c_void,
+        "sampler",
+    )?;
     Some(GroupsRebuild {
         head: relink.head,
         each,

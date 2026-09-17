@@ -756,6 +756,7 @@ fn built_present<'a>(
         info.p_next,
         SWAPCHAIN_PRESENT_MODE_INFO_TYPE,
         owned.as_ptr() as *const c_void,
+        "present_mode",
     )?;
     Some(PresentRebuild {
         info: vk::PresentInfoKHR {
@@ -825,6 +826,7 @@ fn rebuilt_swapchain(
         patched.p_next,
         SWAPCHAIN_MODE_LIST_TYPE,
         owned.as_ptr() as *const c_void,
+        "present_mode",
     ) {
         Some(relink) => SwapchainRebuild {
             ci: vk::SwapchainCreateInfoKHR {

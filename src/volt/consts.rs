@@ -79,8 +79,8 @@ pub(crate) const SHADER_MAPPING_INFO_TYPE: u32 = 1000135006;
 pub(crate) const SAMPLER_YCBCR_CONVERSION_INFO_TYPE: u32 = 1000156001;
 pub(crate) const SAMPLER_SUBSAMPLED_BIT: u32 = 1;
 pub(crate) const SAMPLER_IMAGE_PROCESSING_BIT: u32 = 16;
-pub(crate) const SAMPLER_SHAPE_LOG: &str = "the sampler's own shape restricts this field, leaving it alone";
-pub(crate) const MIP_FLOOR_DROPPED_LOG: &str = "the forced mip floor would cross the ceiling beside it, keeping the application value";
+pub(crate) const SAMPLER_SHAPE_REASON: &str = "the sampler's own shape restricts it, keeping the application value";
+pub(crate) const MIP_FLOOR_DROPPED_LOG: &str = "mip_floor: the forced value would cross the ceiling beside it, keeping the application value";
 pub(crate) const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
 pub(crate) const EXT_MIXED_SAMPLES: &str = "VK_NV_framebuffer_mixed_samples";
 
@@ -124,7 +124,7 @@ pub(crate) const LEVEL_WORD_OFF: &str = "off";
 pub(crate) const LEVEL_WORD_ERROR: &str = "error";
 pub(crate) const LEVEL_WORD_INFO: &str = "info";
 pub(crate) const LEVEL_WORD_WARN: &str = "warn";
-pub(crate) const MIP_CEILING_DROPPED_LOG: &str = "the forced mip ceiling would cross the floor beside it, keeping the application value";
+pub(crate) const MIP_CEILING_DROPPED_LOG: &str = "mip_ceiling: the forced value would cross the floor beside it, keeping the application value";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 
 pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
@@ -173,10 +173,10 @@ pub(crate) const RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE: u32 = 1000150015;
 pub(crate) const FN_GET_PIPELINE_KEY: &str = "vkGetPipelineKeyKHR";
 pub(crate) const FN_CREATE_PIPELINE_BINARIES: &str = "vkCreatePipelineBinariesKHR";
 pub(crate) const EXT_PIPELINE_BINARY: &str = "VK_KHR_pipeline_binary";
-pub(crate) const BINARY_INFO_LOG: &str = "a create info naming pipeline binaries was rebuilt like any other";
-pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "the wrapped create info is one this build does not declare, leaving the setting alone";
+pub(crate) const BINARY_INFO_LOG: &str = "pipeline: a create info naming pipeline binaries was rebuilt like any other";
+pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "sampler: the wrapped create info is one this build does not declare, leaving the setting alone";
 
-pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
+pub(crate) const CHAIN_NODE_REASON: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
 pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
 pub(crate) const SURFACE_PRESENT_MODE_TYPE: u32 = 1000274000;
 pub(crate) const SURFACE_INFO_2_TYPE: u32 = 1000119000;
@@ -228,17 +228,17 @@ pub(crate) const PACING_PRECISE: &str = "precise";
 pub(crate) const PACING_SPIN: &str = "spin";
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
-pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
-pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
+pub(crate) const PRESENT_MISS_WARN: &str = "present_mode: the surface does not support it, keeping application choice";
+pub(crate) const PRESENT_EMPTY_WARN: &str = "present_mode: the choice matched no supported mode, keeping every mode";
 
-pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
+pub(crate) const ALPHA_MISS_WARN: &str = "composite_alpha: the surface does not support it, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer with no registered device";
 
-pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
-pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
-pub(crate) const GPU_MISS_WARN: &str = "gpu selection did not take, the application kept the device it picked";
-pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
+pub(crate) const GPU_EMPTY_WARN: &str = "gpu device: the choice matched no device, keeping every device";
+pub(crate) const GROUP_EMPTY_WARN: &str = "gpu device: the choice matched no device group, keeping every group";
+pub(crate) const GPU_MISS_WARN: &str = "gpu device: the choice did not take, the application kept the device it picked";
+pub(crate) const ALPHA_OPAQUE_INFO: &str = "composite_alpha: opaque skips compositor blending";
 
 pub(crate) const REPORT_MARK: &str = ": ";
 pub(crate) const REPORT_SEP: &str = ", ";

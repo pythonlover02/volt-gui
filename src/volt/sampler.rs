@@ -11,7 +11,7 @@ use crate::consts::FILTER_CUBIC;
 use crate::consts::MIP_CEILING_DROPPED_LOG;
 use crate::consts::MIP_FLOOR_DROPPED_LOG;
 use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
-use crate::consts::SAMPLER_SHAPE_LOG;
+use crate::consts::SAMPLER_SHAPE_REASON;
 use crate::consts::SAMPLER_SUBSAMPLED_BIT;
 use crate::consts::SAMPLER_YCBCR_CONVERSION_INFO_TYPE;
 use crate::consts::SETTING_ANISOTROPY;
@@ -150,21 +150,24 @@ fn shape_choice<T>(choice: Option<T>, restricted: bool) -> Option<T> {
     }
 }
 
-fn call_shape_line(restricted: bool, any_set: bool) {
-    match restricted && any_set {
-        true => log_at(LogLevel::Info, SAMPLER_SHAPE_LOG),
+fn call_shape_line(setting: &str, restricted: bool, set: bool) {
+    match restricted && set {
+        true => log_at(
+            LogLevel::Info,
+            &format!("{}: {}", setting, SAMPLER_SHAPE_REASON),
+        ),
         false => (),
     }
 }
 
-fn any_sampler_setting(s: &Settings) -> bool {
-    s.mag_filter.is_some()
-        || s.min_filter.is_some()
-        || s.mipmap.is_some()
-        || s.anisotropy.is_some()
-        || s.lod_bias.is_some()
-        || s.mip_floor.is_some()
-        || s.mip_ceiling.is_some()
+fn call_shape_lines(s: &Settings, restricted: bool) {
+    call_shape_line(SETTING_MAG_FILTER, restricted, s.mag_filter.is_some());
+    call_shape_line(SETTING_MIN_FILTER, restricted, s.min_filter.is_some());
+    call_shape_line(SETTING_MIPMAP_MODE, restricted, s.mipmap.is_some());
+    call_shape_line(SETTING_ANISOTROPY, restricted, s.anisotropy.is_some());
+    call_shape_line(SETTING_LOD_BIAS, restricted, s.lod_bias.is_some());
+    call_shape_line(SETTING_MIP_FLOOR, restricted, s.mip_floor.is_some());
+    call_shape_line(SETTING_MIP_CEILING, restricted, s.mip_ceiling.is_some());
 }
 
 fn shaped_range(s: &Settings, restricted: bool, original: (f32, f32)) -> (f32, f32) {
@@ -185,7 +188,7 @@ fn patched_ci<'a>(
 ) -> vk::SamplerCreateInfo<'a> {
     let restricted = restricted_shape(original);
     let linear = already_linear(original);
-    call_shape_line(restricted, any_sampler_setting(s));
+    call_shape_lines(s, restricted);
     let (aniso_enable, aniso_max) = pick_aniso(
         shape_choice(s.anisotropy, restricted),
         caps,
@@ -530,6 +533,7 @@ fn built_chain(
         head,
         SHADER_MAPPING_INFO_TYPE,
         node.as_ptr() as *const c_void,
+        "sampler",
     )?;
     Some(ChainRebuild {
         head: relink.head,

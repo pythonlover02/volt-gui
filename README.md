@@ -377,19 +377,19 @@ volt wrote in its place.
 
 ```
 [volt] gpu device: asked 2
-[volt] present_mode: asked fifo, forced mailbox
+[volt] present_mode: asked fifo, applied mailbox
 [volt] image_count: asked 3
-[volt] mag_filter: asked linear, forced nearest
-[volt] anisotropy: asked off, forced 16
-[volt] depth_clamp: asked off; the application did not enable depthClamp
-[volt] frame_limit: forced 60
+[volt] mag_filter: asked linear, applied nearest
+[volt] anisotropy: the application did not enable samplerAnisotropy
+[volt] depth_clamp: the application did not enable depthClamp
+[volt] frame_limit: applied 60
 [volt] frame_pacing: the profile did not set it
 ```
 
-No forced value means volt left that setting alone, either because it is
-`default` or because the game already asked for what you picked. The forced
-value is the one volt wrote, so a setting the device clamped shows what
-landed rather than what the profile says.
+Every setting line names the setting first, then either the value the game
+asked for and the value volt wrote in its place, or the reason the setting
+did not land. The applied value is the one volt wrote, so a setting the
+device clamped shows what landed rather than what the profile says.
 
 The five Framerate settings have no asked value, since a game never tells
 Vulkan what frame rate it wants. They report what volt forced, or say the
