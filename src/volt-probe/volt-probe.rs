@@ -16,6 +16,13 @@ const API_PATCH: u32 = 0;
 const API_VARIANT: u32 = 0;
 const EXIT_OK: i32 = 0;
 const EXIT_FAIL: i32 = 1;
+const EXIT_UNSUPPORTED: i32 = 2;
+const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
+const EXT_PORTABILITY_ENUMERATION: &str = "VK_KHR_portability_enumeration";
+const EXT_PROPERTIES_2: &str = "VK_KHR_get_physical_device_properties2";
+const API_ONE_ONE: u32 = 4198400;
+const NO_ARRAY_LAYERS: u32 = 0;
+const ZERO_EXTENT: u32 = 0;
 const IMAGE_LAYERS: u32 = 1;
 const QUEUE_COUNT: u32 = 1;
 const QUEUE_PRIORITY: f32 = 1.0;
@@ -96,20 +103,48 @@ fn graphics_family(props: &[vk::QueueFamilyProperties]) -> Option<u32> {
         .map(|at| at as u32)
 }
 
-fn swapchain_extent(caps: &vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
+fn asked_extent(caps: &vk::SurfaceCapabilitiesKHR) -> (u32, u32) {
     match caps.current_extent.width {
-        u32::MAX => vk::Extent2D {
-            width: WINDOW_EDGE as u32,
-            height: WINDOW_EDGE as u32,
-        },
-        _ => caps.current_extent,
+        u32::MAX => (WINDOW_EDGE as u32, WINDOW_EDGE as u32),
+        _ => (caps.current_extent.width, caps.current_extent.height),
     }
+}
+
+fn swapchain_extent(caps: &vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
+    let (width, height) = asked_extent(caps);
+    vk::Extent2D {
+        width: width.clamp(caps.min_image_extent.width, caps.max_image_extent.width),
+        height: height.clamp(caps.min_image_extent.height, caps.max_image_extent.height),
+    }
+}
+
+fn surface_usable(caps: &vk::SurfaceCapabilitiesKHR) -> bool {
+    caps.current_extent.width != ZERO_EXTENT
+        && caps.current_extent.height != ZERO_EXTENT
+        && caps.max_image_array_layers > NO_ARRAY_LAYERS
+        && caps
+            .supported_usage_flags
+            .contains(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+        && caps.supported_composite_alpha.as_raw() != 0
+}
+
+fn lowest_bit(mask: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
+    vk::CompositeAlphaFlagsKHR::from_raw(mask.as_raw() & mask.as_raw().wrapping_neg())
 }
 
 fn supported_alpha(mask: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
     match mask.contains(vk::CompositeAlphaFlagsKHR::OPAQUE) {
         true => vk::CompositeAlphaFlagsKHR::OPAQUE,
-        false => vk::CompositeAlphaFlagsKHR::INHERIT,
+        false => lowest_bit(mask),
+    }
+}
+
+fn supported_transform(caps: &vk::SurfaceCapabilitiesKHR) -> vk::SurfaceTransformFlagsKHR {
+    match caps.supported_transforms.contains(caps.current_transform) {
+        true => caps.current_transform,
+        false => vk::SurfaceTransformFlagsKHR::from_raw(
+            caps.supported_transforms.as_raw() & caps.supported_transforms.as_raw().wrapping_neg(),
+        ),
     }
 }
 
@@ -127,7 +162,7 @@ fn swapchain_info(
         image_array_layers: IMAGE_LAYERS,
         image_usage: vk::ImageUsageFlags::COLOR_ATTACHMENT,
         image_sharing_mode: vk::SharingMode::EXCLUSIVE,
-        pre_transform: caps.current_transform,
+        pre_transform: supported_transform(caps),
         composite_alpha: supported_alpha(caps.supported_composite_alpha),
         present_mode: vk::PresentModeKHR::FIFO,
         clipped: vk::TRUE,
@@ -164,10 +199,88 @@ fn call_create_instance(entry: &ash::Entry) -> Option<ash::Instance> {
     unsafe { entry.create_instance(&info, None) }.ok()
 }
 
-fn call_first_physical(instance: &ash::Instance) -> Option<vk::PhysicalDevice> {
-    unsafe { instance.enumerate_physical_devices() }
+enum DeviceOutcome {
+    Ready(vk::PhysicalDevice),
+    Unsupported,
+    Missing,
+}
+
+fn device_extension_names(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Vec<String> {
+    unsafe { instance.enumerate_device_extension_properties(phys) }
+        .unwrap_or_default()
+        .iter()
+        .filter_map(available_name)
+        .collect()
+}
+
+fn portability_listed(names: &[String]) -> bool {
+    names.iter().any(|one| one == EXT_PORTABILITY_SUBSET)
+}
+
+fn outcome_for(
+    phys: vk::PhysicalDevice,
+    listed: bool,
+    support: bool,
+) -> DeviceOutcome {
+    match (listed, support) {
+        (true, false) => DeviceOutcome::Unsupported,
+        (_, _) => DeviceOutcome::Ready(phys),
+    }
+}
+
+fn call_first_physical(
+    instance: &ash::Instance,
+    support: bool,
+) -> DeviceOutcome {
+    match unsafe { instance.enumerate_physical_devices() }
         .ok()
         .and_then(|all| all.first().copied())
+    {
+        None => DeviceOutcome::Missing,
+        Some(phys) => outcome_for(
+            phys,
+            portability_listed(&device_extension_names(instance, phys)),
+            support,
+        ),
+    }
+}
+
+fn portability_support(entry: &ash::Entry) -> bool {
+    let names = available_names(entry);
+    let version = unsafe { entry.try_enumerate_instance_version() }
+        .ok()
+        .flatten()
+        .unwrap_or(0);
+    version >= API_ONE_ONE
+        || names.iter().any(|one| one == EXT_PROPERTIES_2)
+        || names.iter().any(|one| one == EXT_PORTABILITY_ENUMERATION)
+}
+
+fn call_surface_supported(
+    loader: &ash::khr::surface::Instance,
+    phys: vk::PhysicalDevice,
+    family: u32,
+    surface: vk::SurfaceKHR,
+) -> bool {
+    unsafe { loader.get_physical_device_surface_support(phys, family, surface) }.unwrap_or(false)
+}
+
+fn call_format_supported(
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    format: vk::Format,
+) -> bool {
+    unsafe {
+        instance.get_physical_device_image_format_properties(
+            phys,
+            format,
+            vk::ImageType::TYPE_2D,
+            vk::ImageTiling::OPTIMAL,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            vk::ImageCreateFlags::empty(),
+        )
+    }
+    .is_ok()
 }
 
 fn call_graphics_family(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Option<u32> {
@@ -264,8 +377,21 @@ fn call_on_swapchain(
     surfaces: &ash::khr::surface::Instance,
     surface: vk::SurfaceKHR,
 ) -> Option<()> {
+    let family = call_graphics_family(instance, phys)?;
+    match call_surface_supported(surfaces, phys, family, surface) {
+        true => (),
+        false => return None,
+    }
     let caps = call_surface_caps(surfaces, phys, surface)?;
+    match surface_usable(&caps) {
+        true => (),
+        false => return None,
+    }
     let format = call_first_format(surfaces, phys, surface)?;
+    match call_format_supported(instance, phys, format.format) {
+        true => (),
+        false => return None,
+    }
     let create: PfnCreateSwapchain = call_device_fn(instance, device, FN_CREATE_SWAPCHAIN)?;
     let destroy: PfnDestroySwapchain = call_device_fn(instance, device, FN_DESTROY_SWAPCHAIN)?;
     let swapchain = call_create_swapchain(create, device, surface, format, &caps)?;
@@ -334,25 +460,37 @@ fn call_with_device(
     done
 }
 
-fn call_on_instance(entry: &ash::Entry, instance: &ash::Instance) -> Option<()> {
-    call_with_device(entry, instance, call_first_physical(instance)?)
+fn exit_of(done: Option<()>) -> i32 {
+    match done {
+        Some(()) => EXIT_OK,
+        None => EXIT_FAIL,
+    }
 }
 
-fn call_with_instance(entry: &ash::Entry) -> Option<()> {
-    let instance = call_create_instance(entry)?;
-    let done = call_on_instance(entry, &instance);
-    unsafe { instance.destroy_instance(None) };
-    done
+fn call_on_instance(entry: &ash::Entry, instance: &ash::Instance, support: bool) -> i32 {
+    match call_first_physical(instance, support) {
+        DeviceOutcome::Missing => EXIT_FAIL,
+        DeviceOutcome::Unsupported => EXIT_UNSUPPORTED,
+        DeviceOutcome::Ready(phys) => exit_of(call_with_device(entry, instance, phys)),
+    }
 }
 
-fn call_probe() -> Option<()> {
-    call_with_instance(&call_entry()?)
+fn call_with_instance(entry: &ash::Entry) -> i32 {
+    let support = portability_support(entry);
+    match call_create_instance(entry) {
+        None => EXIT_FAIL,
+        Some(instance) => {
+            let code = call_on_instance(entry, &instance, support);
+            unsafe { instance.destroy_instance(None) };
+            code
+        }
+    }
 }
 
 fn call_status() -> i32 {
-    match call_probe() {
-        Some(()) => EXIT_OK,
+    match call_entry() {
         None => EXIT_FAIL,
+        Some(entry) => call_with_instance(&entry),
     }
 }
 

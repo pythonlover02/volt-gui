@@ -80,6 +80,8 @@ volt-gui runs `volt-probe` under the profile you are editing. For each backend i
 volt --probe myprofile -- volt-probe
 ```
 
+It exits 0 on success, 1 where the instance or the device could not be created, and 2 where the device lists the portability subset and the instance support that extension depends on is missing. The layer records device facts at enumeration, so the device-backed cards fill either way.
+
 It opens X11 and Wayland, each through a library loaded at runtime, so a machine missing one reports the other and a machine missing both leaves those settings on `default`. This only affects present modes, image counts and alpha modes. The file carries one section per backend that opened, and the card offers the union with every value naming the backends that reported it: `mailbox (xcb, wayland)`, `immediate (xcb)`. The tag is a label only, profiles store the value. Games may open gamescope or a Flatpak surface instead, and where the game's surface refuses a value the layer handles it at runtime: image count is clamped against the real surface, and a rejected present or alpha mode leaves the game's value with a warning.
 
 ### GPU

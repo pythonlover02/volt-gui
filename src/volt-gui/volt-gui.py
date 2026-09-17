@@ -628,7 +628,7 @@ def process_preview_error(main_window, process_error) -> None:
 
 def process_preview_exit(main_window, exit_code: int, exit_status) -> None:
     match (exit_status == QProcess.ExitStatus.NormalExit, exit_code):
-        case (True, 0):
+        case (True, 0) | (True, 2):
             return None
         case (True, _):
             process_probe_failure(main_window)
