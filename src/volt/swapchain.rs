@@ -152,12 +152,12 @@ fn chosen_alpha(
 
 fn pick_alpha(
     choice: Option<vk::CompositeAlphaFlagsKHR>,
-    mask: vk::CompositeAlphaFlagsKHR,
+    mask: Option<vk::CompositeAlphaFlagsKHR>,
     original: vk::CompositeAlphaFlagsKHR,
 ) -> vk::CompositeAlphaFlagsKHR {
-    match choice {
-        Some(value) => chosen_alpha(mask, value, original),
-        None => original,
+    match (choice, mask) {
+        (Some(value), Some(held)) => chosen_alpha(held, value, original),
+        (_, _) => original,
     }
 }
 
@@ -172,17 +172,19 @@ fn caps_upper(caps_max: u32) -> u32 {
     }
 }
 
+fn clamped_count(choice: Option<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
+    forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
+}
+
 fn pick_image_count(
     choice: Option<u32>,
-    caps: &vk::SurfaceCapabilitiesKHR,
+    caps: Option<&vk::SurfaceCapabilitiesKHR>,
     mode: vk::PresentModeKHR,
     original: u32,
 ) -> u32 {
-    match present_is_shared(mode) {
-        true => original,
-        false => {
-            forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
-        }
+    match (present_is_shared(mode), caps) {
+        (false, Some(held)) => clamped_count(choice, held, original),
+        (_, _) => original,
     }
 }
 
@@ -315,7 +317,7 @@ fn call_report_swapchain(
 fn patched_swapchain_ci<'a>(
     original: &vk::SwapchainCreateInfoKHR<'a>,
     chosen: vk::PresentModeKHR,
-    caps: &vk::SurfaceCapabilitiesKHR,
+    caps: Option<&vk::SurfaceCapabilitiesKHR>,
     s: &Settings,
 ) -> vk::SwapchainCreateInfoKHR<'a> {
     vk::SwapchainCreateInfoKHR {
@@ -323,7 +325,7 @@ fn patched_swapchain_ci<'a>(
         min_image_count: pick_image_count(s.image_count, caps, chosen, original.min_image_count),
         composite_alpha: pick_alpha(
             s.composite_alpha,
-            caps.supported_composite_alpha,
+            caps.map(|held| held.supported_composite_alpha),
             original.composite_alpha,
         ),
         clipped: pick_clipped(s.clipped, original.clipped),
@@ -354,17 +356,13 @@ fn call_query_surface_caps(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
     surface: vk::SurfaceKHR,
-) -> vk::SurfaceCapabilitiesKHR {
+) -> Option<vk::SurfaceCapabilitiesKHR> {
     let mut caps = vk::SurfaceCapabilitiesKHR::default();
     match unsafe {
         (inst.surface_fp.get_physical_device_surface_capabilities_khr)(phys, surface, &mut caps)
     } {
-        vk::Result::SUCCESS => caps,
-        _ => vk::SurfaceCapabilitiesKHR {
-            min_image_count: 1,
-            max_image_count: 0,
-            ..caps
-        },
+        vk::Result::SUCCESS => Some(caps),
+        _ => None,
     }
 }
 
@@ -501,11 +499,13 @@ pub(crate) fn call_surface_capabilities2(
 fn maybe_probe(
     tag: Option<&'static str>,
     supported: &[vk::PresentModeKHR],
-    caps: &vk::SurfaceCapabilitiesKHR,
+    caps: Option<&vk::SurfaceCapabilitiesKHR>,
 ) {
-    match (env_probe_active(), tag) {
-        (true, Some(name)) => call_record_surface(name, build_surface(supported, caps)),
-        (_, _) => (),
+    match (env_probe_active(), tag, caps) {
+        (true, Some(name), Some(held)) => {
+            call_record_surface(name, build_surface(supported, held))
+        }
+        (_, _, _) => (),
     }
 }
 
@@ -605,13 +605,13 @@ fn call_prepared_ci<'a>(
     maybe_probe(
         surface_tag(vk::Instance::from_raw(dev.instance_handle), original.surface),
         &supported,
-        &caps,
+        caps.as_ref(),
     );
     maybe_log_alpha(s.composite_alpha);
     let patched = patched_swapchain_ci(
         original,
         pick_present_mode(s.present_mode, &supported, original.present_mode),
-        &caps,
+        caps.as_ref(),
         s,
     );
     call_report_swapchain(dev, s, original, &patched);
