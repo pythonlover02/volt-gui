@@ -124,7 +124,7 @@ pub(crate) fn applied_text<T: Copy>(held: T, text: fn(T) -> String) -> String {
     text(held)
 }
 
-pub(crate) fn call_report_value<T: Copy + PartialEq>(
+pub(crate) fn call_report_value<T: Copy>(
     owner: u64,
     name: &'static str,
     asked: T,
