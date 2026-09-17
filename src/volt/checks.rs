@@ -5,6 +5,7 @@ use std::sync::RwLock;
 
 use ash::vk;
 
+use crate::config::parse_float;
 use crate::config::parse_settings;
 use crate::config::sanitize_name;
 use crate::consts::CadenceChoice;
@@ -118,12 +119,25 @@ const MAILBOX_VALUE: u32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
+const NAN_TEXT: &str = "NaN";
+const INF_TEXT: &str = "inf";
+const NEG_INF_TEXT: &str = "-inf";
+const FINITE_TEXT: &str = "1.5";
+const FINITE_VALUE: f32 = 1.5;
 
 #[test]
 fn reads_one_spelling_of_the_default_profile_name() {
     assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
     assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+}
+
+#[test]
+fn a_number_that_is_not_finite_is_not_a_value() {
+    assert_eq!(parse_float(NAN_TEXT), None);
+    assert_eq!(parse_float(INF_TEXT), None);
+    assert_eq!(parse_float(NEG_INF_TEXT), None);
+    assert_eq!(parse_float(FINITE_TEXT), Some(FINITE_VALUE));
 }
 
 #[test]

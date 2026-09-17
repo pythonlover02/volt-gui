@@ -89,8 +89,8 @@ fn non_default(text: &str) -> Option<&str> {
     }
 }
 
-fn parse_float(text: &str) -> Option<f32> {
-    text.parse::<f32>().ok()
+pub(crate) fn parse_float(text: &str) -> Option<f32> {
+    text.parse::<f32>().ok().filter(|value| value.is_finite())
 }
 
 fn parse_uint(text: &str) -> Option<u32> {
