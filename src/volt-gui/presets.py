@@ -21,7 +21,6 @@ PRESET_OVERRIDES: Final[dict] = {
         "Textures:anisotropy": "16",
         "Textures:lod_bias": "-0.6",
         "Textures:mip_floor": "0",
-        "Rendering:alpha_to_coverage": "on",
     },
     "Balanced": {
         "Display:present_mode": "mailbox",

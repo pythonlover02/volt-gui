@@ -148,8 +148,8 @@ SETTINGS_DB: Final[dict] = {
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
-            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
-            "options": (DEFAULT_VALUE, "on", "off"),
+            "description": "Turn fragment alpha to coverage off, restoring whatever the game asked for. volt never forces it on: on requires the fragment shader to write alpha at location 0 and volt never reads a shader. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
+            "options": (DEFAULT_VALUE, "off"),
         },
         "alpha_to_one": {
             "section": "rendering",

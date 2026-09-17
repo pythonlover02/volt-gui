@@ -118,7 +118,7 @@ Three sampler fields, three settings, so every combination is reachable. Retro i
 
 **Sample Shading** shade at sample rate inside MSAA targets to cut shimmer. volt never enables `sampleRateShading`; most deferred renderers never ask for it.
 
-**Alpha To Coverage** turns fragment alpha into coverage. Softens cutout edges on foliage and fences. Only does something where the game already renders to MSAA.
+**Alpha To Coverage** turns it off, restoring what the game asked for. volt never forces it on: on needs the fragment shader to write alpha at location 0, and volt never reads a shader. Only does something where the game already renders to MSAA.
 
 **Alpha To One** force fragment alpha to 1 after the shader. volt never enables the feature.
 

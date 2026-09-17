@@ -123,6 +123,13 @@ fn parse_toggle(text: &str) -> Option<vk::Bool32> {
     }
 }
 
+fn parse_off_only(text: &str) -> Option<vk::Bool32> {
+    match text {
+        TEXT_OFF => Some(TOGGLE_OFF),
+        _ => None,
+    }
+}
+
 fn parse_aniso(text: &str) -> Option<f32> {
     match text {
         TEXT_OFF => Some(ANISO_OFF),
@@ -232,7 +239,7 @@ pub(crate) fn parse_settings(text: &str) -> Settings {
         mip_floor: field(&doc, SECTION_TEXTURES, "mip_floor", parse_float),
         mip_ceiling: field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
         sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
-        alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_toggle),
+        alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_off_only),
         alpha_to_one: field(&doc, SECTION_RENDERING, "alpha_to_one", parse_toggle),
         depth_clamp: field(&doc, SECTION_RENDERING, "depth_clamp", parse_toggle),
         frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
