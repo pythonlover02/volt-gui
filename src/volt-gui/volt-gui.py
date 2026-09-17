@@ -335,9 +335,20 @@ def process_yes_no_dialog(parent_widget, title: str, message: str) -> bool:
     return dialog.exec() == QMessageBox.Yes
 
 
+def is_graphic_ascii(profile_name: str) -> bool:
+    return all(33 <= ord(character) <= 126 for character in profile_name)
+
+
 def is_new_profile_name_valid(profile_name: str) -> bool:
-    match (profile_name.strip() == "", is_reserved_profile_name(profile_name), profile_name.strip() in find_all_profiles(), "/" in profile_name or "\\" in profile_name or ".." in profile_name):
-        case (False, False, False, False):
+    match (
+        profile_name.strip() == "",
+        is_reserved_profile_name(profile_name),
+        profile_name.strip() in find_all_profiles(),
+        "/" in profile_name or "\\" in profile_name or ".." in profile_name,
+        "\0" in profile_name,
+        is_graphic_ascii(profile_name),
+    ):
+        case (False, False, False, False, False, True):
             return True
         case _:
             return False

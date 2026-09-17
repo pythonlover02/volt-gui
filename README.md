@@ -362,7 +362,7 @@ volt -- flatpak run com.example.Game
 
 The launch command for the selected profile is shown next to the Apply button, ready to copy.
 
-Profile names must be non-empty printable ASCII with no path separator and no `..`. Anything else falls back to default with a warning. The launcher writes a commented profile on first use.
+Profile names must be non-empty graphic ASCII with no space, no path separator, no `..` and no null byte. Anything else falls back to default with a warning. The launcher writes a commented profile on first use.
 
 To see what applied:
 
