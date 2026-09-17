@@ -156,8 +156,8 @@ The layer reads `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
 |-----|----------------------|
 | GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups(KHR)` |
 | Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR`, `vkQueuePresentKHR` |
-| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV` |
-| Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
+| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV`, `vkGetPipelineKeyKHR`, `vkCreatePipelineBinariesKHR` |
+| Rendering | `vkCreateGraphicsPipelines`, `vkGetPipelineKeyKHR`, `vkCreatePipelineBinariesKHR`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
 | Framerate | `vkQueuePresentKHR` |
 
 Device creation is read, never modified. volt learns which features the game enabled so feature-gated settings apply only where the game asked, and enables nothing itself.

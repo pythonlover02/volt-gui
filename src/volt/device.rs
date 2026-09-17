@@ -11,7 +11,9 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::consts::FN_CREATE_RAY_TRACING_KHR;
 use crate::consts::FN_CREATE_RAY_TRACING_NV;
+use crate::consts::FN_CREATE_PIPELINE_BINARIES;
 use crate::consts::FN_CREATE_SHADERS;
+use crate::consts::FN_GET_PIPELINE_KEY;
 use crate::consts::FN_PIPELINE_INDIRECT_MEMORY;
 use crate::consts::FN_SET_ALPHA_COVERAGE;
 use crate::consts::FN_SET_ALPHA_ONE;
@@ -36,7 +38,9 @@ use crate::instance::PfnCmdSetDepthClamp;
 use crate::instance::PfnCreateRayTracingKHR;
 use crate::instance::PfnCreateRayTracingNV;
 use crate::instance::PfnCreateShaders;
+use crate::instance::PfnCreatePipelineBinaries;
 use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnGetPipelineKey;
 use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
@@ -87,6 +91,8 @@ pub(crate) struct VkDevState {
     pub(crate) instance_handle: u64,
     pub(crate) api_version: u32,
     pub(crate) extensions: HashSet<String>,
+    pub(crate) pipeline_key_fp: Option<PfnGetPipelineKey>,
+    pub(crate) pipeline_binaries_fp: Option<PfnCreatePipelineBinaries>,
 }
 
 pub(crate) fn device_hook_on(dev: &VkDevState, command: &str) -> bool {
@@ -462,6 +468,8 @@ fn register_device(
             instance_handle: inst_handle,
             api_version: inst.api_version,
             extensions: requested_device_extensions(ci),
+            pipeline_key_fp: call_typed_device_fp(gdpa, handle, FN_GET_PIPELINE_KEY),
+            pipeline_binaries_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_PIPELINE_BINARIES),
         },
     );
     maybe_probe_device(inst, phys, &caps);

@@ -117,6 +117,13 @@ pub(crate) const PIPELINE_RENDERING_TYPE: u32 = 1000044002;
 pub(crate) const PIPELINE_REPRESENTATIVE_TYPE: u32 = 1000166001;
 pub(crate) const RENDERING_ATTACHMENT_LOCATION_TYPE: u32 = 1000232001;
 pub(crate) const RENDERING_INPUT_ATTACHMENT_TYPE: u32 = 1000232002;
+pub(crate) const PIPELINE_CREATE_INFO_KHR_TYPE: u32 = 1000483007;
+pub(crate) const GRAPHICS_PIPELINE_CREATE_INFO_TYPE: u32 = 28;
+pub(crate) const FN_GET_PIPELINE_KEY: &str = "vkGetPipelineKeyKHR";
+pub(crate) const FN_CREATE_PIPELINE_BINARIES: &str = "vkCreatePipelineBinariesKHR";
+pub(crate) const EXT_PIPELINE_BINARY: &str = "VK_KHR_pipeline_binary";
+pub(crate) const BINARY_INFO_LOG: &str = "a create info naming pipeline binaries was rebuilt like any other";
+pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "the wrapped create info is one this build does not declare, leaving the setting alone";
 
 pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
 pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
@@ -308,6 +315,8 @@ pub(crate) const HOOK_PROVIDERS: &[(&str, Provider)] = &[
     (FN_SET_ALPHA_ONE, Provider::Ext(EXT_SHADER_OBJECT)),
     (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_DYNAMIC_STATE_3)),
     (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_GET_PIPELINE_KEY, Provider::Ext(EXT_PIPELINE_BINARY)),
+    (FN_CREATE_PIPELINE_BINARIES, Provider::Ext(EXT_PIPELINE_BINARY)),
 ];
 
 pub(crate) const CORE_10_DEVICE_HOOKS: [&str; 9] = [

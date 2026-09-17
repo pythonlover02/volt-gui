@@ -183,6 +183,36 @@ pub(crate) struct VkChainNode {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPipelineCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPipelineBinaryCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) p_keys_and_data_info: *const c_void,
+    pub(crate) pipeline: vk::Pipeline,
+    pub(crate) p_pipeline_create_info: *const VkPipelineCreateInfoKHR,
+}
+
+pub(crate) type PfnGetPipelineKey = unsafe extern "system" fn(
+    vk::Device,
+    *const VkPipelineCreateInfoKHR,
+    *mut c_void,
+) -> vk::Result;
+
+pub(crate) type PfnCreatePipelineBinaries = unsafe extern "system" fn(
+    vk::Device,
+    *const VkPipelineBinaryCreateInfoKHR,
+    *const vk::AllocationCallbacks<'_>,
+    *mut c_void,
+) -> vk::Result;
+
+#[repr(C)]
 pub(crate) struct VkDeviceGroupDeviceCreateInfo {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *const c_void,

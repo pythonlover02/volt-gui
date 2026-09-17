@@ -11,6 +11,8 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::FN_CREATE_COMPUTE_PIPELINES;
+use crate::consts::FN_CREATE_PIPELINE_BINARIES;
+use crate::consts::FN_GET_PIPELINE_KEY;
 use crate::consts::FN_CREATE_RAY_TRACING_KHR;
 use crate::consts::FN_CREATE_RAY_TRACING_NV;
 use crate::consts::FN_CREATE_SHADERS;
@@ -72,6 +74,8 @@ use crate::instance::provider_on;
 use crate::instance::VkHandle;
 use crate::instance::VkPhysicalDeviceGroupProperties;
 use crate::instance::VkPhysicalDeviceSurfaceInfo2;
+use crate::instance::VkPipelineBinaryCreateInfoKHR;
+use crate::instance::VkPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoNV;
 use crate::instance::VkShaderCreateInfoEXT;
@@ -80,10 +84,12 @@ use crate::logging::init_log_level;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_compute_pipelines;
+use crate::pipeline::call_create_pipeline_binaries;
 use crate::pipeline::call_create_graphics_pipelines;
 use crate::pipeline::call_create_ray_tracing_khr;
 use crate::pipeline::call_create_ray_tracing_nv;
 use crate::pipeline::call_create_shaders;
+use crate::pipeline::call_get_pipeline_key;
 use crate::pipeline::call_pipeline_indirect_memory;
 use crate::pipeline::call_set_alpha_coverage;
 use crate::pipeline::call_set_alpha_one;
@@ -230,6 +236,8 @@ fn instance_hooked_symbol(inst: vk::Instance, name: &str) -> Option<*mut c_void>
 
 fn device_extension_hook(name: &str) -> Option<*mut c_void> {
     match name {
+        FN_GET_PIPELINE_KEY => Some(vkGetPipelineKeyKHR as *mut c_void),
+        FN_CREATE_PIPELINE_BINARIES => Some(vkCreatePipelineBinariesKHR as *mut c_void),
         FN_SHARED_SWAPCHAINS => Some(vkCreateSharedSwapchainsKHR as *mut c_void),
         FN_WRITE_SAMPLERS => Some(vkWriteSamplerDescriptorsEXT as *mut c_void),
         FN_CREATE_SHADERS => Some(vkCreateShadersEXT as *mut c_void),
@@ -245,6 +253,8 @@ fn device_extension_hook(name: &str) -> Option<*mut c_void> {
 
 fn device_pointer_present(d: &VkDevState, name: &str) -> bool {
     match name {
+        FN_GET_PIPELINE_KEY => d.pipeline_key_fp.is_some(),
+        FN_CREATE_PIPELINE_BINARIES => d.pipeline_binaries_fp.is_some(),
         FN_SHARED_SWAPCHAINS => d.shared_fp.is_some(),
         FN_WRITE_SAMPLERS => d.samplers_fp.is_some(),
         FN_CREATE_SHADERS => d.shaders_fp.is_some(),
@@ -594,6 +604,29 @@ unsafe extern "system" fn vkGetPipelineIndirectMemoryRequirementsNV(
     match devs_get(dev.as_raw()).and_then(|d| d.indirect_memory_fp.map(|fp| (d, fp))) {
         None => (),
         Some((d, fp)) => call_pipeline_indirect_memory(&d, fp, dev, ci, out),
+    }
+}
+
+unsafe extern "system" fn vkGetPipelineKeyKHR(
+    dev: vk::Device,
+    ci: *const VkPipelineCreateInfoKHR,
+    out: *mut c_void,
+) -> vk::Result {
+    match devs_get(dev.as_raw()).and_then(|d| d.pipeline_key_fp.map(|fp| (d, fp))) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((d, fp)) => call_get_pipeline_key(&d, fp, dev, ci, out),
+    }
+}
+
+unsafe extern "system" fn vkCreatePipelineBinariesKHR(
+    dev: vk::Device,
+    ci: *const VkPipelineBinaryCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut c_void,
+) -> vk::Result {
+    match devs_get(dev.as_raw()).and_then(|d| d.pipeline_binaries_fp.map(|fp| (d, fp))) {
+        None => vk::Result::ERROR_INITIALIZATION_FAILED,
+        Some((d, fp)) => call_create_pipeline_binaries(&d, fp, dev, ci, alloc, out),
     }
 }
 
