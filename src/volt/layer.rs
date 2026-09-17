@@ -10,8 +10,23 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::FN_ALLOCATE_COMMAND_BUFFERS;
 use crate::consts::FN_CREATE_COMPUTE_PIPELINES;
+use crate::consts::FN_CREATE_DEVICE;
+use crate::consts::FN_CREATE_GRAPHICS_PIPELINES;
+use crate::consts::FN_CREATE_INSTANCE;
 use crate::consts::FN_CREATE_PIPELINE_BINARIES;
+use crate::consts::FN_CREATE_SAMPLER;
+use crate::consts::FN_DESTROY_COMMAND_POOL;
+use crate::consts::FN_DESTROY_DEVICE;
+use crate::consts::FN_DESTROY_INSTANCE;
+use crate::consts::FN_DEVICE_QUEUE;
+use crate::consts::FN_ENUMERATE_DEVICES;
+use crate::consts::FN_FREE_COMMAND_BUFFERS;
+use crate::consts::FN_GET_DEVICE_PROC_ADDR;
+use crate::consts::FN_GET_INSTANCE_PROC_ADDR;
+use crate::consts::LOG_QUEUE_2_UNREGISTERED;
+use crate::consts::LOG_QUEUE_UNREGISTERED;
 use crate::consts::FN_GET_PIPELINE_KEY;
 use crate::consts::FN_CREATE_RAY_TRACING_KHR;
 use crate::consts::FN_CREATE_RAY_TRACING_NV;
@@ -138,12 +153,12 @@ fn null_ok_name(name: &str) -> bool {
 
 fn instance_symbol(name: &str) -> Option<*mut c_void> {
     match name {
-        "vkGetInstanceProcAddr" => Some(vkGetInstanceProcAddr as *mut c_void),
-        "vkGetDeviceProcAddr" => Some(vkGetDeviceProcAddr as *mut c_void),
-        "vkCreateInstance" => Some(vkCreateInstance as *mut c_void),
-        "vkDestroyInstance" => Some(vkDestroyInstance as *mut c_void),
-        "vkCreateDevice" => Some(vkCreateDevice as *mut c_void),
-        "vkEnumeratePhysicalDevices" => Some(vkEnumeratePhysicalDevices as *mut c_void),
+        FN_GET_INSTANCE_PROC_ADDR => Some(vkGetInstanceProcAddr as *mut c_void),
+        FN_GET_DEVICE_PROC_ADDR => Some(vkGetDeviceProcAddr as *mut c_void),
+        FN_CREATE_INSTANCE => Some(vkCreateInstance as *mut c_void),
+        FN_DESTROY_INSTANCE => Some(vkDestroyInstance as *mut c_void),
+        FN_CREATE_DEVICE => Some(vkCreateDevice as *mut c_void),
+        FN_ENUMERATE_DEVICES => Some(vkEnumeratePhysicalDevices as *mut c_void),
         _ => None,
     }
 }
@@ -166,15 +181,15 @@ fn instance_gated_surface(inst: vk::Instance, name: &str) -> Option<*mut c_void>
 
 fn device_symbol(name: &str) -> Option<*mut c_void> {
     match name {
-        "vkGetDeviceProcAddr" => Some(vkGetDeviceProcAddr as *mut c_void),
-        "vkDestroyDevice" => Some(vkDestroyDevice as *mut c_void),
-        "vkCreateGraphicsPipelines" => Some(vkCreateGraphicsPipelines as *mut c_void),
+        FN_GET_DEVICE_PROC_ADDR => Some(vkGetDeviceProcAddr as *mut c_void),
+        FN_DESTROY_DEVICE => Some(vkDestroyDevice as *mut c_void),
+        FN_CREATE_GRAPHICS_PIPELINES => Some(vkCreateGraphicsPipelines as *mut c_void),
         FN_CREATE_COMPUTE_PIPELINES => Some(vkCreateComputePipelines as *mut c_void),
-        "vkCreateSampler" => Some(vkCreateSampler as *mut c_void),
-        "vkAllocateCommandBuffers" => Some(vkAllocateCommandBuffers as *mut c_void),
-        "vkFreeCommandBuffers" => Some(vkFreeCommandBuffers as *mut c_void),
-        "vkDestroyCommandPool" => Some(vkDestroyCommandPool as *mut c_void),
-        "vkGetDeviceQueue" => Some(volt_GetDeviceQueue as *mut c_void),
+        FN_CREATE_SAMPLER => Some(vkCreateSampler as *mut c_void),
+        FN_ALLOCATE_COMMAND_BUFFERS => Some(vkAllocateCommandBuffers as *mut c_void),
+        FN_FREE_COMMAND_BUFFERS => Some(vkFreeCommandBuffers as *mut c_void),
+        FN_DESTROY_COMMAND_POOL => Some(vkDestroyCommandPool as *mut c_void),
+        FN_DEVICE_QUEUE => Some(volt_GetDeviceQueue as *mut c_void),
         _ => None,
     }
 }
@@ -285,8 +300,8 @@ fn device_core_symbol(name: &str) -> Option<*mut c_void> {
 
 fn null_ok_ptr(name: &str) -> *mut c_void {
     match name {
-        "vkGetInstanceProcAddr" => vkGetInstanceProcAddr as *mut c_void,
-        "vkCreateInstance" => vkCreateInstance as *mut c_void,
+        FN_GET_INSTANCE_PROC_ADDR => vkGetInstanceProcAddr as *mut c_void,
+        FN_CREATE_INSTANCE => vkCreateInstance as *mut c_void,
         _ => ptr::null_mut(),
     }
 }
@@ -338,7 +353,7 @@ fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
 }
 
 fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
-    match call_next_gipa(gipa, inst, "vkDestroyInstance") {
+    match call_next_gipa(gipa, inst, FN_DESTROY_INSTANCE) {
         Some(d) => unsafe {
             let df: vk::PFN_vkDestroyInstance = mem::transmute(d);
             df(inst, alloc);
@@ -404,7 +419,7 @@ unsafe extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: 
             queue_dev_put(q.as_raw(), dev.as_raw());
             *out = q;
         }
-        None => log_at(LogLevel::Warn, "GetDeviceQueue on unregistered device"),
+        None => log_at(LogLevel::Warn, LOG_QUEUE_UNREGISTERED),
     }
 }
 
@@ -416,7 +431,7 @@ unsafe extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk:
             queue_dev_put(q.as_raw(), dev.as_raw());
             *out = q;
         }
-        None => log_at(LogLevel::Warn, "GetDeviceQueue2 on unregistered device"),
+        None => log_at(LogLevel::Warn, LOG_QUEUE_2_UNREGISTERED),
     }
 }
 

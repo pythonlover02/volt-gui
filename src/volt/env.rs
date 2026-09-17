@@ -5,6 +5,7 @@ use crate::consts::ENV_CONFIG_NAME;
 use crate::consts::ENV_HOME;
 use crate::consts::ENV_LIB_PATH;
 use crate::consts::ENV_LOG;
+use crate::consts::LEVEL_WORD_WARN;
 use crate::consts::ENV_PROBE;
 
 fn read_var(key: &str) -> Option<String> {
@@ -16,7 +17,7 @@ pub(crate) fn env_string(key: &str, default: &str) -> String {
 }
 
 pub(crate) fn env_log_level() -> String {
-    env_string(ENV_LOG, "warn")
+    env_string(ENV_LOG, LEVEL_WORD_WARN)
 }
 
 pub(crate) fn env_config_name() -> String {

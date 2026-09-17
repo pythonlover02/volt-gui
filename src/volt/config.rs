@@ -15,6 +15,30 @@ use crate::consts::FILTER_NEAREST;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
+use crate::consts::KEY_ALPHA_TO_COVERAGE;
+use crate::consts::KEY_ALPHA_TO_ONE;
+use crate::consts::KEY_ANISOTROPY;
+use crate::consts::KEY_CLIPPED;
+use crate::consts::KEY_COMPOSITE_ALPHA;
+use crate::consts::KEY_DEPTH_CLAMP;
+use crate::consts::KEY_DEVICE;
+use crate::consts::KEY_FRAME_LIMIT;
+use crate::consts::KEY_FRAME_LIMIT_CADENCE;
+use crate::consts::KEY_FRAME_LIMIT_METHOD;
+use crate::consts::KEY_FRAME_LIMIT_OFFSET;
+use crate::consts::KEY_FRAME_PACING;
+use crate::consts::KEY_IMAGE_COUNT;
+use crate::consts::KEY_LOD_BIAS;
+use crate::consts::KEY_MAG_FILTER;
+use crate::consts::KEY_MIN_FILTER;
+use crate::consts::KEY_MIPMAP_MODE;
+use crate::consts::KEY_MIP_CEILING;
+use crate::consts::KEY_MIP_FLOOR;
+use crate::consts::KEY_PRESENT_MODE;
+use crate::consts::KEY_SAMPLE_SHADING;
+use crate::consts::LOG_INVALID_PROFILE;
+use crate::consts::NAME_DEFAULT;
+use crate::consts::NAME_EMPTY;
 use crate::consts::HOME_UNSET_WARN;
 use crate::consts::METHOD_EARLY;
 use crate::consts::METHOD_LATE;
@@ -86,7 +110,7 @@ fn table_value<'a>(doc: &'a toml::Table, section: &str, key: &str) -> Option<&'a
 
 fn non_default(text: &str) -> Option<&str> {
     match text {
-        "default" | "" => None,
+        NAME_DEFAULT | NAME_EMPTY => None,
         other => Some(other),
     }
 }
@@ -226,27 +250,27 @@ fn parse_doc(text: &str) -> toml::Table {
 pub(crate) fn parse_settings(text: &str) -> Settings {
     let doc = parse_doc(text);
     Settings {
-        gpu: field(&doc, SECTION_GPU, "device", parse_gpu),
-        present_mode: field(&doc, SECTION_DISPLAY, "present_mode", present_parse),
-        image_count: field(&doc, SECTION_DISPLAY, "image_count", parse_uint),
-        composite_alpha: field(&doc, SECTION_DISPLAY, "composite_alpha", alpha_parse),
-        clipped: field(&doc, SECTION_DISPLAY, "clipped", parse_toggle),
-        mag_filter: field(&doc, SECTION_TEXTURES, "mag_filter", parse_filter),
-        min_filter: field(&doc, SECTION_TEXTURES, "min_filter", parse_filter),
-        mipmap: field(&doc, SECTION_TEXTURES, "mipmap_mode", parse_mipmap),
-        anisotropy: field(&doc, SECTION_TEXTURES, "anisotropy", parse_aniso),
-        lod_bias: field(&doc, SECTION_TEXTURES, "lod_bias", parse_float),
-        mip_floor: field(&doc, SECTION_TEXTURES, "mip_floor", parse_float),
-        mip_ceiling: field(&doc, SECTION_TEXTURES, "mip_ceiling", parse_float),
-        sample_shading: field(&doc, SECTION_RENDERING, "sample_shading", parse_shading),
-        alpha_coverage: field(&doc, SECTION_RENDERING, "alpha_to_coverage", parse_off_only),
-        alpha_to_one: field(&doc, SECTION_RENDERING, "alpha_to_one", parse_toggle),
-        depth_clamp: field(&doc, SECTION_RENDERING, "depth_clamp", parse_toggle),
-        frame_limit: field(&doc, SECTION_FRAMERATE, "frame_limit", parse_limit),
-        frame_limit_offset: field(&doc, SECTION_FRAMERATE, "frame_limit_offset", parse_offset),
-        cadence: field(&doc, SECTION_FRAMERATE, "frame_limit_cadence", parse_cadence),
-        limit_method: field(&doc, SECTION_FRAMERATE, "frame_limit_method", parse_method),
-        pacing: field(&doc, SECTION_FRAMERATE, "frame_pacing", parse_pacing),
+        gpu: field(&doc, SECTION_GPU, KEY_DEVICE, parse_gpu),
+        present_mode: field(&doc, SECTION_DISPLAY, KEY_PRESENT_MODE, present_parse),
+        image_count: field(&doc, SECTION_DISPLAY, KEY_IMAGE_COUNT, parse_uint),
+        composite_alpha: field(&doc, SECTION_DISPLAY, KEY_COMPOSITE_ALPHA, alpha_parse),
+        clipped: field(&doc, SECTION_DISPLAY, KEY_CLIPPED, parse_toggle),
+        mag_filter: field(&doc, SECTION_TEXTURES, KEY_MAG_FILTER, parse_filter),
+        min_filter: field(&doc, SECTION_TEXTURES, KEY_MIN_FILTER, parse_filter),
+        mipmap: field(&doc, SECTION_TEXTURES, KEY_MIPMAP_MODE, parse_mipmap),
+        anisotropy: field(&doc, SECTION_TEXTURES, KEY_ANISOTROPY, parse_aniso),
+        lod_bias: field(&doc, SECTION_TEXTURES, KEY_LOD_BIAS, parse_float),
+        mip_floor: field(&doc, SECTION_TEXTURES, KEY_MIP_FLOOR, parse_float),
+        mip_ceiling: field(&doc, SECTION_TEXTURES, KEY_MIP_CEILING, parse_float),
+        sample_shading: field(&doc, SECTION_RENDERING, KEY_SAMPLE_SHADING, parse_shading),
+        alpha_coverage: field(&doc, SECTION_RENDERING, KEY_ALPHA_TO_COVERAGE, parse_off_only),
+        alpha_to_one: field(&doc, SECTION_RENDERING, KEY_ALPHA_TO_ONE, parse_toggle),
+        depth_clamp: field(&doc, SECTION_RENDERING, KEY_DEPTH_CLAMP, parse_toggle),
+        frame_limit: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT, parse_limit),
+        frame_limit_offset: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_OFFSET, parse_offset),
+        cadence: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_CADENCE, parse_cadence),
+        limit_method: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_METHOD, parse_method),
+        pacing: field(&doc, SECTION_FRAMERATE, KEY_FRAME_PACING, parse_pacing),
     }
 }
 
@@ -277,7 +301,7 @@ pub(crate) fn sanitize_name(raw: &str) -> String {
     match name_is_valid(raw) {
         true => folded_name(raw),
         false => {
-            log_at(LogLevel::Warn, "invalid profile name, using default profile");
+            log_at(LogLevel::Warn, LOG_INVALID_PROFILE);
             DEFAULT_PROFILE.into()
         }
     }

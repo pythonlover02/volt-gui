@@ -22,6 +22,11 @@ use crate::consts::FLATPAK_CONFIG_RW;
 use crate::consts::FLATPAK_INJECT;
 use crate::consts::ENV_PROBE;
 use crate::consts::FLATPAK_RUN;
+use crate::consts::FLATPAK_SUFFIX;
+use crate::consts::FLAG_HELP_LONG;
+use crate::consts::FLAG_HELP_SHORT;
+use crate::consts::FLAG_SEPARATOR;
+use crate::consts::LOG_NO_APP_ID;
 use crate::consts::LIB_DIR_32;
 use crate::consts::LIB_DIR_64;
 use crate::consts::PATH_SEP;
@@ -35,11 +40,13 @@ use crate::logging::log_at;
 use crate::logging::LogLevel;
 
 fn is_help_flag(a: &str) -> bool {
-    a == "--help" || a == "-h"
+    a == FLAG_HELP_LONG || a == FLAG_HELP_SHORT
 }
 
 fn wants_help(args: &[String]) -> bool {
-    args.iter().take_while(|a| **a != "--").any(|a| is_help_flag(a))
+    args.iter()
+        .take_while(|a| **a != FLAG_SEPARATOR)
+        .any(|a| is_help_flag(a))
 }
 
 fn is_probe_flag(a: &str) -> bool {
@@ -71,7 +78,10 @@ fn probe_value(probe: bool) -> &'static str {
 }
 
 fn split_args(args: &[String]) -> (Vec<String>, Vec<String>) {
-    let pos = args.iter().position(|a| a == "--").unwrap_or(args.len());
+    let pos = args
+        .iter()
+        .position(|a| a == FLAG_SEPARATOR)
+        .unwrap_or(args.len());
     (
         args[..pos].to_vec(),
         args.get(pos + 1..).unwrap_or(&[]).to_vec(),
@@ -79,7 +89,7 @@ fn split_args(args: &[String]) -> (Vec<String>, Vec<String>) {
 }
 
 fn is_flatpak_bin(name: &str) -> bool {
-    name == FLATPAK_CMD || name.ends_with("/flatpak")
+    name == FLATPAK_CMD || name.ends_with(FLATPAK_SUFFIX)
 }
 
 fn is_flatpak_run(cmd: &[String]) -> bool {
@@ -195,7 +205,7 @@ fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
 fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     match flatpak_app_id(cmd) {
         None => {
-            log_at(LogLevel::Error, "flatpak run: no app id found");
+            log_at(LogLevel::Error, LOG_NO_APP_ID);
             EXIT_USAGE
         }
         Some(app_id) => {

@@ -83,6 +83,47 @@ pub(crate) const SAMPLER_SHAPE_LOG: &str = "the sampler's own shape restricts th
 pub(crate) const MIP_FLOOR_DROPPED_LOG: &str = "the forced mip floor would cross the ceiling beside it, keeping the application value";
 pub(crate) const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
 pub(crate) const EXT_MIXED_SAMPLES: &str = "VK_NV_framebuffer_mixed_samples";
+
+pub(crate) const LOG_DEVICE_REGISTERED: &str = "vk device registered";
+pub(crate) const LOG_INSTANCE_REGISTERED: &str = "vk instance registered";
+pub(crate) const LOG_SWAPCHAIN_CREATED: &str = "swapchain created";
+pub(crate) const LOG_QUEUE_UNREGISTERED: &str = "GetDeviceQueue on unregistered device";
+pub(crate) const LOG_QUEUE_2_UNREGISTERED: &str = "GetDeviceQueue2 on unregistered device";
+pub(crate) const LOG_NO_APP_ID: &str = "flatpak run: no app id found";
+pub(crate) const LOG_INVALID_PROFILE: &str = "invalid profile name, using default profile";
+
+pub(crate) const KEY_DEVICE: &str = "device";
+pub(crate) const KEY_PRESENT_MODE: &str = "present_mode";
+pub(crate) const KEY_IMAGE_COUNT: &str = "image_count";
+pub(crate) const KEY_COMPOSITE_ALPHA: &str = "composite_alpha";
+pub(crate) const KEY_CLIPPED: &str = "clipped";
+pub(crate) const KEY_MAG_FILTER: &str = "mag_filter";
+pub(crate) const KEY_MIN_FILTER: &str = "min_filter";
+pub(crate) const KEY_MIPMAP_MODE: &str = "mipmap_mode";
+pub(crate) const KEY_ANISOTROPY: &str = "anisotropy";
+pub(crate) const KEY_LOD_BIAS: &str = "lod_bias";
+pub(crate) const KEY_MIP_FLOOR: &str = "mip_floor";
+pub(crate) const KEY_MIP_CEILING: &str = "mip_ceiling";
+pub(crate) const KEY_SAMPLE_SHADING: &str = "sample_shading";
+pub(crate) const KEY_ALPHA_TO_COVERAGE: &str = "alpha_to_coverage";
+pub(crate) const KEY_ALPHA_TO_ONE: &str = "alpha_to_one";
+pub(crate) const KEY_DEPTH_CLAMP: &str = "depth_clamp";
+pub(crate) const KEY_FRAME_LIMIT: &str = "frame_limit";
+pub(crate) const KEY_FRAME_LIMIT_OFFSET: &str = "frame_limit_offset";
+pub(crate) const KEY_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
+pub(crate) const KEY_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
+pub(crate) const KEY_FRAME_PACING: &str = "frame_pacing";
+
+pub(crate) const NAME_DEFAULT: &str = "default";
+pub(crate) const NAME_EMPTY: &str = "";
+pub(crate) const FLAG_HELP_LONG: &str = "--help";
+pub(crate) const FLAG_HELP_SHORT: &str = "-h";
+pub(crate) const FLAG_SEPARATOR: &str = "--";
+pub(crate) const FLATPAK_SUFFIX: &str = "/flatpak";
+pub(crate) const LEVEL_WORD_OFF: &str = "off";
+pub(crate) const LEVEL_WORD_ERROR: &str = "error";
+pub(crate) const LEVEL_WORD_INFO: &str = "info";
+pub(crate) const LEVEL_WORD_WARN: &str = "warn";
 pub(crate) const MIP_CEILING_DROPPED_LOG: &str = "the forced mip ceiling would cross the floor beside it, keeping the application value";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 

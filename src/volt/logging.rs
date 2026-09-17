@@ -4,6 +4,9 @@ use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 
 use crate::consts::DEFAULT_LOG_LEVEL;
+use crate::consts::LEVEL_WORD_ERROR;
+use crate::consts::LEVEL_WORD_INFO;
+use crate::consts::LEVEL_WORD_OFF;
 use crate::consts::LOG_FD;
 use crate::consts::LOG_LEVEL_ERROR;
 use crate::consts::LOG_LEVEL_INFO;
@@ -32,9 +35,9 @@ pub(crate) fn level_num(l: &LogLevel) -> i32 {
 
 fn parse_level(s: &str) -> LogLevel {
     match s {
-        "off" => LogLevel::Off,
-        "error" => LogLevel::Error,
-        "info" => LogLevel::Info,
+        LEVEL_WORD_OFF => LogLevel::Off,
+        LEVEL_WORD_ERROR => LogLevel::Error,
+        LEVEL_WORD_INFO => LogLevel::Info,
         _ => LogLevel::Warn,
     }
 }

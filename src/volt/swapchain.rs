@@ -14,6 +14,7 @@ use crate::consts::ALPHA_OPAQUE_INFO;
 use crate::consts::EXT_GET_SURFACE_CAPS_2;
 use crate::consts::EXT_SURFACE_MAINTENANCE_1;
 use crate::consts::EXT_SURFACE_MAINTENANCE_1_EXT;
+use crate::consts::LOG_SWAPCHAIN_CREATED;
 use crate::consts::MODE_COMPATIBILITY_TYPE;
 use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
@@ -683,7 +684,7 @@ fn call_compatible(
 fn call_created_swapchain(created: vk::Result) -> vk::Result {
     match created {
         vk::Result::SUCCESS => {
-            log_at(LogLevel::Info, "swapchain created");
+            log_at(LogLevel::Info, LOG_SWAPCHAIN_CREATED);
             vk::Result::SUCCESS
         }
         e => e,

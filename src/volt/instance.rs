@@ -64,8 +64,10 @@ use crate::consts::SWAPCHAIN_PRESENT_SCALING_TYPE;
 use crate::consts::VALIDATION_FEATURES_TYPE;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
+use crate::consts::FN_CREATE_INSTANCE;
 use crate::consts::GPU_EMPTY_WARN;
 use crate::consts::HOOK_PROVIDERS;
+use crate::consts::LOG_INSTANCE_REGISTERED;
 use crate::consts::Provider;
 use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::SURFACE_CREATORS;
@@ -1533,7 +1535,7 @@ fn register_instance(
     };
     call_probe_devices(&state, &devices);
     insts_put(handle.as_raw(), state);
-    log_at(LogLevel::Info, "vk instance registered");
+    log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
 }
 
 fn invoke_create_instance(
@@ -1568,7 +1570,7 @@ pub(crate) fn call_real_create_instance(
 ) -> vk::Result {
     match link {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), "vkCreateInstance")
+        Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), FN_CREATE_INSTANCE)
             .map(|f| invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
             .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
     }

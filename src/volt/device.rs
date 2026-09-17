@@ -22,6 +22,8 @@ use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::DEVICE_FEATURES_2_TYPE;
 use crate::consts::EXT_MIXED_SAMPLES;
+use crate::consts::FN_CREATE_DEVICE;
+use crate::consts::LOG_DEVICE_REGISTERED;
 use crate::consts::EXT_PORTABILITY_SUBSET;
 use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
 use crate::consts::GPU_MISS_WARN;
@@ -491,7 +493,7 @@ fn register_device(
     );
     maybe_probe_device(inst, phys, &caps);
     call_report_gpu(inst, phys, ci, handle);
-    log_at(LogLevel::Info, "vk device registered");
+    log_at(LogLevel::Info, LOG_DEVICE_REGISTERED);
 }
 
 fn invoke_create_device(
@@ -538,7 +540,7 @@ pub(crate) fn call_real_create_device(
         (Some(l), Some((ih, inst))) => call_next_gipa(
             l.pfn_next_get_instance_proc_addr,
             vk::Instance::from_raw(ih),
-            "vkCreateDevice",
+            FN_CREATE_DEVICE,
         )
         .map(|f| invoke_create_device(f, &l, loader_data, &inst, ih, phys, ci, alloc, out))
         .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),

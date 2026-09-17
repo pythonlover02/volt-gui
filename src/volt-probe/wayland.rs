@@ -14,7 +14,18 @@ use crate::dl::Library;
 use crate::Backend;
 use crate::Handles;
 
-const LIBRARIES: [&str; 2] = ["libwayland-client.so.0", "libwayland-client.so"];
+const LIB_VERSIONED: &str = "libwayland-client.so.0";
+const LIB_PLAIN: &str = "libwayland-client.so";
+const LIBRARIES: [&str; 2] = [LIB_VERSIONED, LIB_PLAIN];
+const SYM_DISPLAY_CONNECT: &str = "wl_display_connect";
+const SYM_DISPLAY_DISCONNECT: &str = "wl_display_disconnect";
+const SYM_DISPLAY_ROUNDTRIP: &str = "wl_display_roundtrip";
+const SYM_PROXY_MARSHAL: &str = "wl_proxy_marshal_flags";
+const SYM_PROXY_ADD_LISTENER: &str = "wl_proxy_add_listener";
+const SYM_PROXY_GET_VERSION: &str = "wl_proxy_get_version";
+const SYM_REGISTRY_INTERFACE: &str = "wl_registry_interface";
+const SYM_COMPOSITOR_INTERFACE: &str = "wl_compositor_interface";
+const SYM_SURFACE_INTERFACE: &str = "wl_surface_interface";
 const EXT_SURFACE: &str = "VK_KHR_wayland_surface";
 const FN_CREATE_SURFACE: &str = "vkCreateWaylandSurfaceKHR";
 const SURFACE_TYPE: i32 = 1000006000;
@@ -93,15 +104,15 @@ static LISTENER: RegistryListener = RegistryListener {
 
 fn loaded(library: &Library) -> Option<Wl> {
     Some(Wl {
-        connect: library.symbol("wl_display_connect")?,
-        disconnect: library.symbol("wl_display_disconnect")?,
-        roundtrip: library.symbol("wl_display_roundtrip")?,
-        marshal: library.symbol("wl_proxy_marshal_flags")?,
-        add_listener: library.symbol("wl_proxy_add_listener")?,
-        get_version: library.symbol("wl_proxy_get_version")?,
-        registry_interface: library.address("wl_registry_interface")?,
-        compositor_interface: library.address("wl_compositor_interface")?,
-        surface_interface: library.address("wl_surface_interface")?,
+        connect: library.symbol(SYM_DISPLAY_CONNECT)?,
+        disconnect: library.symbol(SYM_DISPLAY_DISCONNECT)?,
+        roundtrip: library.symbol(SYM_DISPLAY_ROUNDTRIP)?,
+        marshal: library.symbol(SYM_PROXY_MARSHAL)?,
+        add_listener: library.symbol(SYM_PROXY_ADD_LISTENER)?,
+        get_version: library.symbol(SYM_PROXY_GET_VERSION)?,
+        registry_interface: library.address(SYM_REGISTRY_INTERFACE)?,
+        compositor_interface: library.address(SYM_COMPOSITOR_INTERFACE)?,
+        surface_interface: library.address(SYM_SURFACE_INTERFACE)?,
     })
 }
 
