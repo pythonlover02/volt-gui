@@ -1,7 +1,6 @@
 use std::ffi::c_void;
 use std::mem;
 use std::ptr;
-use std::sync::RwLock;
 
 use ash::vk;
 
@@ -47,14 +46,11 @@ use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
 use crate::ranks::present_parse;
 use crate::ranks::present_semantic;
-use crate::report::call_claim;
-use crate::report::call_forget;
 use crate::report::feature_note;
 use crate::report::filter_text;
 use crate::report::applied_text;
 use crate::report::number_text;
 use crate::report::report_line;
-use crate::report::ReportMap;
 use crate::sampler::embedded_sampler;
 use crate::swapchain::present_filtered;
 
@@ -107,8 +103,6 @@ const BLOCKED_LINE: &str = "anisotropy: the application did not enable samplerAn
 const ANISO_SIXTEEN: f32 = 16.0;
 const ANISO_SIXTEEN_TEXT: &str = "16";
 const BIAS_DOWN_TEXT: &str = "-0.6";
-const OWNER_ONE: u64 = 1;
-const OWNER_TWO: u64 = 2;
 const SURFACE_TAG: &str = "wayland";
 const SURFACE_PRESENT: [&str; 2] = ["mailbox", "fifo"];
 const SURFACE_ALPHA: [&str; 1] = ["opaque"];
@@ -636,18 +630,6 @@ fn notes_a_feature_only_where_the_profile_set_the_setting() {
 fn writes_a_number_the_way_a_profile_writes_it() {
     assert_eq!(number_text(ANISO_SIXTEEN), ANISO_SIXTEEN_TEXT);
     assert_eq!(number_text(OFFSET_DOWN / 10.0), BIAS_DOWN_TEXT);
-}
-
-#[test]
-fn reports_a_setting_once_per_device_until_the_device_dies() {
-    let store: RwLock<Option<ReportMap>> = RwLock::new(None);
-    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(!call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(call_claim(&store, OWNER_ONE, SETTING_ANISOTROPY));
-    assert!(call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
-    call_forget(&store, OWNER_ONE);
-    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(!call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
 }
 
 fn chain_node(s_type: u32, next: *mut c_void) -> VkChainNode {

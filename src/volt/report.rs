@@ -25,16 +25,12 @@ use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
-pub(crate) type ReportMap = HashMap<u64, HashSet<&'static str>>;
+type ReportMap = HashMap<u64, HashSet<&'static str>>;
 
 static REPORTS: RwLock<Option<ReportMap>> = RwLock::new(None);
 
-pub(crate) fn call_claim(
-    store: &RwLock<Option<ReportMap>>,
-    owner: u64,
-    name: &'static str,
-) -> bool {
-    match store.write() {
+fn call_claim_report(owner: u64, name: &'static str) -> bool {
+    match REPORTS.write() {
         Ok(mut guard) => guard
             .get_or_insert_with(HashMap::new)
             .entry(owner)
@@ -44,8 +40,8 @@ pub(crate) fn call_claim(
     }
 }
 
-pub(crate) fn call_forget(store: &RwLock<Option<ReportMap>>, owner: u64) {
-    match store.write() {
+fn call_forget_owner(owner: u64) {
+    match REPORTS.write() {
         Ok(mut guard) => {
             guard.get_or_insert_with(HashMap::new).remove(&owner);
         }
@@ -53,13 +49,9 @@ pub(crate) fn call_forget(store: &RwLock<Option<ReportMap>>, owner: u64) {
     }
 }
 
-fn call_claim_report(owner: u64, name: &'static str) -> bool {
-    call_claim(&REPORTS, owner, name)
-}
-
 pub(crate) fn call_forget_reports(owner: u64) {
     match info_wanted() {
-        true => call_forget(&REPORTS, owner),
+        true => call_forget_owner(owner),
         false => (),
     }
 }
