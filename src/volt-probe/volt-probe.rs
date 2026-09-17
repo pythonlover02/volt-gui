@@ -20,7 +20,6 @@ const EXIT_UNSUPPORTED: i32 = 2;
 const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
 const EXT_PORTABILITY_ENUMERATION: &str = "VK_KHR_portability_enumeration";
 const EXT_PROPERTIES_2: &str = "VK_KHR_get_physical_device_properties2";
-const API_ONE_ONE: u32 = 4198400;
 const NO_ARRAY_LAYERS: u32 = 0;
 const ZERO_EXTENT: u32 = 0;
 const IMAGE_LAYERS: u32 = 1;
@@ -62,9 +61,20 @@ type PfnDestroySwapchain = unsafe extern "system" fn(
     *const vk::AllocationCallbacks<'_>,
 );
 
-fn wanted_extensions() -> Vec<&'static str> {
-    std::iter::once(EXT_SURFACE)
-        .chain(BACKENDS.iter().map(|backend| backend.extension))
+fn wanted_extensions(has_surface: bool) -> Vec<&'static str> {
+    let surface: Vec<&'static str> = match has_surface {
+        true => vec![EXT_SURFACE],
+        false => Vec::new(),
+    };
+    let backends: Vec<&'static str> = match has_surface {
+        true => BACKENDS.iter().map(|backend| backend.extension).collect(),
+        false => Vec::new(),
+    };
+    surface
+        .into_iter()
+        .chain(std::iter::once(EXT_PROPERTIES_2))
+        .chain(std::iter::once(EXT_PORTABILITY_ENUMERATION))
+        .chain(backends)
         .collect()
 }
 
@@ -83,12 +93,20 @@ fn available_names(entry: &ash::Entry) -> Vec<String> {
         .collect()
 }
 
-fn enabled_names(entry: &ash::Entry) -> Vec<CString> {
+fn enabled_name_list(entry: &ash::Entry) -> Vec<String> {
     let available = available_names(entry);
-    wanted_extensions()
+    let has_surface = available.iter().any(|one| one.as_str() == EXT_SURFACE);
+    wanted_extensions(has_surface)
         .into_iter()
         .filter(|name| available.iter().any(|one| one.as_str() == *name))
-        .filter_map(|name| CString::new(name).ok())
+        .map(str::to_owned)
+        .collect()
+}
+
+fn enabled_names(enabled: &[String]) -> Vec<CString> {
+    enabled
+        .iter()
+        .filter_map(|name| CString::new(name.as_str()).ok())
         .collect()
 }
 
@@ -183,8 +201,8 @@ fn call_entry() -> Option<ash::Entry> {
     unsafe { ash::Entry::load() }.ok()
 }
 
-fn call_create_instance(entry: &ash::Entry) -> Option<ash::Instance> {
-    let names = enabled_names(entry);
+fn call_create_instance(entry: &ash::Entry, enabled: &[String]) -> Option<ash::Instance> {
+    let names = enabled_names(enabled);
     let pointers = name_pointers(&names);
     let application = vk::ApplicationInfo {
         api_version: vk::make_api_version(API_VARIANT, API_MAJOR, API_MINOR, API_PATCH),
@@ -245,15 +263,8 @@ fn call_first_physical(
     }
 }
 
-fn portability_support(entry: &ash::Entry) -> bool {
-    let names = available_names(entry);
-    let version = unsafe { entry.try_enumerate_instance_version() }
-        .ok()
-        .flatten()
-        .unwrap_or(0);
-    version >= API_ONE_ONE
-        || names.iter().any(|one| one == EXT_PROPERTIES_2)
-        || names.iter().any(|one| one == EXT_PORTABILITY_ENUMERATION)
+fn portability_support(enabled: &[String]) -> bool {
+    enabled.iter().any(|one| one.as_str() == EXT_PROPERTIES_2)
 }
 
 fn call_surface_supported(
@@ -287,11 +298,38 @@ fn call_graphics_family(instance: &ash::Instance, phys: vk::PhysicalDevice) -> O
     graphics_family(&unsafe { instance.get_physical_device_queue_family_properties(phys) })
 }
 
+fn device_extensions_to_enable(
+    instance_enabled: &[String],
+    listed: &[String],
+    support: bool,
+) -> Vec<&'static str> {
+    let has_surface = instance_enabled.iter().any(|one| one.as_str() == EXT_SURFACE);
+    let mut out: Vec<&'static str> = Vec::new();
+    match has_surface && listed.iter().any(|one| one.as_str() == EXT_SWAPCHAIN) {
+        true => out.push(EXT_SWAPCHAIN),
+        false => (),
+    }
+    match support && listed.iter().any(|one| one.as_str() == EXT_PORTABILITY_SUBSET) {
+        true => out.push(EXT_PORTABILITY_SUBSET),
+        false => (),
+    }
+    out
+}
+
 fn call_create_device(
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
     family: u32,
-) -> Option<ash::Device> {
+    instance_enabled: &[String],
+    support: bool,
+) -> Option<(ash::Device, bool)> {
+    let listed = device_extension_names(instance, phys);
+    let wanted = device_extensions_to_enable(instance_enabled, &listed, support);
+    let names: Vec<CString> = wanted
+        .iter()
+        .filter_map(|name| CString::new(*name).ok())
+        .collect();
+    let pointers: Vec<*const c_char> = names.iter().map(|name| name.as_ptr()).collect();
     let priorities = [QUEUE_PRIORITY];
     let queue = vk::DeviceQueueCreateInfo {
         queue_family_index: family,
@@ -299,8 +337,6 @@ fn call_create_device(
         p_queue_priorities: priorities.as_ptr(),
         ..Default::default()
     };
-    let name = CString::new(EXT_SWAPCHAIN).ok()?;
-    let pointers = [name.as_ptr()];
     let info = vk::DeviceCreateInfo {
         queue_create_info_count: QUEUE_COUNT,
         p_queue_create_infos: &queue,
@@ -308,7 +344,9 @@ fn call_create_device(
         pp_enabled_extension_names: pointers.as_ptr(),
         ..Default::default()
     };
-    unsafe { instance.create_device(phys, &info, None) }.ok()
+    unsafe { instance.create_device(phys, &info, None) }
+        .ok()
+        .map(|device| (device, wanted.contains(&EXT_SWAPCHAIN)))
 }
 
 fn call_first_format(
@@ -419,12 +457,18 @@ fn call_on_backend(
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
     device: &ash::Device,
+    instance_enabled: &[String],
     backend: &Backend,
 ) -> Option<()> {
-    let handles = (backend.open)()?;
-    let done = call_on_surface(entry, instance, phys, device, backend, &handles);
-    (backend.close)(&handles);
-    done
+    match instance_enabled.iter().any(|name| name.as_str() == backend.extension) {
+        false => None,
+        true => {
+            let handles = (backend.open)()?;
+            let done = call_on_surface(entry, instance, phys, device, backend, &handles);
+            (backend.close)(&handles);
+            done
+        }
+    }
 }
 
 fn call_every_backend(
@@ -432,9 +476,10 @@ fn call_every_backend(
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
     device: &ash::Device,
+    instance_enabled: &[String],
 ) {
     BACKENDS.iter().for_each(|backend| {
-        let _ = call_on_backend(entry, instance, phys, device, backend);
+        let _ = call_on_backend(entry, instance, phys, device, instance_enabled, backend);
     });
 }
 
@@ -443,9 +488,14 @@ fn call_on_device(
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
     device: &ash::Device,
+    instance_enabled: &[String],
+    swapchain: bool,
 ) -> Option<()> {
     call_exercise_sampler(device)?;
-    call_every_backend(entry, instance, phys, device);
+    match swapchain {
+        true => call_every_backend(entry, instance, phys, device, instance_enabled),
+        false => (),
+    }
     Some(())
 }
 
@@ -453,9 +503,13 @@ fn call_with_device(
     entry: &ash::Entry,
     instance: &ash::Instance,
     phys: vk::PhysicalDevice,
+    instance_enabled: &[String],
+    support: bool,
 ) -> Option<()> {
-    let device = call_create_device(instance, phys, call_graphics_family(instance, phys)?)?;
-    let done = call_on_device(entry, instance, phys, &device);
+    let family = call_graphics_family(instance, phys)?;
+    let (device, swapchain) =
+        call_create_device(instance, phys, family, instance_enabled, support)?;
+    let done = call_on_device(entry, instance, phys, &device, instance_enabled, swapchain);
     unsafe { device.destroy_device(None) };
     done
 }
@@ -467,20 +521,32 @@ fn exit_of(done: Option<()>) -> i32 {
     }
 }
 
-fn call_on_instance(entry: &ash::Entry, instance: &ash::Instance, support: bool) -> i32 {
+fn call_on_instance(
+    entry: &ash::Entry,
+    instance: &ash::Instance,
+    instance_enabled: &[String],
+    support: bool,
+) -> i32 {
     match call_first_physical(instance, support) {
         DeviceOutcome::Missing => EXIT_FAIL,
         DeviceOutcome::Unsupported => EXIT_UNSUPPORTED,
-        DeviceOutcome::Ready(phys) => exit_of(call_with_device(entry, instance, phys)),
+        DeviceOutcome::Ready(phys) => exit_of(call_with_device(
+            entry,
+            instance,
+            phys,
+            instance_enabled,
+            support,
+        )),
     }
 }
 
 fn call_with_instance(entry: &ash::Entry) -> i32 {
-    let support = portability_support(entry);
-    match call_create_instance(entry) {
+    let enabled = enabled_name_list(entry);
+    let support = portability_support(&enabled);
+    match call_create_instance(entry, &enabled) {
         None => EXIT_FAIL,
         Some(instance) => {
-            let code = call_on_instance(entry, &instance, support);
+            let code = call_on_instance(entry, &instance, &enabled, support);
             unsafe { instance.destroy_instance(None) };
             code
         }
