@@ -78,10 +78,9 @@ fn clamp_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bo
 }
 
 fn shading_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
-    match (choice, caps.sample_rate_shading) {
-        (None, _) => None,
-        (Some(rate), true) => Some(rate),
-        (Some(_), false) => None,
+    match (choice, caps.sample_rate_shading, caps.mixed_samples) {
+        (Some(rate), true, false) => Some(rate),
+        (_, _, _) => None,
     }
 }
 

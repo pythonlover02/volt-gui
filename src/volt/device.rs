@@ -21,6 +21,7 @@ use crate::consts::FN_SET_DEPTH_CLAMP;
 use crate::consts::FN_SHARED_SWAPCHAINS;
 use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::DEVICE_FEATURES_2_TYPE;
+use crate::consts::EXT_MIXED_SAMPLES;
 use crate::consts::EXT_PORTABILITY_SUBSET;
 use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
 use crate::consts::GPU_MISS_WARN;
@@ -72,6 +73,7 @@ pub(crate) struct DeviceCaps {
     pub(crate) max_lod_bias: f32,
     pub(crate) max_lod_level: f32,
     pub(crate) portability_subset: bool,
+    pub(crate) mixed_samples: bool,
 }
 
 pub(crate) struct VkDevState {
@@ -237,6 +239,7 @@ fn build_caps(
         max_lod_bias: props.limits.max_sampler_lod_bias,
         max_lod_level: lod_levels_for(props.limits.max_image_dimension2_d),
         portability_subset: extensions.contains(EXT_PORTABILITY_SUBSET),
+        mixed_samples: extensions.contains(EXT_MIXED_SAMPLES),
     }
 }
 
