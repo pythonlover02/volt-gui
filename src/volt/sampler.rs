@@ -80,9 +80,9 @@ fn pick_aniso(
 }
 
 fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
-    match caps.portability_subset {
-        true => original,
-        false => forced(choice, original).clamp(-caps.max_lod_bias, caps.max_lod_bias),
+    match (choice, caps.portability_subset) {
+        (Some(value), false) => value.clamp(-caps.max_lod_bias, caps.max_lod_bias),
+        (_, _) => original,
     }
 }
 
