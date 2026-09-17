@@ -167,9 +167,9 @@ fn pick_present_mode(
     tie_holds: bool,
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match (choice, tie_holds) {
-        (Some(value), true) => chosen_mode(supported, value, original),
-        (_, _) => original,
+    match (choice, tie_holds, present_on_floor(original)) {
+        (Some(value), true, true) => chosen_mode(supported, value, original),
+        (_, _, _) => original,
     }
 }
 
@@ -878,6 +878,7 @@ fn call_prepared_ci<'a>(
     );
     let applies = tie_holds
         && s.present_mode.is_some()
+        && present_on_floor(original.present_mode)
         && call_compatible(inst, dev, original.surface, patched.present_mode);
     call_report_swapchain(dev, s, original, &patched);
     forced_of(
