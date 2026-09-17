@@ -395,8 +395,9 @@ The five Framerate settings have no asked value, since a game never tells
 Vulkan what frame rate it wants. They report what volt applied, or say the
 profile did not set them.
 
-The GPU line reports the device id as `applied N` when the profile sets a
-gpu, and `asked N` when it does not.
+The GPU line reads `asked N, applied M` when the profile sets a gpu: N is
+the device the game used, M the profile's pick. With no gpu in the profile
+it reads `asked N` alone.
 
 Each setting prints once per device, so 21 lines at most however many
 samplers, pipelines or swapchains the game creates.

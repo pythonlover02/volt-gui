@@ -60,8 +60,8 @@ use crate::present::call_forget_device_timelines;
 use crate::probe::build_device;
 use crate::probe::call_record_device;
 use crate::report::call_forget_reports;
-use crate::report::call_report_choice;
 use crate::report::call_report_reading;
+use crate::report::call_report_value;
 use crate::report::count_text;
 use crate::swapchain::call_forget_device_forced_modes;
 
@@ -406,7 +406,7 @@ fn call_gpu_warned(id: u32, chosen: Option<u32>, group: Option<Vec<u32>>) {
 fn call_gpu_reported(id: u32, owner: u64, chosen: Option<u32>) {
     match info_wanted() {
         true => match chosen {
-            Some(forced) => call_report_choice(owner, SETTING_GPU, Some(count_text(forced))),
+            Some(forced) => call_report_value(owner, SETTING_GPU, id, forced, count_text, None),
             None => call_report_reading(owner, SETTING_GPU, count_text(id)),
         },
         false => (),

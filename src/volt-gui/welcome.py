@@ -78,7 +78,7 @@ def get_welcome_settings() -> dict:
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
                 ("text", "Every setting gets a line: either the value the game asked for and the value volt wrote in its place, or the reason the setting did not land. The applied value is the one volt wrote, so a setting the device clamped shows what landed rather than what you picked."),
                 ("text", "A setting that needs a device feature the game left clear names that feature instead. The Framerate settings have no asked value, since a game never tells Vulkan what frame rate it wants, so they report what volt applied or say the profile did not set them."),
-                ("text", "The GPU line reports the device id as `applied N` when you set a gpu, and `asked N` when you don't."),
+                ("text", "The GPU line reads `asked N, applied M` when you set a gpu: N is the device the game used, M the one your profile picked. With no gpu in the profile it reads `asked N` alone."),
                 ("text", "Each setting prints once per device, so 21 lines at most however many samplers, pipelines or swapchains the game creates."),
             ),
             "The Probe": (
