@@ -100,11 +100,10 @@ fn shading_of(enable: vk::Bool32, rate: f32) -> f32 {
     }
 }
 
-fn call_coverage_line(owner: u64, s: &Settings, asked: vk::Bool32, held: vk::Bool32) {
+fn call_coverage_line(owner: u64, _s: &Settings, asked: vk::Bool32, held: vk::Bool32) {
     call_report_value(
         owner,
         SETTING_ALPHA_COVERAGE,
-        s.alpha_coverage.is_some(),
         asked,
         held,
         toggle_text,
@@ -122,7 +121,6 @@ fn call_alpha_one_line(
     call_report_value(
         owner,
         SETTING_ALPHA_ONE,
-        s.alpha_to_one.is_some(),
         asked,
         held,
         toggle_text,
@@ -140,7 +138,6 @@ fn call_clamp_line(
     call_report_value(
         owner,
         SETTING_DEPTH_CLAMP,
-        s.depth_clamp.is_some(),
         asked,
         held,
         toggle_text,
@@ -162,7 +159,6 @@ fn call_shading_line(
     call_report_value(
         owner,
         SETTING_SAMPLE_SHADING,
-        s.sample_shading.is_some(),
         shading_of(asked.sample_shading_enable, asked.min_sample_shading),
         shading_of(held.sample_shading_enable, held.min_sample_shading),
         shading_text,

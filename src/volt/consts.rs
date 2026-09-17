@@ -244,7 +244,7 @@ pub(crate) const REPORT_MARK: &str = ": ";
 pub(crate) const REPORT_SEP: &str = ", ";
 pub(crate) const REPORT_NOTE: &str = "; ";
 pub(crate) const REPORT_ASKED: &str = "asked ";
-pub(crate) const REPORT_FORCED: &str = "forced ";
+pub(crate) const REPORT_APPLIED: &str = "applied ";
 pub(crate) const NOTE_NOT_ENABLED: &str = "the application did not enable ";
 pub(crate) const NOTE_NOT_SET: &str = "the profile did not set it";
 

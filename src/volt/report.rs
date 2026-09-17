@@ -13,7 +13,7 @@ use crate::consts::MIPMAP_UNKNOWN_PREFIX;
 use crate::consts::NOTE_NOT_ENABLED;
 use crate::consts::NOTE_NOT_SET;
 use crate::consts::REPORT_ASKED;
-use crate::consts::REPORT_FORCED;
+use crate::consts::REPORT_APPLIED;
 use crate::consts::REPORT_MARK;
 use crate::consts::REPORT_NOTE;
 use crate::consts::REPORT_SEP;
@@ -69,8 +69,8 @@ fn labelled(label: &str, text: Option<String>) -> Option<String> {
     text.map(|value| format!("{}{}", label, value))
 }
 
-fn values(asked: Option<String>, forced: Option<String>) -> String {
-    [labelled(REPORT_ASKED, asked), labelled(REPORT_FORCED, forced)]
+fn values(asked: Option<String>, applied: Option<String>) -> String {
+    [labelled(REPORT_ASKED, asked), labelled(REPORT_APPLIED, applied)]
         .into_iter()
         .flatten()
         .collect::<Vec<String>>()
@@ -78,10 +78,9 @@ fn values(asked: Option<String>, forced: Option<String>) -> String {
 }
 
 fn noted(body: String, note: Option<String>) -> String {
-    match (body.is_empty(), note) {
-        (_, None) => body,
-        (true, Some(text)) => text,
-        (false, Some(text)) => format!("{}{}{}", body, REPORT_NOTE, text),
+    match note {
+        Some(text) => text,
+        None => body,
     }
 }
 
@@ -122,22 +121,13 @@ fn missing_note(forced: &Option<String>) -> Option<String> {
     }
 }
 
-pub(crate) fn forced_text<T: Copy + PartialEq>(
-    set: bool,
-    asked: T,
-    held: T,
-    text: fn(T) -> String,
-) -> Option<String> {
-    match (set, asked == held) {
-        (true, false) => Some(text(held)),
-        (_, _) => None,
-    }
+pub(crate) fn applied_text<T: Copy>(held: T, text: fn(T) -> String) -> String {
+    text(held)
 }
 
 pub(crate) fn call_report_value<T: Copy + PartialEq>(
     owner: u64,
     name: &'static str,
-    set: bool,
     asked: T,
     held: T,
     text: fn(T) -> String,
@@ -147,7 +137,7 @@ pub(crate) fn call_report_value<T: Copy + PartialEq>(
         true => call_report_setting(
             name,
             Some(text(asked)),
-            forced_text(set, asked, held, text),
+            Some(applied_text(held, text)),
             note,
         ),
         false => (),

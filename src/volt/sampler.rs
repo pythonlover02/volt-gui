@@ -245,7 +245,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MAG_FILTER,
-        s.mag_filter.is_some(),
         asked.mag_filter,
         held.mag_filter,
         filter_text,
@@ -254,7 +253,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIN_FILTER,
-        s.min_filter.is_some(),
         asked.min_filter,
         held.min_filter,
         filter_text,
@@ -263,7 +261,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIPMAP_MODE,
-        s.mipmap.is_some(),
         asked.mipmap_mode,
         held.mipmap_mode,
         mipmap_text,
@@ -272,7 +269,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_ANISOTROPY,
-        s.anisotropy.is_some(),
         aniso_of(asked.anisotropy_enable, asked.max_anisotropy),
         aniso_of(held.anisotropy_enable, held.max_anisotropy),
         aniso_text,
@@ -285,7 +281,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_LOD_BIAS,
-        s.lod_bias.is_some(),
         asked.mip_lod_bias,
         held.mip_lod_bias,
         number_text,
@@ -294,7 +289,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIP_FLOOR,
-        s.mip_floor.is_some(),
         asked.min_lod,
         held.min_lod,
         number_text,
@@ -303,7 +297,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIP_CEILING,
-        s.mip_ceiling.is_some(),
         asked.max_lod,
         held.max_lod,
         number_text,

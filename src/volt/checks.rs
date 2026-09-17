@@ -50,7 +50,7 @@ use crate::report::call_claim;
 use crate::report::call_forget;
 use crate::report::feature_note;
 use crate::report::filter_text;
-use crate::report::forced_text;
+use crate::report::applied_text;
 use crate::report::number_text;
 use crate::report::report_line;
 use crate::report::ReportMap;
@@ -98,11 +98,11 @@ const ASKED_MODE: &str = "fifo";
 const FORCED_MODE: &str = "mailbox";
 const ASKED_ANISO: &str = "off";
 const FORCED_LIMIT: &str = "60";
-const ASKED_LINE: &str = "present_mode: asked fifo";
-const BOTH_LINE: &str = "present_mode: asked fifo, forced mailbox";
-const FORCED_LINE: &str = "frame_limit: forced 60";
+const SAME_LINE: &str = "present_mode: asked fifo, applied fifo";
+const BOTH_LINE: &str = "present_mode: asked fifo, applied mailbox";
+const APPLIED_LINE: &str = "frame_limit: applied 60";
 const UNSET_LINE: &str = "frame_limit: the profile did not set it";
-const BLOCKED_LINE: &str = "anisotropy: asked off; the application did not enable samplerAnisotropy";
+const BLOCKED_LINE: &str = "anisotropy: the application did not enable samplerAnisotropy";
 const ANISO_SIXTEEN: f32 = 16.0;
 const ANISO_SIXTEEN_TEXT: &str = "16";
 const BIAS_DOWN_TEXT: &str = "-0.6";
@@ -578,10 +578,15 @@ fn a_hitch_cannot_set_the_peak_past_the_spike_limit() {
 }
 
 #[test]
-fn writes_only_the_parts_a_setting_line_has() {
+fn writes_a_setting_line_in_either_shape() {
     assert_eq!(
-        report_line(SETTING_PRESENT_MODE, Some(ASKED_MODE.into()), None, None),
-        ASKED_LINE
+        report_line(
+            SETTING_PRESENT_MODE,
+            Some(ASKED_MODE.into()),
+            Some(ASKED_MODE.into()),
+            None,
+        ),
+        SAME_LINE
     );
     assert_eq!(
         report_line(
@@ -594,7 +599,7 @@ fn writes_only_the_parts_a_setting_line_has() {
     );
     assert_eq!(
         report_line(SETTING_FRAME_LIMIT, None, Some(FORCED_LIMIT.into()), None),
-        FORCED_LINE
+        APPLIED_LINE
     );
     assert_eq!(
         report_line(SETTING_FRAME_LIMIT, None, None, Some(NOTE_NOT_SET.into())),
@@ -604,7 +609,7 @@ fn writes_only_the_parts_a_setting_line_has() {
         report_line(
             SETTING_ANISOTROPY,
             Some(ASKED_ANISO.into()),
-            None,
+            Some(ASKED_ANISO.into()),
             feature_note(true, false, FEATURE_ANISOTROPY),
         ),
         BLOCKED_LINE
@@ -612,15 +617,11 @@ fn writes_only_the_parts_a_setting_line_has() {
 }
 
 #[test]
-fn names_a_forced_value_only_where_the_profile_set_one() {
+fn names_the_applied_value_wherever_the_profile_set_one() {
     let nearest = vk::Filter::from_raw(NEAREST_FILTER);
     let linear = vk::Filter::from_raw(LINEAR_FILTER);
-    assert_eq!(forced_text(true, nearest, nearest, filter_text), None);
-    assert_eq!(
-        forced_text(true, nearest, linear, filter_text),
-        Some(TEXT_LINEAR.into())
-    );
-    assert_eq!(forced_text(false, nearest, linear, filter_text), None);
+    assert_eq!(applied_text(nearest, filter_text), TEXT_NEAREST.to_string());
+    assert_eq!(applied_text(linear, filter_text), TEXT_LINEAR.to_string());
 }
 
 #[test]

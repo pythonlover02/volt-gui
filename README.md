@@ -378,7 +378,7 @@ volt wrote in its place.
 ```
 [volt] gpu device: asked 2
 [volt] present_mode: asked fifo, applied mailbox
-[volt] image_count: asked 3
+[volt] image_count: asked 3, applied 3
 [volt] mag_filter: asked linear, applied nearest
 [volt] anisotropy: the application did not enable samplerAnisotropy
 [volt] depth_clamp: the application did not enable depthClamp
@@ -386,16 +386,17 @@ volt wrote in its place.
 [volt] frame_pacing: the profile did not set it
 ```
 
-Every setting line names the setting first, then either the value the game
-asked for and the value volt wrote in its place, or the reason the setting
-did not land. The applied value is the one volt wrote, so a setting the
-device clamped shows what landed rather than what the profile says.
+Every setting line names the setting first, then either `asked A, applied B`
+or the reason the setting did not land. The applied value is the one volt
+wrote, so a setting the device clamped shows what landed rather than what
+the profile says.
 
 The five Framerate settings have no asked value, since a game never tells
-Vulkan what frame rate it wants. They report what volt forced, or say the
+Vulkan what frame rate it wants. They report what volt applied, or say the
 profile did not set them.
 
-The GPU line reports the device id as `forced N` when the profile sets a gpu, and `asked N` when it does not.
+The GPU line reports the device id as `applied N` when the profile sets a
+gpu, and `asked N` when it does not.
 
 Each setting prints once per device, so 21 lines at most however many
 samplers, pipelines or swapchains the game creates.

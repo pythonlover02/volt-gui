@@ -296,7 +296,6 @@ fn call_report_display(
     call_report_value(
         owner,
         SETTING_PRESENT_MODE,
-        s.present_mode.is_some(),
         asked.present_mode,
         held.present_mode,
         present_display,
@@ -305,7 +304,6 @@ fn call_report_display(
     call_report_value(
         owner,
         SETTING_IMAGE_COUNT,
-        s.image_count.is_some(),
         asked.min_image_count,
         held.min_image_count,
         count_text,
@@ -314,7 +312,6 @@ fn call_report_display(
     call_report_value(
         owner,
         SETTING_COMPOSITE_ALPHA,
-        s.composite_alpha.is_some(),
         asked.composite_alpha,
         held.composite_alpha,
         alpha_display,
@@ -323,7 +320,6 @@ fn call_report_display(
     call_report_value(
         owner,
         SETTING_CLIPPED,
-        s.clipped.is_some(),
         asked.clipped,
         held.clipped,
         toggle_text,
