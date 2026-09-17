@@ -90,7 +90,7 @@ SETTINGS_DB: Final[dict] = {
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
-            "description": "How the limiter waits, cheapest to tightest. sleep hands the whole wait to the kernel. sliced sleeps in short steps and re-checks the clock, correcting for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits throughout, the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
+            "description": "How the limiter waits. sleep hands the whole wait to the kernel. sliced sleeps in short steps and re-checks the clock, correcting for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits throughout, the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
         },
     },
