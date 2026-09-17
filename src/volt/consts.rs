@@ -199,6 +199,7 @@ pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
 
 pub(crate) const FILTER_NEAREST: i32 = 0;
 pub(crate) const FILTER_LINEAR: i32 = 1;
+pub(crate) const FILTER_CUBIC: i32 = 1000015000;
 
 pub(crate) const MIPMAP_NEAREST: i32 = 0;
 pub(crate) const MIPMAP_LINEAR: i32 = 1;

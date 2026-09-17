@@ -7,6 +7,7 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
 use crate::consts::FEATURE_ANISOTROPY;
+use crate::consts::FILTER_CUBIC;
 use crate::consts::MIP_CEILING_DROPPED_LOG;
 use crate::consts::MIP_FLOOR_DROPPED_LOG;
 use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
@@ -47,11 +48,16 @@ use crate::report::mipmap_text;
 use crate::report::number_text;
 
 
-fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
-    match (choice, caps.sampler_anisotropy) {
-        (None, _) => None,
-        (Some(level), true) => Some(level.min(caps.max_anisotropy)),
-        (Some(_), false) => None,
+fn uses_cubic(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.mag_filter.as_raw() == FILTER_CUBIC || original.min_filter.as_raw() == FILTER_CUBIC
+}
+
+fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps, cubic: bool) -> Option<f32> {
+    match (choice, caps.sampler_anisotropy, cubic) {
+        (None, _, _) => None,
+        (Some(_), _, true) => None,
+        (Some(level), true, false) => Some(level.min(caps.max_anisotropy)),
+        (Some(_), false, false) => None,
     }
 }
 
@@ -65,11 +71,11 @@ fn aniso_pair(level: f32) -> (vk::Bool32, f32) {
 fn pick_aniso(
     choice: Option<f32>,
     caps: &DeviceCaps,
-    original: (vk::Bool32, f32),
+    original: &vk::SamplerCreateInfo<'_>,
 ) -> (vk::Bool32, f32) {
-    match aniso_allowed(choice, caps) {
+    match aniso_allowed(choice, caps, uses_cubic(original)) {
         Some(level) => aniso_pair(level),
-        None => original,
+        None => (original.anisotropy_enable, original.max_anisotropy),
     }
 }
 
@@ -183,7 +189,7 @@ fn patched_ci<'a>(
     let (aniso_enable, aniso_max) = pick_aniso(
         shape_choice(s.anisotropy, restricted),
         caps,
-        (original.anisotropy_enable, original.max_anisotropy),
+        original,
     );
     let (lod_low, lod_high) = shaped_range(s, restricted, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
