@@ -114,7 +114,7 @@ Three sampler fields, three settings. `nearest` and `linear` are core with no qu
 
 **LOD Bias** shift mipmap selection sharper or blurrier.
 
-**Mip Floor / Mip Ceiling** lowest and highest mip levels samplers may use. A ceiling below the floor is swapped rather than dropped.
+**Mip Floor / Mip Ceiling** lowest and highest mip levels samplers may use. The floor lands first and the ceiling second; a forced bound that would cross the value the other field holds is dropped rather than swapped, and logs a line.
 
 ### Rendering
 

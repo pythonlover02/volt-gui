@@ -7,6 +7,8 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
 use crate::consts::FEATURE_ANISOTROPY;
+use crate::consts::MIP_CEILING_DROPPED_LOG;
+use crate::consts::MIP_FLOOR_DROPPED_LOG;
 use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
 use crate::consts::SAMPLER_SHAPE_LOG;
 use crate::consts::SAMPLER_SUBSAMPLED_BIT;
@@ -75,10 +77,31 @@ fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
     forced(choice, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
 }
 
+fn landed(value: f32, held: bool, log: &str) -> Option<f32> {
+    match held {
+        true => Some(value),
+        false => {
+            log_at(LogLevel::Info, log);
+            None
+        }
+    }
+}
+
+fn landed_floor(choice: Option<f32>, against: f32) -> Option<f32> {
+    choice.and_then(|value| landed(value, value <= against, MIP_FLOOR_DROPPED_LOG))
+}
+
+fn landed_ceiling(choice: Option<f32>, against: f32) -> Option<f32> {
+    choice.and_then(|value| landed(value, value >= against, MIP_CEILING_DROPPED_LOG))
+}
+
 fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
-    let low = forced(s.mip_floor, original.0);
-    let high = forced(s.mip_ceiling, original.1);
-    (low.min(high), high.max(low))
+    let low = forced(
+        landed_floor(s.mip_floor, forced(s.mip_ceiling, original.1)),
+        original.0,
+    );
+    let high = forced(landed_ceiling(s.mip_ceiling, low), original.1);
+    (low, high)
 }
 
 fn already_linear(original: &vk::SamplerCreateInfo<'_>) -> bool {
