@@ -21,6 +21,7 @@ use crate::consts::SETTING_FRAME_PACING;
 use crate::consts::SETTING_IMAGE_COUNT;
 use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
+use crate::consts::SWAPCHAIN_PRESENT_SCALING_TYPE;
 use crate::device::VkDevState;
 use crate::env::env_probe_active;
 use crate::instance::call_relinked_chain;
@@ -39,6 +40,7 @@ use crate::instance::Relinked;
 use crate::instance::VkPresentModeList;
 use crate::instance::VkSurfaceCapabilities2;
 use crate::instance::VkSwapchainPresentModesCreateInfoKHR;
+use crate::instance::VkSwapchainPresentScalingCreateInfoKHR;
 use crate::lists::forced;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
@@ -123,14 +125,37 @@ fn chosen_mode(
     }
 }
 
+fn scaling_set(node: *const VkSwapchainPresentScalingCreateInfoKHR) -> bool {
+    unsafe {
+        (*node).scaling_behavior != 0
+            || (*node).present_gravity_x != 0
+            || (*node).present_gravity_y != 0
+    }
+}
+
+fn scaling_chained(p_next: *const c_void) -> bool {
+    match chain_find(p_next, SWAPCHAIN_PRESENT_SCALING_TYPE) {
+        Some(node) => scaling_set(node as *const VkSwapchainPresentScalingCreateInfoKHR),
+        None => false,
+    }
+}
+
+pub(crate) fn mode_tie_holds(
+    flags: vk::SwapchainCreateFlagsKHR,
+    p_next: *const c_void,
+) -> bool {
+    flags.as_raw() == 0 && !scaling_chained(p_next)
+}
+
 fn pick_present_mode(
     choice: Option<vk::PresentModeKHR>,
     supported: &[vk::PresentModeKHR],
+    tie_holds: bool,
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match choice {
-        Some(value) => chosen_mode(supported, value, original),
-        None => original,
+    match (choice, tie_holds) {
+        (Some(value), true) => chosen_mode(supported, value, original),
+        (_, _) => original,
     }
 }
 
@@ -605,14 +630,15 @@ fn rebuilt_swapchain(
 fn narrowed_swapchain(
     patched: vk::SwapchainCreateInfoKHR<'_>,
     choice: Option<vk::PresentModeKHR>,
+    applies: bool,
 ) -> SwapchainRebuild<'_> {
-    match chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE) {
-        Some(node) => rebuilt_swapchain(
+    match (applies, chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE)) {
+        (true, Some(node)) => rebuilt_swapchain(
             patched,
             node as *const VkSwapchainPresentModesCreateInfoKHR,
             choice,
         ),
-        None => plain_swapchain(patched),
+        (_, _) => plain_swapchain(patched),
     }
 }
 
@@ -630,14 +656,15 @@ fn call_prepared_ci<'a>(
         caps.as_ref(),
     );
     maybe_log_alpha(s.composite_alpha);
+    let tie_holds = mode_tie_holds(original.flags, original.p_next);
     let patched = patched_swapchain_ci(
         original,
-        pick_present_mode(s.present_mode, &supported, original.present_mode),
+        pick_present_mode(s.present_mode, &supported, tie_holds, original.present_mode),
         caps.as_ref(),
         s,
     );
     call_report_swapchain(dev, s, original, &patched);
-    narrowed_swapchain(patched, s.present_mode)
+    narrowed_swapchain(patched, s.present_mode, tie_holds && s.present_mode.is_some())
 }
 
 fn call_create_registered(
