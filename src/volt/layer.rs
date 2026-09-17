@@ -94,6 +94,7 @@ use crate::present::maybe_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::sampler::call_write_sampler_descriptors;
 use crate::swapchain::call_create_shared_swapchains;
+use crate::swapchain::call_forget_forced_mode;
 use crate::swapchain::call_create_swapchain;
 use crate::swapchain::call_surface_capabilities;
 use crate::swapchain::call_surface_capabilities2;
@@ -708,6 +709,7 @@ unsafe extern "system" fn vkDestroySwapchainKHR(
     match devs_get(dev.as_raw()) {
         Some(d) => {
             call_forget_timeline(dev.as_raw(), sc);
+            call_forget_forced_mode(dev.as_raw(), sc);
             (d.swap_fp.destroy_swapchain_khr)(dev, sc, alloc);
         }
         None => (),

@@ -155,14 +155,14 @@ The layer reads `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
 | Tab | Where the layer acts |
 |-----|----------------------|
 | GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups(KHR)` |
-| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
+| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR`, `vkQueuePresentKHR` |
 | Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV` |
 | Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
 | Framerate | `vkQueuePresentKHR` |
 
 Device creation is read, never modified. volt learns which features the game enabled so feature-gated settings apply only where the game asked, and enables nothing itself.
 
-Every setting is hooked on each path that reaches it. `2`/`EXT` query variants, device groups, shared swapchains, inline sampler writes and dynamic alpha-to-coverage get the same treatment as the core calls. Present mode lists carried in a `pNext` chain are filtered in place too.
+Every setting is hooked on each path that reaches it. `2`/`EXT` query variants, device groups, shared swapchains, inline sampler writes and dynamic alpha-to-coverage get the same treatment as the core calls. A present mode list the driver fills is filtered in place; a list the game supplies at swapchain creation is rebuilt as volt's own copy holding the forced mode, and the mode named at present is rebuilt to match.
 
 An entry point for an extension the game never enabled is unreachable, and the layer only returns a hook when the call resolves further down the chain.
 

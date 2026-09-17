@@ -55,6 +55,7 @@ use crate::report::call_forget_reports;
 use crate::report::call_report_choice;
 use crate::report::call_report_reading;
 use crate::report::count_text;
+use crate::swapchain::call_forget_device_forced_modes;
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct DeviceCaps {
@@ -146,6 +147,7 @@ pub(crate) fn devs_del(h: u64) -> Option<Arc<VkDevState>> {
     cmdbuf_dev_forget(h);
     call_forget_reports(h);
     call_forget_device_timelines(h);
+    call_forget_device_forced_modes(h);
     DEVS.write()
         .ok()
         .and_then(|mut g| g.as_mut().and_then(|m| m.remove(&h)))

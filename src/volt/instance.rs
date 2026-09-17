@@ -19,7 +19,18 @@ use crate::consts::CUSTOM_RESOLVE_TYPE;
 use crate::consts::DEBUG_UTILS_OBJECT_NAME_TYPE;
 use crate::consts::DEVICE_GROUP_PROPERTIES_TYPE;
 use crate::consts::DEVICE_GROUP_SIZE;
+use crate::consts::DEVICE_GROUP_PRESENT_INFO_TYPE;
 use crate::consts::DEVICE_GROUP_SWAPCHAIN_TYPE;
+use crate::consts::DISPLAY_PRESENT_INFO_TYPE;
+use crate::consts::FRAME_BOUNDARY_TENSORS_TYPE;
+use crate::consts::FRAME_BOUNDARY_TYPE;
+use crate::consts::PRESENT_ID_2_TYPE;
+use crate::consts::PRESENT_ID_TYPE;
+use crate::consts::PRESENT_REGIONS_TYPE;
+use crate::consts::PRESENT_TIMES_GOOGLE_TYPE;
+use crate::consts::PRESENT_TIMINGS_TYPE;
+use crate::consts::SET_PRESENT_CONFIG_TYPE;
+use crate::consts::SWAPCHAIN_PRESENT_FENCE_TYPE;
 use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::GRAPHICS_PIPELINE_LIBRARY_TYPE;
@@ -185,6 +196,119 @@ pub(crate) struct VkPhysicalDeviceFeatures2 {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *mut c_void,
     pub(crate) features: vk::PhysicalDeviceFeatures,
+}
+
+#[repr(C)]
+pub(crate) struct VkSurfacePresentModeKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) present_mode: vk::PresentModeKHR,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkSwapchainPresentModeInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_modes: *const vk::PresentModeKHR,
+}
+
+#[repr(C)]
+pub(crate) struct VkDeviceGroupPresentInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_device_masks: *const u32,
+    pub(crate) mode: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkDisplayPresentInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) src_rect: vk::Rect2D,
+    pub(crate) dst_rect: vk::Rect2D,
+    pub(crate) persistent: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkFrameBoundaryEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) frame_id: u64,
+    pub(crate) image_count: u32,
+    pub(crate) p_images: *const vk::Image,
+    pub(crate) buffer_count: u32,
+    pub(crate) p_buffers: *const vk::Buffer,
+    pub(crate) tag_name: u64,
+    pub(crate) tag_size: usize,
+    pub(crate) p_tag: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkFrameBoundaryTensorsARM {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) tensor_count: u32,
+    pub(crate) p_tensors: *const VkHandle,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentId2KHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_ids: *const u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentIdKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_ids: *const u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentRegionsKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_regions: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentTimesInfoGOOGLE {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_times: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentTimingsInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_timing_infos: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkSetPresentConfigNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) num_frames_per_batch: u32,
+    pub(crate) present_config_feedback: u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainPresentFenceInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_fences: *const vk::Fence,
 }
 
 #[repr(C)]
@@ -1037,6 +1161,17 @@ pub(crate) fn copied_node(node: *const VkChainNode) -> Option<Vec<u64>> {
         PIPELINE_REPRESENTATIVE_TYPE => Some(copied::<VkPipelineRepresentativeFragmentTestStateCreateInfoNV>(node)),
         RENDERING_ATTACHMENT_LOCATION_TYPE => Some(copied::<VkRenderingAttachmentLocationInfo>(node)),
         RENDERING_INPUT_ATTACHMENT_TYPE => Some(copied::<VkRenderingInputAttachmentIndexInfo>(node)),
+        DEVICE_GROUP_PRESENT_INFO_TYPE => Some(copied::<VkDeviceGroupPresentInfoKHR>(node)),
+        DISPLAY_PRESENT_INFO_TYPE => Some(copied::<VkDisplayPresentInfoKHR>(node)),
+        FRAME_BOUNDARY_TYPE => Some(copied::<VkFrameBoundaryEXT>(node)),
+        FRAME_BOUNDARY_TENSORS_TYPE => Some(copied::<VkFrameBoundaryTensorsARM>(node)),
+        PRESENT_ID_2_TYPE => Some(copied::<VkPresentId2KHR>(node)),
+        PRESENT_ID_TYPE => Some(copied::<VkPresentIdKHR>(node)),
+        PRESENT_REGIONS_TYPE => Some(copied::<VkPresentRegionsKHR>(node)),
+        PRESENT_TIMES_GOOGLE_TYPE => Some(copied::<VkPresentTimesInfoGOOGLE>(node)),
+        PRESENT_TIMINGS_TYPE => Some(copied::<VkPresentTimingsInfoEXT>(node)),
+        SET_PRESENT_CONFIG_TYPE => Some(copied::<VkSetPresentConfigNV>(node)),
+        SWAPCHAIN_PRESENT_FENCE_TYPE => Some(copied::<VkSwapchainPresentFenceInfoKHR>(node)),
         _ => None,
     }
 }

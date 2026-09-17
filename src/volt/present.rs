@@ -34,6 +34,7 @@ use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
 use crate::lists::forced;
+use crate::swapchain::rebuilt_present;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Timeline {
@@ -338,5 +339,8 @@ pub(crate) fn call_present_frame(
     queue: vk::Queue,
     info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
-    unsafe { (dev.swap_fp.queue_present_khr)(queue, info) }
+    match rebuilt_present(dev.device.handle().as_raw(), unsafe { &*info }) {
+        Some(built) => unsafe { (dev.swap_fp.queue_present_khr)(queue, &built.info) },
+        None => unsafe { (dev.swap_fp.queue_present_khr)(queue, info) },
+    }
 }

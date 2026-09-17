@@ -120,6 +120,23 @@ pub(crate) const RENDERING_INPUT_ATTACHMENT_TYPE: u32 = 1000232002;
 
 pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
 pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
+pub(crate) const SURFACE_PRESENT_MODE_TYPE: u32 = 1000274000;
+pub(crate) const SURFACE_INFO_2_TYPE: u32 = 1000119000;
+pub(crate) const SURFACE_CAPABILITIES_2_TYPE: u32 = 1000119001;
+pub(crate) const SWAPCHAIN_PRESENT_MODE_INFO_TYPE: u32 = 1000275003;
+pub(crate) const DEVICE_GROUP_PRESENT_INFO_TYPE: u32 = 1000060011;
+pub(crate) const DISPLAY_PRESENT_INFO_TYPE: u32 = 1000003000;
+pub(crate) const FRAME_BOUNDARY_TYPE: u32 = 1000375001;
+pub(crate) const FRAME_BOUNDARY_TENSORS_TYPE: u32 = 1000460023;
+pub(crate) const PRESENT_ID_2_TYPE: u32 = 1000479001;
+pub(crate) const PRESENT_ID_TYPE: u32 = 1000294000;
+pub(crate) const PRESENT_REGIONS_TYPE: u32 = 1000084000;
+pub(crate) const PRESENT_TIMES_GOOGLE_TYPE: u32 = 1000092000;
+pub(crate) const PRESENT_TIMINGS_TYPE: u32 = 1000208003;
+pub(crate) const SET_PRESENT_CONFIG_TYPE: u32 = 1000613000;
+pub(crate) const SWAPCHAIN_PRESENT_FENCE_TYPE: u32 = 1000275001;
+pub(crate) const EXT_SURFACE_MAINTENANCE_1: &str = "VK_KHR_surface_maintenance1";
+pub(crate) const EXT_SURFACE_MAINTENANCE_1_EXT: &str = "VK_EXT_surface_maintenance1";
 
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
