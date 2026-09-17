@@ -1,9 +1,14 @@
+from typing import Callable
+from typing import Optional
+
 from PySide6.QtCore import QEasingCurve
 from PySide6.QtCore import QPropertyAnimation
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QCursor
 from PySide6.QtGui import QFont
+from PySide6.QtGui import QResizeEvent
+from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QComboBox
 from PySide6.QtWidgets import QFrame
@@ -16,6 +21,7 @@ from PySide6.QtWidgets import QListWidgetItem
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtWidgets import QScrollArea
 from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QStackedWidget
 from PySide6.QtWidgets import QTextEdit
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
@@ -41,12 +47,12 @@ def get_combo_minimum_width() -> int:
     return 104
 
 
-def process_combo_wheel_ignore(wheel_event) -> None:
+def process_combo_wheel_ignore(wheel_event: QWheelEvent) -> None:
     wheel_event.ignore()
     return None
 
 
-def process_combo_wheel_block(combo) -> None:
+def process_combo_wheel_block(combo: QComboBox) -> None:
     combo.wheelEvent = process_combo_wheel_ignore
     return None
 
@@ -105,7 +111,7 @@ def build_monospace_font() -> QFont:
     return monospace_font
 
 
-def process_copy_button_action(copy_button, clipboard_text: str) -> None:
+def process_copy_button_action(copy_button: QPushButton, clipboard_text: str) -> None:
     QApplication.clipboard().setText(clipboard_text)
     copy_button.setText("Copied!")
     effect = QGraphicsOpacityEffect(copy_button)
@@ -154,7 +160,7 @@ def create_code_block_widget(code_text: str) -> QFrame:
     return frame
 
 
-def _add_info_text(layout, text: str) -> None:
+def _add_info_text(layout: QVBoxLayout, text: str) -> None:
     text_label = QLabel(text)
     text_label.setWordWrap(True)
     text_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
@@ -163,7 +169,7 @@ def _add_info_text(layout, text: str) -> None:
     return None
 
 
-def _add_info_code(layout, item_entry: tuple) -> None:
+def _add_info_code(layout: QVBoxLayout, item_entry: tuple) -> None:
     match len(item_entry) > 2 and item_entry[2] != "":
         case True:
             code_label = QLabel(item_entry[2])
@@ -176,7 +182,7 @@ def _add_info_code(layout, item_entry: tuple) -> None:
     return None
 
 
-def _add_info_entry(layout, item_entry) -> None:
+def _add_info_entry(layout: QVBoxLayout, item_entry: tuple) -> None:
     match item_entry[0]:
         case "text":
             _add_info_text(layout, item_entry[1])
@@ -185,7 +191,7 @@ def _add_info_entry(layout, item_entry) -> None:
     return None
 
 
-def create_info_card_widget(label_text: str, card_data) -> QFrame:
+def create_info_card_widget(label_text: str, card_data: str | tuple) -> QFrame:
     card = QFrame()
     card.setProperty("settingCard", True)
     card.setFrameStyle(QFrame.Box)
@@ -206,7 +212,7 @@ def create_info_card_widget(label_text: str, card_data) -> QFrame:
     return card
 
 
-def process_container_relayout(container_widget) -> None:
+def process_container_relayout(container_widget: QWidget) -> None:
     match (container_widget.layout() is None, container_widget.width() <= 0):
         case (False, False):
             match container_widget.layout().heightForWidth(container_widget.width()) < 0:
@@ -219,14 +225,14 @@ def process_container_relayout(container_widget) -> None:
     return None
 
 
-def process_scroll_area_resize_sync(event, original_resize_handler, scroll_area_widget, content_container_widget) -> None:
+def process_scroll_area_resize_sync(event: QResizeEvent, original_resize_handler: Callable[[QResizeEvent], None], scroll_area_widget: QScrollArea, content_container_widget: QWidget) -> None:
     original_resize_handler(event)
     content_container_widget.setFixedWidth(scroll_area_widget.viewport().width())
     process_container_relayout(content_container_widget)
     return None
 
 
-def create_scrollable_content_area(container_widget) -> QScrollArea:
+def create_scrollable_content_area(container_widget: QWidget) -> QScrollArea:
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(False)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -236,7 +242,7 @@ def create_scrollable_content_area(container_widget) -> QScrollArea:
     return scroll_area
 
 
-def _build_content_container(info_items) -> QWidget:
+def _build_content_container(info_items: Optional[dict]) -> QWidget:
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -252,7 +258,7 @@ def _build_content_container(info_items) -> QWidget:
     return container_widget
 
 
-def create_tab_content_widget(tab_name: str, info_items) -> dict:
+def create_tab_content_widget(tab_name: str, info_items: Optional[dict]) -> dict:
     widget = QWidget()
     all_widgets = {}
     all_cards = {}
@@ -274,7 +280,7 @@ def create_tab_content_widget(tab_name: str, info_items) -> dict:
     return {"tab": widget, "widgets": all_widgets, "cards": all_cards}
 
 
-def create_sidebar_tab_list(tab_names: tuple, stacked_widget) -> QListWidget:
+def create_sidebar_tab_list(tab_names: tuple, stacked_widget: QStackedWidget) -> QListWidget:
     tab_list = QListWidget()
     tab_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     tab_list.setFocusPolicy(Qt.NoFocus)
@@ -307,7 +313,7 @@ def build_sidebar_header_widget() -> QWidget:
     return header_widget
 
 
-def build_sidebar_container_widget(tab_names: tuple, stacked_widget) -> tuple:
+def build_sidebar_container_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> tuple:
     sidebar_container = QWidget()
     sidebar_container.setFixedWidth(get_sidebar_width())
     sidebar_layout = QVBoxLayout(sidebar_container)
@@ -319,5 +325,5 @@ def build_sidebar_container_widget(tab_names: tuple, stacked_widget) -> tuple:
     return (sidebar_container, tab_list)
 
 
-def create_simple_sidebar_widget(tab_names: tuple, stacked_widget) -> QWidget:
+def create_simple_sidebar_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> QWidget:
     return build_sidebar_container_widget(tab_names, stacked_widget)[0]

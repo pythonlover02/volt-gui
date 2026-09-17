@@ -5,11 +5,13 @@ import socket
 import sys
 
 from typing import Final
+from typing import Optional
 
 from PySide6.QtCore import QProcess
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QComboBox
@@ -219,7 +221,7 @@ def calculate_initial_platform() -> None:
             return None
 
 
-def get_widget_option_text(main_window, option_key: str) -> str:
+def get_widget_option_text(main_window: QMainWindow, option_key: str) -> str:
     match main_window.options_widgets.get(option_key):
         case None:
             return DEFAULT_VALUE
@@ -227,11 +229,11 @@ def get_widget_option_text(main_window, option_key: str) -> str:
             return widget.currentText().strip()
 
 
-def get_resolved_option_value(main_window, option_key: str) -> str:
+def get_resolved_option_value(main_window: QMainWindow, option_key: str) -> str:
     return resolve_option_value(option_key, get_widget_option_text(main_window, option_key))
 
 
-def is_option_enabled(main_window, option_key: str) -> bool:
+def is_option_enabled(main_window: QMainWindow, option_key: str) -> bool:
     return get_resolved_option_value(main_window, option_key) == "on"
 
 
@@ -269,7 +271,7 @@ def create_options_tab_widget() -> dict:
     return {"tab": widget, "widgets": options_widgets}
 
 
-def _add_named_profiles(combo_widget, profiles: tuple) -> None:
+def _add_named_profiles(combo_widget: QComboBox, profiles: tuple) -> None:
     match len(profiles) > 1:
         case True:
             combo_widget.insertSeparator(combo_widget.count())
@@ -280,7 +282,7 @@ def _add_named_profiles(combo_widget, profiles: tuple) -> None:
     return None
 
 
-def process_profile_list_update(main_window) -> None:
+def process_profile_list_update(main_window: QMainWindow) -> None:
     profiles = find_all_profiles()
     main_window.profile_selector.blockSignals(True)
     main_window.profile_selector.clear()
@@ -293,19 +295,19 @@ def process_profile_list_update(main_window) -> None:
     return None
 
 
-def process_profile_selector_restore(main_window) -> None:
+def process_profile_selector_restore(main_window: QMainWindow) -> None:
     main_window.profile_selector.blockSignals(True)
     main_window.profile_selector.setCurrentText(build_profile_label(main_window.current_profile))
     main_window.profile_selector.blockSignals(False)
     return None
 
 
-def process_launch_line_update(main_window) -> None:
+def process_launch_line_update(main_window: QMainWindow) -> None:
     main_window.launch_block.code_editor.setPlainText(build_launch_command(main_window.current_profile))
     return None
 
 
-def process_profile_change(main_window, profile_name: str) -> None:
+def process_profile_change(main_window: QMainWindow, profile_name: str) -> None:
     match getattr(main_window, "initial_setup_complete", False):
         case False:
             return None
@@ -321,7 +323,7 @@ def process_profile_change(main_window, profile_name: str) -> None:
             return None
 
 
-def process_yes_no_dialog(parent_widget, title: str, message: str) -> bool:
+def process_yes_no_dialog(parent_widget: QMainWindow, title: str, message: str) -> bool:
     dialog = QMessageBox(parent_widget)
     dialog.setWindowTitle(title)
     dialog.setText(message)
@@ -354,7 +356,7 @@ def is_new_profile_name_valid(profile_name: str) -> bool:
             return False
 
 
-def process_new_profile_save(main_window) -> None:
+def process_new_profile_save(main_window: QMainWindow) -> None:
     profile_name, accepted = QInputDialog.getText(main_window, "New Profile", "Profile name:")
     match (accepted, profile_name is not None and is_new_profile_name_valid(profile_name)):
         case (True, True):
@@ -374,7 +376,7 @@ def process_new_profile_save(main_window) -> None:
             return None
 
 
-def process_current_profile_delete(main_window) -> None:
+def process_current_profile_delete(main_window: QMainWindow) -> None:
     match main_window.current_profile == DEFAULT_PROFILE:
         case True:
             process_notification_display(main_window, "Cannot delete default profile.", True)
@@ -395,7 +397,7 @@ def process_current_profile_delete(main_window) -> None:
                     return None
 
 
-def process_profile_combo_change(main_window, selected_text: str) -> None:
+def process_profile_combo_change(main_window: QMainWindow, selected_text: str) -> None:
     match selected_text:
         case s if s == NEW_PROFILE_LABEL:
             process_profile_selector_restore(main_window)
@@ -408,7 +410,7 @@ def process_profile_combo_change(main_window, selected_text: str) -> None:
     return None
 
 
-def process_preset_combo_change(main_window, selected_text: str) -> None:
+def process_preset_combo_change(main_window: QMainWindow, selected_text: str) -> None:
     match (selected_text == get_preset_placeholder_label(), is_valid_preset_name(selected_text)):
         case (True, _):
             return None
@@ -428,7 +430,7 @@ def process_preset_combo_change(main_window, selected_text: str) -> None:
             return None
 
 
-def create_system_tray_widget(main_window) -> None:
+def create_system_tray_widget(main_window: QMainWindow) -> None:
     match QSystemTrayIcon.isSystemTrayAvailable():
         case False:
             return None
@@ -448,7 +450,7 @@ def create_system_tray_widget(main_window) -> None:
             return None
 
 
-def process_tray_menu_update(main_window) -> None:
+def process_tray_menu_update(main_window: QMainWindow) -> None:
     match hasattr(main_window, "profile_submenu"):
         case False:
             return None
@@ -461,7 +463,7 @@ def process_tray_menu_update(main_window) -> None:
             return None
 
 
-def process_tray_activation(main_window, activation_reason) -> None:
+def process_tray_activation(main_window: QMainWindow, activation_reason: QSystemTrayIcon.ActivationReason) -> None:
     match activation_reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
         case False:
             return None
@@ -474,7 +476,7 @@ def process_tray_activation(main_window, activation_reason) -> None:
             return None
 
 
-def process_window_show(main_window) -> None:
+def process_window_show(main_window: QMainWindow) -> None:
     match main_window.start_maximized:
         case True:
             main_window.showMaximized()
@@ -485,7 +487,7 @@ def process_window_show(main_window) -> None:
     return None
 
 
-def process_profile_apply_from_tray(main_window, profile_name: str) -> None:
+def process_profile_apply_from_tray(main_window: QMainWindow, profile_name: str) -> None:
     match profile_name != main_window.current_profile:
         case True:
             process_profile_save(main_window.all_widgets, main_window.current_profile)
@@ -499,7 +501,7 @@ def process_profile_apply_from_tray(main_window, profile_name: str) -> None:
     return None
 
 
-def process_notification_display(main_window, notification_message: str, is_error: bool) -> None:
+def process_notification_display(main_window: QMainWindow, notification_message: str, is_error: bool) -> None:
     match is_error:
         case True:
             QMessageBox.warning(main_window, "volt-gui", notification_message)
@@ -508,7 +510,7 @@ def process_notification_display(main_window, notification_message: str, is_erro
     return None
 
 
-def process_tray_option_update(main_window, tray_enabled: bool) -> None:
+def process_tray_option_update(main_window: QMainWindow, tray_enabled: bool) -> None:
     match (main_window.use_system_tray == tray_enabled, tray_enabled, hasattr(main_window, "tray_icon")):
         case (True, _, _):
             main_window.use_system_tray = tray_enabled
@@ -535,7 +537,7 @@ def process_tray_option_update(main_window, tray_enabled: bool) -> None:
     return None
 
 
-def process_options_application(main_window) -> None:
+def process_options_application(main_window: QMainWindow) -> None:
     process_theme_application(QApplication.instance(), get_resolved_option_value(main_window, "application_theme"))
     match (is_option_enabled(main_window, "window_transparency"),
            QApplication.instance().platformName()):
@@ -550,7 +552,7 @@ def process_options_application(main_window) -> None:
     return None
 
 
-def process_options_save_timer_trigger(main_window) -> None:
+def process_options_save_timer_trigger(main_window: QMainWindow) -> None:
     match getattr(main_window, "options_save_timer", None):
         case None:
             main_window.options_save_timer = QTimer(main_window)
@@ -562,7 +564,7 @@ def process_options_save_timer_trigger(main_window) -> None:
     return None
 
 
-def process_option_change(main_window) -> None:
+def process_option_change(main_window: QMainWindow) -> None:
     match getattr(main_window, "initial_setup_complete", False):
         case True:
             process_options_save_timer_trigger(main_window)
@@ -571,7 +573,7 @@ def process_option_change(main_window) -> None:
     return None
 
 
-def process_application_options_save(main_window) -> None:
+def process_application_options_save(main_window: QMainWindow) -> None:
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance["Options"] = {
         option_key: main_window.options_widgets[option_key].currentText().strip()
@@ -584,7 +586,7 @@ def process_application_options_save(main_window) -> None:
     return None
 
 
-def process_application_options_load(main_window) -> None:
+def process_application_options_load(main_window: QMainWindow) -> None:
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance.read(build_options_path())
     for option_key in OPTIONS_DB:
@@ -607,7 +609,7 @@ def process_application_options_load(main_window) -> None:
     return None
 
 
-def process_preview_stop(main_window) -> None:
+def process_preview_stop(main_window: QMainWindow) -> None:
     match getattr(main_window, "preview_process", None):
         case None:
             return None
@@ -618,7 +620,7 @@ def process_preview_stop(main_window) -> None:
             return None
 
 
-def process_probe_failure(main_window) -> None:
+def process_probe_failure(main_window: QMainWindow) -> None:
     match main_window.probe_error_shown:
         case True:
             return None
@@ -628,7 +630,7 @@ def process_probe_failure(main_window) -> None:
             return None
 
 
-def process_preview_error(main_window, process_error) -> None:
+def process_preview_error(main_window: QMainWindow, process_error: QProcess.ProcessError) -> None:
     match process_error == QProcess.ProcessError.FailedToStart:
         case True:
             process_probe_failure(main_window)
@@ -637,7 +639,7 @@ def process_preview_error(main_window, process_error) -> None:
             return None
 
 
-def process_preview_exit(main_window, exit_code: int, exit_status) -> None:
+def process_preview_exit(main_window: QMainWindow, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
     match (exit_status == QProcess.ExitStatus.NormalExit, exit_code):
         case (True, 0) | (True, 2):
             return None
@@ -648,7 +650,7 @@ def process_preview_exit(main_window, exit_code: int, exit_status) -> None:
             return None
 
 
-def process_preview_start(main_window) -> None:
+def process_preview_start(main_window: QMainWindow) -> None:
     process_preview_stop(main_window)
     worker = QProcess(main_window)
     worker.errorOccurred.connect(
@@ -660,7 +662,7 @@ def process_preview_start(main_window) -> None:
     return None
 
 
-def process_dropped_notice(main_window, dropped: tuple) -> None:
+def process_dropped_notice(main_window: QMainWindow, dropped: tuple) -> None:
     match len(dropped):
         case 0:
             return None
@@ -674,7 +676,7 @@ def process_dropped_notice(main_window, dropped: tuple) -> None:
             return None
 
 
-def process_probe_rebuild(main_window) -> None:
+def process_probe_rebuild(main_window: QMainWindow) -> None:
     process_profile_options_rebuild(main_window.all_widgets)
     process_dropped_notice(
         main_window,
@@ -682,7 +684,7 @@ def process_probe_rebuild(main_window) -> None:
     return None
 
 
-def process_probe_poll(main_window) -> None:
+def process_probe_poll(main_window: QMainWindow) -> None:
     match (call_probe_stamp(), main_window.probe_stamp, main_window.probe_settled):
         case (stamp, seen, _) if stamp != seen:
             main_window.probe_stamp = stamp
@@ -696,7 +698,7 @@ def process_probe_poll(main_window) -> None:
             return None
 
 
-def process_all_settings_apply(main_window) -> None:
+def process_all_settings_apply(main_window: QMainWindow) -> None:
     process_application_options_save(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
     process_preview_start(main_window)
@@ -704,7 +706,7 @@ def process_all_settings_apply(main_window) -> None:
     return None
 
 
-def process_window_close(main_window, singleton_socket, close_event) -> None:
+def process_window_close(main_window: QMainWindow, singleton_socket: Optional[socket.socket], close_event: QCloseEvent) -> None:
     match (main_window.use_system_tray, hasattr(main_window, "tray_icon")):
         case (True, True):
             main_window.hide()
@@ -717,7 +719,7 @@ def process_window_close(main_window, singleton_socket, close_event) -> None:
             return None
 
 
-def process_cleanup(main_window, singleton_socket) -> None:
+def process_cleanup(main_window: QMainWindow, singleton_socket: Optional[socket.socket]) -> None:
     match getattr(main_window, "options_save_timer", None):
         case None:
             pass
@@ -740,13 +742,13 @@ def process_cleanup(main_window, singleton_socket) -> None:
     return None
 
 
-def process_application_quit(main_window) -> None:
+def process_application_quit(main_window: QMainWindow) -> None:
     process_cleanup(main_window, main_window.singleton_socket)
     QApplication.quit()
     return None
 
 
-def process_welcome_show(main_window) -> None:
+def process_welcome_show(main_window: QMainWindow) -> None:
     match main_window.welcome_window is None:
         case True:
             main_window.welcome_window = create_welcome_window_widget()
@@ -773,20 +775,20 @@ def validate_singleton_instance(singleton_port: int) -> dict:
             return {"socket": None, "running": True}
 
 
-def process_signal_handler(main_window, signal_number: int) -> None:
+def process_signal_handler(main_window: QMainWindow, signal_number: int) -> None:
     print("\nReceived signal " + str(signal_number) + ", closing...")
     process_cleanup(main_window, main_window.singleton_socket)
     QApplication.quit()
     sys.exit(0)
 
 
-def process_signal_handlers_setup(main_window) -> None:
+def process_signal_handlers_setup(main_window: QMainWindow) -> None:
     signal.signal(signal.SIGINT, lambda signal_number, frame: process_signal_handler(main_window, signal_number))
     signal.signal(signal.SIGTERM, lambda signal_number, frame: process_signal_handler(main_window, signal_number))
     return None
 
 
-def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict, tab_name: str) -> None:
+def process_create_tab(stacked_widget: QStackedWidget, all_widgets: dict, options_widgets: dict, tab_name: str) -> None:
     match tab_name:
         case "Options":
             tab_result = create_options_tab_widget()
@@ -801,7 +803,7 @@ def process_create_tab(stacked_widget, all_widgets: dict, options_widgets: dict,
     return None
 
 
-def create_main_window_widget(singleton_socket):
+def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMainWindow:
     window = QMainWindow()
     window.singleton_socket = singleton_socket
     window.start_maximized = False

@@ -2,6 +2,7 @@ import os
 
 from functools import reduce
 from pathlib import Path
+from typing import Any
 from typing import Final
 from typing import Optional
 
@@ -108,7 +109,7 @@ def _widget_key_for(section_key: str) -> Optional[str]:
         None)
 
 
-def widget_value(widget) -> str:
+def widget_value(widget: Any) -> str:
     match widget.currentData():
         case None:
             return DEFAULT_VALUE
@@ -116,7 +117,7 @@ def widget_value(widget) -> str:
             return data
 
 
-def process_widget_value_update(widget, display_value: str) -> bool:
+def process_widget_value_update(widget: Any, display_value: str) -> bool:
     match widget.findData(display_value):
         case -1:
             widget.setCurrentIndex(0)
@@ -126,7 +127,7 @@ def process_widget_value_update(widget, display_value: str) -> bool:
             return True
 
 
-def process_widget_options_rebuild(widget, options: tuple) -> None:
+def process_widget_options_rebuild(widget: Any, options: tuple) -> None:
     keep = widget_value(widget)
     widget.clear()
     for value, label in options:

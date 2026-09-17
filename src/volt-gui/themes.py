@@ -1,5 +1,8 @@
+from typing import Optional
+
 from PySide6.QtGui import QColor
 from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import QApplication
 
 from database import get_accent_colors
 
@@ -121,7 +124,7 @@ def apply_disabled_roles(palette_instance: QPalette, color_map: dict) -> QPalett
     return palette_instance
 
 
-def process_theme_application(application_instance, theme_name: str) -> None:
+def process_theme_application(application_instance: Optional[QApplication], theme_name: str) -> None:
     match application_instance:
         case None:
             return None
