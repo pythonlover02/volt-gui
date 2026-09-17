@@ -23,8 +23,8 @@ use crate::consts::SOURCE_PUSH_INDEX;
 use crate::consts::SOURCE_SHADER_RECORD_INDEX;
 use crate::consts::SWAPCHAIN_COUNTER_TYPE;
 use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
-use crate::instance::call_relinked_chain;
 use crate::instance::copied_node;
+use crate::instance::relinked_chain;
 use crate::instance::VkChainNode;
 use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkSwapchainCounterCreateInfoEXT;
@@ -612,7 +612,7 @@ fn chains_its_own_copy_in_front_of_the_replacement() {
         surface_counters: NO_COUNTERS,
     };
     let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
-    let built = call_relinked_chain(
+    let built = relinked_chain(
         &front as *const VkSwapchainCounterCreateInfoEXT as *const c_void,
         SWAPCHAIN_MODE_LIST_TYPE,
         &replacement as *const VkChainNode as *const c_void,
@@ -641,7 +641,7 @@ fn passes_the_chain_down_when_a_node_in_front_is_undeclared() {
         &mut target as *mut VkChainNode as *mut c_void,
     );
     let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
-    assert!(call_relinked_chain(
+    assert!(relinked_chain(
         &front as *const VkChainNode as *const c_void,
         SWAPCHAIN_MODE_LIST_TYPE,
         &replacement as *const VkChainNode as *const c_void,

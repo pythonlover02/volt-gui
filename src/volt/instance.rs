@@ -1040,9 +1040,12 @@ fn relinked_from(mut blocks: Vec<Vec<u64>>, replacement: *const c_void) -> Relin
     Relinked { head, blocks }
 }
 
-fn call_undeclared_node() -> Option<Relinked> {
-    log_at(LogLevel::Warn, CHAIN_NODE_WARN);
-    None
+pub(crate) fn relinked_chain(
+    head: *const c_void,
+    target: u32,
+    replacement: *const c_void,
+) -> Option<Relinked> {
+    copied_nodes(nodes_in_front(head, target)).map(|blocks| relinked_from(blocks, replacement))
 }
 
 pub(crate) fn call_relinked_chain(
@@ -1050,9 +1053,12 @@ pub(crate) fn call_relinked_chain(
     target: u32,
     replacement: *const c_void,
 ) -> Option<Relinked> {
-    match copied_nodes(nodes_in_front(head, target)) {
-        Some(blocks) => Some(relinked_from(blocks, replacement)),
-        None => call_undeclared_node(),
+    match relinked_chain(head, target, replacement) {
+        Some(built) => Some(built),
+        None => {
+            log_at(LogLevel::Warn, CHAIN_NODE_WARN);
+            None
+        }
     }
 }
 
