@@ -18,6 +18,7 @@ use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_FRAME_LIMIT;
 use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::TEXT_LINEAR;
+use crate::consts::TEXT_NEAREST;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::SOURCE_PUSH_INDEX;
