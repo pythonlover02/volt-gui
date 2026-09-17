@@ -289,7 +289,6 @@ fn maybe_log_alpha(choice: Option<vk::CompositeAlphaFlagsKHR>) {
 
 fn call_report_display(
     owner: u64,
-    s: &Settings,
     asked: &vk::SwapchainCreateInfoKHR<'_>,
     held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
@@ -353,7 +352,7 @@ fn call_report_fields(
     asked: &vk::SwapchainCreateInfoKHR<'_>,
     held: &vk::SwapchainCreateInfoKHR<'_>,
 ) {
-    call_report_display(owner, s, asked, held);
+    call_report_display(owner, asked, held);
     call_report_framerate(owner, s);
 }
 

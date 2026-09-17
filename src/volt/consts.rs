@@ -242,7 +242,6 @@ pub(crate) const ALPHA_OPAQUE_INFO: &str = "composite_alpha: opaque skips compos
 
 pub(crate) const REPORT_MARK: &str = ": ";
 pub(crate) const REPORT_SEP: &str = ", ";
-pub(crate) const REPORT_NOTE: &str = "; ";
 pub(crate) const REPORT_ASKED: &str = "asked ";
 pub(crate) const REPORT_APPLIED: &str = "applied ";
 pub(crate) const NOTE_NOT_ENABLED: &str = "the application did not enable ";

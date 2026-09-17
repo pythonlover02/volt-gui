@@ -15,7 +15,6 @@ use crate::consts::NOTE_NOT_SET;
 use crate::consts::REPORT_ASKED;
 use crate::consts::REPORT_APPLIED;
 use crate::consts::REPORT_MARK;
-use crate::consts::REPORT_NOTE;
 use crate::consts::REPORT_SEP;
 use crate::consts::TEXT_LINEAR;
 use crate::consts::TEXT_NEAREST;
