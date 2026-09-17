@@ -51,6 +51,7 @@ use crate::probe::call_record_surface;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
+use crate::ranks::present_is_shared;
 use crate::ranks::present_on_floor;
 use crate::report::call_report_choice;
 use crate::report::call_report_value;
@@ -174,9 +175,15 @@ fn caps_upper(caps_max: u32) -> u32 {
 fn pick_image_count(
     choice: Option<u32>,
     caps: &vk::SurfaceCapabilitiesKHR,
+    mode: vk::PresentModeKHR,
     original: u32,
 ) -> u32 {
-    forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
+    match present_is_shared(mode) {
+        true => original,
+        false => {
+            forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
+        }
+    }
 }
 
 fn reported_high(high: u32) -> u32 {
@@ -313,7 +320,7 @@ fn patched_swapchain_ci<'a>(
 ) -> vk::SwapchainCreateInfoKHR<'a> {
     vk::SwapchainCreateInfoKHR {
         present_mode: chosen,
-        min_image_count: pick_image_count(s.image_count, caps, original.min_image_count),
+        min_image_count: pick_image_count(s.image_count, caps, chosen, original.min_image_count),
         composite_alpha: pick_alpha(
             s.composite_alpha,
             caps.supported_composite_alpha,
