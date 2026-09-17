@@ -174,7 +174,7 @@ pub(crate) const FN_GET_PIPELINE_KEY: &str = "vkGetPipelineKeyKHR";
 pub(crate) const FN_CREATE_PIPELINE_BINARIES: &str = "vkCreatePipelineBinariesKHR";
 pub(crate) const EXT_PIPELINE_BINARY: &str = "VK_KHR_pipeline_binary";
 pub(crate) const BINARY_INFO_LOG: &str = "pipeline: a create info naming pipeline binaries was rebuilt like any other";
-pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "sampler: the wrapped create info is one this build does not declare, leaving the setting alone";
+pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "pipeline: the wrapped create info is one this build does not declare, leaving the setting alone";
 
 pub(crate) const CHAIN_NODE_REASON: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
 pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
