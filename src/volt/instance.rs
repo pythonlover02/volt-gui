@@ -69,8 +69,12 @@ use crate::consts::HOOK_PROVIDERS;
 use crate::consts::Provider;
 use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::SURFACE_CREATORS;
+use crate::device::limit_caps;
+use crate::env::env_probe_active;
 use crate::lists::filtered;
 use crate::lists::kept;
+use crate::probe::build_device;
+use crate::probe::call_record_device;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 
@@ -1461,6 +1465,16 @@ fn call_owned_devices(instance: &ash::Instance) -> Vec<vk::PhysicalDevice> {
     unsafe { instance.enumerate_physical_devices() }.unwrap_or_default()
 }
 
+fn call_probe_devices(st: &VkInstState, devices: &[vk::PhysicalDevice]) {
+    match env_probe_active() {
+        true => devices.iter().for_each(|phys| {
+            let props = unsafe { st.instance.get_physical_device_properties(*phys) };
+            call_record_device(build_device(st, *phys, &limit_caps(&props)))
+        }),
+        false => (),
+    }
+}
+
 fn call_remember_owner(handle: vk::Instance, devices: Vec<vk::PhysicalDevice>) {
     devices
         .into_iter()
@@ -1503,10 +1517,9 @@ fn register_instance(
 ) {
     let static_fn = ash::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
-    call_remember_owner(handle, call_owned_devices(&instance));
-    insts_put(
-        handle.as_raw(),
-        VkInstState {
+    let devices = call_owned_devices(&instance);
+    call_remember_owner(handle, devices.clone());
+    let state = VkInstState {
             instance,
             gipa,
             surface_fp: load_surface_fp(gipa, handle),
@@ -1517,8 +1530,9 @@ fn register_instance(
             destroy_surface_fp: call_typed_instance_fp(gipa, handle, FN_DESTROY_SURFACE),
             api_version,
             extensions: Arc::new(extensions),
-        },
-    );
+    };
+    call_probe_devices(&state, &devices);
+    insts_put(handle.as_raw(), state);
     log_at(LogLevel::Info, "vk instance registered");
 }
 

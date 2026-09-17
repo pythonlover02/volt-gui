@@ -225,6 +225,15 @@ fn lod_levels_for(max_dimension: u32) -> f32 {
     (max_dimension.max(1) as f32).log2().floor()
 }
 
+pub(crate) fn limit_caps(props: &vk::PhysicalDeviceProperties) -> DeviceCaps {
+    DeviceCaps {
+        max_anisotropy: props.limits.max_sampler_anisotropy,
+        max_lod_bias: props.limits.max_sampler_lod_bias,
+        max_lod_level: lod_levels_for(props.limits.max_image_dimension2_d),
+        ..DeviceCaps::default()
+    }
+}
+
 fn build_caps(
     props: &vk::PhysicalDeviceProperties,
     asked: &vk::PhysicalDeviceFeatures,
