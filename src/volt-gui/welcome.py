@@ -23,7 +23,7 @@ def get_welcome_settings() -> dict:
         "How it Works": {
             "The volt Layer": (
                 ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering and mip selection, the swapchain for vsync, image count and compositing, device enumeration for GPU selection, presents for the frame limiter, and pipelines for the rendering toggles."),
-                ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again. The probe runs again on Apply so the lists here stay in step."),
+                ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again."),
             ),
             "What it Will Not Do": (
                 ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and LACT for clocks and fan curves, or CoreCtrl if you also want CPU controls."),
@@ -74,7 +74,7 @@ def get_welcome_settings() -> dict:
                 ("text", "Every setting defaults to \"default\", which means the layer does not touch that value and the application keeps its own choice. A profile with everything on default is a true passthrough."),
             ),
             "Seeing What Applied": (
-                ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
+                ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied and what the surface or the device turned down."),
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
                 ("text", "Every setting gets a line, naming the value the game asked for and the value volt wrote in its place. No forced value means volt left that setting alone, either because it is default or because the game already asked for what you picked. The forced value is the one volt wrote, so a setting the device clamped shows what landed rather than what you picked."),
                 ("text", "A setting that needs a device feature the game left clear names that feature instead. The Framerate settings have no asked value, since a game never tells Vulkan what frame rate it wants, so they report what volt forced or say the profile did not set them."),
