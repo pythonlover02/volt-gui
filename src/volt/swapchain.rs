@@ -31,6 +31,7 @@ use crate::instance::chain_find;
 use crate::instance::insts_get;
 use crate::instance::owning_instance;
 use crate::instance::surface_tag;
+use crate::instance::walked_nodes;
 use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnSurfaceCaps2;
 use crate::instance::VkChainNode;
@@ -411,18 +412,8 @@ pub(crate) fn call_surface_capabilities(
     }
 }
 
-fn non_null_node(p: *mut c_void) -> Option<*mut VkChainNode> {
-    match p.is_null() {
-        true => None,
-        false => Some(p as *mut VkChainNode),
-    }
-}
-
 fn chain_nodes(head: *mut c_void) -> Vec<*mut VkChainNode> {
-    std::iter::successors(non_null_node(head), |node| {
-        non_null_node(unsafe { (**node).p_next })
-    })
-    .collect()
+    walked_nodes(head)
 }
 
 fn node_type(node: *mut VkChainNode) -> u32 {

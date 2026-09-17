@@ -38,7 +38,7 @@ use crate::instance::PfnCreateSharedSwapchains;
 use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
 use crate::instance::PfnWriteSamplers;
-use crate::instance::VkChainNode;
+use crate::instance::walked_nodes;
 use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceFeatures2;
 use crate::instance::VkLayerLinkInfo;
@@ -213,19 +213,11 @@ fn build_caps(
     }
 }
 
-fn non_null_node(p: *const c_void) -> Option<*const VkChainNode> {
-    match p.is_null() {
-        true => None,
-        false => Some(p as *const VkChainNode),
-    }
-}
-
 fn chained_features(p_next: *const c_void) -> Option<vk::PhysicalDeviceFeatures> {
-    std::iter::successors(non_null_node(p_next), |node| {
-        non_null_node(unsafe { (**node).p_next as *const c_void })
-    })
-    .find(|node| unsafe { (**node).s_type.as_raw() } as u32 == DEVICE_FEATURES_2_TYPE)
-    .map(|node| unsafe { (*(node as *const VkPhysicalDeviceFeatures2)).features })
+    walked_nodes(p_next)
+        .into_iter()
+        .find(|node| unsafe { (**node).s_type.as_raw() } as u32 == DEVICE_FEATURES_2_TYPE)
+        .map(|node| unsafe { (*(node as *const VkPhysicalDeviceFeatures2)).features })
 }
 
 fn plain_features(ci: &vk::DeviceCreateInfo<'_>) -> Option<vk::PhysicalDeviceFeatures> {

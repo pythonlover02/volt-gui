@@ -986,18 +986,25 @@ pub(crate) fn copied_node(node: *const VkChainNode) -> Option<Vec<u64>> {
     }
 }
 
-fn const_node(p: *const c_void) -> Option<*const VkChainNode> {
+fn mut_node(p: *mut c_void) -> Option<*mut VkChainNode> {
     match p.is_null() {
         true => None,
-        false => Some(p as *const VkChainNode),
+        false => Some(p as *mut VkChainNode),
     }
 }
 
-fn const_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
-    std::iter::successors(const_node(head), |node| {
-        const_node(unsafe { (**node).p_next as *const c_void })
+pub(crate) fn walked_nodes(head: *const c_void) -> Vec<*mut VkChainNode> {
+    std::iter::successors(mut_node(head as *mut c_void), |node| {
+        mut_node(unsafe { (**node).p_next })
     })
     .collect()
+}
+
+fn const_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
+    walked_nodes(head)
+        .into_iter()
+        .map(|node| node as *const VkChainNode)
+        .collect()
 }
 
 fn chain_node_type(node: *const VkChainNode) -> u32 {
