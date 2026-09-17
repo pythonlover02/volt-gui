@@ -482,7 +482,7 @@ Without the grant the layer still loads, it just finds no profile and leaves eve
 
 **Profiles** are TOML files in `~/.config/volt-gui/`, one per configuration. Create and switch from the GUI, the tray, or `volt <name> -- ...`. Switching saves the one you were on and restarts the probe.
 
-**Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. Frame limit, composite alpha and clipped presentation are left alone since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
+**Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. No preset sets frame limit, composite alpha or clipped presentation, since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
 
 **Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, display backend, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
 
