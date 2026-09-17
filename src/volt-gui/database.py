@@ -98,19 +98,19 @@ SETTINGS_DB: Final[dict] = {
         "mag_filter": {
             "section": "textures",
             "label": "Magnification Filter",
-            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. This is the one filter a still screenshot shows you. Core Vulkan, so the list never changes.",
+            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. linear is forced only onto a sampler already using linear somewhere; otherwise that sampler is left alone with a line in the log. This is the one filter a still screenshot shows you. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "min_filter": {
             "section": "textures",
             "label": "Minification Filter",
-            "description": "How a texture is sampled when it is drawn smaller than its own size, which is most of the screen. nearest takes one texel and shimmers as the camera moves. linear averages and settles, and is where mipmaps and anisotropic filtering do their work. Core Vulkan, so the list never changes.",
+            "description": "How a texture is sampled when it is drawn smaller than its own size, which is most of the screen. nearest takes one texel and shimmers as the camera moves. linear averages and settles, and is where mipmaps and anisotropic filtering do their work. linear is forced only onto a sampler already using linear somewhere; otherwise that sampler is left alone with a line in the log. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
-            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, which shows as a band on the ground. linear blends across them, the third linear in trilinear. Core Vulkan, so the list never changes. Only affects textures that have mips.",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, which shows as a band on the ground. linear blends across them, the third linear in trilinear, and is forced only onto a sampler already using linear somewhere. Core Vulkan, so the list never changes. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "anisotropy": {

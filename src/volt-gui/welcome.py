@@ -43,7 +43,7 @@ def get_welcome_settings() -> dict:
                 ("text", "The rest carry fixed lists, because there is nothing to read. Nearest and linear are core Vulkan with no feature and no query behind them, so every driver has both and none of them says so. The Framerate settings have nothing to read at all: a game never tells Vulkan what frame rate it wants, so there is nothing on the device to ask."),
             ),
             "The Three Filter Cards": (
-                ("text", "Three sampler fields, three cards. Nothing overrides anything, and every combination is reachable."),
+                ("text", "Three sampler fields, three cards. Nothing overrides anything. Linear is forced only onto a sampler whose own magnification filter, minification filter or mipmap mode is already linear, so every draw time rule the forced linear triggers is one the sampler's own linear already triggers on the same image."),
                 ("text", "In the order magnification, minification, mipmap:\n\n- retro: nearest, nearest, nearest.\n- bilinear: linear, linear, nearest.\n- trilinear: linear, linear, linear.\n- sharp pixel art without distant shimmer: nearest, linear, linear."),
                 ("text", "Magnification is what you see up close. Minification is most of the screen, and where mipmaps and anisotropic filtering do their work. Mipmap Mode is the blend between levels."),
                 ("text", "An unnormalized, subsampled, image processing or converted sampler keeps every field its own shape restricts, so these settings leave that sampler alone and log a line."),

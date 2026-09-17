@@ -81,6 +81,29 @@ fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
     (low.min(high), high.max(low))
 }
 
+fn already_linear(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.mag_filter == vk::Filter::LINEAR
+        || original.min_filter == vk::Filter::LINEAR
+        || original.mipmap_mode == vk::SamplerMipmapMode::LINEAR
+}
+
+fn linear_filter_choice(choice: Option<vk::Filter>, linear: bool) -> Option<vk::Filter> {
+    match choice {
+        Some(value) if value == vk::Filter::LINEAR && !linear => None,
+        held => held,
+    }
+}
+
+fn linear_mipmap_choice(
+    choice: Option<vk::SamplerMipmapMode>,
+    linear: bool,
+) -> Option<vk::SamplerMipmapMode> {
+    match choice {
+        Some(value) if value == vk::SamplerMipmapMode::LINEAR && !linear => None,
+        held => held,
+    }
+}
+
 fn restricted_shape(original: &vk::SamplerCreateInfo<'_>) -> bool {
     original.flags.as_raw() & SAMPLER_SUBSAMPLED_BIT != 0
         || original.flags.as_raw() & SAMPLER_IMAGE_PROCESSING_BIT != 0
@@ -129,6 +152,7 @@ fn patched_ci<'a>(
     original: &vk::SamplerCreateInfo<'a>,
 ) -> vk::SamplerCreateInfo<'a> {
     let restricted = restricted_shape(original);
+    let linear = already_linear(original);
     call_shape_line(restricted, any_sampler_setting(s));
     let (aniso_enable, aniso_max) = pick_aniso(
         shape_choice(s.anisotropy, restricted),
@@ -137,9 +161,18 @@ fn patched_ci<'a>(
     );
     let (lod_low, lod_high) = shaped_range(s, restricted, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
-        mag_filter: forced(shape_choice(s.mag_filter, restricted), original.mag_filter),
-        min_filter: forced(shape_choice(s.min_filter, restricted), original.min_filter),
-        mipmap_mode: forced(shape_choice(s.mipmap, restricted), original.mipmap_mode),
+        mag_filter: forced(
+            linear_filter_choice(shape_choice(s.mag_filter, restricted), linear),
+            original.mag_filter,
+        ),
+        min_filter: forced(
+            linear_filter_choice(shape_choice(s.min_filter, restricted), linear),
+            original.min_filter,
+        ),
+        mipmap_mode: forced(
+            linear_mipmap_choice(shape_choice(s.mipmap, restricted), linear),
+            original.mipmap_mode,
+        ),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(
