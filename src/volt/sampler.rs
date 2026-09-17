@@ -140,7 +140,10 @@ fn restricted_shape(original: &vk::SamplerCreateInfo<'_>) -> bool {
     original.flags.as_raw() & SAMPLER_SUBSAMPLED_BIT != 0
         || original.flags.as_raw() & SAMPLER_IMAGE_PROCESSING_BIT != 0
         || original.unnormalized_coordinates == vk::TRUE
-        || chain_find(original.p_next, SAMPLER_YCBCR_CONVERSION_INFO_TYPE).is_some()
+}
+
+fn converted_sampler(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    chain_find(original.p_next, SAMPLER_YCBCR_CONVERSION_INFO_TYPE).is_some()
 }
 
 fn shape_choice<T>(choice: Option<T>, restricted: bool) -> Option<T> {
@@ -160,14 +163,13 @@ fn call_shape_line(setting: &str, restricted: bool, set: bool) {
     }
 }
 
-fn call_shape_lines(s: &Settings, restricted: bool) {
-    call_shape_line(SETTING_MAG_FILTER, restricted, s.mag_filter.is_some());
-    call_shape_line(SETTING_MIN_FILTER, restricted, s.min_filter.is_some());
-    call_shape_line(SETTING_MIPMAP_MODE, restricted, s.mipmap.is_some());
-    call_shape_line(SETTING_ANISOTROPY, restricted, s.anisotropy.is_some());
-    call_shape_line(SETTING_LOD_BIAS, restricted, s.lod_bias.is_some());
-    call_shape_line(SETTING_MIP_FLOOR, restricted, s.mip_floor.is_some());
-    call_shape_line(SETTING_MIP_CEILING, restricted, s.mip_ceiling.is_some());
+fn call_shape_lines(s: &Settings, shape: bool, filters: bool) {
+    call_shape_line(SETTING_MAG_FILTER, filters, s.mag_filter.is_some());
+    call_shape_line(SETTING_MIN_FILTER, filters, s.min_filter.is_some());
+    call_shape_line(SETTING_MIPMAP_MODE, shape, s.mipmap.is_some());
+    call_shape_line(SETTING_ANISOTROPY, filters, s.anisotropy.is_some());
+    call_shape_line(SETTING_MIP_FLOOR, shape, s.mip_floor.is_some());
+    call_shape_line(SETTING_MIP_CEILING, shape, s.mip_ceiling.is_some());
 }
 
 fn shaped_range(s: &Settings, restricted: bool, original: (f32, f32)) -> (f32, f32) {
@@ -186,35 +188,32 @@ fn patched_ci<'a>(
     caps: &DeviceCaps,
     original: &vk::SamplerCreateInfo<'a>,
 ) -> vk::SamplerCreateInfo<'a> {
-    let restricted = restricted_shape(original);
+    let shape = restricted_shape(original);
+    let filters = shape || converted_sampler(original);
     let linear = already_linear(original);
-    call_shape_lines(s, restricted);
+    call_shape_lines(s, shape, filters);
     let (aniso_enable, aniso_max) = pick_aniso(
-        shape_choice(s.anisotropy, restricted),
+        shape_choice(s.anisotropy, filters),
         caps,
         original,
     );
-    let (lod_low, lod_high) = shaped_range(s, restricted, (original.min_lod, original.max_lod));
+    let (lod_low, lod_high) = shaped_range(s, shape, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
         mag_filter: forced(
-            linear_filter_choice(shape_choice(s.mag_filter, restricted), linear),
+            linear_filter_choice(shape_choice(s.mag_filter, filters), linear),
             original.mag_filter,
         ),
         min_filter: forced(
-            linear_filter_choice(shape_choice(s.min_filter, restricted), linear),
+            linear_filter_choice(shape_choice(s.min_filter, filters), linear),
             original.min_filter,
         ),
         mipmap_mode: forced(
-            linear_mipmap_choice(shape_choice(s.mipmap, restricted), linear),
+            linear_mipmap_choice(shape_choice(s.mipmap, shape), linear),
             original.mipmap_mode,
         ),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
-        mip_lod_bias: pick_lod_bias(
-            shape_choice(s.lod_bias, restricted),
-            caps,
-            original.mip_lod_bias,
-        ),
+        mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
         min_lod: lod_low,
         max_lod: lod_high,
         ..*original

@@ -108,7 +108,7 @@ This is the only setting volt cannot force. Nothing in Vulkan names the device a
 
 **Mipmap Mode** hard cut between mip levels, or a blend.
 
-An unnormalized, subsampled, image-processing or converted sampler keeps every field its shape restricts, so the texture settings leave that sampler alone and log a line.
+An unnormalized, subsampled, image-processing or converted sampler keeps every field its shape restricts, so a setting naming one of those fields leaves it alone and logs a line.
 
 Three sampler fields, three settings. `nearest` and `linear` are core with no query behind them, so `linear` is forced only where the sampler's own magnification filter, minification filter or mipmap mode already uses linear; otherwise that setting leaves the sampler alone and logs a line. Retro is `nearest`/`nearest`/`nearest`. Bilinear is `linear`/`linear`/`nearest`. Trilinear is `linear`/`linear`/`linear`.
 
