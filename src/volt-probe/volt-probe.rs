@@ -114,11 +114,13 @@ fn name_pointers(names: &[CString]) -> Vec<*const c_char> {
     names.iter().map(|name| name.as_ptr()).collect()
 }
 
-fn graphics_family(props: &[vk::QueueFamilyProperties]) -> Option<u32> {
-    props
-        .iter()
-        .position(|one| one.queue_flags.contains(vk::QueueFlags::GRAPHICS))
-        .map(|at| at as u32)
+fn family_draws(one: &vk::QueueFamilyProperties) -> bool {
+    one.queue_flags.contains(vk::QueueFlags::GRAPHICS)
+        || one.queue_flags.contains(vk::QueueFlags::COMPUTE)
+}
+
+fn drawing_family(props: &[vk::QueueFamilyProperties]) -> Option<u32> {
+    props.iter().position(family_draws).map(|at| at as u32)
 }
 
 fn asked_extent(caps: &vk::SurfaceCapabilitiesKHR) -> (u32, u32) {
@@ -294,8 +296,8 @@ fn call_format_supported(
     .is_ok()
 }
 
-fn call_graphics_family(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Option<u32> {
-    graphics_family(&unsafe { instance.get_physical_device_queue_family_properties(phys) })
+fn call_drawing_family(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Option<u32> {
+    drawing_family(&unsafe { instance.get_physical_device_queue_family_properties(phys) })
 }
 
 fn device_extensions_to_enable(
@@ -415,7 +417,7 @@ fn call_on_swapchain(
     surfaces: &ash::khr::surface::Instance,
     surface: vk::SurfaceKHR,
 ) -> Option<()> {
-    let family = call_graphics_family(instance, phys)?;
+    let family = call_drawing_family(instance, phys)?;
     match call_surface_supported(surfaces, phys, family, surface) {
         true => (),
         false => return None,
@@ -506,7 +508,7 @@ fn call_with_device(
     instance_enabled: &[String],
     support: bool,
 ) -> Option<()> {
-    let family = call_graphics_family(instance, phys)?;
+    let family = call_drawing_family(instance, phys)?;
     let (device, swapchain) =
         call_create_device(instance, phys, family, instance_enabled, support)?;
     let done = call_on_device(entry, instance, phys, &device, instance_enabled, swapchain);
