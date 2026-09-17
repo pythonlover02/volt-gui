@@ -8,7 +8,9 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::BINARY_INFO_LOG;
 use crate::consts::FEATURE_ALPHA_ONE;
+use crate::consts::COMPUTE_PIPELINE_CREATE_INFO_TYPE;
 use crate::consts::GRAPHICS_PIPELINE_CREATE_INFO_TYPE;
+use crate::consts::RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE;
 use crate::consts::PIPELINE_BINARY_INFO_TYPE;
 use crate::consts::PIPELINE_CREATE_INFO_KHR_TYPE;
 use crate::consts::WRAPPED_UNDECLARED_LOG;
@@ -875,6 +877,49 @@ where
     run(node)
 }
 
+fn call_wrapped_graphics<F>(
+    dev: &VkDevState,
+    s: &Settings,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let originals = vec![unsafe { *(inner as *const vk::GraphicsPipelineCreateInfo<'_>) }];
+    let patch = graphics_patch(dev, s, &originals);
+    let patched = graphics_patched(&originals, &patch);
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
+fn call_wrapped_compute<F>(
+    dev: &VkDevState,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let original = unsafe { *(inner as *const vk::ComputePipelineCreateInfo<'_>) };
+    let built = rebuilt_stage(dev, stage_of(&original));
+    let patched = [patched_compute_ci(&original, &built)];
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
+fn call_wrapped_ray<F>(
+    dev: &VkDevState,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let original = unsafe { *(inner as *const VkRayTracingPipelineCreateInfoKHR) };
+    let built = rebuilt_stages(dev, original.p_stages, original.stage_count);
+    let patched = [patched_ray_khr_ci(&original, &built)];
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
 fn call_with_wrapped<F>(
     dev: &VkDevState,
     s: &Settings,
@@ -885,14 +930,11 @@ where
     F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
 {
     let inner = unsafe { (*node).p_next } as *const c_void;
-    match wrapped_kind(inner) == GRAPHICS_PIPELINE_CREATE_INFO_TYPE {
-        false => call_undeclared_run(node, run),
-        true => {
-            let originals = vec![unsafe { *(inner as *const vk::GraphicsPipelineCreateInfo<'_>) }];
-            let patch = graphics_patch(dev, s, &originals);
-            let patched = graphics_patched(&originals, &patch);
-            run(&wrapper_of(patched.as_ptr() as *mut c_void))
-        }
+    match wrapped_kind(inner) {
+        GRAPHICS_PIPELINE_CREATE_INFO_TYPE => call_wrapped_graphics(dev, s, inner, run),
+        COMPUTE_PIPELINE_CREATE_INFO_TYPE => call_wrapped_compute(dev, inner, run),
+        RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE => call_wrapped_ray(dev, inner, run),
+        _ => call_undeclared_run(node, run),
     }
 }
 
