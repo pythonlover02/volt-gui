@@ -25,7 +25,7 @@ use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
-use crate::ranks::present_on_floor;
+use crate::ranks::present_semantic;
 
 pub(crate) struct DeviceFacts {
     pub(crate) index: u32,
@@ -92,7 +92,7 @@ fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
     unique_sorted(supported.iter().map(|m| m.as_raw() as u32).collect())
         .into_iter()
         .map(|raw| vk::PresentModeKHR::from_raw(raw as i32))
-        .filter(|mode| present_on_floor(*mode))
+        .filter(|mode| present_semantic(*mode).is_some_and(|facts| facts.floor))
         .map(present_display)
         .collect()
 }

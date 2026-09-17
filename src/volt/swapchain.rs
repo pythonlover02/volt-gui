@@ -67,23 +67,26 @@ use crate::probe::call_record_surface;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
-use crate::ranks::present_is_shared;
-use crate::ranks::present_on_floor;
+use crate::ranks::present_semantic;
 use crate::report::call_report_choice;
 use crate::report::call_report_value;
 use crate::report::count_text;
 use crate::report::number_text;
 use crate::report::toggle_text;
 
+fn on_floor(mode: vk::PresentModeKHR) -> bool {
+    present_semantic(mode).is_some_and(|facts| facts.floor)
+}
+
 fn present_kept(mode: vk::PresentModeKHR, choice: vk::PresentModeKHR) -> bool {
-    match present_on_floor(mode) {
+    match on_floor(mode) {
         true => mode == choice,
         false => true,
     }
 }
 
 fn floor_survived(modes: &[vk::PresentModeKHR]) -> bool {
-    modes.iter().copied().any(present_on_floor)
+    modes.iter().copied().any(on_floor)
 }
 
 fn restored_modes(
@@ -167,7 +170,7 @@ fn pick_present_mode(
     tie_holds: bool,
     original: vk::PresentModeKHR,
 ) -> vk::PresentModeKHR {
-    match (choice, tie_holds, present_on_floor(original)) {
+    match (choice, tie_holds, on_floor(original)) {
         (Some(value), true, true) => chosen_mode(supported, value, original),
         (_, _, _) => original,
     }
@@ -241,7 +244,7 @@ fn pick_image_count(
     mode: vk::PresentModeKHR,
     original: u32,
 ) -> u32 {
-    match (present_is_shared(mode), caps) {
+    match (present_semantic(mode).is_some_and(|facts| facts.shared), caps) {
         (false, Some(held)) => clamped_count(choice, held, original),
         (_, _) => original,
     }
@@ -871,7 +874,7 @@ fn call_prepared_ci<'a>(
     );
     let applies = tie_holds
         && s.present_mode.is_some()
-        && present_on_floor(original.present_mode)
+        && on_floor(original.present_mode)
         && call_compatible(inst, dev, original.surface, patched.present_mode);
     call_report_swapchain(dev, s, original, &patched);
     forced_of(

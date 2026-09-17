@@ -67,14 +67,6 @@ pub(crate) fn present_semantic(value: vk::PresentModeKHR) -> Option<PresentFacts
     present_row(value.as_raw()).map(|(_, _, floor, shared)| PresentFacts { floor, shared })
 }
 
-pub(crate) fn present_is_shared(value: vk::PresentModeKHR) -> bool {
-    present_semantic(value).map(|facts| facts.shared).unwrap_or(false)
-}
-
-pub(crate) fn present_on_floor(value: vk::PresentModeKHR) -> bool {
-    present_semantic(value).map(|facts| facts.floor).unwrap_or(false)
-}
-
 pub(crate) fn alpha_display(value: vk::CompositeAlphaFlagsKHR) -> String {
     match alpha_row(value.as_raw()) {
         Some((_, name, _)) => name.to_string(),
