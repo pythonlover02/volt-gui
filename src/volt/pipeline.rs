@@ -16,6 +16,7 @@ use crate::consts::PIPELINE_CREATE_INFO_KHR_TYPE;
 use crate::consts::WRAPPED_UNDECLARED_LOG;
 use crate::consts::FEATURE_DEPTH_CLAMP;
 use crate::consts::FEATURE_SHADING;
+use crate::consts::NOTE_MIXED_SAMPLES;
 use crate::consts::SETTING_ALPHA_COVERAGE;
 use crate::consts::SETTING_ALPHA_ONE;
 use crate::consts::SETTING_DEPTH_CLAMP;
@@ -79,10 +80,33 @@ fn clamp_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bo
     }
 }
 
+fn shading_off_only(rate: f32) -> Option<f32> {
+    match rate > SHADING_OFF {
+        true => None,
+        false => Some(rate),
+    }
+}
+
 fn shading_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
     match (choice, caps.sample_rate_shading, caps.mixed_samples) {
         (Some(rate), true, false) => Some(rate),
-        (_, _, _) => None,
+        (Some(rate), _, _) => shading_off_only(rate),
+        (None, _, _) => None,
+    }
+}
+
+fn shading_reason(set: bool, caps: &DeviceCaps) -> Option<String> {
+    match (set, caps.mixed_samples) {
+        (true, true) => Some(NOTE_MIXED_SAMPLES.into()),
+        (true, false) => feature_note(true, caps.sample_rate_shading, FEATURE_SHADING),
+        (false, _) => None,
+    }
+}
+
+fn shading_note(s: &Settings, caps: &DeviceCaps) -> Option<String> {
+    match shading_allowed(s.sample_shading, caps) {
+        Some(_) => None,
+        None => shading_reason(s.sample_shading.is_some(), caps),
     }
 }
 
@@ -162,11 +186,7 @@ fn call_shading_line(
         shading_of(asked.sample_shading_enable, asked.min_sample_shading),
         shading_of(held.sample_shading_enable, held.min_sample_shading),
         shading_text,
-        feature_note(
-            s.sample_shading.is_some(),
-            caps.sample_rate_shading,
-            FEATURE_SHADING,
-        ),
+        shading_note(s, caps),
     );
 }
 

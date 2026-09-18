@@ -247,6 +247,7 @@ pub(crate) const REPORT_ASKED: &str = "asked ";
 pub(crate) const REPORT_APPLIED: &str = "applied ";
 pub(crate) const NOTE_NOT_ENABLED: &str = "the application did not enable ";
 pub(crate) const NOTE_NOT_SET: &str = "the profile did not set it";
+pub(crate) const NOTE_MIXED_SAMPLES: &str = "the application enabled mixed framebuffer samples, so only off is forced";
 
 pub(crate) const FEATURE_ANISOTROPY: &str = "samplerAnisotropy";
 pub(crate) const FEATURE_SHADING: &str = "sampleRateShading";
