@@ -11,6 +11,7 @@ use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ALPHA_MISS_WARN;
 use crate::consts::ALPHA_OPAQUE_INFO;
+use crate::consts::COUNT_SHARED_REASON;
 use crate::consts::EXT_GET_SURFACE_CAPS_2;
 use crate::consts::EXT_SURFACE_MAINTENANCE_1;
 use crate::consts::EXT_SURFACE_MAINTENANCE_1_EXT;
@@ -18,8 +19,10 @@ use crate::consts::LOG_SWAPCHAIN_CREATED;
 use crate::consts::MODE_COMPATIBILITY_TYPE;
 use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
+use crate::consts::PRESENT_ABOVE_FLOOR_REASON;
 use crate::consts::PRESENT_LIST_REASON;
 use crate::consts::PRESENT_MISS_WARN;
+use crate::consts::PRESENT_TIE_REASON;
 use crate::consts::SETTING_CLIPPED;
 use crate::consts::SETTING_COMPOSITE_ALPHA;
 use crate::consts::SETTING_FRAME_LIMIT;
@@ -292,6 +295,26 @@ fn maybe_log_alpha(choice: Option<vk::CompositeAlphaFlagsKHR>) {
     match choice.and_then(alpha_semantic) {
         Some(facts) => log_blending(facts.blends),
         None => (),
+    }
+}
+
+fn present_note(
+    choice: Option<vk::PresentModeKHR>,
+    tie_holds: bool,
+    original: vk::PresentModeKHR,
+) -> Option<&'static str> {
+    match (choice, on_floor(original), tie_holds) {
+        (None, _, _) => None,
+        (Some(_), false, _) => Some(PRESENT_ABOVE_FLOOR_REASON),
+        (Some(_), true, false) => Some(PRESENT_TIE_REASON),
+        (Some(_), true, true) => None,
+    }
+}
+
+fn count_note(choice: Option<u32>, mode: vk::PresentModeKHR) -> Option<&'static str> {
+    match (choice, present_semantic(mode).is_some_and(|facts| facts.shared)) {
+        (Some(_), true) => Some(COUNT_SHARED_REASON),
+        (_, _) => None,
     }
 }
 
@@ -905,6 +928,14 @@ fn call_prepared_ci<'a>(
         original,
         patched,
         tie_holds && s.present_mode == Some(patched.present_mode),
+    );
+    call_report_reason(
+        SETTING_PRESENT_MODE,
+        present_note(s.present_mode, tie_holds, original.present_mode),
+    );
+    call_report_reason(
+        SETTING_IMAGE_COUNT,
+        count_note(s.image_count, original.present_mode),
     );
     call_report_swapchain(dev, s, original, &built.ci);
     built

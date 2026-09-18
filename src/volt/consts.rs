@@ -83,7 +83,10 @@ pub(crate) const SAMPLER_YCBCR_CONVERSION_INFO_TYPE: u32 = 1000156001;
 pub(crate) const SAMPLER_SUBSAMPLED_BIT: u32 = 1;
 pub(crate) const SAMPLER_IMAGE_PROCESSING_BIT: u32 = 16;
 pub(crate) const SAMPLER_SHAPE_REASON: &str = "the sampler's own shape restricts it, keeping the application value";
-pub(crate) const MIP_FLOOR_DROPPED_LOG: &str = "mip_floor: the forced value would cross the ceiling beside it, keeping the application value";
+pub(crate) const MIP_CROSS_REASON: &str = "the forced value would cross the other bound, keeping the application value";
+pub(crate) const LINEAR_REASON: &str = "linear is forced only where the sampler already uses linear, keeping the application value";
+pub(crate) const CUBIC_REASON: &str = "anisotropy is never enabled beside a cubic filter, keeping the application value";
+pub(crate) const PORTABILITY_REASON: &str = "the application enabled the portability subset, keeping the application value";
 pub(crate) const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
 pub(crate) const EXT_MIXED_SAMPLES: &str = "VK_NV_framebuffer_mixed_samples";
 
@@ -127,7 +130,6 @@ pub(crate) const LEVEL_WORD_OFF: &str = "off";
 pub(crate) const LEVEL_WORD_ERROR: &str = "error";
 pub(crate) const LEVEL_WORD_INFO: &str = "info";
 pub(crate) const LEVEL_WORD_WARN: &str = "warn";
-pub(crate) const MIP_CEILING_DROPPED_LOG: &str = "mip_ceiling: the forced value would cross the floor beside it, keeping the application value";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 
 pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
@@ -233,6 +235,9 @@ pub(crate) const PACING_SPIN: &str = "spin";
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const PRESENT_MISS_WARN: &str = "present_mode: the surface does not support it, keeping application choice";
 pub(crate) const PRESENT_LIST_REASON: &str = "the surface could not confirm the forced mode for the chained mode list, keeping the application value";
+pub(crate) const PRESENT_TIE_REASON: &str = "the application set swapchain flags or a scaling node, keeping the application value";
+pub(crate) const PRESENT_ABOVE_FLOOR_REASON: &str = "the application picked a mode an extension defines, keeping the application value";
+pub(crate) const COUNT_SHARED_REASON: &str = "the application picked a shared present mode, which keeps a single image";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present_mode: the choice matched no supported mode, keeping every mode";
 
 pub(crate) const ALPHA_MISS_WARN: &str = "composite_alpha: the surface does not support it, keeping application choice";

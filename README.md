@@ -399,8 +399,9 @@ The GPU line reads `asked N, applied M` when the profile sets a gpu: N is
 the device the game used, M the profile's pick. With no gpu in the profile
 it reads `asked N` alone.
 
-Each setting prints once per device, so 21 lines at most however many
-samplers, pipelines or swapchains the game creates.
+Each setting's asked and applied line prints once per device however many
+samplers, pipelines or swapchains the game creates, and a reason line prints
+each time a value is kept.
 
 ## Environment Variables
 

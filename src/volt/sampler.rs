@@ -6,10 +6,12 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
+use crate::consts::CUBIC_REASON;
 use crate::consts::FEATURE_ANISOTROPY;
 use crate::consts::FILTER_CUBIC;
-use crate::consts::MIP_CEILING_DROPPED_LOG;
-use crate::consts::MIP_FLOOR_DROPPED_LOG;
+use crate::consts::LINEAR_REASON;
+use crate::consts::MIP_CROSS_REASON;
+use crate::consts::PORTABILITY_REASON;
 use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
 use crate::consts::SAMPLER_SHAPE_REASON;
 use crate::consts::SAMPLER_SUBSAMPLED_BIT;
@@ -39,8 +41,7 @@ use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkShaderDescriptorSetAndBindingMappingInfoEXT;
 use crate::lists::forced;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
-use crate::logging::LogLevel;
+use crate::report::call_report_reason;
 use crate::report::call_report_value;
 use crate::report::feature_note;
 use crate::report::filter_text;
@@ -86,22 +87,19 @@ fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
     }
 }
 
-fn landed(value: f32, held: bool, log: &str) -> Option<f32> {
+fn landed(value: f32, held: bool) -> Option<f32> {
     match held {
         true => Some(value),
-        false => {
-            log_at(LogLevel::Info, log);
-            None
-        }
+        false => None,
     }
 }
 
 fn landed_floor(choice: Option<f32>, against: f32) -> Option<f32> {
-    choice.and_then(|value| landed(value, value <= against, MIP_FLOOR_DROPPED_LOG))
+    choice.and_then(|value| landed(value, value <= against))
 }
 
 fn landed_ceiling(choice: Option<f32>, against: f32) -> Option<f32> {
-    choice.and_then(|value| landed(value, value >= against, MIP_CEILING_DROPPED_LOG))
+    choice.and_then(|value| landed(value, value >= against))
 }
 
 fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
@@ -153,25 +151,6 @@ fn shape_choice<T>(choice: Option<T>, restricted: bool) -> Option<T> {
     }
 }
 
-fn call_shape_line(setting: &str, restricted: bool, set: bool) {
-    match restricted && set {
-        true => log_at(
-            LogLevel::Info,
-            &format!("{}: {}", setting, SAMPLER_SHAPE_REASON),
-        ),
-        false => (),
-    }
-}
-
-fn call_shape_lines(s: &Settings, shape: bool, filters: bool) {
-    call_shape_line(SETTING_MAG_FILTER, filters, s.mag_filter.is_some());
-    call_shape_line(SETTING_MIN_FILTER, filters, s.min_filter.is_some());
-    call_shape_line(SETTING_MIPMAP_MODE, shape, s.mipmap.is_some());
-    call_shape_line(SETTING_ANISOTROPY, filters, s.anisotropy.is_some());
-    call_shape_line(SETTING_MIP_FLOOR, shape, s.mip_floor.is_some());
-    call_shape_line(SETTING_MIP_CEILING, shape, s.mip_ceiling.is_some());
-}
-
 fn shaped_range(s: &Settings, restricted: bool, original: (f32, f32)) -> (f32, f32) {
     pick_lod_range(
         &Settings {
@@ -191,7 +170,6 @@ fn patched_ci<'a>(
     let shape = restricted_shape(original);
     let filters = shape || converted_sampler(original);
     let linear = already_linear(original);
-    call_shape_lines(s, shape, filters);
     let (aniso_enable, aniso_max) = pick_aniso(
         shape_choice(s.anisotropy, filters),
         caps,
@@ -303,11 +281,120 @@ fn call_report_fields(
     );
 }
 
+fn kept_reason(set: bool, reasons: &[(bool, &'static str)]) -> Option<&'static str> {
+    match set {
+        true => reasons.iter().find(|entry| entry.0).map(|entry| entry.1),
+        false => None,
+    }
+}
+
+fn filter_dropped(choice: Option<vk::Filter>, linear: bool) -> bool {
+    linear_filter_choice(choice, linear) != choice
+}
+
+fn mipmap_dropped(choice: Option<vk::SamplerMipmapMode>, linear: bool) -> bool {
+    linear_mipmap_choice(choice, linear) != choice
+}
+
+fn floor_crossed(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) -> bool {
+    landed_floor(s.mip_floor, forced(s.mip_ceiling, asked.max_lod)).is_none()
+}
+
+fn ceiling_crossed(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) -> bool {
+    landed_ceiling(
+        s.mip_ceiling,
+        forced(
+            landed_floor(s.mip_floor, forced(s.mip_ceiling, asked.max_lod)),
+            asked.min_lod,
+        ),
+    )
+    .is_none()
+}
+
+fn filter_reason(
+    choice: Option<vk::Filter>,
+    filters: bool,
+    linear: bool,
+) -> Option<&'static str> {
+    kept_reason(
+        choice.is_some(),
+        &[
+            (filters, SAMPLER_SHAPE_REASON),
+            (filter_dropped(choice, linear), LINEAR_REASON),
+        ],
+    )
+}
+
+fn call_report_filter_reasons(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) {
+    let shape = restricted_shape(asked);
+    let filters = shape || converted_sampler(asked);
+    let linear = already_linear(asked);
+    call_report_reason(SETTING_MAG_FILTER, filter_reason(s.mag_filter, filters, linear));
+    call_report_reason(SETTING_MIN_FILTER, filter_reason(s.min_filter, filters, linear));
+    call_report_reason(
+        SETTING_MIPMAP_MODE,
+        kept_reason(
+            s.mipmap.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (mipmap_dropped(s.mipmap, linear), LINEAR_REASON),
+            ],
+        ),
+    );
+}
+
+fn call_report_level_reasons(
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: &vk::SamplerCreateInfo<'_>,
+) {
+    let shape = restricted_shape(asked);
+    call_report_reason(
+        SETTING_ANISOTROPY,
+        kept_reason(
+            s.anisotropy.is_some(),
+            &[
+                (shape || converted_sampler(asked), SAMPLER_SHAPE_REASON),
+                (uses_cubic(asked), CUBIC_REASON),
+            ],
+        ),
+    );
+    call_report_reason(
+        SETTING_LOD_BIAS,
+        kept_reason(
+            s.lod_bias.is_some(),
+            &[(caps.portability_subset, PORTABILITY_REASON)],
+        ),
+    );
+    call_report_reason(
+        SETTING_MIP_FLOOR,
+        kept_reason(
+            s.mip_floor.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (floor_crossed(s, asked), MIP_CROSS_REASON),
+            ],
+        ),
+    );
+    call_report_reason(
+        SETTING_MIP_CEILING,
+        kept_reason(
+            s.mip_ceiling.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (ceiling_crossed(s, asked), MIP_CROSS_REASON),
+            ],
+        ),
+    );
+}
+
 fn call_report_one(
     dev: &VkDevState,
     asked: &vk::SamplerCreateInfo<'_>,
     held: &vk::SamplerCreateInfo<'_>,
 ) {
+    call_report_filter_reasons(ensure_settings(), asked);
+    call_report_level_reasons(ensure_settings(), &dev.caps, asked);
     call_report_fields(
         dev.device.handle().as_raw(),
         ensure_settings(),
