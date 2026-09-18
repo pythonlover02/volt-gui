@@ -65,6 +65,9 @@ from ui import create_tab_content_widget
 from ui import build_sidebar_container_widget
 from ui import HEADER_VERTICAL_MARGIN
 from ui import process_combo_wheel_block
+from ui import STYLE_DESCRIPTION
+from ui import WINDOW_MIN_HEIGHT
+from ui import WINDOW_MIN_WIDTH
 from welcome import create_welcome_window_widget
 
 SINGLETON_PORT: Final[int] = 47832
@@ -78,6 +81,12 @@ SCALE_MAX: Final[float] = 3.0
 DEFAULT_SCALE: Final[str] = "1.0"
 GRAPHIC_FIRST: Final[int] = 33
 GRAPHIC_LAST: Final[int] = 126
+PROBE_EXIT_OK: Final[int] = 0
+PROBE_EXIT_UNSUPPORTED: Final[int] = 2
+WINDOW_OPACITY: Final[float] = 0.95
+WINDOW_OPAQUE: Final[float] = 1.0
+WELCOME_DELAY_MS: Final[int] = 100
+SHOW_DELAY_MS: Final[int] = 0
 PREVIEW_BIN: Final[str] = "volt"
 PREVIEW_TARGET: Final[str] = "volt-probe"
 PREVIEW_POLL_MS: Final[int] = 750
@@ -265,7 +274,7 @@ def create_options_tab_widget() -> dict:
         card_layout.addWidget(combo)
         description_label = QLabel(get_option_description(option_key))
         description_label.setWordWrap(True)
-        description_label.setStyleSheet("color: #585858; font-size: 9pt;")
+        description_label.setStyleSheet(STYLE_DESCRIPTION)
         card_layout.addWidget(description_label)
         content_layout.addWidget(card)
         options_widgets[option_key] = combo
@@ -548,9 +557,9 @@ def process_options_application(main_window: QMainWindow) -> None:
     match (is_option_enabled(main_window, "window_transparency"),
            QApplication.instance().platformName()):
         case (True, "xcb"):
-            main_window.setWindowOpacity(0.95)
+            main_window.setWindowOpacity(WINDOW_OPACITY)
         case _:
-            main_window.setWindowOpacity(1.0)
+            main_window.setWindowOpacity(WINDOW_OPAQUE)
     process_tray_option_update(main_window, is_option_enabled(main_window, "system_tray_behavior"))
     main_window.start_minimized = is_option_enabled(main_window, "start_window_minimized")
     main_window.start_maximized = is_option_enabled(main_window, "start_window_maximized")
@@ -647,7 +656,7 @@ def process_preview_error(main_window: QMainWindow, process_error: QProcess.Proc
 
 def process_preview_exit(main_window: QMainWindow, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
     match (exit_status == QProcess.ExitStatus.NormalExit, exit_code):
-        case (True, 0) | (True, 2):
+        case (True, code) if code in (PROBE_EXIT_OK, PROBE_EXIT_UNSUPPORTED):
             return None
         case (True, _):
             process_probe_failure(main_window)
@@ -823,7 +832,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     window.probe_stamp = call_probe_stamp()
     window.probe_settled = True
     window.setWindowTitle("volt-gui")
-    window.setMinimumSize(620, 380)
+    window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
     process_theme_application(QApplication.instance(), get_persisted_option_resolved("application_theme"))
     central_widget = QWidget()
@@ -906,12 +915,12 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
             pass
     match window.show_welcome:
         case True:
-            QTimer.singleShot(100, lambda: process_welcome_show(window))
+            QTimer.singleShot(WELCOME_DELAY_MS, lambda: process_welcome_show(window))
         case False:
             pass
     match window.start_minimized and window.use_system_tray:
         case False:
-            QTimer.singleShot(0, lambda: process_window_show(window))
+            QTimer.singleShot(SHOW_DELAY_MS, lambda: process_window_show(window))
         case True:
             pass
     window.probe_timer = QTimer(window)

@@ -36,6 +36,15 @@ SIDEBAR_WIDTH: Final[int] = 200
 HEADER_VERTICAL_MARGIN: Final[int] = 14
 COPY_BUTTON_WIDTH: Final[int] = 70
 COMBO_MINIMUM_WIDTH: Final[int] = 104
+WINDOW_MIN_WIDTH: Final[int] = 620
+WINDOW_MIN_HEIGHT: Final[int] = 380
+COPY_RESET_MS: Final[int] = 1000
+COPY_FADE_MS: Final[int] = 200
+STYLE_DIVIDER: Final[str] = "QFrame { background-color: #262626; border: none; }"
+STYLE_DESCRIPTION: Final[str] = "color: #585858; font-size: 9pt;"
+STYLE_CODE_LABEL: Final[str] = "color: #585858; font-size: 9pt; margin-top: 4px;"
+STYLE_VERSION_LABEL: Final[str] = "font-size: 8pt; color: #9A9A9A; background: transparent;"
+STYLE_CODE_EDIT: Final[str] = "QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
 
 
 def process_combo_wheel_ignore(wheel_event: QWheelEvent) -> None:
@@ -67,7 +76,7 @@ def create_divider_widget() -> QFrame:
     divider.setFrameShadow(QFrame.Plain)
     divider.setFixedHeight(1)
     divider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    divider.setStyleSheet("QFrame { background-color: #262626; border: none; }")
+    divider.setStyleSheet(STYLE_DIVIDER)
     return divider
 
 
@@ -91,7 +100,7 @@ def create_setting_card_widget(label_text: str, description_text: str, options: 
     description_label = QLabel(description_text)
     description_label.setWordWrap(True)
     description_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
-    description_label.setStyleSheet("color: #585858; font-size: 9pt;")
+    description_label.setStyleSheet(STYLE_DESCRIPTION)
     card_layout.addWidget(description_label)
     return {"card": card, "widget": input_widget}
 
@@ -108,12 +117,12 @@ def process_copy_button_action(copy_button: QPushButton, clipboard_text: str) ->
     effect = QGraphicsOpacityEffect(copy_button)
     copy_button.setGraphicsEffect(effect)
     animation = QPropertyAnimation(effect, b"opacity")
-    animation.setDuration(200)
+    animation.setDuration(COPY_FADE_MS)
     animation.setStartValue(0.7)
     animation.setEndValue(1.0)
     animation.setEasingCurve(QEasingCurve.OutCubic)
     animation.start()
-    QTimer.singleShot(1000, lambda: copy_button.setText("Copy"))
+    QTimer.singleShot(COPY_RESET_MS, lambda: copy_button.setText("Copy"))
     return None
 
 
@@ -139,7 +148,7 @@ def create_code_block_widget(code_text: str) -> QFrame:
     text_edit.document().setDocumentMargin(0)
     text_edit.setFont(build_monospace_font())
     text_edit.setFixedHeight(STANDARD_BUTTON_HEIGHT)
-    text_edit.setStyleSheet("QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }")
+    text_edit.setStyleSheet(STYLE_CODE_EDIT)
     copy_button = QPushButton("Copy")
     copy_button.setCursor(QCursor(Qt.PointingHandCursor))
     copy_button.setFixedSize(COPY_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
@@ -155,7 +164,7 @@ def _process_info_text(layout: QVBoxLayout, text: str) -> None:
     text_label = QLabel(text)
     text_label.setWordWrap(True)
     text_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
-    text_label.setStyleSheet("color: #585858; font-size: 9pt;")
+    text_label.setStyleSheet(STYLE_DESCRIPTION)
     layout.addWidget(text_label)
     return None
 
@@ -165,7 +174,7 @@ def _process_info_code(layout: QVBoxLayout, item_entry: tuple) -> None:
         case True:
             code_label = QLabel(item_entry[2])
             code_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
-            code_label.setStyleSheet("color: #585858; font-size: 9pt; margin-top: 4px;")
+            code_label.setStyleSheet(STYLE_CODE_LABEL)
             layout.addWidget(code_label)
         case False:
             pass
@@ -295,7 +304,7 @@ def build_sidebar_header_widget() -> QWidget:
     gui_label = QLabel("-gui")
     gui_label.setStyleSheet("font-weight: bold; font-size: 13pt; background: transparent;")
     version_label = QLabel("v" + APP_VERSION)
-    version_label.setStyleSheet("font-size: 8pt; color: #9A9A9A; background: transparent;")
+    version_label.setStyleSheet(STYLE_VERSION_LABEL)
     version_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
     header_layout.addWidget(volt_label, 0)
     header_layout.addWidget(gui_label, 0)

@@ -10,6 +10,8 @@ from themes import STANDARD_BUTTON_HEIGHT
 from themes import STANDARD_BUTTON_WIDTH
 from ui import create_simple_sidebar_widget
 from ui import create_tab_content_widget
+from ui import WINDOW_MIN_HEIGHT
+from ui import WINDOW_MIN_WIDTH
 
 
 def get_welcome_settings() -> dict:
@@ -115,7 +117,7 @@ def get_welcome_settings() -> dict:
 def create_welcome_window_widget() -> QMainWindow:
     window = QMainWindow()
     window.setWindowTitle("volt-gui Welcome")
-    window.setMinimumSize(620, 380)
+    window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
     central_widget = QWidget()
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)

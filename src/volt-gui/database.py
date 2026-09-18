@@ -236,6 +236,14 @@ OPTION_BUILDERS: Final[dict] = {
 }
 
 
+ACCENT_COLORS: Final[dict] = {
+    "amd": ("#E31937", "#FF2D4A", "#B81430"),
+    "intel": ("#0068B5", "#1A8CFF", "#004D87"),
+    "nvidia": ("#76B900", "#8ED11A", "#5A8F00"),
+}
+DEFAULT_ACCENT: Final[tuple] = ("#80dbcb", "#9ae4d8", "#66b0a2")
+
+
 def find_settings_for_tab(tab_name: str) -> dict:
     return SETTINGS_DB.get(tab_name, {})
 
@@ -338,15 +346,7 @@ def resolve_option_value(option_key: str, raw_value: str) -> str:
 
 
 def get_accent_colors(theme_name: str) -> tuple:
-    match theme_name:
-        case "amd":
-            return ("#E31937", "#FF2D4A", "#B81430")
-        case "intel":
-            return ("#0068B5", "#1A8CFF", "#004D87")
-        case "nvidia":
-            return ("#76B900", "#8ED11A", "#5A8F00")
-        case _:
-            return ("#80dbcb", "#9ae4d8", "#66b0a2")
+    return ACCENT_COLORS.get(theme_name, DEFAULT_ACCENT)
 
 
 def get_about_data() -> dict:

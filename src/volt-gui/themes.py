@@ -9,6 +9,16 @@ from database import get_accent_colors
 
 STANDARD_BUTTON_WIDTH: Final[int] = 90
 STANDARD_BUTTON_HEIGHT: Final[int] = 36
+BASE_COLORS: Final[dict] = {
+    "background": "#161616",
+    "background_darker": "#0e0e0e",
+    "background_lighter": "#262626",
+    "surface": "#1e1e1e",
+    "text_primary": "#E8E8E8",
+    "text_secondary": "#9A9A9A",
+    "text_disabled": "#444444",
+    "card_background": "#1a1a1a",
+}
 
 
 def get_style_palette_roles() -> tuple:
@@ -94,14 +104,7 @@ QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; 
 
 def build_theme_colors(theme_name: str) -> dict:
     return {
-        "background": "#161616",
-        "background_darker": "#0e0e0e",
-        "background_lighter": "#262626",
-        "surface": "#1e1e1e",
-        "text_primary": "#E8E8E8",
-        "text_secondary": "#9A9A9A",
-        "text_disabled": "#444444",
-        "card_background": "#1a1a1a",
+        **BASE_COLORS,
         "accent": get_accent_colors(theme_name)[0],
         "accent_hover": get_accent_colors(theme_name)[1],
         "accent_pressed": get_accent_colors(theme_name)[2],
@@ -111,7 +114,7 @@ def build_theme_colors(theme_name: str) -> dict:
 def build_palette(color_map: dict) -> QPalette:
     palette_instance = QPalette()
     for palette_role, color_key in get_style_palette_roles():
-        palette_instance.setColor(palette_role, QColor(color_map.get(color_key, "#E8E8E8")))
+        palette_instance.setColor(palette_role, QColor(color_map.get(color_key, BASE_COLORS["text_primary"])))
     return palette_instance
 
 
