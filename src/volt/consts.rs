@@ -436,10 +436,10 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every setting is one value: the value volt forces, or "default", which
 # keeps whatever the application asked for. there is no range and no order
 #
-# a value volt has no name for is written the way the interface shows it,
-# and forces exactly like a named one
+# a value volt has no name for is never read from a profile
 #
-# anisotropy and sample_shading need a device feature the application itself
+# anisotropy, sample_shading, alpha_to_one and depth_clamp need a device
+# feature the application itself
 # enabled. volt never enables one: where the application left the feature
 # clear the setting is ignored and a line is logged
 #
