@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 from typing import Final
 
@@ -113,12 +114,18 @@ def build_preset_combo_items(combo_widget: Any) -> None:
     return None
 
 
+def _widget_dropped(widget_collection: dict, item: tuple) -> bool:
+    widget_key, setting_value = item
+    match widget_collection.get(widget_key):
+        case None:
+            return False
+        case widget:
+            return not process_widget_value_update(widget, setting_value)
+
+
 def _preset_dropped(widget_collection: dict, values: dict) -> tuple:
-    return tuple(
-        widget_key
-        for widget_key, setting_value in values.items()
-        if widget_collection.get(widget_key) is not None
-        and not process_widget_value_update(widget_collection[widget_key], setting_value))
+    dropped = filter(partial(_widget_dropped, widget_collection), values.items())
+    return tuple(widget_key for widget_key, _ in dropped)
 
 
 def process_preset_apply(widget_collection: dict, preset_name: str) -> tuple:

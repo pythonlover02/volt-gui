@@ -4,6 +4,7 @@ import signal
 import socket
 import sys
 
+from functools import partial
 from typing import Final
 from typing import Optional
 
@@ -163,13 +164,13 @@ def get_bundle_dir() -> str:
     return getattr(sys, BUNDLE_ATTR, "")
 
 
-def _outside_bundle(entry: str, bundle: str) -> bool:
+def _outside_bundle(bundle: str, entry: str) -> bool:
     return bundle not in entry
 
 
 def _cleaned_path(value: str, bundle: str) -> str:
     return os.pathsep.join(
-        entry for entry in value.split(os.pathsep) if _outside_bundle(entry, bundle))
+        filter(partial(_outside_bundle, bundle), value.split(os.pathsep)))
 
 
 def call_restore_lib_path() -> None:
@@ -588,12 +589,15 @@ def process_option_change(main_window: QMainWindow) -> None:
     return None
 
 
+def _option_present(main_window: QMainWindow, option_key: str) -> bool:
+    return option_key in main_window.options_widgets
+
+
 def process_application_options_save(main_window: QMainWindow) -> None:
     parser_instance = configparser.ConfigParser(interpolation=None)
     parser_instance["Options"] = {
         option_key: main_window.options_widgets[option_key].currentText().strip()
-        for option_key in OPTIONS_DB
-        if option_key in main_window.options_widgets}
+        for option_key in filter(partial(_option_present, main_window), OPTIONS_DB)}
     parser_instance["Profile"] = {"last_active_profile": main_window.current_profile}
     os.makedirs(build_config_dir(), exist_ok=True)
     with open(build_options_path(), "w") as file_handle:

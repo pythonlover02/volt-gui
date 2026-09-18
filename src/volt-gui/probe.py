@@ -1,5 +1,6 @@
 import os
 
+from functools import partial
 from functools import reduce
 from pathlib import Path
 from typing import Final
@@ -126,8 +127,12 @@ def _tag_label(value: str, tags: tuple) -> str:
     return value + TAG_OPEN + TAG_SEP.join(tags) + TAG_CLOSE
 
 
+def _carries(value: str, source: tuple) -> bool:
+    return value in source[1]
+
+
 def _tags_for(value: str, sources: tuple) -> tuple:
-    return tuple(name for name, values in sources if value in values)
+    return tuple(name for name, _ in filter(partial(_carries, value), sources))
 
 
 def _ordered_values(sources: tuple) -> tuple:
@@ -174,12 +179,13 @@ def _span_of(limit: float) -> int:
     return int(limit / FRACTION_STEP)
 
 
+def _non_empty(entry: tuple) -> bool:
+    return entry[1] != ()
+
+
 def _surface_lists(data: tuple, key: str) -> tuple:
-    return tuple(
-        (name, values)
-        for name, values in (
-            (n, probe_list(v, key)) for n, v in probe_surfaces(data))
-        if values != ())
+    return tuple(filter(_non_empty, (
+        (n, probe_list(v, key)) for n, v in probe_surfaces(data))))
 
 
 def present_options(data: tuple) -> tuple:
@@ -255,14 +261,11 @@ def _count_values(low: Optional[float], high: Optional[float]) -> tuple:
 
 
 def _count_sources(data: tuple) -> tuple:
-    return tuple(
-        (name, values)
-        for name, values in (
-            (n, _count_values(
-                probe_number(v, "min_image_count"),
-                probe_number(v, "max_image_count")))
-            for n, v in probe_surfaces(data))
-        if values != ())
+    return tuple(filter(_non_empty, (
+        (n, _count_values(
+            probe_number(v, "min_image_count"),
+            probe_number(v, "max_image_count")))
+        for n, v in probe_surfaces(data))))
 
 
 def image_count_options(data: tuple) -> tuple:
