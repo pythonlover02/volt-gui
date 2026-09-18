@@ -124,7 +124,7 @@ fn shading_of(enable: vk::Bool32, rate: f32) -> f32 {
     }
 }
 
-fn call_coverage_line(owner: u64, _s: &Settings, asked: vk::Bool32, held: vk::Bool32) {
+fn call_coverage_line(owner: u64, asked: vk::Bool32, held: vk::Bool32) {
     call_report_value(
         owner,
         SETTING_ALPHA_COVERAGE,
@@ -200,7 +200,6 @@ fn call_multisample_lines(
     call_shading_line(owner, s, caps, asked, held);
     call_coverage_line(
         owner,
-        s,
         asked.alpha_to_coverage_enable,
         held.alpha_to_coverage_enable,
     );
@@ -296,7 +295,6 @@ fn call_report_coverage(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
     match info_wanted() {
         true => call_coverage_line(
             dev.device.handle().as_raw(),
-            ensure_settings(),
             asked,
             held,
         ),
