@@ -338,7 +338,7 @@ fn forward_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFuncti
 fn instance_path_symbol(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
     match (
         instance_symbol(name),
-        device_core_symbol_by_name(name),
+        device_core_symbol(name),
         instance_gated_surface(inst, name),
         instance_hooked_symbol(inst, name),
     ) {
@@ -347,10 +347,6 @@ fn instance_path_symbol(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
         (None, None, Some(p), _) => Some(p),
         (None, None, None, found) => found,
     }
-}
-
-fn device_core_symbol_by_name(name: &str) -> Option<*mut c_void> {
-    device_core_symbol(name)
 }
 
 fn resolve_instance_proc(inst: vk::Instance, name: &str) -> vk::PFN_vkVoidFunction {
