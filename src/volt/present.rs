@@ -212,8 +212,10 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
     }
 }
 
-fn call_present_key(info: *const vk::PresentInfoKHR<'_>) -> u64 {
-    unsafe { (*(*info).p_swapchains).as_raw() }
+fn call_present_keys(info: *const vk::PresentInfoKHR<'_>) -> Vec<u64> {
+    (0..unsafe { (*info).swapchain_count } as usize)
+        .map(|at| unsafe { (*(*info).p_swapchains.add(at)).as_raw() })
+        .collect()
 }
 
 fn call_stored(map: &mut TimelineMap, key: (u64, u64), next: Timeline) -> u64 {
@@ -259,15 +261,29 @@ fn call_frame_target(
     }
 }
 
+fn call_latest_target(
+    dev: u64,
+    keys: Vec<u64>,
+    interval: u64,
+    method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
+) -> u64 {
+    keys.into_iter()
+        .map(|key| call_frame_target((dev, key), interval, method, cadence))
+        .max()
+        .unwrap_or_else(call_now_ns)
+}
+
 fn call_limit_to(
-    key: (u64, u64),
+    dev: u64,
+    keys: Vec<u64>,
     fps: f32,
     pacing: PacingChoice,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
 ) {
     call_wait_until(
-        call_frame_target(key, target_interval_ns(fps), method, cadence),
+        call_latest_target(dev, keys, target_interval_ns(fps), method, cadence),
         pacing,
     );
 }
@@ -304,7 +320,8 @@ pub(crate) fn maybe_limit_frame(
 ) {
     match limit_fps(s, stage) {
         Some(fps) => call_limit_to(
-            (dev, call_present_key(info)),
+            dev,
+            call_present_keys(info),
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
