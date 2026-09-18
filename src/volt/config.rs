@@ -208,70 +208,83 @@ fn parse_pacing(text: &str) -> Option<PacingChoice> {
     }
 }
 
-fn checked<T>(section: &str, key: &str, text: &str, value: Option<T>) -> Option<T> {
+pub(crate) struct Parsed {
+    pub(crate) settings: Settings,
+    pub(crate) warnings: Vec<String>,
+}
+
+fn checked<T>(
+    warnings: &mut Vec<String>,
+    section: &str,
+    key: &str,
+    text: &str,
+    value: Option<T>,
+) -> Option<T> {
     match value {
         Some(v) => Some(v),
         None => {
-            log_at(
-                LogLevel::Warn,
-                &format!(
-                    "{}.{} names \"{}\", which is not a value this build can read: that setting was left alone",
-                    section, key, text
-                ),
-            );
+            warnings.push(format!(
+                "{}.{} names \"{}\", which is not a value this build can read: that setting was left alone",
+                section, key, text
+            ));
             None
         }
     }
 }
 
-fn field<T, F>(doc: &toml::Table, section: &str, key: &str, parse: F) -> Option<T>
+fn field<T, F>(
+    doc: &toml::Table,
+    warnings: &mut Vec<String>,
+    section: &str,
+    key: &str,
+    parse: F,
+) -> Option<T>
 where
     F: Fn(&str) -> Option<T>,
 {
     match table_value(doc, section, key).and_then(non_default) {
         None => None,
-        Some(text) => checked(section, key, text, parse(text)),
+        Some(text) => checked(warnings, section, key, text, parse(text)),
     }
 }
 
-fn parse_doc(text: &str) -> toml::Table {
+fn parse_doc(text: &str, warnings: &mut Vec<String>) -> toml::Table {
     match text.parse::<toml::Table>() {
         Ok(d) => d,
         Err(e) => {
-            log_at(
-                LogLevel::Warn,
-                &format!("config parse failed: {}, using defaults", e),
-            );
+            warnings.push(format!("config parse failed: {}, using defaults", e));
             toml::Table::new()
         }
     }
 }
 
-pub(crate) fn parse_settings(text: &str) -> Settings {
-    let doc = parse_doc(text);
-    Settings {
-        gpu: field(&doc, SECTION_GPU, KEY_DEVICE, parse_gpu),
-        present_mode: field(&doc, SECTION_DISPLAY, KEY_PRESENT_MODE, present_parse),
-        image_count: field(&doc, SECTION_DISPLAY, KEY_IMAGE_COUNT, parse_uint),
-        composite_alpha: field(&doc, SECTION_DISPLAY, KEY_COMPOSITE_ALPHA, alpha_parse),
-        clipped: field(&doc, SECTION_DISPLAY, KEY_CLIPPED, parse_toggle),
-        mag_filter: field(&doc, SECTION_TEXTURES, KEY_MAG_FILTER, parse_filter),
-        min_filter: field(&doc, SECTION_TEXTURES, KEY_MIN_FILTER, parse_filter),
-        mipmap: field(&doc, SECTION_TEXTURES, KEY_MIPMAP_MODE, parse_mipmap),
-        anisotropy: field(&doc, SECTION_TEXTURES, KEY_ANISOTROPY, parse_aniso),
-        lod_bias: field(&doc, SECTION_TEXTURES, KEY_LOD_BIAS, parse_float),
-        mip_floor: field(&doc, SECTION_TEXTURES, KEY_MIP_FLOOR, parse_float),
-        mip_ceiling: field(&doc, SECTION_TEXTURES, KEY_MIP_CEILING, parse_float),
-        sample_shading: field(&doc, SECTION_RENDERING, KEY_SAMPLE_SHADING, parse_shading),
-        alpha_coverage: field(&doc, SECTION_RENDERING, KEY_ALPHA_TO_COVERAGE, parse_off_only),
-        alpha_to_one: field(&doc, SECTION_RENDERING, KEY_ALPHA_TO_ONE, parse_toggle),
-        depth_clamp: field(&doc, SECTION_RENDERING, KEY_DEPTH_CLAMP, parse_toggle),
-        frame_limit: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT, parse_limit),
-        frame_limit_offset: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_OFFSET, parse_offset),
-        cadence: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_CADENCE, parse_cadence),
-        limit_method: field(&doc, SECTION_FRAMERATE, KEY_FRAME_LIMIT_METHOD, parse_method),
-        pacing: field(&doc, SECTION_FRAMERATE, KEY_FRAME_PACING, parse_pacing),
-    }
+pub(crate) fn parse_settings(text: &str) -> Parsed {
+    let mut warnings = Vec::new();
+    let doc = parse_doc(text, &mut warnings);
+    let settings = Settings {
+        gpu: field(&doc, &mut warnings, SECTION_GPU, KEY_DEVICE, parse_gpu),
+        present_mode: field(&doc, &mut warnings, SECTION_DISPLAY, KEY_PRESENT_MODE, present_parse),
+        image_count: field(&doc, &mut warnings, SECTION_DISPLAY, KEY_IMAGE_COUNT, parse_uint),
+        composite_alpha: field(&doc, &mut warnings, SECTION_DISPLAY, KEY_COMPOSITE_ALPHA, alpha_parse),
+        clipped: field(&doc, &mut warnings, SECTION_DISPLAY, KEY_CLIPPED, parse_toggle),
+        mag_filter: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_MAG_FILTER, parse_filter),
+        min_filter: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_MIN_FILTER, parse_filter),
+        mipmap: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_MIPMAP_MODE, parse_mipmap),
+        anisotropy: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_ANISOTROPY, parse_aniso),
+        lod_bias: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_LOD_BIAS, parse_float),
+        mip_floor: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_MIP_FLOOR, parse_float),
+        mip_ceiling: field(&doc, &mut warnings, SECTION_TEXTURES, KEY_MIP_CEILING, parse_float),
+        sample_shading: field(&doc, &mut warnings, SECTION_RENDERING, KEY_SAMPLE_SHADING, parse_shading),
+        alpha_coverage: field(&doc, &mut warnings, SECTION_RENDERING, KEY_ALPHA_TO_COVERAGE, parse_off_only),
+        alpha_to_one: field(&doc, &mut warnings, SECTION_RENDERING, KEY_ALPHA_TO_ONE, parse_toggle),
+        depth_clamp: field(&doc, &mut warnings, SECTION_RENDERING, KEY_DEPTH_CLAMP, parse_toggle),
+        frame_limit: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT, parse_limit),
+        frame_limit_offset: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_OFFSET, parse_offset),
+        cadence: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_CADENCE, parse_cadence),
+        limit_method: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_METHOD, parse_method),
+        pacing: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_PACING, parse_pacing),
+    };
+    Parsed { settings, warnings }
 }
 
 fn reserved_name(raw: &str) -> bool {
@@ -297,10 +310,17 @@ fn folded_name(raw: &str) -> String {
     }
 }
 
-pub(crate) fn sanitize_name(raw: &str) -> String {
+pub(crate) fn sanitized_name(raw: &str) -> Option<String> {
     match name_is_valid(raw) {
-        true => folded_name(raw),
-        false => {
+        true => Some(folded_name(raw)),
+        false => None,
+    }
+}
+
+pub(crate) fn call_sanitize_name(raw: &str) -> String {
+    match sanitized_name(raw) {
+        Some(name) => name,
+        None => {
             log_at(LogLevel::Warn, LOG_INVALID_PROFILE);
             DEFAULT_PROFILE.into()
         }
@@ -328,16 +348,24 @@ pub(crate) fn config_dir() -> PathBuf {
 }
 
 pub(crate) fn profile_name() -> String {
-    sanitize_name(&env_config_name())
+    call_sanitize_name(&env_config_name())
 }
 
 pub(crate) fn config_path(name: &str) -> PathBuf {
     config_dir().join(format!("{}.toml", name))
 }
 
+fn call_logged_settings(parsed: Parsed) -> Settings {
+    parsed
+        .warnings
+        .iter()
+        .for_each(|warning| log_at(LogLevel::Warn, warning));
+    parsed.settings
+}
+
 fn read_config(path: &PathBuf) -> Settings {
     match fs::read_to_string(path) {
-        Ok(text) => parse_settings(&text),
+        Ok(text) => call_logged_settings(parse_settings(&text)),
         Err(e) => {
             log_at(
                 LogLevel::Warn,

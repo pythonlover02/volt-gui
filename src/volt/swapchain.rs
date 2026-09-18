@@ -59,7 +59,10 @@ use crate::instance::VkSurfacePresentModeKHR;
 use crate::instance::VkSwapchainPresentModeInfoKHR;
 use crate::instance::VkSwapchainPresentModesCreateInfoKHR;
 use crate::instance::VkSwapchainPresentScalingCreateInfoKHR;
+use crate::lists::call_warned;
 use crate::lists::forced;
+use crate::lists::untouched;
+use crate::lists::Narrowed;
 use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -97,22 +100,22 @@ fn floor_survived(modes: &[vk::PresentModeKHR]) -> bool {
 fn restored_modes(
     narrowed: Vec<vk::PresentModeKHR>,
     modes: Vec<vk::PresentModeKHR>,
-) -> Vec<vk::PresentModeKHR> {
+) -> Narrowed<vk::PresentModeKHR> {
     match floor_survived(&narrowed) {
-        true => narrowed,
-        false => {
-            log_at(LogLevel::Warn, PRESENT_EMPTY_WARN);
-            modes
-        }
+        true => untouched(narrowed),
+        false => Narrowed {
+            items: modes,
+            restored: true,
+        },
     }
 }
 
-pub(crate) fn present_filtered(
+pub(crate) fn present_narrowed(
     modes: Vec<vk::PresentModeKHR>,
     choice: Option<vk::PresentModeKHR>,
-) -> Vec<vk::PresentModeKHR> {
+) -> Narrowed<vk::PresentModeKHR> {
     match choice {
-        None => modes,
+        None => untouched(modes),
         Some(value) => restored_modes(
             modes
                 .iter()
@@ -122,6 +125,13 @@ pub(crate) fn present_filtered(
             modes,
         ),
     }
+}
+
+fn call_present_filtered(
+    modes: Vec<vk::PresentModeKHR>,
+    choice: Option<vk::PresentModeKHR>,
+) -> Vec<vk::PresentModeKHR> {
+    call_warned(present_narrowed(modes, choice), PRESENT_EMPTY_WARN)
 }
 
 fn supported_mode(
@@ -457,7 +467,7 @@ fn call_filtered_modes(
     surface: vk::SurfaceKHR,
     choice: Option<vk::PresentModeKHR>,
 ) -> Vec<vk::PresentModeKHR> {
-    present_filtered(call_query_present_modes(inst, phys, surface), choice)
+    call_present_filtered(call_query_present_modes(inst, phys, surface), choice)
 }
 
 pub(crate) fn call_surface_present_modes(
@@ -536,7 +546,7 @@ fn call_write_modes(list: *mut VkPresentModeList, kept_modes: &[vk::PresentModeK
 fn call_filtered_mode_list(list: *mut VkPresentModeList, choice: Option<vk::PresentModeKHR>) {
     match unsafe { (*list).p_present_modes.is_null() } {
         true => (),
-        false => call_write_modes(list, &present_filtered(call_read_modes(list), choice)),
+        false => call_write_modes(list, &call_present_filtered(call_read_modes(list), choice)),
     }
 }
 

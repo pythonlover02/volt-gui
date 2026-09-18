@@ -6,7 +6,7 @@ use ash::vk;
 
 use crate::config::parse_float;
 use crate::config::parse_settings;
-use crate::config::sanitize_name;
+use crate::config::sanitized_name;
 use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FEATURE_ANISOTROPY;
@@ -54,7 +54,7 @@ use crate::report::applied_text;
 use crate::report::number_text;
 use crate::report::report_line;
 use crate::sampler::embedded_sampler;
-use crate::swapchain::present_filtered;
+use crate::swapchain::present_narrowed;
 
 const UNKNOWN_MODE: i32 = 4242;
 const UNKNOWN_ALPHA: u32 = 16;
@@ -69,7 +69,7 @@ const CLAMP_PROFILE: &str = "[rendering]\ndepth_clamp = \"off\"\n";
 const INHERIT_ALPHA: u32 = 8;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
-const LIST_EMPTY_WARN: &str = "list emptied by the choice, restoring";
+
 const LIMIT_START_NS: u64 = 10_000;
 const LIMIT_INTERVAL_NS: u64 = 1_000;
 const OTHER_INTERVAL_NS: u64 = 2_000;
@@ -132,9 +132,9 @@ const FINITE_VALUE: f32 = 1.5;
 
 #[test]
 fn reads_one_spelling_of_the_default_profile_name() {
-    assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
-    assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
-    assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+    assert_eq!(sanitized_name(DEFAULT_NAME_MIXED), Some(DEFAULT_PROFILE.into()));
+    assert_eq!(sanitized_name(RESERVED_NAME_MIXED), None);
+    assert_eq!(sanitized_name(PLAIN_NAME), Some(PLAIN_NAME.into()));
 }
 
 #[test]
@@ -183,15 +183,15 @@ fn keeps_the_application_value_when_nothing_is_forced() {
 
 #[test]
 fn restores_a_list_the_choice_emptied() {
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3, LIST_EMPTY_WARN), vec![1, 2, 3]);
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1, LIST_EMPTY_WARN), vec![2, 3]);
+    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3).items, vec![1, 2, 3]);
+    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1).items, vec![2, 3]);
 }
 
 #[test]
 fn keeps_only_what_the_choice_names() {
-    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![2]);
-    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
-    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
+    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v)).items, vec![2]);
+    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v)).items, vec![1, 2, 3]);
+    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v)).items, vec![1, 2, 3]);
 }
 
 #[test]
@@ -254,27 +254,27 @@ fn reads_the_facts_a_setting_branches_on() {
 
 #[test]
 fn leaves_a_value_above_the_floor_at_default() {
-    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, None);
+    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).settings.present_mode, None);
     assert_eq!(
-        parse_settings(NAMED_MODE_PROFILE).present_mode,
+        parse_settings(NAMED_MODE_PROFILE).settings.present_mode,
         Some(vk::PresentModeKHR::from_raw(FIFO_MODE))
     );
 }
 
 #[test]
 fn reads_the_two_feature_gated_toggles_from_a_profile() {
-    assert_eq!(parse_settings(ALPHA_ONE_PROFILE).alpha_to_one, Some(TOGGLE_ON));
-    assert_eq!(parse_settings(CLAMP_PROFILE).depth_clamp, Some(TOGGLE_OFF));
+    assert_eq!(parse_settings(ALPHA_ONE_PROFILE).settings.alpha_to_one, Some(TOGGLE_ON));
+    assert_eq!(parse_settings(CLAMP_PROFILE).settings.depth_clamp, Some(TOGGLE_OFF));
 }
 
 #[test]
 fn reads_each_sampler_filter_on_its_own() {
     assert_eq!(
-        parse_settings(FILTER_PROFILE).mag_filter,
+        parse_settings(FILTER_PROFILE).settings.mag_filter,
         Some(vk::Filter::from_raw(NEAREST_FILTER))
     );
     assert_eq!(
-        parse_settings(FILTER_PROFILE).min_filter,
+        parse_settings(FILTER_PROFILE).settings.min_filter,
         Some(vk::Filter::from_raw(LINEAR_FILTER))
     );
 }
@@ -420,13 +420,13 @@ fn never_shifts_a_cap_below_one_frame_a_second() {
 
 #[test]
 fn reads_a_frame_limit_offset_from_a_profile() {
-    assert_eq!(parse_settings(OFFSET_PROFILE).frame_limit_offset, Some(OFFSET_DOWN));
+    assert_eq!(parse_settings(OFFSET_PROFILE).settings.frame_limit_offset, Some(OFFSET_DOWN));
 }
 
 #[test]
 fn reads_a_frame_limit_cadence_from_a_profile() {
-    assert_eq!(parse_settings(FIXED_PROFILE).cadence, Some(CadenceChoice::Fixed));
-    assert_eq!(parse_settings(DYNAMIC_PROFILE).cadence, Some(CadenceChoice::Dynamic));
+    assert_eq!(parse_settings(FIXED_PROFILE).settings.cadence, Some(CadenceChoice::Fixed));
+    assert_eq!(parse_settings(DYNAMIC_PROFILE).settings.cadence, Some(CadenceChoice::Dynamic));
 }
 
 #[test]
@@ -733,11 +733,11 @@ fn reads_the_sampler_only_where_the_selector_names_one() {
 fn narrows_a_chained_mode_list_to_the_choice() {
     let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
     assert_eq!(
-        present_filtered(vec![vk::PresentModeKHR::FIFO, mailbox], Some(mailbox)),
+        present_narrowed(vec![vk::PresentModeKHR::FIFO, mailbox], Some(mailbox)).items,
         vec![mailbox]
     );
     assert_eq!(
-        present_filtered(vec![vk::PresentModeKHR::FIFO], Some(mailbox)),
+        present_narrowed(vec![vk::PresentModeKHR::FIFO], Some(mailbox)).items,
         vec![vk::PresentModeKHR::FIFO]
     );
 }
@@ -747,7 +747,7 @@ fn leaves_a_mode_above_the_floor_where_it_was() {
     let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
     let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
     assert_eq!(
-        present_filtered(vec![vk::PresentModeKHR::FIFO, mailbox, shared], Some(mailbox)),
+        present_narrowed(vec![vk::PresentModeKHR::FIFO, mailbox, shared], Some(mailbox)).items,
         vec![mailbox, shared]
     );
 }
@@ -757,7 +757,7 @@ fn restores_a_list_where_no_floor_mode_survives_beside_one_above_it() {
     let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
     let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
     let modes = vec![vk::PresentModeKHR::FIFO, shared];
-    assert_eq!(present_filtered(modes.clone(), Some(mailbox)), modes);
+    assert_eq!(present_narrowed(modes.clone(), Some(mailbox)).items, modes);
 }
 
 #[test]

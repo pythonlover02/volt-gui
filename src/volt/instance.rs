@@ -73,6 +73,7 @@ use crate::consts::GROUP_EMPTY_WARN;
 use crate::consts::SURFACE_CREATORS;
 use crate::device::limit_caps;
 use crate::env::env_probe_active;
+use crate::lists::call_warned;
 use crate::lists::filtered;
 use crate::lists::kept;
 use crate::probe::build_device;
@@ -1062,14 +1063,12 @@ fn device_position(pair: &(usize, vk::PhysicalDevice)) -> u32 {
     pair.0 as u32 + 1
 }
 
-fn gpu_filtered(
+fn call_gpu_filtered(
     devices: Vec<vk::PhysicalDevice>,
     choice: Option<u32>,
 ) -> Vec<vk::PhysicalDevice> {
-    plain(filtered(
-        indexed(devices),
-        choice,
-        |pair| Some(device_position(pair)),
+    plain(call_warned(
+        filtered(indexed(devices), choice, |pair| Some(device_position(pair))),
         GPU_EMPTY_WARN,
     ))
 }
@@ -1100,18 +1099,20 @@ fn narrowed_group(
     narrowed
 }
 
-fn group_filtered(
+fn call_group_filtered(
     groups: Vec<VkPhysicalDeviceGroupProperties>,
     allowed: Vec<vk::PhysicalDevice>,
     choice: Option<u32>,
 ) -> Vec<VkPhysicalDeviceGroupProperties> {
     match choice {
-        Some(_) => kept(
-            groups
-                .into_iter()
-                .map(|group| narrowed_group(group, &allowed))
-                .collect(),
-            |group| group.physical_device_count > 0,
+        Some(_) => call_warned(
+            kept(
+                groups
+                    .into_iter()
+                    .map(|group| narrowed_group(group, &allowed))
+                    .collect(),
+                |group| group.physical_device_count > 0,
+            ),
             GROUP_EMPTY_WARN,
         ),
         None => groups,
@@ -1357,7 +1358,7 @@ fn call_enumerate_through(
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
     match unsafe { st.instance.enumerate_physical_devices() } {
-        Ok(all) => call_write_list(&gpu_filtered(all, ensure_settings().gpu), count, devices),
+        Ok(all) => call_write_list(&call_gpu_filtered(all, ensure_settings().gpu), count, devices),
         Err(e) => e,
     }
 }
@@ -1400,7 +1401,7 @@ fn call_query_groups(
 }
 
 fn call_allowed_devices(st: &VkInstState) -> Vec<vk::PhysicalDevice> {
-    gpu_filtered(all_devices(st), ensure_settings().gpu)
+    call_gpu_filtered(all_devices(st), ensure_settings().gpu)
 }
 
 fn call_groups_through(
@@ -1411,7 +1412,7 @@ fn call_groups_through(
     groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_write_list(
-        &group_filtered(
+        &call_group_filtered(
             call_query_groups(handle, fp),
             call_allowed_devices(st),
             ensure_settings().gpu,

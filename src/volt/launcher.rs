@@ -6,7 +6,7 @@ use std::process::Command;
 use crate::config::config_dir;
 use crate::config::config_path;
 use crate::config::home_dir;
-use crate::config::sanitize_name;
+use crate::config::call_sanitize_name;
 use crate::consts::DEFAULT_CONFIG;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::ENABLE_VALUE;
@@ -62,7 +62,7 @@ fn is_flag(a: &str) -> bool {
 }
 
 fn head_profile(head: &[String]) -> String {
-    sanitize_name(
+    call_sanitize_name(
         head.iter()
             .find(|a| !is_flag(a))
             .map(String::as_str)
