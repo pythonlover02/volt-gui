@@ -1,4 +1,5 @@
 from typing import Callable
+from typing import Final
 from typing import Optional
 
 from PySide6.QtCore import QEasingCurve
@@ -28,23 +29,13 @@ from PySide6.QtWidgets import QWidget
 
 from database import APP_VERSION
 from database import call_cards_for_tab
-from themes import get_standard_button_height
+from themes import STANDARD_BUTTON_HEIGHT
 
 
-def get_sidebar_width() -> int:
-    return 200
-
-
-def get_header_vertical_margin() -> int:
-    return 14
-
-
-def get_copy_button_width() -> int:
-    return 70
-
-
-def get_combo_minimum_width() -> int:
-    return 104
+SIDEBAR_WIDTH: Final[int] = 200
+HEADER_VERTICAL_MARGIN: Final[int] = 14
+COPY_BUTTON_WIDTH: Final[int] = 70
+COMBO_MINIMUM_WIDTH: Final[int] = 104
 
 
 def process_combo_wheel_ignore(wheel_event: QWheelEvent) -> None:
@@ -60,7 +51,7 @@ def process_combo_wheel_block(combo: QComboBox) -> None:
 def create_combo_widget(options: tuple) -> QComboBox:
     combo = QComboBox()
     combo.setView(QListView())
-    combo.setFixedHeight(get_standard_button_height())
+    combo.setFixedHeight(STANDARD_BUTTON_HEIGHT)
     combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     combo.setFocusPolicy(Qt.ClickFocus)
     process_combo_wheel_block(combo)
@@ -95,7 +86,7 @@ def create_setting_card_widget(label_text: str, description_text: str, options: 
     card_layout.addWidget(title_label)
     input_widget = create_combo_widget(options)
     input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-    input_widget.setMinimumWidth(get_combo_minimum_width())
+    input_widget.setMinimumWidth(COMBO_MINIMUM_WIDTH)
     card_layout.addWidget(input_widget)
     description_label = QLabel(description_text)
     description_label.setWordWrap(True)
@@ -147,12 +138,12 @@ def create_code_block_widget(code_text: str) -> QFrame:
     text_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     text_edit.document().setDocumentMargin(0)
     text_edit.setFont(build_monospace_font())
-    text_edit.setFixedHeight(get_standard_button_height())
+    text_edit.setFixedHeight(STANDARD_BUTTON_HEIGHT)
     text_edit.setStyleSheet("QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }")
     copy_button = QPushButton("Copy")
     copy_button.setCursor(QCursor(Qt.PointingHandCursor))
-    copy_button.setFixedSize(get_copy_button_width(), get_standard_button_height())
-    copy_button.setStyleSheet(build_copy_button_stylesheet(get_copy_button_width(), get_standard_button_height()))
+    copy_button.setFixedSize(COPY_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
+    copy_button.setStyleSheet(build_copy_button_stylesheet(COPY_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT))
     copy_button.clicked.connect(lambda: process_copy_button_action(copy_button, text_edit.toPlainText()))
     layout.addWidget(text_edit, 1)
     layout.addWidget(copy_button, 0)
@@ -297,7 +288,7 @@ def build_sidebar_header_widget() -> QWidget:
     header_widget = QWidget()
     header_widget.setStyleSheet("background-color: transparent;")
     header_layout = QHBoxLayout(header_widget)
-    header_layout.setContentsMargins(14, get_header_vertical_margin(), 14, get_header_vertical_margin())
+    header_layout.setContentsMargins(14, HEADER_VERTICAL_MARGIN, 14, HEADER_VERTICAL_MARGIN)
     header_layout.setSpacing(0)
     volt_label = QLabel("volt")
     volt_label.setStyleSheet("font-weight: bold; font-size: 13pt; color: palette(highlight); background: transparent;")
@@ -315,7 +306,7 @@ def build_sidebar_header_widget() -> QWidget:
 
 def build_sidebar_container_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> tuple:
     sidebar_container = QWidget()
-    sidebar_container.setFixedWidth(get_sidebar_width())
+    sidebar_container.setFixedWidth(SIDEBAR_WIDTH)
     sidebar_layout = QVBoxLayout(sidebar_container)
     sidebar_layout.setContentsMargins(0, 0, 0, 0)
     sidebar_layout.setSpacing(0)

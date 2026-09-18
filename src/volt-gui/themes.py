@@ -1,3 +1,4 @@
+from typing import Final
 from typing import Optional
 
 from PySide6.QtGui import QColor
@@ -5,6 +6,9 @@ from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
 
 from database import get_accent_colors
+
+STANDARD_BUTTON_WIDTH: Final[int] = 90
+STANDARD_BUTTON_HEIGHT: Final[int] = 36
 
 
 def get_style_palette_roles() -> tuple:
@@ -34,13 +38,6 @@ def get_style_palette_disabled_roles() -> tuple:
         (QPalette.Button, "background_darker"),
     )
 
-
-def get_standard_button_width() -> int:
-    return 90
-
-
-def get_standard_button_height() -> int:
-    return 36
 
 
 def get_style_stylesheet_template() -> str:

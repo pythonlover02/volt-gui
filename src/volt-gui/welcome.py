@@ -6,8 +6,8 @@ from PySide6.QtWidgets import QStackedWidget
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
 
-from themes import get_standard_button_height
-from themes import get_standard_button_width
+from themes import STANDARD_BUTTON_HEIGHT
+from themes import STANDARD_BUTTON_WIDTH
 from ui import create_simple_sidebar_widget
 from ui import create_tab_content_widget
 
@@ -137,7 +137,7 @@ def create_welcome_window_widget() -> QMainWindow:
     button_layout.setSpacing(8)
     button_layout.setAlignment(Qt.AlignVCenter)
     close_button = QPushButton("Close")
-    close_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    close_button.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
     close_button.clicked.connect(window.close)
     button_layout.addStretch(1)
     button_layout.addWidget(close_button, 0, Qt.AlignVCenter)

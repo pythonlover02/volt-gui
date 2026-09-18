@@ -55,15 +55,15 @@ from profiles import process_profile_delete
 from profiles import process_profile_options_rebuild
 from profiles import process_profile_save
 from profiles import process_profile_widget_load
-from themes import get_standard_button_height
-from themes import get_standard_button_width
+from themes import STANDARD_BUTTON_HEIGHT
+from themes import STANDARD_BUTTON_WIDTH
 from themes import process_theme_application
 from ui import create_code_block_widget
 from ui import create_combo_widget
 from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
 from ui import build_sidebar_container_widget
-from ui import get_header_vertical_margin
+from ui import HEADER_VERTICAL_MARGIN
 from ui import process_combo_wheel_block
 from welcome import create_welcome_window_widget
 
@@ -848,7 +848,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     window.launch_block = create_code_block_widget(build_launch_command(DEFAULT_PROFILE))
     launch_wrapper = QWidget()
     launch_wrapper_layout = QVBoxLayout(launch_wrapper)
-    launch_wrapper_layout.setContentsMargins(12, get_header_vertical_margin(), 8, 8)
+    launch_wrapper_layout.setContentsMargins(12, HEADER_VERTICAL_MARGIN, 8, 8)
     launch_wrapper_layout.setSpacing(0)
     launch_wrapper_layout.addWidget(window.launch_block)
     right_content_layout.addWidget(launch_wrapper)
@@ -863,19 +863,19 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     bottom_bar_layout.setAlignment(Qt.AlignBottom)
     preset_combo = QComboBox()
     preset_combo.setView(QListView())
-    preset_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    preset_combo.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
     preset_combo.setFocusPolicy(Qt.ClickFocus)
     process_combo_wheel_block(preset_combo)
     window.preset_selector = preset_combo
     build_preset_combo_items(preset_combo)
     profile_combo = QComboBox()
     profile_combo.setView(QListView())
-    profile_combo.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    profile_combo.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
     profile_combo.setFocusPolicy(Qt.ClickFocus)
     process_combo_wheel_block(profile_combo)
     window.profile_selector = profile_combo
     apply_button = QPushButton("Apply")
-    apply_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    apply_button.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
     apply_button.clicked.connect(lambda: process_all_settings_apply(window))
     bottom_bar_layout.addStretch(1)
     bottom_bar_layout.addWidget(preset_combo, 0, Qt.AlignBottom)
