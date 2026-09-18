@@ -213,11 +213,11 @@ fn cmdbuf_dev_del(c: u64) {
     }
 }
 
-fn cmdbuf_pool_forget(pool: u64) {
+fn cmdbuf_pool_forget(dev: u64, pool: u64) {
     match CMDBUF_TO_DEV.write() {
         Ok(mut g) => g
             .iter_mut()
-            .for_each(|m| m.retain(|_, owner| owner.1 != pool)),
+            .for_each(|m| m.retain(|_, owner| *owner != (dev, pool))),
         Err(_) => (),
     }
 }
@@ -368,7 +368,7 @@ pub(crate) fn call_destroy_command_pool(
     pool: vk::CommandPool,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    cmdbuf_pool_forget(pool.as_raw());
+    cmdbuf_pool_forget(dev.as_raw(), pool.as_raw());
     unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
 }
 
