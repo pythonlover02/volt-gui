@@ -300,6 +300,20 @@ fn call_drawing_family(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Op
     drawing_family(&unsafe { instance.get_physical_device_queue_family_properties(phys) })
 }
 
+fn call_family_count(instance: &ash::Instance, phys: vk::PhysicalDevice) -> u32 {
+    unsafe { instance.get_physical_device_queue_family_properties(phys) }.len() as u32
+}
+
+fn call_surface_family(
+    instance: &ash::Instance,
+    phys: vk::PhysicalDevice,
+    loader: &ash::khr::surface::Instance,
+    surface: vk::SurfaceKHR,
+) -> bool {
+    (0..call_family_count(instance, phys))
+        .any(|family| call_surface_supported(loader, phys, family, surface))
+}
+
 fn device_extensions_to_enable(
     instance_enabled: &[String],
     listed: &[String],
@@ -417,8 +431,7 @@ fn call_on_swapchain(
     surfaces: &ash::khr::surface::Instance,
     surface: vk::SurfaceKHR,
 ) -> Option<()> {
-    let family = call_drawing_family(instance, phys)?;
-    match call_surface_supported(surfaces, phys, family, surface) {
+    match call_surface_family(instance, phys, surfaces, surface) {
         true => (),
         false => return None,
     }
