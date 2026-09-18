@@ -242,7 +242,7 @@ def create_scrollable_content_area(container_widget: QWidget) -> QScrollArea:
     return scroll_area
 
 
-def _build_content_container(info_items: Optional[dict]) -> QWidget:
+def _create_content_container(info_items: Optional[dict]) -> QWidget:
     container_widget = QWidget()
     container_widget.setProperty("scrollContainer", True)
     content_layout = QVBoxLayout(container_widget)
@@ -265,7 +265,7 @@ def create_tab_content_widget(tab_name: str, info_items: Optional[dict]) -> dict
     main_layout = QVBoxLayout(widget)
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(0)
-    container_widget = _build_content_container(info_items)
+    container_widget = _create_content_container(info_items)
     match info_items is None:
         case True:
             for widget_key, label_text, description_text, options in call_cards_for_tab(tab_name):
@@ -293,7 +293,7 @@ def create_sidebar_tab_list(tab_names: tuple, stacked_widget: QStackedWidget) ->
     return tab_list
 
 
-def build_sidebar_header_widget() -> QWidget:
+def create_sidebar_header_widget() -> QWidget:
     header_widget = QWidget()
     header_widget.setStyleSheet("background-color: transparent;")
     header_layout = QHBoxLayout(header_widget)
@@ -313,17 +313,17 @@ def build_sidebar_header_widget() -> QWidget:
     return header_widget
 
 
-def build_sidebar_container_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> tuple:
+def create_sidebar_container_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> tuple:
     sidebar_container = QWidget()
     sidebar_container.setFixedWidth(SIDEBAR_WIDTH)
     sidebar_layout = QVBoxLayout(sidebar_container)
     sidebar_layout.setContentsMargins(0, 0, 0, 0)
     sidebar_layout.setSpacing(0)
-    sidebar_layout.addWidget(build_sidebar_header_widget())
+    sidebar_layout.addWidget(create_sidebar_header_widget())
     tab_list = create_sidebar_tab_list(tab_names, stacked_widget)
     sidebar_layout.addWidget(tab_list, 1)
     return (sidebar_container, tab_list)
 
 
 def create_simple_sidebar_widget(tab_names: tuple, stacked_widget: QStackedWidget) -> QWidget:
-    return build_sidebar_container_widget(tab_names, stacked_widget)[0]
+    return create_sidebar_container_widget(tab_names, stacked_widget)[0]

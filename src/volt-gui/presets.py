@@ -103,7 +103,7 @@ def build_preset_values(preset_name: str) -> dict:
         **PRESET_OVERRIDES.get(preset_name, {})}
 
 
-def build_preset_combo_items(combo_widget: Any) -> None:
+def process_preset_combo_items(combo_widget: Any) -> None:
     combo_widget.blockSignals(True)
     combo_widget.clear()
     combo_widget.addItem(get_preset_placeholder_label())

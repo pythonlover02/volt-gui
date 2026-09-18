@@ -43,7 +43,7 @@ from database import get_option_description
 from database import get_option_label
 from database import get_option_options
 from database import resolve_option_value
-from presets import build_preset_combo_items
+from presets import process_preset_combo_items
 from presets import get_preset_placeholder_label
 from presets import is_valid_preset_name
 from presets import process_preset_apply
@@ -63,7 +63,7 @@ from ui import create_code_block_widget
 from ui import create_combo_widget
 from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
-from ui import build_sidebar_container_widget
+from ui import create_sidebar_container_widget
 from ui import HEADER_VERTICAL_MARGIN
 from ui import process_combo_wheel_block
 from ui import STYLE_DESCRIPTION
@@ -429,7 +429,7 @@ def process_preset_combo_change(main_window: QMainWindow, selected_text: str) ->
         case (True, _):
             return None
         case (False, False):
-            build_preset_combo_items(main_window.preset_selector)
+            process_preset_combo_items(main_window.preset_selector)
             return None
         case (False, True):
             match process_yes_no_dialog(main_window, "Apply Preset", "Apply '" + selected_text + "' to '" + main_window.current_profile + "'? All values will be replaced."):
@@ -440,7 +440,7 @@ def process_preset_combo_change(main_window: QMainWindow, selected_text: str) ->
                     process_dropped_notice(main_window, dropped)
                 case False:
                     pass
-            build_preset_combo_items(main_window.preset_selector)
+            process_preset_combo_items(main_window.preset_selector)
             return None
 
 
@@ -851,7 +851,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     options_widgets = {}
     for tab_name in ALL_TABS:
         process_create_tab(stacked_widget, all_widgets, options_widgets, tab_name)
-    sidebar_container, tab_list = build_sidebar_container_widget(ALL_TABS, stacked_widget)
+    sidebar_container, tab_list = create_sidebar_container_widget(ALL_TABS, stacked_widget)
     window.sidebar_tab_list = tab_list
     content_layout.addWidget(sidebar_container)
     right_content_widget = QWidget()
@@ -880,7 +880,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     preset_combo.setFocusPolicy(Qt.ClickFocus)
     process_combo_wheel_block(preset_combo)
     window.preset_selector = preset_combo
-    build_preset_combo_items(preset_combo)
+    process_preset_combo_items(preset_combo)
     profile_combo = QComboBox()
     profile_combo.setView(QListView())
     profile_combo.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
