@@ -148,15 +148,8 @@ fn surface_usable(caps: &vk::SurfaceCapabilitiesKHR) -> bool {
         && caps.supported_composite_alpha.as_raw() != 0
 }
 
-fn lowest_bit(mask: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
-    vk::CompositeAlphaFlagsKHR::from_raw(mask.as_raw() & mask.as_raw().wrapping_neg())
-}
-
 fn supported_alpha(mask: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
-    match mask.contains(vk::CompositeAlphaFlagsKHR::OPAQUE) {
-        true => vk::CompositeAlphaFlagsKHR::OPAQUE,
-        false => lowest_bit(mask),
-    }
+    vk::CompositeAlphaFlagsKHR::from_raw(mask.as_raw() & mask.as_raw().wrapping_neg())
 }
 
 fn supported_transform(caps: &vk::SurfaceCapabilitiesKHR) -> vk::SurfaceTransformFlagsKHR {
