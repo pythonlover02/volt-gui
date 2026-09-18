@@ -112,7 +112,7 @@ An unnormalized, subsampled, image-processing or converted sampler keeps every f
 
 Three sampler fields, three settings. `nearest` and `linear` are core with no query behind them, so `linear` is forced only where the sampler's own magnification filter, minification filter or mipmap mode already uses linear; otherwise that setting leaves the sampler alone and logs a line. Retro is `nearest`/`nearest`/`nearest`. Bilinear is `linear`/`linear`/`nearest`. Trilinear is `linear`/`linear`/`linear`.
 
-**Anisotropic Filtering** off up to whatever your GPU reports. volt never enables `samplerAnisotropy`; where the game left it off the setting is ignored and logged. Nearly every game enables it.
+**Anisotropic Filtering** `off` up to whatever your GPU reports. volt never enables `samplerAnisotropy`; where the game left it off the setting is ignored and logged. Nearly every game enables it.
 
 **LOD Bias** shift mipmap selection sharper or blurrier.
 
