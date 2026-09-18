@@ -1479,13 +1479,15 @@ fn call_owned_devices(instance: &ash::Instance) -> Vec<vk::PhysicalDevice> {
     unsafe { instance.enumerate_physical_devices() }.unwrap_or_default()
 }
 
-fn call_probe_devices(st: &VkInstState, devices: &[vk::PhysicalDevice]) {
-    match env_probe_active() {
-        true => devices.iter().for_each(|phys| {
-            let props = unsafe { st.instance.get_physical_device_properties(*phys) };
-            call_record_device(build_device(st, *phys, &limit_caps(&props)))
-        }),
-        false => (),
+fn call_probe_first_device(st: &VkInstState, phys: vk::PhysicalDevice) {
+    let props = unsafe { st.instance.get_physical_device_properties(phys) };
+    call_record_device(build_device(st, phys, &limit_caps(&props)));
+}
+
+fn call_probe_devices(st: &VkInstState) {
+    match (env_probe_active(), call_allowed_devices(st).first().copied()) {
+        (true, Some(phys)) => call_probe_first_device(st, phys),
+        (_, _) => (),
     }
 }
 
@@ -1532,7 +1534,7 @@ fn register_instance(
     let static_fn = ash::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
     let devices = call_owned_devices(&instance);
-    call_remember_owner(handle, devices.clone());
+    call_remember_owner(handle, devices);
     let state = VkInstState {
             instance,
             gipa,
@@ -1545,7 +1547,7 @@ fn register_instance(
             api_version,
             extensions: Arc::new(extensions),
     };
-    call_probe_devices(&state, &devices);
+    call_probe_devices(&state);
     insts_put(handle.as_raw(), state);
     log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
 }
