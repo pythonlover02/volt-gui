@@ -260,7 +260,7 @@ def find_setting_options(tab_name: str, setting_key: str, data: dict) -> tuple:
             return ((DEFAULT_VALUE, DEFAULT_VALUE),) + builder(data)
 
 
-def get_setting_options(tab_name: str, setting_key: str) -> tuple:
+def call_setting_options(tab_name: str, setting_key: str) -> tuple:
     return find_setting_options(tab_name, setting_key, call_read_probe())
 
 
@@ -272,12 +272,12 @@ def build_widget_key(tab_name: str, setting_key: str) -> str:
     return tab_name + ":" + setting_key
 
 
-def find_cards_for_tab(tab_name: str) -> tuple:
+def call_cards_for_tab(tab_name: str) -> tuple:
     return tuple(
         (build_widget_key(tab_name, setting_key),
          get_setting_label(tab_name, setting_key),
          get_setting_description(tab_name, setting_key),
-         get_setting_options(tab_name, setting_key))
+         call_setting_options(tab_name, setting_key))
         for setting_key in find_settings_for_tab(tab_name))
 
 
@@ -288,7 +288,7 @@ def _tab_option_sources(tab_name: str, data: dict) -> tuple:
         for setting_key in find_settings_for_tab(tab_name))
 
 
-def find_option_sources() -> tuple:
+def call_option_sources() -> tuple:
     data = call_read_probe()
     return tuple(
         entry

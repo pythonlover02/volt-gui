@@ -49,7 +49,7 @@ from presets import process_preset_apply
 from probe import call_probe_stamp
 from profiles import build_config_dir
 from profiles import build_options_path
-from profiles import find_all_profiles
+from profiles import call_all_profiles
 from profiles import is_reserved_profile_name
 from profiles import process_profile_delete
 from profiles import process_profile_options_rebuild
@@ -119,7 +119,7 @@ def build_launch_command(profile_name: str) -> str:
             return "volt " + profile_name + " -- %command%"
 
 
-def get_persisted_option_value(option_key: str) -> str:
+def call_persisted_option_value(option_key: str) -> str:
     match build_options_path().exists():
         case False:
             return get_option_default_value(option_key)
@@ -147,7 +147,7 @@ def resolve_scale_factor(raw: str) -> str:
 
 
 def get_persisted_option_resolved(option_key: str) -> str:
-    return resolve_option_value(option_key, get_persisted_option_value(option_key))
+    return resolve_option_value(option_key, call_persisted_option_value(option_key))
 
 
 def get_bundle_dir() -> str:
@@ -198,7 +198,7 @@ def call_clean_environment() -> None:
             return None
 
 
-def calculate_initial_scale() -> None:
+def process_initial_scale() -> None:
     os.environ["QT_SCALE_FACTOR"] = resolve_scale_factor(
         get_persisted_option_resolved("interface_scale_factor"))
     return None
@@ -214,7 +214,7 @@ def build_platform_chain(platform: str) -> str:
             return other
 
 
-def calculate_initial_platform() -> None:
+def process_initial_platform() -> None:
     match get_persisted_option_resolved("qt_platform"):
         case "":
             return None
@@ -285,7 +285,7 @@ def _add_named_profiles(combo_widget: QComboBox, profiles: tuple) -> None:
 
 
 def process_profile_list_update(main_window: QMainWindow) -> None:
-    profiles = find_all_profiles()
+    profiles = call_all_profiles()
     main_window.profile_selector.blockSignals(True)
     main_window.profile_selector.clear()
     main_window.profile_selector.addItem(build_profile_label(profiles[0]))
@@ -347,7 +347,7 @@ def is_new_profile_name_valid(profile_name: str) -> bool:
     match (
         profile_name.strip() == "",
         is_reserved_profile_name(profile_name),
-        profile_name.strip() in find_all_profiles(),
+        profile_name.strip() in call_all_profiles(),
         "/" in profile_name or "\\" in profile_name or ".." in profile_name,
         "\0" in profile_name,
         is_graphic_ascii(profile_name),
@@ -460,7 +460,7 @@ def process_tray_menu_update(main_window: QMainWindow) -> None:
             return None
         case True:
             main_window.profile_submenu.clear()
-            for profile_name in find_all_profiles():
+            for profile_name in call_all_profiles():
                 action = QAction("Apply " + build_profile_label(profile_name), main_window)
                 action.triggered.connect(lambda checked, bound_profile_name=profile_name: process_profile_apply_from_tray(main_window, bound_profile_name))
                 main_window.profile_submenu.addAction(action)
@@ -767,7 +767,7 @@ def process_welcome_show(main_window: QMainWindow) -> None:
 
 
 
-def validate_singleton_instance(singleton_port: int) -> dict:
+def call_claim_singleton(singleton_port: int) -> dict:
     lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
     lock_name = "\0volt-gui-singleton-" + str(singleton_port)
     match lock_socket.connect_ex(lock_name) != 0:
@@ -929,7 +929,7 @@ def main() -> None:
             sys.exit(1)
         case False:
             pass
-    singleton_result = validate_singleton_instance(SINGLETON_PORT)
+    singleton_result = call_claim_singleton(SINGLETON_PORT)
     match singleton_result["running"]:
         case True:
             print("volt-gui is already running.")
@@ -938,8 +938,8 @@ def main() -> None:
             pass
     os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.theme.gnome=false")
     call_clean_environment()
-    calculate_initial_platform()
-    calculate_initial_scale()
+    process_initial_platform()
+    process_initial_scale()
     application = QApplication(sys.argv)
     application.setStyle("Fusion")
     application.setQuitOnLastWindowClosed(False)

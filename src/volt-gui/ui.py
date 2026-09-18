@@ -27,7 +27,7 @@ from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
 
 from database import APP_VERSION
-from database import find_cards_for_tab
+from database import call_cards_for_tab
 from themes import get_standard_button_height
 
 
@@ -160,7 +160,7 @@ def create_code_block_widget(code_text: str) -> QFrame:
     return frame
 
 
-def _add_info_text(layout: QVBoxLayout, text: str) -> None:
+def _process_info_text(layout: QVBoxLayout, text: str) -> None:
     text_label = QLabel(text)
     text_label.setWordWrap(True)
     text_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
@@ -169,7 +169,7 @@ def _add_info_text(layout: QVBoxLayout, text: str) -> None:
     return None
 
 
-def _add_info_code(layout: QVBoxLayout, item_entry: tuple) -> None:
+def _process_info_code(layout: QVBoxLayout, item_entry: tuple) -> None:
     match len(item_entry) > 2 and item_entry[2] != "":
         case True:
             code_label = QLabel(item_entry[2])
@@ -182,12 +182,12 @@ def _add_info_code(layout: QVBoxLayout, item_entry: tuple) -> None:
     return None
 
 
-def _add_info_entry(layout: QVBoxLayout, item_entry: tuple) -> None:
+def _process_info_entry(layout: QVBoxLayout, item_entry: tuple) -> None:
     match item_entry[0]:
         case "text":
-            _add_info_text(layout, item_entry[1])
+            _process_info_text(layout, item_entry[1])
         case "code":
-            _add_info_code(layout, item_entry)
+            _process_info_code(layout, item_entry)
     return None
 
 
@@ -205,10 +205,10 @@ def create_info_card_widget(label_text: str, card_data: str | tuple) -> QFrame:
     layout.addWidget(title_label)
     match isinstance(card_data, str):
         case True:
-            _add_info_text(layout, card_data)
+            _process_info_text(layout, card_data)
         case False:
             for item_entry in card_data:
-                _add_info_entry(layout, item_entry)
+                _process_info_entry(layout, item_entry)
     return card
 
 
@@ -268,7 +268,7 @@ def create_tab_content_widget(tab_name: str, info_items: Optional[dict]) -> dict
     container_widget = _build_content_container(info_items)
     match info_items is None:
         case True:
-            for widget_key, label_text, description_text, options in find_cards_for_tab(tab_name):
+            for widget_key, label_text, description_text, options in call_cards_for_tab(tab_name):
                 card_result = create_setting_card_widget(label_text, description_text, options)
                 container_widget.layout().addWidget(card_result["card"])
                 container_widget.layout().addWidget(create_divider_widget())

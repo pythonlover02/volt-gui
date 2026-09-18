@@ -118,7 +118,7 @@ def build_palette(color_map: dict) -> QPalette:
     return palette_instance
 
 
-def apply_disabled_roles(palette_instance: QPalette, color_map: dict) -> QPalette:
+def process_disabled_roles(palette_instance: QPalette, color_map: dict) -> QPalette:
     for palette_role, color_key in get_style_palette_disabled_roles():
         palette_instance.setColor(QPalette.Disabled, palette_role, QColor(color_map[color_key]))
     return palette_instance
@@ -131,5 +131,5 @@ def process_theme_application(application_instance: Optional[QApplication], them
         case app:
             color_map = build_theme_colors(theme_name)
             app.setStyleSheet(get_style_stylesheet_template().format(**color_map))
-            app.setPalette(apply_disabled_roles(build_palette(color_map), color_map))
+            app.setPalette(process_disabled_roles(build_palette(color_map), color_map))
             return None
