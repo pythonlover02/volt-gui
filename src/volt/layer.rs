@@ -170,11 +170,18 @@ fn instance_surface_symbol(name: &str) -> Option<*mut c_void> {
     }
 }
 
+fn instance_resolves(inst: vk::Instance, name: &str) -> bool {
+    insts_get(inst.as_raw())
+        .and_then(|st| call_next_gipa(st.gipa, inst, name))
+        .is_some()
+}
+
 fn instance_gated_surface(inst: vk::Instance, name: &str) -> Option<*mut c_void> {
     instance_surface_symbol(name).filter(|_| {
         insts_get(inst.as_raw())
             .map(|st| provider_on(st.api_version, &st.extensions, name))
             .unwrap_or(false)
+            && instance_resolves(inst, name)
     })
 }
 
@@ -203,11 +210,18 @@ fn device_provided_symbol(name: &str) -> Option<*mut c_void> {
     }
 }
 
+fn device_resolves(dev: vk::Device, name: &str) -> bool {
+    devs_gdpa(dev.as_raw())
+        .and_then(|gdpa| call_next_gdpa(gdpa, dev, name))
+        .is_some()
+}
+
 fn device_provided_hooked(dev: vk::Device, name: &str) -> Option<*mut c_void> {
     device_provided_symbol(name).filter(|_| {
         devs_get(dev.as_raw())
             .map(|d| device_hook_on(&d, name))
             .unwrap_or(false)
+            && device_resolves(dev, name)
     })
 }
 
