@@ -767,18 +767,35 @@ fn rebuilt_mode_info(
     }
 }
 
+fn asked_modes(node: *const VkSwapchainPresentModeInfoKHR) -> Vec<vk::PresentModeKHR> {
+    (0..unsafe { (*node).swapchain_count } as usize)
+        .map(|at| unsafe { *(*node).p_present_modes.add(at) })
+        .collect()
+}
+
 fn built_present<'a>(
     dev: u64,
     info: &vk::PresentInfoKHR<'a>,
     node: *const VkSwapchainPresentModeInfoKHR,
 ) -> Option<PresentRebuild<'a>> {
     let modes = spent_modes(dev, info, node);
+    match modes == asked_modes(node) {
+        true => None,
+        false => call_linked_present(info, node, modes),
+    }
+}
+
+fn call_linked_present<'a>(
+    info: &vk::PresentInfoKHR<'a>,
+    node: *const VkSwapchainPresentModeInfoKHR,
+    modes: Vec<vk::PresentModeKHR>,
+) -> Option<PresentRebuild<'a>> {
     let owned = vec![rebuilt_mode_info(node, &modes)];
     let relink = call_relinked_chain(
         info.p_next,
         SWAPCHAIN_PRESENT_MODE_INFO_TYPE,
         owned.as_ptr() as *const c_void,
-        "present_mode",
+        SETTING_PRESENT_MODE,
     )?;
     Some(PresentRebuild {
         info: vk::PresentInfoKHR {
