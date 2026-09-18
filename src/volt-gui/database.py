@@ -122,7 +122,7 @@ SETTINGS_DB: Final[dict] = {
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports.",
+            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports, up to 4 either way.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_floor": {
