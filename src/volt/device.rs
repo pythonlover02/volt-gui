@@ -23,6 +23,7 @@ use crate::consts::FN_WRITE_SAMPLERS;
 use crate::consts::DEVICE_FEATURES_2_TYPE;
 use crate::consts::EXT_MIXED_SAMPLES;
 use crate::consts::FN_CREATE_DEVICE;
+use crate::consts::FN_DEVICE_QUEUE_2;
 use crate::consts::LOG_DEVICE_REGISTERED;
 use crate::consts::EXT_PORTABILITY_SUBSET;
 use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
@@ -44,6 +45,7 @@ use crate::instance::PfnCreateRayTracingNV;
 use crate::instance::PfnCreateShaders;
 use crate::instance::PfnCreatePipelineBinaries;
 use crate::instance::PfnCreateSharedSwapchains;
+use crate::instance::PfnGetDeviceQueue2;
 use crate::instance::PfnGetPipelineKey;
 use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::PfnSetDeviceLoaderData;
@@ -84,6 +86,7 @@ pub(crate) struct VkDevState {
     pub(crate) gdpa: vk::PFN_vkGetDeviceProcAddr,
     pub(crate) loader_data: Option<PfnSetDeviceLoaderData>,
     pub(crate) swap_fp: ash::khr::swapchain::DeviceFn,
+    pub(crate) queue2_fp: Option<PfnGetDeviceQueue2>,
     pub(crate) shared_fp: Option<PfnCreateSharedSwapchains>,
     pub(crate) samplers_fp: Option<PfnWriteSamplers>,
     pub(crate) shaders_fp: Option<PfnCreateShaders>,
@@ -474,6 +477,7 @@ fn register_device(
             gdpa,
             loader_data,
             swap_fp: load_swap_fp(gdpa, handle),
+            queue2_fp: call_typed_device_fp(gdpa, handle, FN_DEVICE_QUEUE_2),
             shared_fp: call_typed_device_fp(gdpa, handle, FN_SHARED_SWAPCHAINS),
             samplers_fp: call_typed_device_fp(gdpa, handle, FN_WRITE_SAMPLERS),
             shaders_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_SHADERS),

@@ -422,13 +422,13 @@ extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, ou
     }
 }
 
-extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const vk::DeviceQueueInfo2<'_>, out: *mut vk::Queue) {
-    match devs_get(dev.as_raw()) {
-        Some(d) => {
-            let q = unsafe { d.device.get_device_queue2(&*info) };
+extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const c_void, out: *mut vk::Queue) {
+    match devs_get(dev.as_raw()).and_then(|d| d.queue2_fp.map(|fp| (d, fp))) {
+        Some((d, fp)) => {
+            unsafe { fp(dev, info, out) };
+            let q = unsafe { *out };
             call_register_queue(&d, dev, q);
             queue_dev_put(q.as_raw(), dev.as_raw());
-            unsafe { *out = q };
         }
         None => log_at(LogLevel::Warn, LOG_QUEUE_2_UNREGISTERED),
     }

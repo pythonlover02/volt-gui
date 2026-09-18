@@ -126,6 +126,9 @@ pub(crate) type PfnCmdSetAlphaToOne =
 pub(crate) type PfnCmdSetDepthClamp =
     unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
 
+pub(crate) type PfnGetDeviceQueue2 =
+    unsafe extern "system" fn(vk::Device, *const c_void, *mut vk::Queue);
+
 pub(crate) type PfnSetDeviceLoaderData =
     unsafe extern "system" fn(vk::Device, *mut c_void) -> vk::Result;
 
