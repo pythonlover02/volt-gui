@@ -76,6 +76,8 @@ DEFAULT_PROFILE_LABEL: Final[str] = "Default"
 SCALE_MIN: Final[float] = 0.5
 SCALE_MAX: Final[float] = 3.0
 DEFAULT_SCALE: Final[str] = "1.0"
+GRAPHIC_FIRST: Final[int] = 33
+GRAPHIC_LAST: Final[int] = 126
 PREVIEW_BIN: Final[str] = "volt"
 PREVIEW_TARGET: Final[str] = "volt-probe"
 PREVIEW_POLL_MS: Final[int] = 750
@@ -338,7 +340,7 @@ def process_yes_no_dialog(parent_widget: QMainWindow, title: str, message: str) 
 
 
 def is_graphic_ascii(profile_name: str) -> bool:
-    return all(33 <= ord(character) <= 126 for character in profile_name)
+    return all(GRAPHIC_FIRST <= ord(character) <= GRAPHIC_LAST for character in profile_name)
 
 
 def is_new_profile_name_valid(profile_name: str) -> bool:
