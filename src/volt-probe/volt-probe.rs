@@ -85,7 +85,7 @@ fn available_name(one: &vk::ExtensionProperties) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn available_names(entry: &ash::Entry) -> Vec<String> {
+fn call_available_names(entry: &ash::Entry) -> Vec<String> {
     unsafe { entry.enumerate_instance_extension_properties(None) }
         .unwrap_or_default()
         .iter()
@@ -93,8 +93,8 @@ fn available_names(entry: &ash::Entry) -> Vec<String> {
         .collect()
 }
 
-fn enabled_name_list(entry: &ash::Entry) -> Vec<String> {
-    let available = available_names(entry);
+fn call_enabled_name_list(entry: &ash::Entry) -> Vec<String> {
+    let available = call_available_names(entry);
     let has_surface = available.iter().any(|one| one.as_str() == EXT_SURFACE);
     wanted_extensions(has_surface)
         .into_iter()
@@ -218,7 +218,7 @@ enum DeviceOutcome {
     Missing,
 }
 
-fn device_extension_names(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Vec<String> {
+fn call_device_extension_names(instance: &ash::Instance, phys: vk::PhysicalDevice) -> Vec<String> {
     unsafe { instance.enumerate_device_extension_properties(phys) }
         .unwrap_or_default()
         .iter()
@@ -252,7 +252,7 @@ fn call_first_physical(
         None => DeviceOutcome::Missing,
         Some(phys) => outcome_for(
             phys,
-            portability_listed(&device_extension_names(instance, phys)),
+            portability_listed(&call_device_extension_names(instance, phys)),
             support,
         ),
     }
@@ -332,7 +332,7 @@ fn call_create_device(
     instance_enabled: &[String],
     support: bool,
 ) -> Option<(ash::Device, bool)> {
-    let listed = device_extension_names(instance, phys);
+    let listed = call_device_extension_names(instance, phys);
     let wanted = device_extensions_to_enable(instance_enabled, &listed, support);
     let names: Vec<CString> = wanted
         .iter()
@@ -549,7 +549,7 @@ fn call_on_instance(
 }
 
 fn call_with_instance(entry: &ash::Entry) -> i32 {
-    let enabled = enabled_name_list(entry);
+    let enabled = call_enabled_name_list(entry);
     let support = portability_support(&enabled);
     match call_create_instance(entry, &enabled) {
         None => EXIT_FAIL,

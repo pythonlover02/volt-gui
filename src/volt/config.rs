@@ -327,7 +327,7 @@ pub(crate) fn call_sanitize_name(raw: &str) -> String {
     }
 }
 
-fn fallback_home() -> String {
+fn call_fallback_home() -> String {
     log_at(LogLevel::Warn, HOME_UNSET_WARN);
     HOME_FALLBACK.into()
 }
@@ -335,7 +335,7 @@ fn fallback_home() -> String {
 fn home_text() -> String {
     match env_home() {
         Some(path) => path,
-        None => fallback_home(),
+        None => call_fallback_home(),
     }
 }
 
@@ -363,7 +363,7 @@ fn call_logged_settings(parsed: Parsed) -> Settings {
     parsed.settings
 }
 
-fn read_config(path: &PathBuf) -> Settings {
+fn call_read_config(path: &PathBuf) -> Settings {
     match fs::read_to_string(path) {
         Ok(text) => call_logged_settings(parse_settings(&text)),
         Err(e) => {
@@ -376,13 +376,13 @@ fn read_config(path: &PathBuf) -> Settings {
     }
 }
 
-fn load_settings() -> Settings {
+fn call_load_settings() -> Settings {
     init_log_level();
-    let loaded = read_config(&config_path(&profile_name()));
+    let loaded = call_read_config(&config_path(&profile_name()));
     log_at(LogLevel::Info, SETTINGS_FROZEN_INFO);
     loaded
 }
 
 pub(crate) fn ensure_settings() -> &'static Settings {
-    SETTINGS.get_or_init(load_settings)
+    SETTINGS.get_or_init(call_load_settings)
 }

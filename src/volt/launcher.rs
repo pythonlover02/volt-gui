@@ -161,7 +161,7 @@ fn build_flatpak_args(
     .concat()
 }
 
-fn write_default_config(path: &PathBuf) {
+fn call_write_default_config(path: &PathBuf) {
     let _ = fs::create_dir_all(config_dir());
     match path.exists() {
         true => (),
@@ -190,7 +190,7 @@ fn lib_path(existing: Option<String>) -> String {
     }
 }
 
-fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
+fn call_exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
     let err = Command::new(&cmd[0])
         .args(&cmd[1..])
         .env(ENV_ENABLE, ENABLE_VALUE)
@@ -202,7 +202,7 @@ fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
     EXIT_EXEC_FAILED
 }
 
-fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
+fn call_exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     match flatpak_app_id(cmd) {
         None => {
             log_at(LogLevel::Error, LOG_NO_APP_ID);
@@ -223,33 +223,33 @@ fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     }
 }
 
-fn launch_cmd(head: &[String], cmd: &[String]) -> i32 {
+fn call_launch_cmd(head: &[String], cmd: &[String]) -> i32 {
     let profile = head_profile(head);
-    write_default_config(&config_path(&profile));
+    call_write_default_config(&config_path(&profile));
     match is_flatpak_run(cmd) {
-        true => exec_flatpak(cmd, &profile, wants_probe(head)),
-        false => exec_native(cmd, &profile, wants_probe(head)),
+        true => call_exec_flatpak(cmd, &profile, wants_probe(head)),
+        false => call_exec_native(cmd, &profile, wants_probe(head)),
     }
 }
 
-fn launch(args: Vec<String>) -> i32 {
+fn call_launch(args: Vec<String>) -> i32 {
     let (head, cmd) = split_args(&args);
     match cmd.is_empty() {
         true => {
             print!("{}", USAGE);
             EXIT_USAGE
         }
-        false => launch_cmd(&head, &cmd),
+        false => call_launch_cmd(&head, &cmd),
     }
 }
 
-pub fn run_launcher(args: Vec<String>) -> i32 {
+pub fn call_run_launcher(args: Vec<String>) -> i32 {
     init_log_level();
     match wants_help(&args) {
         true => {
             print!("{}", USAGE);
             EXIT_OK
         }
-        false => launch(args),
+        false => call_launch(args),
     }
 }

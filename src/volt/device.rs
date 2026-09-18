@@ -30,7 +30,7 @@ use crate::consts::DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE;
 use crate::consts::GPU_MISS_WARN;
 use crate::consts::SETTING_GPU;
 use crate::env::env_probe_active;
-use crate::instance::all_devices;
+use crate::instance::call_all_devices;
 use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::cstr_names;
@@ -59,7 +59,7 @@ use crate::logging::info_wanted;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
 use crate::present::call_forget_device_timelines;
-use crate::probe::build_device;
+use crate::probe::call_build_device;
 use crate::probe::call_record_device;
 use crate::report::call_forget_reports;
 use crate::report::call_report_reading;
@@ -130,7 +130,7 @@ pub(crate) fn devs_gdpa(h: u64) -> Option<vk::PFN_vkGetDeviceProcAddr> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&h).map(|d| d.gdpa)))
 }
 
-pub(crate) fn devs_put(h: u64, v: VkDevState) {
+pub(crate) fn call_devs_put(h: u64, v: VkDevState) {
     match DEVS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(h, Arc::new(v));
@@ -139,7 +139,7 @@ pub(crate) fn devs_put(h: u64, v: VkDevState) {
     }
 }
 
-fn queue_dev_forget(dev: u64) {
+fn call_queue_dev_forget(dev: u64) {
     match QUEUE_TO_DEV.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -148,7 +148,7 @@ fn queue_dev_forget(dev: u64) {
     }
 }
 
-fn cmdbuf_dev_forget(dev: u64) {
+fn call_cmdbuf_dev_forget(dev: u64) {
     match CMDBUF_TO_DEV.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -157,9 +157,9 @@ fn cmdbuf_dev_forget(dev: u64) {
     }
 }
 
-pub(crate) fn devs_del(h: u64) -> Option<Arc<VkDevState>> {
-    queue_dev_forget(h);
-    cmdbuf_dev_forget(h);
+pub(crate) fn call_devs_del(h: u64) -> Option<Arc<VkDevState>> {
+    call_queue_dev_forget(h);
+    call_cmdbuf_dev_forget(h);
     call_forget_reports(h);
     call_forget_device_timelines(h);
     call_forget_device_forced_modes(h);
@@ -175,7 +175,7 @@ fn queue_dev_get(q: u64) -> Option<u64> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&q).copied()))
 }
 
-pub(crate) fn queue_dev_put(q: u64, d: u64) {
+pub(crate) fn call_queue_dev_put(q: u64, d: u64) {
     match QUEUE_TO_DEV.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(q, d);
@@ -195,7 +195,7 @@ fn cmdbuf_dev_get(c: u64) -> Option<u64> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&c).map(|owner| owner.0)))
 }
 
-fn cmdbuf_dev_put(c: u64, owner: (u64, u64)) {
+fn call_cmdbuf_dev_put(c: u64, owner: (u64, u64)) {
     match CMDBUF_TO_DEV.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(c, owner);
@@ -204,7 +204,7 @@ fn cmdbuf_dev_put(c: u64, owner: (u64, u64)) {
     }
 }
 
-fn cmdbuf_dev_del(c: u64) {
+fn call_cmdbuf_dev_del(c: u64) {
     match CMDBUF_TO_DEV.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).remove(&c);
@@ -213,7 +213,7 @@ fn cmdbuf_dev_del(c: u64) {
     }
 }
 
-fn cmdbuf_pool_forget(dev: u64, pool: u64) {
+fn call_cmdbuf_pool_forget(dev: u64, pool: u64) {
     match CMDBUF_TO_DEV.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -325,7 +325,7 @@ fn call_record_command_buffers(
     out: *mut vk::CommandBuffer,
 ) {
     (0..unsafe { (*info).command_buffer_count } as usize).for_each(|at| {
-        cmdbuf_dev_put(
+        call_cmdbuf_dev_put(
             unsafe { (*out.add(at)).as_raw() },
             (dev.as_raw(), unsafe { (*info).command_pool.as_raw() }),
         )
@@ -333,7 +333,7 @@ fn call_record_command_buffers(
 }
 
 fn call_forget_command_buffers(count: u32, buffers: *const vk::CommandBuffer) {
-    (0..count as usize).for_each(|at| cmdbuf_dev_del(unsafe { (*buffers.add(at)).as_raw() }));
+    (0..count as usize).for_each(|at| call_cmdbuf_dev_del(unsafe { (*buffers.add(at)).as_raw() }));
 }
 
 pub(crate) fn call_allocate_command_buffers(
@@ -368,7 +368,7 @@ pub(crate) fn call_destroy_command_pool(
     pool: vk::CommandPool,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    cmdbuf_pool_forget(dev.as_raw(), pool.as_raw());
+    call_cmdbuf_pool_forget(dev.as_raw(), pool.as_raw());
     unsafe { (d.device.fp_v1_0().destroy_command_pool)(dev, pool, alloc) };
 }
 
@@ -423,7 +423,7 @@ fn call_gpu_lines(
     owner: u64,
     chosen: Option<u32>,
 ) {
-    let all = all_devices(inst);
+    let all = call_all_devices(inst);
     let id = device_index(&all, phys);
     call_gpu_warned(id, chosen, asked_group(ci, &all));
     call_gpu_reported(id, owner, chosen);
@@ -436,9 +436,9 @@ fn gpu_line_wanted(chosen: Option<u32>) -> bool {
     }
 }
 
-fn maybe_probe_device(inst: &VkInstState, phys: vk::PhysicalDevice, caps: &DeviceCaps) {
+fn call_probe_device(inst: &VkInstState, phys: vk::PhysicalDevice, caps: &DeviceCaps) {
     match env_probe_active() {
-        true => call_record_device(build_device(inst, phys, caps)),
+        true => call_record_device(call_build_device(inst, phys, caps)),
         false => (),
     }
 }
@@ -456,7 +456,7 @@ fn call_report_gpu(
     }
 }
 
-fn register_device(
+fn call_register_device(
     gdpa: vk::PFN_vkGetDeviceProcAddr,
     loader_data: Option<PfnSetDeviceLoaderData>,
     handle: vk::Device,
@@ -469,7 +469,7 @@ fn register_device(
     let device = unsafe {
         ash::Device::load_with(|name| mem::transmute(gdpa(handle, name.as_ptr())), handle)
     };
-    devs_put(
+    call_devs_put(
         handle.as_raw(),
         VkDevState {
             device,
@@ -495,12 +495,12 @@ fn register_device(
             pipeline_binaries_fp: call_typed_device_fp(gdpa, handle, FN_CREATE_PIPELINE_BINARIES),
         },
     );
-    maybe_probe_device(inst, phys, &caps);
+    call_probe_device(inst, phys, &caps);
     call_report_gpu(inst, phys, ci, handle);
     log_at(LogLevel::Info, LOG_DEVICE_REGISTERED);
 }
 
-fn invoke_create_device(
+fn call_invoke_create_device(
     create_fn: unsafe extern "system" fn(),
     link: &VkLayerLinkInfo,
     loader_data: Option<PfnSetDeviceLoaderData>,
@@ -516,7 +516,7 @@ fn invoke_create_device(
         cf(phys, ci, alloc, out)
     } {
         vk::Result::SUCCESS => {
-            register_device(
+            call_register_device(
                 link.pfn_next_get_device_proc_addr,
                 loader_data,
                 unsafe { *out },
@@ -546,7 +546,7 @@ pub(crate) fn call_real_create_device(
             vk::Instance::from_raw(ih),
             FN_CREATE_DEVICE,
         )
-        .map(|f| invoke_create_device(f, &l, loader_data, &inst, ih, phys, ci, alloc, out))
+        .map(|f| call_invoke_create_device(f, &l, loader_data, &inst, ih, phys, ci, alloc, out))
         .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
         (_, _) => vk::Result::ERROR_INITIALIZATION_FAILED,
     }

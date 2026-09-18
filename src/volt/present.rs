@@ -312,7 +312,7 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
         .map(|fps| shifted_fps(fps, s.frame_limit_offset))
 }
 
-pub(crate) fn maybe_limit_frame(
+pub(crate) fn call_limit_frame(
     stage: LimitStage,
     s: &Settings,
     dev: u64,

@@ -36,6 +36,6 @@ pub(crate) fn env_lib_path() -> Option<String> {
     read_var(ENV_LIB_PATH)
 }
 
-pub fn process_args() -> Vec<String> {
+pub fn launch_args() -> Vec<String> {
     env::args().skip(1).collect()
 }

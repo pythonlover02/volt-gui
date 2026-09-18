@@ -17,7 +17,7 @@ use crate::consts::PROBE_SEP;
 use crate::consts::PROBE_TEMP;
 use crate::consts::PROBE_WRITE_INFO;
 use crate::device::DeviceCaps;
-use crate::instance::all_devices;
+use crate::instance::call_all_devices;
 use crate::instance::device_index;
 use crate::instance::VkInstState;
 use crate::logging::log_at;
@@ -66,7 +66,7 @@ fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
     values
 }
 
-fn device_features(
+fn call_device_features(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
 ) -> vk::PhysicalDeviceFeatures {
@@ -77,15 +77,15 @@ fn feature_held(flag: vk::Bool32) -> bool {
     flag == vk::TRUE
 }
 
-fn device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
+fn call_device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
     let props = unsafe { inst.instance.get_physical_device_properties(phys) };
     unsafe { CStr::from_ptr(props.device_name.as_ptr()) }
         .to_string_lossy()
         .to_lowercase()
 }
 
-fn device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
-    all.iter().map(|p| device_name(inst, *p)).collect()
+fn call_device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
+    all.iter().map(|p| call_device_name(inst, *p)).collect()
 }
 
 fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
@@ -132,16 +132,16 @@ fn section_head(tag: &str) -> String {
     format!("{}{}{}\n", PROBE_SECTION_OPEN, tag, PROBE_SECTION_CLOSE)
 }
 
-pub(crate) fn build_device(
+pub(crate) fn call_build_device(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
     caps: &DeviceCaps,
 ) -> DeviceFacts {
-    let all = all_devices(inst);
-    let features = device_features(inst, phys);
+    let all = call_all_devices(inst);
+    let features = call_device_features(inst, phys);
     DeviceFacts {
         index: device_index(&all, phys),
-        names: device_names(inst, &all),
+        names: call_device_names(inst, &all),
         max_anisotropy: caps.max_anisotropy,
         max_lod_bias: caps.max_lod_bias,
         max_lod_level: caps.max_lod_level,

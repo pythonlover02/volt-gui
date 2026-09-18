@@ -76,7 +76,7 @@ use crate::env::env_probe_active;
 use crate::lists::call_warned;
 use crate::lists::filtered;
 use crate::lists::kept;
-use crate::probe::build_device;
+use crate::probe::call_build_device;
 use crate::probe::call_record_device;
 use crate::logging::log_at;
 use crate::logging::LogLevel;
@@ -919,7 +919,7 @@ fn phys_owner_get(phys: u64) -> Option<u64> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&phys).copied()))
 }
 
-fn phys_owner_put(phys: u64, inst: u64) {
+fn call_phys_owner_put(phys: u64, inst: u64) {
     match PHYS_OWNER.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(phys, inst);
@@ -928,7 +928,7 @@ fn phys_owner_put(phys: u64, inst: u64) {
     }
 }
 
-fn phys_owner_forget(inst: u64) {
+fn call_phys_owner_forget(inst: u64) {
     match PHYS_OWNER.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -941,7 +941,7 @@ pub(crate) fn insts_get(h: u64) -> Option<VkInstState> {
     INSTS.read().ok().and_then(|g| g.as_ref().and_then(|m| m.get(&h).cloned()))
 }
 
-pub(crate) fn insts_put(h: u64, v: VkInstState) {
+pub(crate) fn call_insts_put(h: u64, v: VkInstState) {
     match INSTS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(h, v);
@@ -950,9 +950,9 @@ pub(crate) fn insts_put(h: u64, v: VkInstState) {
     }
 }
 
-pub(crate) fn insts_del(h: u64) {
-    phys_owner_forget(h);
-    surface_tags_forget(h);
+pub(crate) fn call_insts_del(h: u64) {
+    call_phys_owner_forget(h);
+    call_surface_tags_forget(h);
     match INSTS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).remove(&h);
@@ -965,7 +965,7 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
     phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
 }
 
-fn surface_tag_put(inst: u64, surface: u64, tag: &'static str) {
+fn call_surface_tag_put(inst: u64, surface: u64, tag: &'static str) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert((inst, surface), tag);
@@ -974,7 +974,7 @@ fn surface_tag_put(inst: u64, surface: u64, tag: &'static str) {
     }
 }
 
-fn surface_tag_del(inst: u64, surface: u64) {
+fn call_surface_tag_del(inst: u64, surface: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).remove(&(inst, surface));
@@ -983,7 +983,7 @@ fn surface_tag_del(inst: u64, surface: u64) {
     }
 }
 
-fn surface_tags_forget(inst: u64) {
+fn call_surface_tags_forget(inst: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -1007,7 +1007,7 @@ fn call_tagged_result(
 ) -> vk::Result {
     match result {
         vk::Result::SUCCESS => {
-            surface_tag_put(inst.as_raw(), unsafe { (*out).as_raw() }, tag);
+            call_surface_tag_put(inst.as_raw(), unsafe { (*out).as_raw() }, tag);
             vk::Result::SUCCESS
         }
         e => e,
@@ -1033,14 +1033,14 @@ pub(crate) fn call_destroy_tagged_surface(
     surface: vk::SurfaceKHR,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    surface_tag_del(inst.as_raw(), surface.as_raw());
+    call_surface_tag_del(inst.as_raw(), surface.as_raw());
     match insts_get(inst.as_raw()).and_then(|st| st.destroy_surface_fp) {
         Some(fp) => unsafe { fp(inst, surface, alloc) },
         None => (),
     }
 }
 
-pub(crate) fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
+pub(crate) fn call_all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
     call_owned_devices(&inst.instance)
 }
 
@@ -1401,7 +1401,7 @@ fn call_query_groups(
 }
 
 fn call_allowed_devices(st: &VkInstState) -> Vec<vk::PhysicalDevice> {
-    call_gpu_filtered(all_devices(st), ensure_settings().gpu)
+    call_gpu_filtered(call_all_devices(st), ensure_settings().gpu)
 }
 
 fn call_groups_through(
@@ -1483,7 +1483,7 @@ fn call_owned_devices(instance: &ash::Instance) -> Vec<vk::PhysicalDevice> {
 
 fn call_probe_first_device(st: &VkInstState, phys: vk::PhysicalDevice) {
     let props = unsafe { st.instance.get_physical_device_properties(phys) };
-    call_record_device(build_device(st, phys, &limit_caps(&props)));
+    call_record_device(call_build_device(st, phys, &limit_caps(&props)));
 }
 
 fn call_probe_devices(st: &VkInstState) {
@@ -1496,7 +1496,7 @@ fn call_probe_devices(st: &VkInstState) {
 fn call_remember_owner(handle: vk::Instance, devices: Vec<vk::PhysicalDevice>) {
     devices
         .into_iter()
-        .for_each(|phys| phys_owner_put(phys.as_raw(), handle.as_raw()));
+        .for_each(|phys| call_phys_owner_put(phys.as_raw(), handle.as_raw()));
 }
 
 fn call_surface_creators(
@@ -1527,7 +1527,7 @@ fn requested_instance_extensions(ci: *const vk::InstanceCreateInfo<'_>) -> HashS
     })
 }
 
-fn register_instance(
+fn call_register_instance(
     gipa: vk::PFN_vkGetInstanceProcAddr,
     handle: vk::Instance,
     api_version: u32,
@@ -1550,11 +1550,11 @@ fn register_instance(
             extensions: Arc::new(extensions),
     };
     call_probe_devices(&state);
-    insts_put(handle.as_raw(), state);
+    call_insts_put(handle.as_raw(), state);
     log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
 }
 
-fn invoke_create_instance(
+fn call_invoke_create_instance(
     create_fn: unsafe extern "system" fn(),
     gipa: vk::PFN_vkGetInstanceProcAddr,
     ci: *const vk::InstanceCreateInfo<'_>,
@@ -1566,7 +1566,7 @@ fn invoke_create_instance(
         cf(ci, alloc, out)
     } {
         vk::Result::SUCCESS => {
-            register_instance(
+            call_register_instance(
                 gipa,
                 unsafe { *out },
                 requested_api_version(ci),
@@ -1587,7 +1587,7 @@ pub(crate) fn call_real_create_instance(
     match link {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
         Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), FN_CREATE_INSTANCE)
-            .map(|f| invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
+            .map(|f| call_invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
             .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
     }
 }

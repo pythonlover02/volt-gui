@@ -69,10 +69,10 @@ use crate::device::call_real_create_device;
 use crate::device::call_register_queue;
 use crate::device::cmdbuf_owner;
 use crate::device::device_hook_on;
-use crate::device::devs_del;
+use crate::device::call_devs_del;
 use crate::device::devs_gdpa;
 use crate::device::devs_get;
-use crate::device::queue_dev_put;
+use crate::device::call_queue_dev_put;
 use crate::device::queue_owner;
 use crate::device::VkDevState;
 use crate::instance::call_advance_chain;
@@ -86,7 +86,7 @@ use crate::instance::call_next_gdpa;
 use crate::instance::call_next_gipa;
 use crate::instance::call_real_create_instance;
 use crate::instance::chain_layer_info;
-use crate::instance::insts_del;
+use crate::instance::call_insts_del;
 use crate::instance::insts_get;
 use crate::instance::provider_on;
 use crate::instance::VkHandle;
@@ -114,7 +114,7 @@ use crate::pipeline::call_set_alpha_one;
 use crate::pipeline::call_set_depth_clamp;
 use crate::present::call_forget_timeline;
 use crate::present::call_present_frame;
-use crate::present::maybe_limit_frame;
+use crate::present::call_limit_frame;
 use crate::sampler::call_create_sampler;
 use crate::sampler::call_write_sampler_descriptors;
 use crate::swapchain::call_create_shared_swapchains;
@@ -396,7 +396,7 @@ fn call_staged_limit(
     info: *const vk::PresentInfoKHR<'_>,
 ) {
     match dev {
-        Some(handle) => maybe_limit_frame(stage, s, handle, info),
+        Some(handle) => call_limit_frame(stage, s, handle, info),
         None => (),
     }
 }
@@ -427,7 +427,7 @@ extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, ou
         Some(d) => {
             let q = unsafe { d.device.get_device_queue(qfam, qidx) };
             call_register_queue(&d, dev, q);
-            queue_dev_put(q.as_raw(), dev.as_raw());
+            call_queue_dev_put(q.as_raw(), dev.as_raw());
             unsafe { *out = q };
         }
         None => log_at(LogLevel::Warn, LOG_QUEUE_UNREGISTERED),
@@ -440,7 +440,7 @@ extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const c_void, ou
             unsafe { fp(dev, info, out) };
             let q = unsafe { *out };
             call_register_queue(&d, dev, q);
-            queue_dev_put(q.as_raw(), dev.as_raw());
+            call_queue_dev_put(q.as_raw(), dev.as_raw());
         }
         None => log_at(LogLevel::Warn, LOG_QUEUE_2_UNREGISTERED),
     }
@@ -488,7 +488,7 @@ extern "system" fn vkCreateInstance(
 
 extern "system" fn vkDestroyInstance(inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
     let st = insts_get(inst.as_raw());
-    insts_del(inst.as_raw());
+    call_insts_del(inst.as_raw());
     match st {
         Some(s) => call_chain_destroy_instance(s.gipa, inst, alloc),
         None => (),
@@ -544,7 +544,7 @@ extern "system" fn vkCreateDevice(
 }
 
 extern "system" fn vkDestroyDevice(dev: vk::Device, alloc: *const vk::AllocationCallbacks<'_>) {
-    match devs_del(dev.as_raw()) {
+    match call_devs_del(dev.as_raw()) {
         Some(d) => unsafe { d.device.destroy_device(alloc.as_ref()) },
         None => (),
     }

@@ -294,16 +294,16 @@ fn clamped_caps(
     }
 }
 
-fn log_blending(blends: bool) {
+fn call_log_blending(blends: bool) {
     match blends {
         false => log_at(LogLevel::Info, ALPHA_OPAQUE_INFO),
         true => (),
     }
 }
 
-fn maybe_log_alpha(choice: Option<vk::CompositeAlphaFlagsKHR>) {
+fn call_log_alpha(choice: Option<vk::CompositeAlphaFlagsKHR>) {
     match choice.and_then(alpha_semantic) {
-        Some(facts) => log_blending(facts.blends),
+        Some(facts) => call_log_blending(facts.blends),
         None => (),
     }
 }
@@ -589,7 +589,7 @@ pub(crate) fn call_surface_capabilities2(
     }
 }
 
-fn maybe_probe(
+fn call_probe_surface(
     tag: Option<&'static str>,
     supported: &[vk::PresentModeKHR],
     caps: Option<&vk::SurfaceCapabilitiesKHR>,
@@ -936,12 +936,12 @@ fn call_prepared_ci<'a>(
 ) -> SwapchainRebuild<'a> {
     let supported = call_query_present_modes(inst, dev.phys, original.surface);
     let caps = call_query_surface_caps(inst, dev.phys, original.surface);
-    maybe_probe(
+    call_probe_surface(
         surface_tag(vk::Instance::from_raw(dev.instance_handle), original.surface),
         &supported,
         caps.as_ref(),
     );
-    maybe_log_alpha(s.composite_alpha);
+    call_log_alpha(s.composite_alpha);
     let tie_holds = mode_tie_holds(original.flags, original.p_next);
     let patched = patched_swapchain_ci(
         original,
