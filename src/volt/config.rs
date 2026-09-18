@@ -12,6 +12,7 @@ use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
+use crate::consts::FIRST_DEVICE;
 use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
@@ -21,6 +22,7 @@ use crate::consts::KEY_ANISOTROPY;
 use crate::consts::KEY_CLIPPED;
 use crate::consts::KEY_COMPOSITE_ALPHA;
 use crate::consts::KEY_DEPTH_CLAMP;
+use crate::consts::KEY_DOT;
 use crate::consts::KEY_DEVICE;
 use crate::consts::KEY_FRAME_LIMIT;
 use crate::consts::KEY_FRAME_LIMIT_CADENCE;
@@ -47,6 +49,9 @@ use crate::consts::MethodChoice;
 use crate::consts::MIPMAP_LINEAR;
 use crate::consts::MIPMAP_NEAREST;
 use crate::consts::PACING_PRECISE;
+use crate::consts::PARSE_FAILED_CLOSE;
+use crate::consts::PARSE_FAILED_OPEN;
+use crate::consts::REPORT_MARK;
 use crate::consts::PACING_SLEEP;
 use crate::consts::PACING_SLICED;
 use crate::consts::PACING_SPIN;
@@ -66,6 +71,9 @@ use crate::consts::TEXT_OFF;
 use crate::consts::TEXT_ON;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
+use crate::consts::UNREAD_CLOSE;
+use crate::consts::UNREAD_OPEN;
+use crate::consts::UNREAD_PROFILE_CLOSE;
 use crate::env::env_config_name;
 use crate::env::env_home;
 use crate::logging::init_log_level;
@@ -177,7 +185,7 @@ fn parse_offset(text: &str) -> Option<f32> {
 }
 
 fn parse_gpu(text: &str) -> Option<u32> {
-    parse_uint(text).filter(|v| *v >= 1)
+    parse_uint(text).filter(|v| *v >= FIRST_DEVICE)
 }
 
 fn parse_cadence(text: &str) -> Option<CadenceChoice> {
@@ -223,10 +231,7 @@ fn checked<T>(
     match value {
         Some(v) => Some(v),
         None => {
-            warnings.push(format!(
-                "{}.{} names \"{}\", which is not a value this build can read: that setting was left alone",
-                section, key, text
-            ));
+            warnings.push([section, KEY_DOT, key, UNREAD_OPEN, text, UNREAD_CLOSE].concat());
             None
         }
     }
@@ -252,7 +257,7 @@ fn parse_doc(text: &str, warnings: &mut Vec<String>) -> toml::Table {
     match text.parse::<toml::Table>() {
         Ok(d) => d,
         Err(e) => {
-            warnings.push(format!("config parse failed: {}, using defaults", e));
+            warnings.push([PARSE_FAILED_OPEN, e.to_string().as_str(), PARSE_FAILED_CLOSE].concat());
             toml::Table::new()
         }
     }
@@ -369,7 +374,13 @@ fn call_read_config(path: &PathBuf) -> Settings {
         Err(e) => {
             log_at(
                 LogLevel::Warn,
-                &format!("{}: {}, every setting left alone", path.display(), e),
+                &[
+                    path.display().to_string().as_str(),
+                    REPORT_MARK,
+                    e.to_string().as_str(),
+                    UNREAD_PROFILE_CLOSE,
+                ]
+                .concat(),
             );
             Settings::default()
         }

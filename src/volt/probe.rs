@@ -6,7 +6,23 @@ use std::sync::Mutex;
 use ash::vk;
 
 use crate::config::config_dir;
+use crate::consts::LINE_END;
 use crate::consts::PROBE_FAIL_WARN;
+use crate::consts::PROBE_KEY_ALPHA_TO_ONE;
+use crate::consts::PROBE_KEY_COMPOSITE_ALPHAS;
+use crate::consts::PROBE_KEY_DEPTH_CLAMP;
+use crate::consts::PROBE_KEY_DEVICE_INDEX;
+use crate::consts::PROBE_KEY_DEVICE_NAMES;
+use crate::consts::PROBE_KEY_MAX_ANISOTROPY;
+use crate::consts::PROBE_KEY_MAX_IMAGE_COUNT;
+use crate::consts::PROBE_KEY_MAX_LOD_BIAS;
+use crate::consts::PROBE_KEY_MAX_LOD_LEVEL;
+use crate::consts::PROBE_KEY_MIN_IMAGE_COUNT;
+use crate::consts::PROBE_KEY_PRESENT_MODES;
+use crate::consts::PROBE_KEY_SAMPLER_ANISOTROPY;
+use crate::consts::PROBE_KEY_SAMPLE_RATE_SHADING;
+use crate::consts::PROBE_PAIR_CLOSE;
+use crate::consts::PROBE_PAIR_OPEN;
 use crate::consts::PROBE_FILE;
 use crate::consts::PROBE_OFF;
 use crate::consts::PROBE_ON;
@@ -125,11 +141,11 @@ fn flag_text(value: bool) -> &'static str {
 }
 
 fn pair(key: &str, value: &str) -> String {
-    format!("{} = \"{}\"\n", key, value)
+    [key, PROBE_PAIR_OPEN, value, PROBE_PAIR_CLOSE].concat()
 }
 
 fn section_head(tag: &str) -> String {
-    format!("{}{}{}\n", PROBE_SECTION_OPEN, tag, PROBE_SECTION_CLOSE)
+    [PROBE_SECTION_OPEN, tag, PROBE_SECTION_CLOSE, LINE_END].concat()
 }
 
 pub(crate) fn call_build_device(
@@ -167,16 +183,16 @@ pub(crate) fn build_surface(
 fn render_device(d: &DeviceFacts) -> String {
     [
         PROBE_SECTION.to_string(),
-        "\n".to_string(),
-        pair("device_index", &d.index.to_string()),
-        pair("device_names", &joined(&d.names)),
-        pair("max_anisotropy", &d.max_anisotropy.to_string()),
-        pair("max_lod_bias", &d.max_lod_bias.to_string()),
-        pair("max_lod_level", &d.max_lod_level.to_string()),
-        pair("sampler_anisotropy", flag_text(d.anisotropy)),
-        pair("sample_rate_shading", flag_text(d.shading)),
-        pair("alpha_to_one", flag_text(d.alpha_one)),
-        pair("depth_clamp", flag_text(d.clamp)),
+        LINE_END.to_string(),
+        pair(PROBE_KEY_DEVICE_INDEX, &d.index.to_string()),
+        pair(PROBE_KEY_DEVICE_NAMES, &joined(&d.names)),
+        pair(PROBE_KEY_MAX_ANISOTROPY, &d.max_anisotropy.to_string()),
+        pair(PROBE_KEY_MAX_LOD_BIAS, &d.max_lod_bias.to_string()),
+        pair(PROBE_KEY_MAX_LOD_LEVEL, &d.max_lod_level.to_string()),
+        pair(PROBE_KEY_SAMPLER_ANISOTROPY, flag_text(d.anisotropy)),
+        pair(PROBE_KEY_SAMPLE_RATE_SHADING, flag_text(d.shading)),
+        pair(PROBE_KEY_ALPHA_TO_ONE, flag_text(d.alpha_one)),
+        pair(PROBE_KEY_DEPTH_CLAMP, flag_text(d.clamp)),
     ]
     .concat()
 }
@@ -184,10 +200,10 @@ fn render_device(d: &DeviceFacts) -> String {
 pub(crate) fn render_surface(tag: &str, s: &SurfaceFacts) -> String {
     [
         section_head(tag),
-        pair("present_modes", &joined(&s.present)),
-        pair("composite_alphas", &joined(&s.alphas)),
-        pair("min_image_count", &s.min_images.to_string()),
-        pair("max_image_count", &s.max_images.to_string()),
+        pair(PROBE_KEY_PRESENT_MODES, &joined(&s.present)),
+        pair(PROBE_KEY_COMPOSITE_ALPHAS, &joined(&s.alphas)),
+        pair(PROBE_KEY_MIN_IMAGE_COUNT, &s.min_images.to_string()),
+        pair(PROBE_KEY_MAX_IMAGE_COUNT, &s.max_images.to_string()),
     ]
     .concat()
 }
@@ -207,7 +223,7 @@ fn render_sections(state: &ProbeState) -> Vec<String> {
 }
 
 fn render(state: &ProbeState) -> String {
-    render_sections(state).join("\n")
+    render_sections(state).join(LINE_END)
 }
 
 fn call_unchanged(path: &PathBuf, text: &str) -> bool {

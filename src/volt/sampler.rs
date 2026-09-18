@@ -6,6 +6,7 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
+use crate::consts::CHAIN_SAMPLER_LABEL;
 use crate::consts::CUBIC_REASON;
 use crate::consts::FEATURE_ANISOTROPY;
 use crate::consts::FILTER_CUBIC;
@@ -614,7 +615,7 @@ fn built_chain(
         head,
         SHADER_MAPPING_INFO_TYPE,
         node.as_ptr() as *const c_void,
-        "sampler",
+        CHAIN_SAMPLER_LABEL,
     )?;
     Some(ChainRebuild {
         head: relink.head,

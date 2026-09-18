@@ -18,6 +18,8 @@ use crate::consts::EXT_SURFACE_MAINTENANCE_1_EXT;
 use crate::consts::LOG_SWAPCHAIN_CREATED;
 use crate::consts::MODE_COMPATIBILITY_TYPE;
 use crate::consts::MODE_LIST_TYPES;
+use crate::consts::NO_FLAGS;
+use crate::consts::NO_IMAGE_LIMIT;
 use crate::consts::PRESENT_EMPTY_WARN;
 use crate::consts::PRESENT_ABOVE_FLOOR_REASON;
 use crate::consts::PRESENT_LIST_REASON;
@@ -159,9 +161,9 @@ fn chosen_mode(
 
 fn scaling_set(node: *const VkSwapchainPresentScalingCreateInfoKHR) -> bool {
     unsafe {
-        (*node).scaling_behavior != 0
-            || (*node).present_gravity_x != 0
-            || (*node).present_gravity_y != 0
+        (*node).scaling_behavior != NO_FLAGS
+            || (*node).present_gravity_x != NO_FLAGS
+            || (*node).present_gravity_y != NO_FLAGS
     }
 }
 
@@ -176,7 +178,7 @@ pub(crate) fn mode_tie_holds(
     flags: vk::SwapchainCreateFlagsKHR,
     p_next: *const c_void,
 ) -> bool {
-    flags.as_raw() == 0 && !scaling_chained(p_next)
+    flags.as_raw() == NO_FLAGS && !scaling_chained(p_next)
 }
 
 fn pick_present_mode(
@@ -201,7 +203,7 @@ fn chosen_alpha(
     value: vk::CompositeAlphaFlagsKHR,
     original: vk::CompositeAlphaFlagsKHR,
 ) -> vk::CompositeAlphaFlagsKHR {
-    match value.as_raw() != 0 && mask.as_raw() & value.as_raw() == value.as_raw() {
+    match value.as_raw() != NO_FLAGS && mask.as_raw() & value.as_raw() == value.as_raw() {
         true => value,
         false => logged_alpha_miss(original),
     }
@@ -244,7 +246,7 @@ fn pick_clipped(choice: Option<vk::Bool32>, original: vk::Bool32) -> vk::Bool32 
 
 fn caps_upper(caps_max: u32) -> u32 {
     match caps_max {
-        0 => u32::MAX,
+        NO_IMAGE_LIMIT => u32::MAX,
         n => n,
     }
 }
@@ -270,7 +272,7 @@ fn pick_image_count(
 
 fn reported_high(high: u32) -> u32 {
     match high {
-        u32::MAX => 0,
+        u32::MAX => NO_IMAGE_LIMIT,
         n => n,
     }
 }

@@ -129,6 +129,13 @@ const INF_TEXT: &str = "inf";
 const NEG_INF_TEXT: &str = "-inf";
 const FINITE_TEXT: &str = "1.5";
 const FINITE_VALUE: f32 = 1.5;
+const LIST_FIRST: i32 = 1;
+const LIST_SECOND: i32 = 2;
+const LIST_THIRD: i32 = 3;
+const LIST_MISSING: i32 = 9;
+const QUEUE_2_COMMAND: &str = "vkGetDeviceQueue2";
+const SURFACE_CAPS_COMMAND: &str = "vkGetPhysicalDeviceSurfaceCapabilitiesKHR";
+const BIAS_DOWN: f32 = -0.6;
 
 #[test]
 fn reads_one_spelling_of_the_default_profile_name() {
@@ -142,18 +149,10 @@ fn hands_a_hook_out_where_any_one_provider_is_on() {
     let none: std::collections::HashSet<String> = std::collections::HashSet::new();
     let surface: std::collections::HashSet<String> =
         std::iter::once(SURFACE_EXT_NAME.to_string()).collect();
-    assert!(provider_on(CORE_ONE_ONE, &none, "vkGetDeviceQueue2"));
-    assert!(!provider_on(CORE_ONE_ZERO, &none, "vkGetDeviceQueue2"));
-    assert!(provider_on(
-        CORE_ONE_ZERO,
-        &surface,
-        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"
-    ));
-    assert!(!provider_on(
-        CORE_ONE_ZERO,
-        &none,
-        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"
-    ));
+    assert!(provider_on(CORE_ONE_ONE, &none, QUEUE_2_COMMAND));
+    assert!(!provider_on(CORE_ONE_ZERO, &none, QUEUE_2_COMMAND));
+    assert!(provider_on(CORE_ONE_ZERO, &surface, SURFACE_CAPS_COMMAND));
+    assert!(!provider_on(CORE_ONE_ZERO, &none, SURFACE_CAPS_COMMAND));
 }
 
 #[test]
@@ -177,21 +176,36 @@ fn a_number_that_is_not_finite_is_not_a_value() {
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
-    assert_eq!(forced(None, 3), 3);
-    assert_eq!(forced(Some(2), 3), 2);
+    assert_eq!(forced(None, LIST_THIRD), LIST_THIRD);
+    assert_eq!(forced(Some(LIST_SECOND), LIST_THIRD), LIST_SECOND);
 }
 
 #[test]
 fn restores_a_list_the_choice_emptied() {
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3).items, vec![1, 2, 3]);
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1).items, vec![2, 3]);
+    assert_eq!(
+        kept(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], |value: &i32| *value > LIST_THIRD).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
+    assert_eq!(
+        kept(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], |value: &i32| *value > LIST_FIRST).items,
+        vec![LIST_SECOND, LIST_THIRD]
+    );
 }
 
 #[test]
 fn keeps_only_what_the_choice_names() {
-    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v)).items, vec![2]);
-    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v)).items, vec![1, 2, 3]);
-    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v)).items, vec![1, 2, 3]);
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], Some(LIST_SECOND), |v: &i32| Some(*v)).items,
+        vec![LIST_SECOND]
+    );
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], None, |v: &i32| Some(*v)).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], Some(LIST_MISSING), |v: &i32| Some(*v)).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
 }
 
 #[test]
@@ -637,7 +651,7 @@ fn notes_a_feature_only_where_the_profile_set_the_setting() {
 #[test]
 fn writes_a_number_the_way_a_profile_writes_it() {
     assert_eq!(number_text(ANISO_SIXTEEN), ANISO_SIXTEEN_TEXT);
-    assert_eq!(number_text(OFFSET_DOWN / 10.0), BIAS_DOWN_TEXT);
+    assert_eq!(number_text(BIAS_DOWN), BIAS_DOWN_TEXT);
 }
 
 fn chain_node(s_type: u32, next: *mut c_void) -> VkChainNode {

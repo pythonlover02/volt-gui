@@ -7,6 +7,7 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::BINARY_INFO_LOG;
+use crate::consts::CHAIN_SAMPLER_LABEL;
 use crate::consts::FEATURE_ALPHA_ONE;
 use crate::consts::COMPUTE_PIPELINE_CREATE_INFO_TYPE;
 use crate::consts::GRAPHICS_PIPELINE_CREATE_INFO_TYPE;
@@ -469,7 +470,7 @@ fn linked_groups(
         head,
         SHADER_GROUPS_TYPE,
         owned.as_ptr() as *const c_void,
-        "sampler",
+        CHAIN_SAMPLER_LABEL,
     )?;
     Some(GroupsRebuild {
         head: relink.head,

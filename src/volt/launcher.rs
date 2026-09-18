@@ -21,6 +21,7 @@ use crate::consts::FLATPAK_CONFIG_RO;
 use crate::consts::FLATPAK_CONFIG_RW;
 use crate::consts::FLATPAK_INJECT;
 use crate::consts::ENV_PROBE;
+use crate::consts::EXEC_FAILED;
 use crate::consts::FLATPAK_RUN;
 use crate::consts::FLATPAK_SUFFIX;
 use crate::consts::FLAG_HELP_LONG;
@@ -198,7 +199,7 @@ fn call_exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
         .env(ENV_PROBE, probe_value(probe))
         .env(ENV_LIB_PATH, lib_path(env_lib_path()))
         .exec();
-    log_at(LogLevel::Error, &format!("exec failed: {}", err));
+    log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
     EXIT_EXEC_FAILED
 }
 
@@ -217,7 +218,7 @@ fn call_exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
                 &flatpak_trailing(cmd),
             );
             let err = Command::new(FLATPAK_CMD).args(&args).exec();
-            log_at(LogLevel::Error, &format!("exec failed: {}", err));
+            log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
             EXIT_EXEC_FAILED
         }
     }

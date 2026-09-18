@@ -7,11 +7,13 @@ use crate::consts::DEFAULT_LOG_LEVEL;
 use crate::consts::LEVEL_WORD_ERROR;
 use crate::consts::LEVEL_WORD_INFO;
 use crate::consts::LEVEL_WORD_OFF;
+use crate::consts::LINE_END;
 use crate::consts::LOG_FD;
 use crate::consts::LOG_LEVEL_ERROR;
 use crate::consts::LOG_LEVEL_INFO;
 use crate::consts::LOG_LEVEL_OFF;
 use crate::consts::LOG_LEVEL_WARN;
+use crate::consts::LOG_PREFIX;
 use crate::env::env_log_level;
 
 pub(crate) enum LogLevel {
@@ -56,7 +58,7 @@ pub(crate) fn info_wanted() -> bool {
 
 pub(crate) fn log_at(level: LogLevel, msg: &str) {
     match should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
-        true => call_write_log(&format!("[volt] {}\n", msg)),
+        true => call_write_log(&[LOG_PREFIX, msg, LINE_END].concat()),
         false => (),
     }
 }

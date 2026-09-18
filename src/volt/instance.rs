@@ -62,6 +62,7 @@ use crate::consts::SWAPCHAIN_NATIVE_HDR_TYPE;
 use crate::consts::SWAPCHAIN_PRESENT_BARRIER_TYPE;
 use crate::consts::SWAPCHAIN_PRESENT_SCALING_TYPE;
 use crate::consts::VALIDATION_FEATURES_TYPE;
+use crate::consts::FIRST_DEVICE;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
 use crate::consts::FN_CREATE_INSTANCE;
@@ -70,7 +71,9 @@ use crate::consts::HOOK_PROVIDERS;
 use crate::consts::LOG_INSTANCE_REGISTERED;
 use crate::consts::Provider;
 use crate::consts::GROUP_EMPTY_WARN;
+use crate::consts::SINGLE_DEVICE;
 use crate::consts::SURFACE_CREATORS;
+use crate::consts::UNSET_API_VERSION;
 use crate::device::limit_caps;
 use crate::env::env_probe_active;
 use crate::lists::call_warned;
@@ -1047,8 +1050,8 @@ pub(crate) fn call_all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
 pub(crate) fn device_index(all: &[vk::PhysicalDevice], phys: vk::PhysicalDevice) -> u32 {
     all.iter()
         .position(|device| *device == phys)
-        .map(|at| at as u32 + 1)
-        .unwrap_or(1)
+        .map(|at| at as u32 + FIRST_DEVICE)
+        .unwrap_or(FIRST_DEVICE)
 }
 
 fn indexed(devices: Vec<vk::PhysicalDevice>) -> Vec<(usize, vk::PhysicalDevice)> {
@@ -1060,7 +1063,7 @@ fn plain(pairs: Vec<(usize, vk::PhysicalDevice)>) -> Vec<vk::PhysicalDevice> {
 }
 
 fn device_position(pair: &(usize, vk::PhysicalDevice)) -> u32 {
-    pair.0 as u32 + 1
+    pair.0 as u32 + FIRST_DEVICE
 }
 
 fn call_gpu_filtered(
@@ -1079,7 +1082,7 @@ fn group_devices(group: &VkPhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDev
 
 fn subset_of(kept_count: usize, original: vk::Bool32) -> vk::Bool32 {
     match kept_count {
-        1 => vk::FALSE,
+        SINGLE_DEVICE => vk::FALSE,
         _ => original,
     }
 }
@@ -1517,7 +1520,7 @@ fn requested_api_version(ci: *const vk::InstanceCreateInfo<'_>) -> u32 {
     match unsafe { (*ci).p_application_info.as_ref() } {
         None => vk::API_VERSION_1_0,
         Some(info) => match info.api_version {
-            0 => vk::API_VERSION_1_0,
+            UNSET_API_VERSION => vk::API_VERSION_1_0,
             asked => asked,
         },
     }
