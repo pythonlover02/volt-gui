@@ -235,7 +235,10 @@ fn caps_upper(caps_max: u32) -> u32 {
 }
 
 fn clamped_count(choice: Option<u32>, caps: &vk::SurfaceCapabilitiesKHR, original: u32) -> u32 {
-    forced(choice, original).clamp(caps.min_image_count, caps_upper(caps.max_image_count))
+    match choice {
+        Some(value) => value.clamp(caps.min_image_count, caps_upper(caps.max_image_count)),
+        None => original,
+    }
 }
 
 fn pick_image_count(
