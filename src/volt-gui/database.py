@@ -134,7 +134,7 @@ SETTINGS_DB: Final[dict] = {
         "mip_ceiling": {
             "section": "textures",
             "label": "Mip Ceiling",
-            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor. The ceiling lands last: where both are forced and cross, the ceiling wins and the floor keeps the game's value, with a line in the log.",
+            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor. A forced bound that would cross the value the other field holds is dropped, with a line in the log.",
             "options": (DEFAULT_VALUE,),
         },
     },
