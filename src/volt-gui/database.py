@@ -219,18 +219,6 @@ OPTIONS_DB: Final[dict] = {
 }
 
 
-def find_settings_for_tab(tab_name: str) -> dict:
-    return SETTINGS_DB.get(tab_name, {})
-
-
-def get_setting_label(tab_name: str, setting_key: str) -> str:
-    return SETTINGS_DB[tab_name][setting_key]["label"]
-
-
-def get_setting_description(tab_name: str, setting_key: str) -> str:
-    return SETTINGS_DB[tab_name][setting_key]["description"]
-
-
 OPTION_BUILDERS: Final[dict] = {
     "device": gpu_options,
     "present_mode": present_options,
@@ -246,6 +234,18 @@ OPTION_BUILDERS: Final[dict] = {
     "frame_limit": lambda _: frametime_pairs(
         SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
 }
+
+
+def find_settings_for_tab(tab_name: str) -> dict:
+    return SETTINGS_DB.get(tab_name, {})
+
+
+def get_setting_label(tab_name: str, setting_key: str) -> str:
+    return SETTINGS_DB[tab_name][setting_key]["label"]
+
+
+def get_setting_description(tab_name: str, setting_key: str) -> str:
+    return SETTINGS_DB[tab_name][setting_key]["description"]
 
 
 def _static_options(tab_name: str, setting_key: str) -> tuple:
