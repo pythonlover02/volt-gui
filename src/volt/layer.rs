@@ -363,12 +363,18 @@ fn resolve_null_instance_proc(name: &str) -> vk::PFN_vkVoidFunction {
     }
 }
 
+fn call_destroy_through(
+    d: unsafe extern "system" fn(),
+    inst: vk::Instance,
+    alloc: *const vk::AllocationCallbacks<'_>,
+) {
+    let df: vk::PFN_vkDestroyInstance = unsafe { mem::transmute(d) };
+    unsafe { df(inst, alloc) };
+}
+
 fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::Instance, alloc: *const vk::AllocationCallbacks<'_>) {
     match call_next_gipa(gipa, inst, FN_DESTROY_INSTANCE) {
-        Some(d) => unsafe {
-            let df: vk::PFN_vkDestroyInstance = mem::transmute(d);
-            df(inst, alloc);
-        },
+        Some(d) => call_destroy_through(d, inst, alloc),
         None => (),
     }
 }

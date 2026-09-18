@@ -511,10 +511,8 @@ fn call_invoke_create_device(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Device,
 ) -> vk::Result {
-    match unsafe {
-        let cf: vk::PFN_vkCreateDevice = mem::transmute(create_fn);
-        cf(phys, ci, alloc, out)
-    } {
+    let cf: vk::PFN_vkCreateDevice = unsafe { mem::transmute(create_fn) };
+    match unsafe { cf(phys, ci, alloc, out) } {
         vk::Result::SUCCESS => {
             call_register_device(
                 link.pfn_next_get_device_proc_addr,

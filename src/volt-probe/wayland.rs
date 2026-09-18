@@ -141,21 +141,21 @@ fn call_bind(wl: &Wl, registry: *mut c_void, name: u32) -> *mut c_void {
     }
 }
 
-unsafe extern "C" fn on_global(
+extern "C" fn on_global(
     data: *mut c_void,
     registry: *mut c_void,
     name: u32,
     interface: *const c_char,
     _version: u32,
 ) {
-    let state = &mut *(data as *mut BindState);
-    match CStr::from_ptr(interface).to_bytes() == COMPOSITOR_NAME {
+    let state = unsafe { &mut *(data as *mut BindState) };
+    match unsafe { CStr::from_ptr(interface) }.to_bytes() == COMPOSITOR_NAME {
         true => state.compositor = call_bind(state.wl, registry, name),
         false => (),
     }
 }
 
-unsafe extern "C" fn on_global_remove(_data: *mut c_void, _registry: *mut c_void, _name: u32) {}
+extern "C" fn on_global_remove(_data: *mut c_void, _registry: *mut c_void, _name: u32) {}
 
 fn call_registry(wl: &Wl, display: *mut c_void) -> *mut c_void {
     unsafe {

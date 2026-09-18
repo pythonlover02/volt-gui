@@ -495,19 +495,21 @@ pub(crate) struct StagesRebuild {
 fn named_sampler(
     mapping: &VkDescriptorSetAndBindingMappingEXT,
 ) -> Option<*const vk::SamplerCreateInfo<'static>> {
-    unsafe {
-        match mapping.source {
-            SOURCE_CONSTANT_OFFSET => Some(mapping.source_data.constant_offset.p_embedded_sampler),
-            SOURCE_PUSH_INDEX => Some(mapping.source_data.push_index.p_embedded_sampler),
-            SOURCE_INDIRECT_INDEX => Some(mapping.source_data.indirect_index.p_embedded_sampler),
-            SOURCE_INDIRECT_INDEX_ARRAY => {
-                Some(mapping.source_data.indirect_index_array.p_embedded_sampler)
-            }
-            SOURCE_SHADER_RECORD_INDEX => {
-                Some(mapping.source_data.shader_record_index.p_embedded_sampler)
-            }
-            _ => None,
+    match mapping.source {
+        SOURCE_CONSTANT_OFFSET => {
+            Some(unsafe { mapping.source_data.constant_offset.p_embedded_sampler })
         }
+        SOURCE_PUSH_INDEX => Some(unsafe { mapping.source_data.push_index.p_embedded_sampler }),
+        SOURCE_INDIRECT_INDEX => {
+            Some(unsafe { mapping.source_data.indirect_index.p_embedded_sampler })
+        }
+        SOURCE_INDIRECT_INDEX_ARRAY => {
+            Some(unsafe { mapping.source_data.indirect_index_array.p_embedded_sampler })
+        }
+        SOURCE_SHADER_RECORD_INDEX => {
+            Some(unsafe { mapping.source_data.shader_record_index.p_embedded_sampler })
+        }
+        _ => None,
     }
 }
 

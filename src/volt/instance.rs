@@ -1308,18 +1308,20 @@ pub(crate) fn call_loader_data_fn(node: *mut VkLayerCreateInfo) -> Option<PfnSet
         .map(|link| unsafe { mem::transmute(link) })
 }
 
+fn call_advanced_link(link: *mut VkLayerCreateInfo) -> VkLayerLinkInfo {
+    let li = unsafe { (*link).u_layer_info };
+    let out = VkLayerLinkInfo {
+        pfn_next_get_instance_proc_addr: unsafe { (*li).pfn_next_get_instance_proc_addr },
+        pfn_next_get_device_proc_addr: unsafe { (*li).pfn_next_get_device_proc_addr },
+    };
+    unsafe { (*link).u_layer_info = (*li).p_next };
+    out
+}
+
 pub(crate) fn call_advance_chain(link: *mut VkLayerCreateInfo) -> Option<VkLayerLinkInfo> {
     match link.is_null() || unsafe { (*link).u_layer_info.is_null() } {
         true => None,
-        false => unsafe {
-            let li = (*link).u_layer_info;
-            let out = VkLayerLinkInfo {
-                pfn_next_get_instance_proc_addr: (*li).pfn_next_get_instance_proc_addr,
-                pfn_next_get_device_proc_addr: (*li).pfn_next_get_device_proc_addr,
-            };
-            (*link).u_layer_info = (*li).p_next;
-            Some(out)
-        },
+        false => Some(call_advanced_link(link)),
     }
 }
 
@@ -1561,10 +1563,8 @@ fn call_invoke_create_instance(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Instance,
 ) -> vk::Result {
-    match unsafe {
-        let cf: vk::PFN_vkCreateInstance = mem::transmute(create_fn);
-        cf(ci, alloc, out)
-    } {
+    let cf: vk::PFN_vkCreateInstance = unsafe { mem::transmute(create_fn) };
+    match unsafe { cf(ci, alloc, out) } {
         vk::Result::SUCCESS => {
             call_register_instance(
                 gipa,
