@@ -610,6 +610,7 @@ pub(crate) fn call_create_compute_pipelines(
 ) -> vk::Result {
     let originals: Vec<vk::ComputePipelineCreateInfo<'_>> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
+    call_binary_line(originals.iter().any(|ci| names_binaries(ci.p_next)));
     let stages: Vec<Option<StageRebuild>> = originals
         .iter()
         .map(|ci| rebuilt_stage(dev, stage_of(ci)))
@@ -667,6 +668,7 @@ pub(crate) fn call_create_ray_tracing_khr(
 ) -> vk::Result {
     let originals: Vec<VkRayTracingPipelineCreateInfoKHR> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
+    call_binary_line(originals.iter().any(|ci| names_binaries(ci.p_next)));
     let stages: Vec<Option<StagesRebuild>> = originals
         .iter()
         .map(|ci| rebuilt_stages(dev, ci.p_stages, ci.stage_count))
