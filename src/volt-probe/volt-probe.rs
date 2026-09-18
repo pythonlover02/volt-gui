@@ -18,7 +18,6 @@ const EXIT_OK: i32 = 0;
 const EXIT_FAIL: i32 = 1;
 const EXIT_UNSUPPORTED: i32 = 2;
 const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
-const EXT_PORTABILITY_ENUMERATION: &str = "VK_KHR_portability_enumeration";
 const EXT_PROPERTIES_2: &str = "VK_KHR_get_physical_device_properties2";
 const NO_ARRAY_LAYERS: u32 = 0;
 const ZERO_EXTENT: u32 = 0;
@@ -73,7 +72,6 @@ fn wanted_extensions(has_surface: bool) -> Vec<&'static str> {
     surface
         .into_iter()
         .chain(std::iter::once(EXT_PROPERTIES_2))
-        .chain(std::iter::once(EXT_PORTABILITY_ENUMERATION))
         .chain(backends)
         .collect()
 }
