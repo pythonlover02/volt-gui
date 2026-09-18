@@ -156,7 +156,7 @@ def resolve_scale_factor(raw: str) -> str:
             return DEFAULT_SCALE
 
 
-def get_persisted_option_resolved(option_key: str) -> str:
+def call_persisted_option_resolved(option_key: str) -> str:
     return resolve_option_value(option_key, call_persisted_option_value(option_key))
 
 
@@ -210,7 +210,7 @@ def call_clean_environment() -> None:
 
 def process_initial_scale() -> None:
     os.environ["QT_SCALE_FACTOR"] = resolve_scale_factor(
-        get_persisted_option_resolved("interface_scale_factor"))
+        call_persisted_option_resolved("interface_scale_factor"))
     return None
 
 
@@ -225,7 +225,7 @@ def build_platform_chain(platform: str) -> str:
 
 
 def process_initial_platform() -> None:
-    match get_persisted_option_resolved("qt_platform"):
+    match call_persisted_option_resolved("qt_platform"):
         case "":
             return None
         case platform:
@@ -353,7 +353,7 @@ def is_graphic_ascii(profile_name: str) -> bool:
     return all(GRAPHIC_FIRST <= ord(character) <= GRAPHIC_LAST for character in profile_name)
 
 
-def is_new_profile_name_valid(profile_name: str) -> bool:
+def call_new_profile_name_valid(profile_name: str) -> bool:
     match (
         profile_name.strip() == "",
         is_reserved_profile_name(profile_name),
@@ -370,7 +370,7 @@ def is_new_profile_name_valid(profile_name: str) -> bool:
 
 def process_new_profile_save(main_window: QMainWindow) -> None:
     profile_name, accepted = QInputDialog.getText(main_window, "New Profile", "Profile name:")
-    match (accepted, profile_name is not None and is_new_profile_name_valid(profile_name)):
+    match (accepted, profile_name is not None and call_new_profile_name_valid(profile_name)):
         case (True, True):
             process_profile_save(main_window.all_widgets, main_window.current_profile)
             main_window.current_profile = profile_name.strip()
@@ -838,7 +838,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     window.setWindowTitle("volt-gui")
     window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
     window.setAttribute(Qt.WA_DontShowOnScreen, True)
-    process_theme_application(QApplication.instance(), get_persisted_option_resolved("application_theme"))
+    process_theme_application(QApplication.instance(), call_persisted_option_resolved("application_theme"))
     central_widget = QWidget()
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)
