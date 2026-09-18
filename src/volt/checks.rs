@@ -46,6 +46,8 @@ use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
 use crate::ranks::present_parse;
 use crate::ranks::present_semantic;
+use crate::ranks::AlphaFacts;
+use crate::ranks::PresentFacts;
 use crate::report::feature_note;
 use crate::report::filter_text;
 use crate::report::applied_text;
@@ -228,8 +230,8 @@ fn gives_each_enum_its_own_unknown_prefix() {
 
 #[test]
 fn groups_an_unnamed_value_under_nothing() {
-    assert!(present_semantic(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)).is_none());
-    assert!(alpha_semantic(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA)).is_none());
+    assert_eq!(present_semantic(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)), None);
+    assert_eq!(alpha_semantic(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA)), None);
 }
 
 #[test]
@@ -238,10 +240,16 @@ fn reads_the_facts_a_setting_branches_on() {
     let inherit = vk::CompositeAlphaFlagsKHR::from_raw(INHERIT_ALPHA);
     let fifo = vk::PresentModeKHR::from_raw(FIFO_MODE);
     let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
-    assert_eq!(alpha_semantic(opaque).map(|facts| facts.blends), Some(false));
-    assert_eq!(alpha_semantic(inherit).map(|facts| facts.blends), Some(true));
-    assert_eq!(present_semantic(fifo).map(|facts| facts.floor), Some(true));
-    assert_eq!(present_semantic(shared).map(|facts| facts.floor), Some(false));
+    assert_eq!(alpha_semantic(opaque), Some(AlphaFacts { blends: false }));
+    assert_eq!(alpha_semantic(inherit), Some(AlphaFacts { blends: true }));
+    assert_eq!(
+        present_semantic(fifo),
+        Some(PresentFacts { floor: true, shared: false })
+    );
+    assert_eq!(
+        present_semantic(shared),
+        Some(PresentFacts { floor: false, shared: true })
+    );
 }
 
 #[test]

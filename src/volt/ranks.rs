@@ -20,13 +20,13 @@ const COMPOSITE_ALPHAS: [(u32, &str, bool); 4] = [
     (8, "inherit", true),
 ];
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct PresentFacts {
     pub(crate) floor: bool,
     pub(crate) shared: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct AlphaFacts {
     pub(crate) blends: bool,
 }
