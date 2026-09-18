@@ -150,6 +150,13 @@ pub(crate) fn call_report_reading(owner: u64, name: &'static str, asked: String)
     }
 }
 
+pub(crate) fn call_report_reason(name: &str, reason: Option<&str>) {
+    match reason {
+        Some(text) => call_report_setting(name, None, None, Some(text.into())),
+        None => (),
+    }
+}
+
 pub(crate) fn number_text(value: f32) -> String {
     format!("{}", value)
 }

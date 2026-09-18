@@ -232,6 +232,7 @@ pub(crate) const PACING_SPIN: &str = "spin";
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
 pub(crate) const PRESENT_MISS_WARN: &str = "present_mode: the surface does not support it, keeping application choice";
+pub(crate) const PRESENT_LIST_REASON: &str = "the surface could not confirm the forced mode for the chained mode list, keeping the application value";
 pub(crate) const PRESENT_EMPTY_WARN: &str = "present_mode: the choice matched no supported mode, keeping every mode";
 
 pub(crate) const ALPHA_MISS_WARN: &str = "composite_alpha: the surface does not support it, keeping application choice";

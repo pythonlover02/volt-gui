@@ -18,6 +18,7 @@ use crate::consts::LOG_SWAPCHAIN_CREATED;
 use crate::consts::MODE_COMPATIBILITY_TYPE;
 use crate::consts::MODE_LIST_TYPES;
 use crate::consts::PRESENT_EMPTY_WARN;
+use crate::consts::PRESENT_LIST_REASON;
 use crate::consts::PRESENT_MISS_WARN;
 use crate::consts::SETTING_CLIPPED;
 use crate::consts::SETTING_COMPOSITE_ALPHA;
@@ -69,6 +70,7 @@ use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
 use crate::ranks::present_semantic;
 use crate::report::call_report_choice;
+use crate::report::call_report_reason;
 use crate::report::call_report_value;
 use crate::report::count_text;
 use crate::report::number_text;
@@ -778,12 +780,6 @@ pub(crate) fn rebuilt_present<'a>(
     )
 }
 
-fn chained_modes(node: *const VkSwapchainPresentModesCreateInfoKHR) -> Vec<vk::PresentModeKHR> {
-    (0..unsafe { (*node).present_mode_count } as usize)
-        .map(|at| unsafe { *(*node).p_present_modes.add(at) })
-        .collect()
-}
-
 fn rebuilt_mode_node(
     node: *const VkSwapchainPresentModesCreateInfoKHR,
     modes: &[vk::PresentModeKHR],
@@ -805,50 +801,78 @@ fn plain_swapchain(patched: vk::SwapchainCreateInfoKHR<'_>) -> SwapchainRebuild<
     }
 }
 
-fn forced_of(built: SwapchainRebuild<'_>, forced: Option<vk::PresentModeKHR>) -> SwapchainRebuild<'_> {
-    SwapchainRebuild { forced, ..built }
+fn kept_swapchain<'a>(
+    original: &vk::SwapchainCreateInfoKHR<'a>,
+    patched: vk::SwapchainCreateInfoKHR<'a>,
+) -> SwapchainRebuild<'a> {
+    plain_swapchain(vk::SwapchainCreateInfoKHR {
+        present_mode: original.present_mode,
+        ..patched
+    })
 }
 
-fn rebuilt_swapchain(
-    patched: vk::SwapchainCreateInfoKHR<'_>,
+fn call_rebuilt_swapchain<'a>(
+    original: &vk::SwapchainCreateInfoKHR<'a>,
+    patched: vk::SwapchainCreateInfoKHR<'a>,
     node: *const VkSwapchainPresentModesCreateInfoKHR,
-    choice: Option<vk::PresentModeKHR>,
-) -> SwapchainRebuild<'_> {
-    let modes = match choice {
-        Some(value) => vec![value],
-        None => chained_modes(node),
-    };
+) -> SwapchainRebuild<'a> {
+    let modes = vec![patched.present_mode];
     let owned = vec![rebuilt_mode_node(node, &modes)];
     match call_relinked_chain(
         patched.p_next,
         SWAPCHAIN_MODE_LIST_TYPE,
         owned.as_ptr() as *const c_void,
-        "present_mode",
+        SETTING_PRESENT_MODE,
     ) {
         Some(relink) => SwapchainRebuild {
             ci: vk::SwapchainCreateInfoKHR {
                 p_next: relink.head,
                 ..patched
             },
+            forced: Some(patched.present_mode),
             modes,
             node: owned,
             relink: Some(relink),
-            forced: None,
         },
-        None => plain_swapchain(patched),
+        None => kept_swapchain(original, patched),
     }
 }
 
-fn narrowed_swapchain(
-    patched: vk::SwapchainCreateInfoKHR<'_>,
-    choice: Option<vk::PresentModeKHR>,
-    applies: bool,
-) -> SwapchainRebuild<'_> {
-    match (applies, chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE)) {
-        (true, Some(node)) => rebuilt_swapchain(
+fn call_refused_swapchain<'a>(
+    original: &vk::SwapchainCreateInfoKHR<'a>,
+    patched: vk::SwapchainCreateInfoKHR<'a>,
+) -> SwapchainRebuild<'a> {
+    call_report_reason(SETTING_PRESENT_MODE, Some(PRESENT_LIST_REASON));
+    kept_swapchain(original, patched)
+}
+
+fn call_listed_swapchain<'a>(
+    inst: &VkInstState,
+    dev: &VkDevState,
+    original: &vk::SwapchainCreateInfoKHR<'a>,
+    patched: vk::SwapchainCreateInfoKHR<'a>,
+    node: *const VkSwapchainPresentModesCreateInfoKHR,
+) -> SwapchainRebuild<'a> {
+    match call_compatible(inst, dev, original.surface, patched.present_mode) {
+        true => call_rebuilt_swapchain(original, patched, node),
+        false => call_refused_swapchain(original, patched),
+    }
+}
+
+fn call_narrowed_swapchain<'a>(
+    inst: &VkInstState,
+    dev: &VkDevState,
+    original: &vk::SwapchainCreateInfoKHR<'a>,
+    patched: vk::SwapchainCreateInfoKHR<'a>,
+    landed: bool,
+) -> SwapchainRebuild<'a> {
+    match (landed, chain_find(patched.p_next, SWAPCHAIN_MODE_LIST_TYPE)) {
+        (true, Some(node)) => call_listed_swapchain(
+            inst,
+            dev,
+            original,
             patched,
             node as *const VkSwapchainPresentModesCreateInfoKHR,
-            choice,
         ),
         (_, _) => plain_swapchain(patched),
     }
@@ -875,16 +899,15 @@ fn call_prepared_ci<'a>(
         caps.as_ref(),
         s,
     );
-    let landed = s.present_mode.filter(|mode| *mode == patched.present_mode);
-    let applies = tie_holds
-        && landed.is_some()
-        && on_floor(original.present_mode)
-        && call_compatible(inst, dev, original.surface, patched.present_mode);
-    call_report_swapchain(dev, s, original, &patched);
-    forced_of(
-        narrowed_swapchain(patched, landed, applies),
-        applies.then_some(patched.present_mode),
-    )
+    let built = call_narrowed_swapchain(
+        inst,
+        dev,
+        original,
+        patched,
+        tie_holds && s.present_mode == Some(patched.present_mode),
+    );
+    call_report_swapchain(dev, s, original, &built.ci);
+    built
 }
 
 fn call_create_registered(
