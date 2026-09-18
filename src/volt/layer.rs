@@ -55,6 +55,8 @@ use crate::consts::LAYER_DATA_CALLBACK;
 use crate::consts::LAYER_IFACE_VERSION;
 use crate::consts::LAYER_LINK_INFO;
 use crate::consts::LAYER_NEGOTIATE_INTERFACE_STRUCT;
+use crate::consts::LOADER_DEVICE_CREATE_INFO_TYPE;
+use crate::consts::LOADER_INSTANCE_CREATE_INFO_TYPE;
 use crate::consts::LimitStage;
 use crate::consts::NULL_OK;
 use crate::consts::TAG_WAYLAND;
@@ -479,7 +481,7 @@ extern "system" fn vkCreateInstance(
     call_real_create_instance(
         call_advance_chain(chain_layer_info(
             unsafe { (*ci).p_next },
-            vk::StructureType::LOADER_INSTANCE_CREATE_INFO,
+            LOADER_INSTANCE_CREATE_INFO_TYPE,
             LAYER_LINK_INFO,
         )),
         ci,
@@ -530,12 +532,12 @@ extern "system" fn vkCreateDevice(
     call_real_create_device(
         call_advance_chain(chain_layer_info(
             unsafe { (*ci).p_next },
-            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+            LOADER_DEVICE_CREATE_INFO_TYPE,
             LAYER_LINK_INFO,
         )),
         call_loader_data_fn(chain_layer_info(
             unsafe { (*ci).p_next },
-            vk::StructureType::LOADER_DEVICE_CREATE_INFO,
+            LOADER_DEVICE_CREATE_INFO_TYPE,
             LAYER_DATA_CALLBACK,
         )),
         phys,

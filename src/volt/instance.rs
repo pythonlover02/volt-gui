@@ -1138,13 +1138,13 @@ fn non_null_ci(p: *const VkLayerCreateInfo) -> Option<*const VkLayerCreateInfo> 
 
 pub(crate) fn chain_layer_info(
     p_next: *const c_void,
-    want: vk::StructureType,
+    want: u32,
     function: i32,
 ) -> *mut VkLayerCreateInfo {
     std::iter::successors(non_null_ci(p_next as *const VkLayerCreateInfo), |p| {
         non_null_ci(unsafe { (**p).p_next as *const VkLayerCreateInfo })
     })
-    .find(|p| unsafe { (**p).s_type == want && (**p).function == function })
+    .find(|p| unsafe { (**p).s_type.as_raw() as u32 == want && (**p).function == function })
     .map(|p| p as *mut VkLayerCreateInfo)
     .unwrap_or(ptr::null_mut())
 }
