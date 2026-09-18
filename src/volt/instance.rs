@@ -1393,7 +1393,8 @@ fn call_query_groups(
         (0..n).map(|_| empty_group()).collect();
     let r2 = unsafe { fp(handle, &mut n, v.as_mut_ptr()) };
     match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
+        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v.into_iter().take(n as usize).collect(),
+        (vk::Result::SUCCESS, vk::Result::INCOMPLETE) => call_query_groups(handle, fp),
         (_, _) => Vec::new(),
     }
 }
