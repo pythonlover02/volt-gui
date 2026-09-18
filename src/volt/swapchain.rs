@@ -531,7 +531,7 @@ fn mode_lists(head: *mut c_void) -> Vec<*mut VkPresentModeList> {
         .collect()
 }
 
-fn call_read_modes(list: *mut VkPresentModeList) -> Vec<vk::PresentModeKHR> {
+fn read_modes(list: *mut VkPresentModeList) -> Vec<vk::PresentModeKHR> {
     (0..unsafe { (*list).present_mode_count } as usize)
         .map(|at| unsafe { *(*list).p_present_modes.add(at) })
         .collect()
@@ -548,7 +548,7 @@ fn call_write_modes(list: *mut VkPresentModeList, kept_modes: &[vk::PresentModeK
 fn call_filtered_mode_list(list: *mut VkPresentModeList, choice: Option<vk::PresentModeKHR>) {
     match unsafe { (*list).p_present_modes.is_null() } {
         true => (),
-        false => call_write_modes(list, &call_present_filtered(call_read_modes(list), choice)),
+        false => call_write_modes(list, &call_present_filtered(read_modes(list), choice)),
     }
 }
 

@@ -212,7 +212,7 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
     }
 }
 
-fn call_present_keys(info: *const vk::PresentInfoKHR<'_>) -> Vec<u64> {
+fn present_keys(info: *const vk::PresentInfoKHR<'_>) -> Vec<u64> {
     (0..unsafe { (*info).swapchain_count } as usize)
         .map(|at| unsafe { (*(*info).p_swapchains.add(at)).as_raw() })
         .collect()
@@ -321,7 +321,7 @@ pub(crate) fn call_limit_frame(
     match limit_fps(s, stage) {
         Some(fps) => call_limit_to(
             dev,
-            call_present_keys(info),
+            present_keys(info),
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
