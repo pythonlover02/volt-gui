@@ -32,7 +32,7 @@ pub(crate) const PROBE_ON: &str = "on";
 pub(crate) const PROBE_OFF: &str = "off";
 pub(crate) const PROBE_UNSET: &str = "";
 pub(crate) const PROBE_WRITE_INFO: &str = "probe written to the config directory";
-pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps its built in lists";
+pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps the lists it last read";
 
 pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
