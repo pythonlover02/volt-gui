@@ -392,7 +392,9 @@ def process_current_profile_delete(main_window: QMainWindow) -> None:
                     main_window.current_profile = DEFAULT_PROFILE
                     process_profile_list_update(main_window)
                     process_profile_selector_restore(main_window)
-                    process_profile_widget_load(main_window.all_widgets, DEFAULT_PROFILE)
+                    process_dropped_notice(
+                        main_window,
+                        process_profile_widget_load(main_window.all_widgets, DEFAULT_PROFILE))
                     process_launch_line_update(main_window)
                     process_tray_menu_update(main_window)
                     process_notification_display(main_window, "Profile deleted.", False)
@@ -495,7 +497,9 @@ def process_profile_apply_from_tray(main_window: QMainWindow, profile_name: str)
             process_profile_save(main_window.all_widgets, main_window.current_profile)
             main_window.current_profile = profile_name
             process_profile_selector_restore(main_window)
-            process_profile_widget_load(main_window.all_widgets, profile_name)
+            process_dropped_notice(
+                main_window,
+                process_profile_widget_load(main_window.all_widgets, profile_name))
             process_launch_line_update(main_window)
         case False:
             pass
