@@ -469,9 +469,9 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # a value volt has no name for is never read from a profile
 #
 # anisotropy, sample_shading, alpha_to_one and depth_clamp need a device
-# feature the application itself
-# enabled. volt never enables one: where the application left the feature
-# clear the setting is ignored and a line is logged
+# feature the application itself enabled. volt never enables one: where the
+# application left the feature clear the setting is ignored and a line is
+# logged
 #
 # a forced value the device did not report is not forced: volt keeps the
 # application's own value and logs a warning
