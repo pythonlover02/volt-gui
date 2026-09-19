@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ffi::c_char;
 use std::ffi::c_void;
+use std::ffi::CStr;
 use std::ffi::CString;
+use std::sync::Arc;
 use std::mem;
 use std::ptr;
 use std::sync::RwLock;
@@ -11,12 +14,23 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::consts::ATTACHMENT_SAMPLE_COUNT_TYPE;
-use crate::consts::CHAIN_NODE_WARN;
+use crate::consts::CHAIN_NODE_REASON;
 use crate::consts::CUSTOM_RESOLVE_TYPE;
 use crate::consts::DEBUG_UTILS_OBJECT_NAME_TYPE;
 use crate::consts::DEVICE_GROUP_PROPERTIES_TYPE;
 use crate::consts::DEVICE_GROUP_SIZE;
+use crate::consts::DEVICE_GROUP_PRESENT_INFO_TYPE;
 use crate::consts::DEVICE_GROUP_SWAPCHAIN_TYPE;
+use crate::consts::DISPLAY_PRESENT_INFO_TYPE;
+use crate::consts::FRAME_BOUNDARY_TENSORS_TYPE;
+use crate::consts::FRAME_BOUNDARY_TYPE;
+use crate::consts::PRESENT_ID_2_TYPE;
+use crate::consts::PRESENT_ID_TYPE;
+use crate::consts::PRESENT_REGIONS_TYPE;
+use crate::consts::PRESENT_TIMES_GOOGLE_TYPE;
+use crate::consts::PRESENT_TIMINGS_TYPE;
+use crate::consts::SET_PRESENT_CONFIG_TYPE;
+use crate::consts::SWAPCHAIN_PRESENT_FENCE_TYPE;
 use crate::consts::FN_DESTROY_SURFACE;
 use crate::consts::FN_DEVICE_GROUPS;
 use crate::consts::GRAPHICS_PIPELINE_LIBRARY_TYPE;
@@ -48,14 +62,26 @@ use crate::consts::SWAPCHAIN_NATIVE_HDR_TYPE;
 use crate::consts::SWAPCHAIN_PRESENT_BARRIER_TYPE;
 use crate::consts::SWAPCHAIN_PRESENT_SCALING_TYPE;
 use crate::consts::VALIDATION_FEATURES_TYPE;
+use crate::consts::FIRST_DEVICE;
 use crate::consts::FN_DEVICE_GROUPS_KHR;
 use crate::consts::FN_SURFACE_CAPS_2;
+use crate::consts::FN_CREATE_INSTANCE;
 use crate::consts::GPU_EMPTY_WARN;
+use crate::consts::HOOK_PROVIDERS;
+use crate::consts::LOG_INSTANCE_REGISTERED;
+use crate::consts::Provider;
 use crate::consts::GROUP_EMPTY_WARN;
+use crate::consts::SINGLE_DEVICE;
 use crate::consts::SURFACE_CREATORS;
+use crate::consts::UNSET_API_VERSION;
+use crate::device::limit_caps;
+use crate::env::env_probe_active;
+use crate::lists::call_warned;
 use crate::lists::filtered;
 use crate::lists::kept;
-use crate::logging::log_at;
+use crate::probe::call_build_device;
+use crate::probe::call_record_device;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
@@ -103,6 +129,9 @@ pub(crate) type PfnCmdSetAlphaToOne =
 
 pub(crate) type PfnCmdSetDepthClamp =
     unsafe extern "system" fn(vk::CommandBuffer, vk::Bool32);
+
+pub(crate) type PfnGetDeviceQueue2 =
+    unsafe extern "system" fn(vk::Device, *const c_void, *mut vk::Queue);
 
 pub(crate) type PfnSetDeviceLoaderData =
     unsafe extern "system" fn(vk::Device, *mut c_void) -> vk::Result;
@@ -168,10 +197,161 @@ pub(crate) struct VkChainNode {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub(crate) struct VkPipelineCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkPipelineBinaryCreateInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) p_keys_and_data_info: *const c_void,
+    pub(crate) pipeline: vk::Pipeline,
+    pub(crate) p_pipeline_create_info: *const VkPipelineCreateInfoKHR,
+}
+
+pub(crate) type PfnGetPipelineKey = unsafe extern "system" fn(
+    vk::Device,
+    *const VkPipelineCreateInfoKHR,
+    *mut c_void,
+) -> vk::Result;
+
+pub(crate) type PfnCreatePipelineBinaries = unsafe extern "system" fn(
+    vk::Device,
+    *const VkPipelineBinaryCreateInfoKHR,
+    *const vk::AllocationCallbacks<'_>,
+    *mut c_void,
+) -> vk::Result;
+
+#[repr(C)]
+pub(crate) struct VkDeviceGroupDeviceCreateInfo {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) physical_device_count: u32,
+    pub(crate) p_physical_devices: *const vk::PhysicalDevice,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct VkPhysicalDeviceFeatures2 {
     pub(crate) s_type: vk::StructureType,
     pub(crate) p_next: *mut c_void,
     pub(crate) features: vk::PhysicalDeviceFeatures,
+}
+
+#[repr(C)]
+pub(crate) struct VkSurfacePresentModeKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *mut c_void,
+    pub(crate) present_mode: vk::PresentModeKHR,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub(crate) struct VkSwapchainPresentModeInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_modes: *const vk::PresentModeKHR,
+}
+
+#[repr(C)]
+pub(crate) struct VkDeviceGroupPresentInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_device_masks: *const u32,
+    pub(crate) mode: vk::Flags,
+}
+
+#[repr(C)]
+pub(crate) struct VkDisplayPresentInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) src_rect: vk::Rect2D,
+    pub(crate) dst_rect: vk::Rect2D,
+    pub(crate) persistent: vk::Bool32,
+}
+
+#[repr(C)]
+pub(crate) struct VkFrameBoundaryEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) flags: vk::Flags,
+    pub(crate) frame_id: u64,
+    pub(crate) image_count: u32,
+    pub(crate) p_images: *const vk::Image,
+    pub(crate) buffer_count: u32,
+    pub(crate) p_buffers: *const vk::Buffer,
+    pub(crate) tag_name: u64,
+    pub(crate) tag_size: usize,
+    pub(crate) p_tag: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkFrameBoundaryTensorsARM {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) tensor_count: u32,
+    pub(crate) p_tensors: *const VkHandle,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentId2KHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_ids: *const u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentIdKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_present_ids: *const u64,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentRegionsKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_regions: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentTimesInfoGOOGLE {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_times: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkPresentTimingsInfoEXT {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_timing_infos: *const c_void,
+}
+
+#[repr(C)]
+pub(crate) struct VkSetPresentConfigNV {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) num_frames_per_batch: u32,
+    pub(crate) present_config_feedback: u32,
+}
+
+#[repr(C)]
+pub(crate) struct VkSwapchainPresentFenceInfoKHR {
+    pub(crate) s_type: vk::StructureType,
+    pub(crate) p_next: *const c_void,
+    pub(crate) swapchain_count: u32,
+    pub(crate) p_fences: *const vk::Fence,
 }
 
 #[repr(C)]
@@ -707,11 +887,33 @@ pub(crate) struct VkInstState {
     pub(crate) groups_khr_fp: Option<PfnDeviceGroups>,
     pub(crate) surface_fps: HashMap<&'static str, PfnCreateSurface>,
     pub(crate) destroy_surface_fp: Option<PfnDestroySurface>,
+    pub(crate) api_version: u32,
+    pub(crate) extensions: Arc<HashSet<String>>,
+}
+
+pub(crate) fn provider_on(api_version: u32, extensions: &HashSet<String>, command: &str) -> bool {
+    HOOK_PROVIDERS
+        .iter()
+        .filter(|(name, _)| *name == command)
+        .any(|(_, provider)| match provider {
+            Provider::Version(least) => api_version >= *least,
+            Provider::Ext(name) => extensions.contains(*name),
+        })
+}
+
+pub(crate) fn cstr_names(names: *const *const c_char, count: u32) -> HashSet<String> {
+    (0..count as usize)
+        .map(|at| {
+            unsafe { CStr::from_ptr(*names.add(at)) }
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect()
 }
 
 static INSTS: RwLock<Option<HashMap<u64, VkInstState>>> = RwLock::new(None);
 static PHYS_OWNER: RwLock<Option<HashMap<u64, u64>>> = RwLock::new(None);
-static SURFACE_TAGS: RwLock<Option<HashMap<u64, (u64, &'static str)>>> = RwLock::new(None);
+static SURFACE_TAGS: RwLock<Option<HashMap<(u64, u64), &'static str>>> = RwLock::new(None);
 
 fn phys_owner_get(phys: u64) -> Option<u64> {
     PHYS_OWNER
@@ -720,7 +922,7 @@ fn phys_owner_get(phys: u64) -> Option<u64> {
         .and_then(|g| g.as_ref().and_then(|m| m.get(&phys).copied()))
 }
 
-fn phys_owner_put(phys: u64, inst: u64) {
+fn call_phys_owner_put(phys: u64, inst: u64) {
     match PHYS_OWNER.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(phys, inst);
@@ -729,7 +931,7 @@ fn phys_owner_put(phys: u64, inst: u64) {
     }
 }
 
-fn phys_owner_forget(inst: u64) {
+fn call_phys_owner_forget(inst: u64) {
     match PHYS_OWNER.write() {
         Ok(mut g) => g
             .iter_mut()
@@ -742,7 +944,7 @@ pub(crate) fn insts_get(h: u64) -> Option<VkInstState> {
     INSTS.read().ok().and_then(|g| g.as_ref().and_then(|m| m.get(&h).cloned()))
 }
 
-pub(crate) fn insts_put(h: u64, v: VkInstState) {
+pub(crate) fn call_insts_put(h: u64, v: VkInstState) {
     match INSTS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).insert(h, v);
@@ -751,9 +953,9 @@ pub(crate) fn insts_put(h: u64, v: VkInstState) {
     }
 }
 
-pub(crate) fn insts_del(h: u64) {
-    phys_owner_forget(h);
-    surface_tags_forget(h);
+pub(crate) fn call_insts_del(h: u64) {
+    call_phys_owner_forget(h);
+    call_surface_tags_forget(h);
     match INSTS.write() {
         Ok(mut g) => {
             g.get_or_insert_with(HashMap::new).remove(&h);
@@ -766,37 +968,37 @@ pub(crate) fn owning_instance(phys: vk::PhysicalDevice) -> Option<(u64, VkInstSt
     phys_owner_get(phys.as_raw()).and_then(|h| insts_get(h).map(|st| (h, st)))
 }
 
-fn surface_tag_put(surface: u64, inst: u64, tag: &'static str) {
+fn call_surface_tag_put(inst: u64, surface: u64, tag: &'static str) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).insert(surface, (inst, tag));
+            g.get_or_insert_with(HashMap::new).insert((inst, surface), tag);
         }
         Err(_) => (),
     }
 }
 
-fn surface_tag_del(surface: u64) {
+fn call_surface_tag_del(inst: u64, surface: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => {
-            g.get_or_insert_with(HashMap::new).remove(&surface);
+            g.get_or_insert_with(HashMap::new).remove(&(inst, surface));
         }
         Err(_) => (),
     }
 }
 
-fn surface_tags_forget(inst: u64) {
+fn call_surface_tags_forget(inst: u64) {
     match SURFACE_TAGS.write() {
         Ok(mut g) => g
             .iter_mut()
-            .for_each(|m| m.retain(|_, owner| owner.0 != inst)),
+            .for_each(|m| m.retain(|(owner, _), _| *owner != inst)),
         Err(_) => (),
     }
 }
 
-pub(crate) fn surface_tag(surface: vk::SurfaceKHR) -> Option<&'static str> {
+pub(crate) fn surface_tag(inst: vk::Instance, surface: vk::SurfaceKHR) -> Option<&'static str> {
     SURFACE_TAGS.read().ok().and_then(|g| {
         g.as_ref()
-            .and_then(|m| m.get(&surface.as_raw()).map(|owner| owner.1))
+            .and_then(|m| m.get(&(inst.as_raw(), surface.as_raw())).copied())
     })
 }
 
@@ -808,7 +1010,7 @@ fn call_tagged_result(
 ) -> vk::Result {
     match result {
         vk::Result::SUCCESS => {
-            surface_tag_put(unsafe { (*out).as_raw() }, inst.as_raw(), tag);
+            call_surface_tag_put(inst.as_raw(), unsafe { (*out).as_raw() }, tag);
             vk::Result::SUCCESS
         }
         e => e,
@@ -834,22 +1036,22 @@ pub(crate) fn call_destroy_tagged_surface(
     surface: vk::SurfaceKHR,
     alloc: *const vk::AllocationCallbacks<'_>,
 ) {
-    surface_tag_del(surface.as_raw());
+    call_surface_tag_del(inst.as_raw(), surface.as_raw());
     match insts_get(inst.as_raw()).and_then(|st| st.destroy_surface_fp) {
         Some(fp) => unsafe { fp(inst, surface, alloc) },
         None => (),
     }
 }
 
-pub(crate) fn all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
+pub(crate) fn call_all_devices(inst: &VkInstState) -> Vec<vk::PhysicalDevice> {
     call_owned_devices(&inst.instance)
 }
 
 pub(crate) fn device_index(all: &[vk::PhysicalDevice], phys: vk::PhysicalDevice) -> u32 {
     all.iter()
         .position(|device| *device == phys)
-        .map(|at| at as u32 + 1)
-        .unwrap_or(1)
+        .map(|at| at as u32 + FIRST_DEVICE)
+        .unwrap_or(FIRST_DEVICE)
 }
 
 fn indexed(devices: Vec<vk::PhysicalDevice>) -> Vec<(usize, vk::PhysicalDevice)> {
@@ -861,17 +1063,15 @@ fn plain(pairs: Vec<(usize, vk::PhysicalDevice)>) -> Vec<vk::PhysicalDevice> {
 }
 
 fn device_position(pair: &(usize, vk::PhysicalDevice)) -> u32 {
-    pair.0 as u32 + 1
+    pair.0 as u32 + FIRST_DEVICE
 }
 
-fn gpu_filtered(
+fn call_gpu_filtered(
     devices: Vec<vk::PhysicalDevice>,
     choice: Option<u32>,
 ) -> Vec<vk::PhysicalDevice> {
-    plain(filtered(
-        indexed(devices),
-        choice,
-        |pair| Some(device_position(pair)),
+    plain(call_warned(
+        filtered(indexed(devices), choice, |pair| Some(device_position(pair))),
         GPU_EMPTY_WARN,
     ))
 }
@@ -880,22 +1080,44 @@ fn group_devices(group: &VkPhysicalDeviceGroupProperties) -> Vec<vk::PhysicalDev
     group.physical_devices[..group.physical_device_count as usize].to_vec()
 }
 
-fn group_wanted(
-    group: &VkPhysicalDeviceGroupProperties,
-    allowed: &[vk::PhysicalDevice],
-) -> bool {
-    group_devices(group)
-        .into_iter()
-        .any(|device| allowed.contains(&device))
+fn subset_of(kept_count: usize, original: vk::Bool32) -> vk::Bool32 {
+    match kept_count {
+        SINGLE_DEVICE => vk::FALSE,
+        _ => original,
+    }
 }
 
-fn group_filtered(
+fn narrowed_group(
+    group: VkPhysicalDeviceGroupProperties,
+    allowed: &[vk::PhysicalDevice],
+) -> VkPhysicalDeviceGroupProperties {
+    let held: Vec<vk::PhysicalDevice> = group_devices(&group)
+        .into_iter()
+        .filter(|device| allowed.contains(device))
+        .collect();
+    let mut narrowed = group;
+    narrowed.physical_device_count = held.len() as u32;
+    (0..held.len()).for_each(|at| narrowed.physical_devices[at] = held[at]);
+    narrowed.subset_allocation = subset_of(held.len(), group.subset_allocation);
+    narrowed
+}
+
+fn call_group_filtered(
     groups: Vec<VkPhysicalDeviceGroupProperties>,
     allowed: Vec<vk::PhysicalDevice>,
     choice: Option<u32>,
 ) -> Vec<VkPhysicalDeviceGroupProperties> {
     match choice {
-        Some(_) => kept(groups, |group| group_wanted(group, &allowed), GROUP_EMPTY_WARN),
+        Some(_) => call_warned(
+            kept(
+                groups
+                    .into_iter()
+                    .map(|group| narrowed_group(group, &allowed))
+                    .collect(),
+                |group| group.physical_device_count > 0,
+            ),
+            GROUP_EMPTY_WARN,
+        ),
         None => groups,
     }
 }
@@ -920,13 +1142,13 @@ fn non_null_ci(p: *const VkLayerCreateInfo) -> Option<*const VkLayerCreateInfo> 
 
 pub(crate) fn chain_layer_info(
     p_next: *const c_void,
-    want: vk::StructureType,
+    want: u32,
     function: i32,
 ) -> *mut VkLayerCreateInfo {
     std::iter::successors(non_null_ci(p_next as *const VkLayerCreateInfo), |p| {
         non_null_ci(unsafe { (**p).p_next as *const VkLayerCreateInfo })
     })
-    .find(|p| unsafe { (**p).s_type == want && (**p).function == function })
+    .find(|p| unsafe { (**p).s_type.as_raw() as u32 == want && (**p).function == function })
     .map(|p| p as *mut VkLayerCreateInfo)
     .unwrap_or(ptr::null_mut())
 }
@@ -982,6 +1204,17 @@ pub(crate) fn copied_node(node: *const VkChainNode) -> Option<Vec<u64>> {
         PIPELINE_REPRESENTATIVE_TYPE => Some(copied::<VkPipelineRepresentativeFragmentTestStateCreateInfoNV>(node)),
         RENDERING_ATTACHMENT_LOCATION_TYPE => Some(copied::<VkRenderingAttachmentLocationInfo>(node)),
         RENDERING_INPUT_ATTACHMENT_TYPE => Some(copied::<VkRenderingInputAttachmentIndexInfo>(node)),
+        DEVICE_GROUP_PRESENT_INFO_TYPE => Some(copied::<VkDeviceGroupPresentInfoKHR>(node)),
+        DISPLAY_PRESENT_INFO_TYPE => Some(copied::<VkDisplayPresentInfoKHR>(node)),
+        FRAME_BOUNDARY_TYPE => Some(copied::<VkFrameBoundaryEXT>(node)),
+        FRAME_BOUNDARY_TENSORS_TYPE => Some(copied::<VkFrameBoundaryTensorsARM>(node)),
+        PRESENT_ID_2_TYPE => Some(copied::<VkPresentId2KHR>(node)),
+        PRESENT_ID_TYPE => Some(copied::<VkPresentIdKHR>(node)),
+        PRESENT_REGIONS_TYPE => Some(copied::<VkPresentRegionsKHR>(node)),
+        PRESENT_TIMES_GOOGLE_TYPE => Some(copied::<VkPresentTimesInfoGOOGLE>(node)),
+        PRESENT_TIMINGS_TYPE => Some(copied::<VkPresentTimingsInfoEXT>(node)),
+        SET_PRESENT_CONFIG_TYPE => Some(copied::<VkSetPresentConfigNV>(node)),
+        SWAPCHAIN_PRESENT_FENCE_TYPE => Some(copied::<VkSwapchainPresentFenceInfoKHR>(node)),
         _ => None,
     }
 }
@@ -993,11 +1226,23 @@ fn const_node(p: *const c_void) -> Option<*const VkChainNode> {
     }
 }
 
-fn const_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
+fn mut_node(p: *mut c_void) -> Option<*mut VkChainNode> {
+    match p.is_null() {
+        true => None,
+        false => Some(p as *mut VkChainNode),
+    }
+}
+
+pub(crate) fn walked_nodes(head: *const c_void) -> Vec<*const VkChainNode> {
     std::iter::successors(const_node(head), |node| {
-        const_node(unsafe { (**node).p_next as *const c_void })
+        const_node(unsafe { (**node).p_next })
     })
     .collect()
+}
+
+pub(crate) fn filled_nodes(head: *mut c_void) -> Vec<*mut VkChainNode> {
+    std::iter::successors(mut_node(head), |node| mut_node(unsafe { (**node).p_next }))
+        .collect()
 }
 
 fn chain_node_type(node: *const VkChainNode) -> u32 {
@@ -1005,13 +1250,13 @@ fn chain_node_type(node: *const VkChainNode) -> u32 {
 }
 
 pub(crate) fn chain_find(head: *const c_void, want: u32) -> Option<*const VkChainNode> {
-    const_nodes(head)
+    walked_nodes(head)
         .into_iter()
         .find(|node| chain_node_type(*node) == want)
 }
 
 fn nodes_in_front(head: *const c_void, want: u32) -> Vec<*const VkChainNode> {
-    const_nodes(head)
+    walked_nodes(head)
         .into_iter()
         .take_while(|node| chain_node_type(*node) != want)
         .collect()
@@ -1033,19 +1278,29 @@ fn relinked_from(mut blocks: Vec<Vec<u64>>, replacement: *const c_void) -> Relin
     Relinked { head, blocks }
 }
 
-fn call_undeclared_node() -> Option<Relinked> {
-    log_at(LogLevel::Warn, CHAIN_NODE_WARN);
-    None
+pub(crate) fn relinked_chain(
+    head: *const c_void,
+    target: u32,
+    replacement: *const c_void,
+) -> Option<Relinked> {
+    copied_nodes(nodes_in_front(head, target)).map(|blocks| relinked_from(blocks, replacement))
 }
 
 pub(crate) fn call_relinked_chain(
     head: *const c_void,
     target: u32,
     replacement: *const c_void,
+    setting: &'static str,
 ) -> Option<Relinked> {
-    match copied_nodes(nodes_in_front(head, target)) {
-        Some(blocks) => Some(relinked_from(blocks, replacement)),
-        None => call_undeclared_node(),
+    match relinked_chain(head, target, replacement) {
+        Some(built) => Some(built),
+        None => {
+            call_log_at(
+                LogLevel::Warn,
+                &format!("{}: {}", setting, CHAIN_NODE_REASON),
+            );
+            None
+        }
     }
 }
 
@@ -1056,18 +1311,20 @@ pub(crate) fn call_loader_data_fn(node: *mut VkLayerCreateInfo) -> Option<PfnSet
         .map(|link| unsafe { mem::transmute(link) })
 }
 
+fn call_advanced_link(link: *mut VkLayerCreateInfo) -> VkLayerLinkInfo {
+    let li = unsafe { (*link).u_layer_info };
+    let out = VkLayerLinkInfo {
+        pfn_next_get_instance_proc_addr: unsafe { (*li).pfn_next_get_instance_proc_addr },
+        pfn_next_get_device_proc_addr: unsafe { (*li).pfn_next_get_device_proc_addr },
+    };
+    unsafe { (*link).u_layer_info = (*li).p_next };
+    out
+}
+
 pub(crate) fn call_advance_chain(link: *mut VkLayerCreateInfo) -> Option<VkLayerLinkInfo> {
     match link.is_null() || unsafe { (*link).u_layer_info.is_null() } {
         true => None,
-        false => unsafe {
-            let li = (*link).u_layer_info;
-            let out = VkLayerLinkInfo {
-                pfn_next_get_instance_proc_addr: (*li).pfn_next_get_instance_proc_addr,
-                pfn_next_get_device_proc_addr: (*li).pfn_next_get_device_proc_addr,
-            };
-            (*link).u_layer_info = (*li).p_next;
-            Some(out)
-        },
+        false => Some(call_advanced_link(link)),
     }
 }
 
@@ -1106,7 +1363,7 @@ fn call_enumerate_through(
     devices: *mut vk::PhysicalDevice,
 ) -> vk::Result {
     match unsafe { st.instance.enumerate_physical_devices() } {
-        Ok(all) => call_write_list(&gpu_filtered(all, ensure_settings().gpu), count, devices),
+        Ok(all) => call_write_list(&call_gpu_filtered(all, ensure_settings().gpu), count, devices),
         Err(e) => e,
     }
 }
@@ -1142,13 +1399,14 @@ fn call_query_groups(
         (0..n).map(|_| empty_group()).collect();
     let r2 = unsafe { fp(handle, &mut n, v.as_mut_ptr()) };
     match (r1, r2) {
-        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v,
+        (vk::Result::SUCCESS, vk::Result::SUCCESS) => v.into_iter().take(n as usize).collect(),
+        (vk::Result::SUCCESS, vk::Result::INCOMPLETE) => call_query_groups(handle, fp),
         (_, _) => Vec::new(),
     }
 }
 
 fn call_allowed_devices(st: &VkInstState) -> Vec<vk::PhysicalDevice> {
-    gpu_filtered(all_devices(st), ensure_settings().gpu)
+    call_gpu_filtered(call_all_devices(st), ensure_settings().gpu)
 }
 
 fn call_groups_through(
@@ -1159,7 +1417,7 @@ fn call_groups_through(
     groups: *mut VkPhysicalDeviceGroupProperties,
 ) -> vk::Result {
     call_write_list(
-        &group_filtered(
+        &call_group_filtered(
             call_query_groups(handle, fp),
             call_allowed_devices(st),
             ensure_settings().gpu,
@@ -1228,10 +1486,22 @@ fn call_owned_devices(instance: &ash::Instance) -> Vec<vk::PhysicalDevice> {
     unsafe { instance.enumerate_physical_devices() }.unwrap_or_default()
 }
 
+fn call_probe_first_device(st: &VkInstState, phys: vk::PhysicalDevice) {
+    let props = unsafe { st.instance.get_physical_device_properties(phys) };
+    call_record_device(call_build_device(st, phys, &limit_caps(&props)));
+}
+
+fn call_probe_devices(st: &VkInstState) {
+    match (env_probe_active(), call_allowed_devices(st).first().copied()) {
+        (true, Some(phys)) => call_probe_first_device(st, phys),
+        (_, _) => (),
+    }
+}
+
 fn call_remember_owner(handle: vk::Instance, devices: Vec<vk::PhysicalDevice>) {
     devices
         .into_iter()
-        .for_each(|phys| phys_owner_put(phys.as_raw(), handle.as_raw()));
+        .for_each(|phys| call_phys_owner_put(phys.as_raw(), handle.as_raw()));
 }
 
 fn call_surface_creators(
@@ -1246,13 +1516,33 @@ fn call_surface_creators(
         .collect()
 }
 
-fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) {
+fn requested_api_version(ci: *const vk::InstanceCreateInfo<'_>) -> u32 {
+    match unsafe { (*ci).p_application_info.as_ref() } {
+        None => vk::API_VERSION_1_0,
+        Some(info) => match info.api_version {
+            UNSET_API_VERSION => vk::API_VERSION_1_0,
+            asked => asked,
+        },
+    }
+}
+
+fn requested_instance_extensions(ci: *const vk::InstanceCreateInfo<'_>) -> HashSet<String> {
+    cstr_names(unsafe { (*ci).pp_enabled_extension_names }, unsafe {
+        (*ci).enabled_extension_count
+    })
+}
+
+fn call_register_instance(
+    gipa: vk::PFN_vkGetInstanceProcAddr,
+    handle: vk::Instance,
+    api_version: u32,
+    extensions: HashSet<String>,
+) {
     let static_fn = ash::StaticFn { get_instance_proc_addr: gipa };
     let instance = unsafe { ash::Instance::load(&static_fn, handle) };
-    call_remember_owner(handle, call_owned_devices(&instance));
-    insts_put(
-        handle.as_raw(),
-        VkInstState {
+    let devices = call_owned_devices(&instance);
+    call_remember_owner(handle, devices);
+    let state = VkInstState {
             instance,
             gipa,
             surface_fp: load_surface_fp(gipa, handle),
@@ -1261,24 +1551,30 @@ fn register_instance(gipa: vk::PFN_vkGetInstanceProcAddr, handle: vk::Instance) 
             groups_khr_fp: call_typed_instance_fp(gipa, handle, FN_DEVICE_GROUPS_KHR),
             surface_fps: call_surface_creators(gipa, handle),
             destroy_surface_fp: call_typed_instance_fp(gipa, handle, FN_DESTROY_SURFACE),
-        },
-    );
-    log_at(LogLevel::Info, "vk instance registered");
+            api_version,
+            extensions: Arc::new(extensions),
+    };
+    call_probe_devices(&state);
+    call_insts_put(handle.as_raw(), state);
+    call_log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
 }
 
-fn invoke_create_instance(
+fn call_invoke_create_instance(
     create_fn: unsafe extern "system" fn(),
     gipa: vk::PFN_vkGetInstanceProcAddr,
     ci: *const vk::InstanceCreateInfo<'_>,
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Instance,
 ) -> vk::Result {
-    match unsafe {
-        let cf: vk::PFN_vkCreateInstance = mem::transmute(create_fn);
-        cf(ci, alloc, out)
-    } {
+    let cf: vk::PFN_vkCreateInstance = unsafe { mem::transmute(create_fn) };
+    match unsafe { cf(ci, alloc, out) } {
         vk::Result::SUCCESS => {
-            register_instance(gipa, unsafe { *out });
+            call_register_instance(
+                gipa,
+                unsafe { *out },
+                requested_api_version(ci),
+                requested_instance_extensions(ci),
+            );
             vk::Result::SUCCESS
         }
         e => e,
@@ -1293,8 +1589,8 @@ pub(crate) fn call_real_create_instance(
 ) -> vk::Result {
     match link {
         None => vk::Result::ERROR_INITIALIZATION_FAILED,
-        Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), "vkCreateInstance")
-            .map(|f| invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
+        Some(l) => call_next_gipa(l.pfn_next_get_instance_proc_addr, vk::Instance::null(), FN_CREATE_INSTANCE)
+            .map(|f| call_invoke_create_instance(f, l.pfn_next_get_instance_proc_addr, ci, alloc, out))
             .unwrap_or(vk::Result::ERROR_INITIALIZATION_FAILED),
     }
 }

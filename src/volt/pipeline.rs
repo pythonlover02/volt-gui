@@ -6,9 +6,18 @@ use ash::vk::Handle;
 
 use crate::config::ensure_settings;
 use crate::config::Settings;
+use crate::consts::BINARY_INFO_LOG;
+use crate::consts::CHAIN_SAMPLER_LABEL;
 use crate::consts::FEATURE_ALPHA_ONE;
+use crate::consts::COMPUTE_PIPELINE_CREATE_INFO_TYPE;
+use crate::consts::GRAPHICS_PIPELINE_CREATE_INFO_TYPE;
+use crate::consts::RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE;
+use crate::consts::PIPELINE_BINARY_INFO_TYPE;
+use crate::consts::PIPELINE_CREATE_INFO_KHR_TYPE;
+use crate::consts::WRAPPED_UNDECLARED_LOG;
 use crate::consts::FEATURE_DEPTH_CLAMP;
 use crate::consts::FEATURE_SHADING;
+use crate::consts::NOTE_MIXED_SAMPLES;
 use crate::consts::SETTING_ALPHA_COVERAGE;
 use crate::consts::SETTING_ALPHA_ONE;
 use crate::consts::SETTING_DEPTH_CLAMP;
@@ -16,25 +25,30 @@ use crate::consts::SETTING_SAMPLE_SHADING;
 use crate::consts::SHADER_GROUPS_TYPE;
 use crate::consts::SHADING_OFF;
 use crate::consts::TEXT_OFF;
-use crate::consts::TOGGLE_ON;
 use crate::consts::UNOWNED_BUFFER_ERROR;
+use crate::lists::forced;
 use crate::device::DeviceCaps;
 use crate::device::VkDevState;
 use crate::instance::call_relinked_chain;
 use crate::instance::chain_find;
 use crate::instance::PfnCreateRayTracingKHR;
 use crate::instance::PfnCreateRayTracingNV;
+use crate::instance::PfnCreatePipelineBinaries;
 use crate::instance::PfnCreateShaders;
+use crate::instance::PfnGetPipelineKey;
 use crate::instance::PfnPipelineIndirectMemory;
 use crate::instance::Relinked;
 use crate::instance::VkGraphicsPipelineShaderGroupsCreateInfoNV;
 use crate::instance::VkGraphicsShaderGroupCreateInfoNV;
 use crate::instance::VkHandle;
+use crate::instance::VkPipelineBinaryCreateInfoKHR;
+use crate::instance::VkPipelineBinaryInfoKHR;
+use crate::instance::VkPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoNV;
 use crate::instance::VkShaderCreateInfoEXT;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::report::call_report_value;
 use crate::report::feature_note;
@@ -47,21 +61,11 @@ use crate::sampler::ChainRebuild;
 use crate::sampler::StageRebuild;
 use crate::sampler::StagesRebuild;
 
-fn toggle_vk(value: u32) -> vk::Bool32 {
-    match value {
-        TOGGLE_ON => vk::TRUE,
-        _ => vk::FALSE,
-    }
+fn pick_coverage(choice: Option<vk::Bool32>, original: vk::Bool32) -> vk::Bool32 {
+    forced(choice, original)
 }
 
-fn pick_coverage(choice: Option<u32>, original: vk::Bool32) -> vk::Bool32 {
-    match choice {
-        Some(value) => toggle_vk(value),
-        None => original,
-    }
-}
-
-fn alpha_one_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
+fn alpha_one_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bool32> {
     match (choice, caps.alpha_to_one) {
         (None, _) => None,
         (Some(value), true) => Some(value),
@@ -69,7 +73,7 @@ fn alpha_one_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
     }
 }
 
-fn clamp_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
+fn clamp_allowed(choice: Option<vk::Bool32>, caps: &DeviceCaps) -> Option<vk::Bool32> {
     match (choice, caps.depth_clamp) {
         (None, _) => None,
         (Some(value), true) => Some(value),
@@ -77,11 +81,33 @@ fn clamp_allowed(choice: Option<u32>, caps: &DeviceCaps) -> Option<u32> {
     }
 }
 
+fn shading_off_only(rate: f32) -> Option<f32> {
+    match rate > SHADING_OFF {
+        true => None,
+        false => Some(rate),
+    }
+}
+
 fn shading_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
-    match (choice, caps.sample_rate_shading) {
-        (None, _) => None,
-        (Some(rate), true) => Some(rate),
-        (Some(_), false) => None,
+    match (choice, caps.sample_rate_shading, caps.mixed_samples) {
+        (Some(rate), true, false) => Some(rate),
+        (Some(rate), _, _) => shading_off_only(rate),
+        (None, _, _) => None,
+    }
+}
+
+fn shading_reason(set: bool, caps: &DeviceCaps) -> Option<String> {
+    match (set, caps.mixed_samples) {
+        (true, true) => Some(NOTE_MIXED_SAMPLES.into()),
+        (true, false) => feature_note(true, caps.sample_rate_shading, FEATURE_SHADING),
+        (false, _) => None,
+    }
+}
+
+fn shading_note(s: &Settings, caps: &DeviceCaps) -> Option<String> {
+    match shading_allowed(s.sample_shading, caps) {
+        Some(_) => None,
+        None => shading_reason(s.sample_shading.is_some(), caps),
     }
 }
 
@@ -99,11 +125,10 @@ fn shading_of(enable: vk::Bool32, rate: f32) -> f32 {
     }
 }
 
-fn call_coverage_line(owner: u64, s: &Settings, asked: vk::Bool32, held: vk::Bool32) {
+fn call_coverage_line(owner: u64, asked: vk::Bool32, held: vk::Bool32) {
     call_report_value(
         owner,
         SETTING_ALPHA_COVERAGE,
-        s.alpha_coverage.is_some(),
         asked,
         held,
         toggle_text,
@@ -121,7 +146,6 @@ fn call_alpha_one_line(
     call_report_value(
         owner,
         SETTING_ALPHA_ONE,
-        s.alpha_to_one.is_some(),
         asked,
         held,
         toggle_text,
@@ -139,7 +163,6 @@ fn call_clamp_line(
     call_report_value(
         owner,
         SETTING_DEPTH_CLAMP,
-        s.depth_clamp.is_some(),
         asked,
         held,
         toggle_text,
@@ -161,15 +184,10 @@ fn call_shading_line(
     call_report_value(
         owner,
         SETTING_SAMPLE_SHADING,
-        s.sample_shading.is_some(),
         shading_of(asked.sample_shading_enable, asked.min_sample_shading),
         shading_of(held.sample_shading_enable, held.min_sample_shading),
         shading_text,
-        feature_note(
-            s.sample_shading.is_some(),
-            caps.sample_rate_shading,
-            FEATURE_SHADING,
-        ),
+        shading_note(s, caps),
     );
 }
 
@@ -183,7 +201,6 @@ fn call_multisample_lines(
     call_shading_line(owner, s, caps, asked, held);
     call_coverage_line(
         owner,
-        s,
         asked.alpha_to_coverage_enable,
         held.alpha_to_coverage_enable,
     );
@@ -279,7 +296,6 @@ fn call_report_coverage(dev: &VkDevState, asked: vk::Bool32, held: vk::Bool32) {
     match info_wanted() {
         true => call_coverage_line(
             dev.device.handle().as_raw(),
-            ensure_settings(),
             asked,
             held,
         ),
@@ -450,7 +466,12 @@ fn linked_groups(
         .map(|(group, built)| rebuilt_group(group, built))
         .collect();
     let owned = vec![rebuilt_groups_node(node, &groups)];
-    let relink = call_relinked_chain(head, SHADER_GROUPS_TYPE, owned.as_ptr() as *const c_void)?;
+    let relink = call_relinked_chain(
+        head,
+        SHADER_GROUPS_TYPE,
+        owned.as_ptr() as *const c_void,
+        CHAIN_SAMPLER_LABEL,
+    )?;
     Some(GroupsRebuild {
         head: relink.head,
         each,
@@ -588,6 +609,7 @@ pub(crate) fn call_create_compute_pipelines(
 ) -> vk::Result {
     let originals: Vec<vk::ComputePipelineCreateInfo<'_>> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
+    call_binary_line(originals.iter().any(|ci| names_binaries(ci.p_next)));
     let stages: Vec<Option<StageRebuild>> = originals
         .iter()
         .map(|ci| rebuilt_stage(dev, stage_of(ci)))
@@ -645,6 +667,7 @@ pub(crate) fn call_create_ray_tracing_khr(
 ) -> vk::Result {
     let originals: Vec<VkRayTracingPipelineCreateInfoKHR> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
+    call_binary_line(originals.iter().any(|ci| names_binaries(ci.p_next)));
     let stages: Vec<Option<StagesRebuild>> = originals
         .iter()
         .map(|ci| rebuilt_stages(dev, ci.p_stages, ci.stage_count))
@@ -709,7 +732,7 @@ pub(crate) fn call_set_alpha_coverage(
 ) {
     match owner {
         Some(d) => call_forward_coverage(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 
@@ -732,7 +755,7 @@ pub(crate) fn call_set_alpha_one(
 ) {
     match owner {
         Some(d) => call_forward_alpha_one(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 
@@ -755,8 +778,59 @@ pub(crate) fn call_set_depth_clamp(
 ) {
     match owner {
         Some(d) => call_forward_clamp(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
+}
+
+pub(crate) struct GraphicsPatch<'a> {
+    multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo<'a>>>,
+    rasterizations: Vec<Option<vk::PipelineRasterizationStateCreateInfo<'a>>>,
+    stages: Vec<Option<StagesRebuild>>,
+    groups: Vec<Option<GroupsRebuild>>,
+}
+
+fn graphics_patch<'a>(
+    dev: &VkDevState,
+    s: &Settings,
+    originals: &[vk::GraphicsPipelineCreateInfo<'a>],
+) -> GraphicsPatch<'a> {
+    let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo<'a>>> = originals
+        .iter()
+        .map(|ci| patched_multisample(s, &dev.caps, ci.p_multisample_state))
+        .collect();
+    let rasterizations: Vec<Option<vk::PipelineRasterizationStateCreateInfo<'a>>> = originals
+        .iter()
+        .map(|ci| patched_rasterization(s, &dev.caps, ci.p_rasterization_state))
+        .collect();
+    call_report_pipelines(dev, s, originals, &multisamples, &rasterizations);
+    let stages: Vec<Option<StagesRebuild>> = originals
+        .iter()
+        .map(|ci| rebuilt_stages(dev, ci.p_stages.cast(), ci.stage_count))
+        .collect();
+    let groups: Vec<Option<GroupsRebuild>> = originals
+        .iter()
+        .map(|ci| rebuilt_groups(dev, ci.p_next))
+        .collect();
+    GraphicsPatch {
+        multisamples,
+        rasterizations,
+        stages,
+        groups,
+    }
+}
+
+fn graphics_patched<'a>(
+    originals: &[vk::GraphicsPipelineCreateInfo<'a>],
+    patch: &'a GraphicsPatch<'a>,
+) -> Vec<vk::GraphicsPipelineCreateInfo<'a>> {
+    originals
+        .iter()
+        .zip(patch.multisamples.iter())
+        .zip(patch.rasterizations.iter())
+        .zip(patch.stages.iter())
+        .zip(patch.groups.iter())
+        .map(|((((ci, m), r), t), g)| patched_ci(ci, m, r, t, g))
+        .collect()
 }
 
 pub(crate) fn call_create_graphics_pipelines(
@@ -767,34 +841,11 @@ pub(crate) fn call_create_graphics_pipelines(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Pipeline,
 ) -> vk::Result {
-    let s = ensure_settings();
     let originals: Vec<vk::GraphicsPipelineCreateInfo<'_>> =
         unsafe { std::slice::from_raw_parts(cis, count as usize) }.to_vec();
-    let multisamples: Vec<Option<vk::PipelineMultisampleStateCreateInfo<'_>>> = originals
-        .iter()
-        .map(|ci| patched_multisample(s, &dev.caps, ci.p_multisample_state))
-        .collect();
-    let rasterizations: Vec<Option<vk::PipelineRasterizationStateCreateInfo<'_>>> = originals
-        .iter()
-        .map(|ci| patched_rasterization(s, &dev.caps, ci.p_rasterization_state))
-        .collect();
-    call_report_pipelines(dev, s, &originals, &multisamples, &rasterizations);
-    let stages: Vec<Option<StagesRebuild>> = originals
-        .iter()
-        .map(|ci| rebuilt_stages(dev, ci.p_stages.cast(), ci.stage_count))
-        .collect();
-    let groups: Vec<Option<GroupsRebuild>> = originals
-        .iter()
-        .map(|ci| rebuilt_groups(dev, ci.p_next))
-        .collect();
-    let patched: Vec<vk::GraphicsPipelineCreateInfo<'_>> = originals
-        .iter()
-        .zip(multisamples.iter())
-        .zip(rasterizations.iter())
-        .zip(stages.iter())
-        .zip(groups.iter())
-        .map(|((((ci, m), r), t), g)| patched_ci(ci, m, r, t, g))
-        .collect();
+    call_binary_line(originals.iter().any(|ci| names_binaries(ci.p_next)));
+    let patch = graphics_patch(dev, ensure_settings(), &originals);
+    let patched = graphics_patched(&originals, &patch);
     unsafe {
         (dev.device.fp_v1_0().create_graphics_pipelines)(
             dev.device.handle(),
@@ -804,5 +855,150 @@ pub(crate) fn call_create_graphics_pipelines(
             alloc,
             out,
         )
+    }
+}
+
+fn binary_count(node: *const VkPipelineBinaryInfoKHR) -> u32 {
+    unsafe { (*node).binary_count }
+}
+
+fn names_binaries(p_next: *const c_void) -> bool {
+    match chain_find(p_next, PIPELINE_BINARY_INFO_TYPE) {
+        Some(node) => binary_count(node as *const VkPipelineBinaryInfoKHR) > 0,
+        None => false,
+    }
+}
+
+fn call_binary_line(named: bool) {
+    match named {
+        true => call_log_at(LogLevel::Info, BINARY_INFO_LOG),
+        false => (),
+    }
+}
+
+fn wrapper_of(head: *mut c_void) -> VkPipelineCreateInfoKHR {
+    VkPipelineCreateInfoKHR {
+        s_type: vk::StructureType::from_raw(PIPELINE_CREATE_INFO_KHR_TYPE as i32),
+        p_next: head,
+    }
+}
+
+fn wrapped_kind(inner: *const c_void) -> u32 {
+    unsafe { (*(inner as *const vk::StructureType)).as_raw() as u32 }
+}
+
+fn call_undeclared_wrapped() {
+    call_log_at(LogLevel::Warn, WRAPPED_UNDECLARED_LOG);
+}
+
+fn call_undeclared_run<F>(node: *const VkPipelineCreateInfoKHR, run: F) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    call_undeclared_wrapped();
+    run(node)
+}
+
+fn call_wrapped_graphics<F>(
+    dev: &VkDevState,
+    s: &Settings,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let originals = vec![unsafe { *(inner as *const vk::GraphicsPipelineCreateInfo<'_>) }];
+    let patch = graphics_patch(dev, s, &originals);
+    let patched = graphics_patched(&originals, &patch);
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
+fn call_wrapped_compute<F>(
+    dev: &VkDevState,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let original = unsafe { *(inner as *const vk::ComputePipelineCreateInfo<'_>) };
+    let built = rebuilt_stage(dev, stage_of(&original));
+    let patched = [patched_compute_ci(&original, &built)];
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
+fn call_wrapped_ray<F>(
+    dev: &VkDevState,
+    inner: *const c_void,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let original = unsafe { *(inner as *const VkRayTracingPipelineCreateInfoKHR) };
+    let built = rebuilt_stages(dev, original.p_stages, original.stage_count);
+    let patched = [patched_ray_khr_ci(&original, &built)];
+    run(&wrapper_of(patched.as_ptr() as *mut c_void))
+}
+
+fn call_with_wrapped<F>(
+    dev: &VkDevState,
+    s: &Settings,
+    node: *const VkPipelineCreateInfoKHR,
+    run: F,
+) -> vk::Result
+where
+    F: FnOnce(*const VkPipelineCreateInfoKHR) -> vk::Result,
+{
+    let inner = unsafe { (*node).p_next } as *const c_void;
+    match wrapped_kind(inner) {
+        GRAPHICS_PIPELINE_CREATE_INFO_TYPE => call_wrapped_graphics(dev, s, inner, run),
+        COMPUTE_PIPELINE_CREATE_INFO_TYPE => call_wrapped_compute(dev, inner, run),
+        RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE => call_wrapped_ray(dev, inner, run),
+        _ => call_undeclared_run(node, run),
+    }
+}
+
+pub(crate) fn call_get_pipeline_key(
+    dev: &VkDevState,
+    fp: PfnGetPipelineKey,
+    handle: vk::Device,
+    ci: *const VkPipelineCreateInfoKHR,
+    out: *mut c_void,
+) -> vk::Result {
+    match ci.is_null() {
+        true => unsafe { fp(handle, ci, out) },
+        false => call_with_wrapped(dev, ensure_settings(), ci, |built| unsafe {
+            fp(handle, built, out)
+        }),
+    }
+}
+
+fn rebuilt_binary_ci(
+    original: *const VkPipelineBinaryCreateInfoKHR,
+    wrapper: *const VkPipelineCreateInfoKHR,
+) -> VkPipelineBinaryCreateInfoKHR {
+    VkPipelineBinaryCreateInfoKHR {
+        p_pipeline_create_info: wrapper,
+        ..unsafe { *original }
+    }
+}
+
+pub(crate) fn call_create_pipeline_binaries(
+    dev: &VkDevState,
+    fp: PfnCreatePipelineBinaries,
+    handle: vk::Device,
+    ci: *const VkPipelineBinaryCreateInfoKHR,
+    alloc: *const vk::AllocationCallbacks<'_>,
+    out: *mut c_void,
+) -> vk::Result {
+    let wrapped = unsafe { (*ci).p_pipeline_create_info };
+    match wrapped.is_null() {
+        true => unsafe { fp(handle, ci, alloc, out) },
+        false => call_with_wrapped(dev, ensure_settings(), wrapped, |built| {
+            let rebuilt = rebuilt_binary_ci(ci, built);
+            unsafe { fp(handle, &rebuilt, alloc, out) }
+        }),
     }
 }

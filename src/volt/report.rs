@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::RwLock;
 
+use ash::vk;
+
 use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
 use crate::consts::FILTER_UNKNOWN_PREFIX;
@@ -11,9 +13,8 @@ use crate::consts::MIPMAP_UNKNOWN_PREFIX;
 use crate::consts::NOTE_NOT_ENABLED;
 use crate::consts::NOTE_NOT_SET;
 use crate::consts::REPORT_ASKED;
-use crate::consts::REPORT_FORCED;
+use crate::consts::REPORT_APPLIED;
 use crate::consts::REPORT_MARK;
-use crate::consts::REPORT_NOTE;
 use crate::consts::REPORT_SEP;
 use crate::consts::TEXT_LINEAR;
 use crate::consts::TEXT_NEAREST;
@@ -21,19 +22,15 @@ use crate::consts::TEXT_OFF;
 use crate::consts::TEXT_ON;
 use crate::consts::TOGGLE_ON;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
-pub(crate) type ReportMap = HashMap<u64, HashSet<&'static str>>;
+type ReportMap = HashMap<u64, HashSet<&'static str>>;
 
 static REPORTS: RwLock<Option<ReportMap>> = RwLock::new(None);
 
-pub(crate) fn call_claim(
-    store: &RwLock<Option<ReportMap>>,
-    owner: u64,
-    name: &'static str,
-) -> bool {
-    match store.write() {
+fn call_claim_report(owner: u64, name: &'static str) -> bool {
+    match REPORTS.write() {
         Ok(mut guard) => guard
             .get_or_insert_with(HashMap::new)
             .entry(owner)
@@ -43,8 +40,8 @@ pub(crate) fn call_claim(
     }
 }
 
-pub(crate) fn call_forget(store: &RwLock<Option<ReportMap>>, owner: u64) {
-    match store.write() {
+fn call_forget_owner(owner: u64) {
+    match REPORTS.write() {
         Ok(mut guard) => {
             guard.get_or_insert_with(HashMap::new).remove(&owner);
         }
@@ -52,13 +49,9 @@ pub(crate) fn call_forget(store: &RwLock<Option<ReportMap>>, owner: u64) {
     }
 }
 
-fn call_claim_report(owner: u64, name: &'static str) -> bool {
-    call_claim(&REPORTS, owner, name)
-}
-
 pub(crate) fn call_forget_reports(owner: u64) {
     match info_wanted() {
-        true => call_forget(&REPORTS, owner),
+        true => call_forget_owner(owner),
         false => (),
     }
 }
@@ -67,8 +60,8 @@ fn labelled(label: &str, text: Option<String>) -> Option<String> {
     text.map(|value| format!("{}{}", label, value))
 }
 
-fn values(asked: Option<String>, forced: Option<String>) -> String {
-    [labelled(REPORT_ASKED, asked), labelled(REPORT_FORCED, forced)]
+fn values(asked: Option<String>, applied: Option<String>) -> String {
+    [labelled(REPORT_ASKED, asked), labelled(REPORT_APPLIED, applied)]
         .into_iter()
         .flatten()
         .collect::<Vec<String>>()
@@ -76,10 +69,9 @@ fn values(asked: Option<String>, forced: Option<String>) -> String {
 }
 
 fn noted(body: String, note: Option<String>) -> String {
-    match (body.is_empty(), note) {
-        (_, None) => body,
-        (true, Some(text)) => text,
-        (false, Some(text)) => format!("{}{}{}", body, REPORT_NOTE, text),
+    match note {
+        Some(text) => text,
+        None => body,
     }
 }
 
@@ -103,7 +95,7 @@ pub(crate) fn call_report_setting(
     forced: Option<String>,
     note: Option<String>,
 ) {
-    log_at(LogLevel::Info, &report_line(name, asked, forced, note));
+    call_log_at(LogLevel::Info, &report_line(name, asked, forced, note));
 }
 
 pub(crate) fn feature_note(set: bool, held: bool, feature: &str) -> Option<String> {
@@ -120,22 +112,13 @@ fn missing_note(forced: &Option<String>) -> Option<String> {
     }
 }
 
-pub(crate) fn forced_text<T: Copy + PartialEq>(
-    set: bool,
-    asked: T,
-    held: T,
-    text: fn(T) -> String,
-) -> Option<String> {
-    match (set, asked == held) {
-        (true, false) => Some(text(held)),
-        (_, _) => None,
-    }
+pub(crate) fn applied_text<T: Copy>(held: T, text: fn(T) -> String) -> String {
+    text(held)
 }
 
-pub(crate) fn call_report_value<T: Copy + PartialEq>(
+pub(crate) fn call_report_value<T: Copy>(
     owner: u64,
     name: &'static str,
-    set: bool,
     asked: T,
     held: T,
     text: fn(T) -> String,
@@ -145,7 +128,7 @@ pub(crate) fn call_report_value<T: Copy + PartialEq>(
         true => call_report_setting(
             name,
             Some(text(asked)),
-            forced_text(set, asked, held, text),
+            Some(applied_text(held, text)),
             note,
         ),
         false => (),
@@ -167,6 +150,13 @@ pub(crate) fn call_report_reading(owner: u64, name: &'static str, asked: String)
     }
 }
 
+pub(crate) fn call_report_reason(name: &str, reason: Option<&str>) {
+    match reason {
+        Some(text) => call_report_setting(name, None, None, Some(text.into())),
+        None => (),
+    }
+}
+
 pub(crate) fn number_text(value: f32) -> String {
     format!("{}", value)
 }
@@ -182,16 +172,16 @@ pub(crate) fn toggle_text(value: u32) -> String {
     }
 }
 
-pub(crate) fn filter_text(value: u32) -> String {
-    match value {
+pub(crate) fn filter_text(value: vk::Filter) -> String {
+    match value.as_raw() {
         FILTER_NEAREST => TEXT_NEAREST.into(),
         FILTER_LINEAR => TEXT_LINEAR.into(),
         other => format!("{}{}", FILTER_UNKNOWN_PREFIX, other),
     }
 }
 
-pub(crate) fn mipmap_text(value: u32) -> String {
-    match value {
+pub(crate) fn mipmap_text(value: vk::SamplerMipmapMode) -> String {
+    match value.as_raw() {
         MIPMAP_NEAREST => TEXT_NEAREST.into(),
         MIPMAP_LINEAR => TEXT_LINEAR.into(),
         other => format!("{}{}", MIPMAP_UNKNOWN_PREFIX, other),

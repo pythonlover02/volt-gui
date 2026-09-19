@@ -6,9 +6,17 @@ use ash::vk::Handle;
 use crate::config::ensure_settings;
 use crate::config::Settings;
 use crate::consts::ANISO_OFF;
+use crate::consts::CHAIN_SAMPLER_LABEL;
+use crate::consts::CUBIC_REASON;
 use crate::consts::FEATURE_ANISOTROPY;
-use crate::consts::FILTER_LINEAR;
-use crate::consts::MIPMAP_LINEAR;
+use crate::consts::FILTER_CUBIC;
+use crate::consts::LINEAR_REASON;
+use crate::consts::MIP_CROSS_REASON;
+use crate::consts::PORTABILITY_REASON;
+use crate::consts::SAMPLER_IMAGE_PROCESSING_BIT;
+use crate::consts::SAMPLER_SHAPE_REASON;
+use crate::consts::SAMPLER_SUBSAMPLED_BIT;
+use crate::consts::SAMPLER_YCBCR_CONVERSION_INFO_TYPE;
 use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_LOD_BIAS;
 use crate::consts::SETTING_MAG_FILTER;
@@ -34,45 +42,24 @@ use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkShaderDescriptorSetAndBindingMappingInfoEXT;
 use crate::lists::forced;
 use crate::logging::info_wanted;
+use crate::report::call_report_reason;
 use crate::report::call_report_value;
 use crate::report::feature_note;
 use crate::report::filter_text;
 use crate::report::mipmap_text;
 use crate::report::number_text;
 
-fn filter_vk(value: u32) -> vk::Filter {
-    match value {
-        FILTER_LINEAR => vk::Filter::LINEAR,
-        _ => vk::Filter::NEAREST,
-    }
+
+fn uses_cubic(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.mag_filter.as_raw() == FILTER_CUBIC || original.min_filter.as_raw() == FILTER_CUBIC
 }
 
-fn pick_filter(choice: Option<u32>, original: vk::Filter) -> vk::Filter {
-    match choice {
-        Some(value) => filter_vk(value),
-        None => original,
-    }
-}
-
-fn mipmap_vk(value: u32) -> vk::SamplerMipmapMode {
-    match value {
-        MIPMAP_LINEAR => vk::SamplerMipmapMode::LINEAR,
-        _ => vk::SamplerMipmapMode::NEAREST,
-    }
-}
-
-fn pick_mipmap(choice: Option<u32>, original: vk::SamplerMipmapMode) -> vk::SamplerMipmapMode {
-    match choice {
-        Some(value) => mipmap_vk(value),
-        None => original,
-    }
-}
-
-fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps) -> Option<f32> {
-    match (choice, caps.sampler_anisotropy) {
-        (None, _) => None,
-        (Some(level), true) => Some(level.min(caps.max_anisotropy)),
-        (Some(_), false) => None,
+fn aniso_allowed(choice: Option<f32>, caps: &DeviceCaps, cubic: bool) -> Option<f32> {
+    match (choice, caps.sampler_anisotropy, cubic) {
+        (None, _, _) => None,
+        (Some(_), _, true) => None,
+        (Some(level), true, false) => Some(level.min(caps.max_anisotropy)),
+        (Some(_), false, false) => None,
     }
 }
 
@@ -86,22 +73,94 @@ fn aniso_pair(level: f32) -> (vk::Bool32, f32) {
 fn pick_aniso(
     choice: Option<f32>,
     caps: &DeviceCaps,
-    original: (vk::Bool32, f32),
+    original: &vk::SamplerCreateInfo<'_>,
 ) -> (vk::Bool32, f32) {
-    match aniso_allowed(choice, caps) {
+    match aniso_allowed(choice, caps, uses_cubic(original)) {
         Some(level) => aniso_pair(level),
-        None => original,
+        None => (original.anisotropy_enable, original.max_anisotropy),
     }
 }
 
 fn pick_lod_bias(choice: Option<f32>, caps: &DeviceCaps, original: f32) -> f32 {
-    forced(choice, original).clamp(-caps.max_lod_bias, caps.max_lod_bias)
+    match (choice, caps.portability_subset) {
+        (Some(value), false) => value.clamp(-caps.max_lod_bias, caps.max_lod_bias),
+        (_, _) => original,
+    }
+}
+
+fn landed(value: f32, held: bool) -> Option<f32> {
+    match held {
+        true => Some(value),
+        false => None,
+    }
+}
+
+fn landed_floor(choice: Option<f32>, against: f32) -> Option<f32> {
+    choice.and_then(|value| landed(value, value <= against))
+}
+
+fn landed_ceiling(choice: Option<f32>, against: f32) -> Option<f32> {
+    choice.and_then(|value| landed(value, value >= against))
 }
 
 fn pick_lod_range(s: &Settings, original: (f32, f32)) -> (f32, f32) {
-    let low = forced(s.mip_floor, original.0);
-    let high = forced(s.mip_ceiling, original.1);
-    (low.min(high), high.max(low))
+    let low = forced(
+        landed_floor(s.mip_floor, forced(s.mip_ceiling, original.1)),
+        original.0,
+    );
+    let high = forced(landed_ceiling(s.mip_ceiling, low), original.1);
+    (low, high)
+}
+
+fn already_linear(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.mag_filter == vk::Filter::LINEAR
+        || original.min_filter == vk::Filter::LINEAR
+        || original.mipmap_mode == vk::SamplerMipmapMode::LINEAR
+}
+
+fn linear_filter_choice(choice: Option<vk::Filter>, linear: bool) -> Option<vk::Filter> {
+    match choice {
+        Some(value) if value == vk::Filter::LINEAR && !linear => None,
+        held => held,
+    }
+}
+
+fn linear_mipmap_choice(
+    choice: Option<vk::SamplerMipmapMode>,
+    linear: bool,
+) -> Option<vk::SamplerMipmapMode> {
+    match choice {
+        Some(value) if value == vk::SamplerMipmapMode::LINEAR && !linear => None,
+        held => held,
+    }
+}
+
+fn restricted_shape(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    original.flags.as_raw() & SAMPLER_SUBSAMPLED_BIT != 0
+        || original.flags.as_raw() & SAMPLER_IMAGE_PROCESSING_BIT != 0
+        || original.unnormalized_coordinates == vk::TRUE
+}
+
+fn converted_sampler(original: &vk::SamplerCreateInfo<'_>) -> bool {
+    chain_find(original.p_next, SAMPLER_YCBCR_CONVERSION_INFO_TYPE).is_some()
+}
+
+fn shape_choice<T>(choice: Option<T>, restricted: bool) -> Option<T> {
+    match restricted {
+        true => None,
+        false => choice,
+    }
+}
+
+fn shaped_range(s: &Settings, restricted: bool, original: (f32, f32)) -> (f32, f32) {
+    pick_lod_range(
+        &Settings {
+            mip_floor: shape_choice(s.mip_floor, restricted),
+            mip_ceiling: shape_choice(s.mip_ceiling, restricted),
+            ..Default::default()
+        },
+        original,
+    )
 }
 
 fn patched_ci<'a>(
@@ -109,16 +168,28 @@ fn patched_ci<'a>(
     caps: &DeviceCaps,
     original: &vk::SamplerCreateInfo<'a>,
 ) -> vk::SamplerCreateInfo<'a> {
+    let shape = restricted_shape(original);
+    let filters = shape || converted_sampler(original);
+    let linear = already_linear(original);
     let (aniso_enable, aniso_max) = pick_aniso(
-        s.anisotropy,
+        shape_choice(s.anisotropy, filters),
         caps,
-        (original.anisotropy_enable, original.max_anisotropy),
+        original,
     );
-    let (lod_low, lod_high) = pick_lod_range(s, (original.min_lod, original.max_lod));
+    let (lod_low, lod_high) = shaped_range(s, shape, (original.min_lod, original.max_lod));
     vk::SamplerCreateInfo {
-        mag_filter: pick_filter(s.mag_filter, original.mag_filter),
-        min_filter: pick_filter(s.min_filter, original.min_filter),
-        mipmap_mode: pick_mipmap(s.mipmap, original.mipmap_mode),
+        mag_filter: forced(
+            linear_filter_choice(shape_choice(s.mag_filter, filters), linear),
+            original.mag_filter,
+        ),
+        min_filter: forced(
+            linear_filter_choice(shape_choice(s.min_filter, filters), linear),
+            original.min_filter,
+        ),
+        mipmap_mode: forced(
+            linear_mipmap_choice(shape_choice(s.mipmap, shape), linear),
+            original.mipmap_mode,
+        ),
         anisotropy_enable: aniso_enable,
         max_anisotropy: aniso_max,
         mip_lod_bias: pick_lod_bias(s.lod_bias, caps, original.mip_lod_bias),
@@ -152,34 +223,30 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MAG_FILTER,
-        s.mag_filter.is_some(),
-        asked.mag_filter.as_raw() as u32,
-        held.mag_filter.as_raw() as u32,
+        asked.mag_filter,
+        held.mag_filter,
         filter_text,
         None,
     );
     call_report_value(
         owner,
         SETTING_MIN_FILTER,
-        s.min_filter.is_some(),
-        asked.min_filter.as_raw() as u32,
-        held.min_filter.as_raw() as u32,
+        asked.min_filter,
+        held.min_filter,
         filter_text,
         None,
     );
     call_report_value(
         owner,
         SETTING_MIPMAP_MODE,
-        s.mipmap.is_some(),
-        asked.mipmap_mode.as_raw() as u32,
-        held.mipmap_mode.as_raw() as u32,
+        asked.mipmap_mode,
+        held.mipmap_mode,
         mipmap_text,
         None,
     );
     call_report_value(
         owner,
         SETTING_ANISOTROPY,
-        s.anisotropy.is_some(),
         aniso_of(asked.anisotropy_enable, asked.max_anisotropy),
         aniso_of(held.anisotropy_enable, held.max_anisotropy),
         aniso_text,
@@ -192,7 +259,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_LOD_BIAS,
-        s.lod_bias.is_some(),
         asked.mip_lod_bias,
         held.mip_lod_bias,
         number_text,
@@ -201,7 +267,6 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIP_FLOOR,
-        s.mip_floor.is_some(),
         asked.min_lod,
         held.min_lod,
         number_text,
@@ -210,11 +275,117 @@ fn call_report_fields(
     call_report_value(
         owner,
         SETTING_MIP_CEILING,
-        s.mip_ceiling.is_some(),
         asked.max_lod,
         held.max_lod,
         number_text,
         None,
+    );
+}
+
+fn kept_reason(set: bool, reasons: &[(bool, &'static str)]) -> Option<&'static str> {
+    match set {
+        true => reasons.iter().find(|entry| entry.0).map(|entry| entry.1),
+        false => None,
+    }
+}
+
+fn filter_dropped(choice: Option<vk::Filter>, linear: bool) -> bool {
+    linear_filter_choice(choice, linear) != choice
+}
+
+fn mipmap_dropped(choice: Option<vk::SamplerMipmapMode>, linear: bool) -> bool {
+    linear_mipmap_choice(choice, linear) != choice
+}
+
+fn floor_crossed(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) -> bool {
+    landed_floor(s.mip_floor, forced(s.mip_ceiling, asked.max_lod)).is_none()
+}
+
+fn ceiling_crossed(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) -> bool {
+    landed_ceiling(
+        s.mip_ceiling,
+        forced(
+            landed_floor(s.mip_floor, forced(s.mip_ceiling, asked.max_lod)),
+            asked.min_lod,
+        ),
+    )
+    .is_none()
+}
+
+fn filter_reason(
+    choice: Option<vk::Filter>,
+    filters: bool,
+    linear: bool,
+) -> Option<&'static str> {
+    kept_reason(
+        choice.is_some(),
+        &[
+            (filters, SAMPLER_SHAPE_REASON),
+            (filter_dropped(choice, linear), LINEAR_REASON),
+        ],
+    )
+}
+
+fn call_report_filter_reasons(s: &Settings, asked: &vk::SamplerCreateInfo<'_>) {
+    let shape = restricted_shape(asked);
+    let filters = shape || converted_sampler(asked);
+    let linear = already_linear(asked);
+    call_report_reason(SETTING_MAG_FILTER, filter_reason(s.mag_filter, filters, linear));
+    call_report_reason(SETTING_MIN_FILTER, filter_reason(s.min_filter, filters, linear));
+    call_report_reason(
+        SETTING_MIPMAP_MODE,
+        kept_reason(
+            s.mipmap.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (mipmap_dropped(s.mipmap, linear), LINEAR_REASON),
+            ],
+        ),
+    );
+}
+
+fn call_report_level_reasons(
+    s: &Settings,
+    caps: &DeviceCaps,
+    asked: &vk::SamplerCreateInfo<'_>,
+) {
+    let shape = restricted_shape(asked);
+    call_report_reason(
+        SETTING_ANISOTROPY,
+        kept_reason(
+            s.anisotropy.is_some(),
+            &[
+                (shape || converted_sampler(asked), SAMPLER_SHAPE_REASON),
+                (uses_cubic(asked), CUBIC_REASON),
+            ],
+        ),
+    );
+    call_report_reason(
+        SETTING_LOD_BIAS,
+        kept_reason(
+            s.lod_bias.is_some(),
+            &[(caps.portability_subset, PORTABILITY_REASON)],
+        ),
+    );
+    call_report_reason(
+        SETTING_MIP_FLOOR,
+        kept_reason(
+            s.mip_floor.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (floor_crossed(s, asked), MIP_CROSS_REASON),
+            ],
+        ),
+    );
+    call_report_reason(
+        SETTING_MIP_CEILING,
+        kept_reason(
+            s.mip_ceiling.is_some(),
+            &[
+                (shape, SAMPLER_SHAPE_REASON),
+                (ceiling_crossed(s, asked), MIP_CROSS_REASON),
+            ],
+        ),
     );
 }
 
@@ -223,6 +394,8 @@ fn call_report_one(
     asked: &vk::SamplerCreateInfo<'_>,
     held: &vk::SamplerCreateInfo<'_>,
 ) {
+    call_report_filter_reasons(ensure_settings(), asked);
+    call_report_level_reasons(ensure_settings(), &dev.caps, asked);
     call_report_fields(
         dev.device.handle().as_raw(),
         ensure_settings(),
@@ -323,19 +496,21 @@ pub(crate) struct StagesRebuild {
 fn named_sampler(
     mapping: &VkDescriptorSetAndBindingMappingEXT,
 ) -> Option<*const vk::SamplerCreateInfo<'static>> {
-    unsafe {
-        match mapping.source {
-            SOURCE_CONSTANT_OFFSET => Some(mapping.source_data.constant_offset.p_embedded_sampler),
-            SOURCE_PUSH_INDEX => Some(mapping.source_data.push_index.p_embedded_sampler),
-            SOURCE_INDIRECT_INDEX => Some(mapping.source_data.indirect_index.p_embedded_sampler),
-            SOURCE_INDIRECT_INDEX_ARRAY => {
-                Some(mapping.source_data.indirect_index_array.p_embedded_sampler)
-            }
-            SOURCE_SHADER_RECORD_INDEX => {
-                Some(mapping.source_data.shader_record_index.p_embedded_sampler)
-            }
-            _ => None,
+    match mapping.source {
+        SOURCE_CONSTANT_OFFSET => {
+            Some(unsafe { mapping.source_data.constant_offset.p_embedded_sampler })
         }
+        SOURCE_PUSH_INDEX => Some(unsafe { mapping.source_data.push_index.p_embedded_sampler }),
+        SOURCE_INDIRECT_INDEX => {
+            Some(unsafe { mapping.source_data.indirect_index.p_embedded_sampler })
+        }
+        SOURCE_INDIRECT_INDEX_ARRAY => {
+            Some(unsafe { mapping.source_data.indirect_index_array.p_embedded_sampler })
+        }
+        SOURCE_SHADER_RECORD_INDEX => {
+            Some(unsafe { mapping.source_data.shader_record_index.p_embedded_sampler })
+        }
+        _ => None,
     }
 }
 
@@ -440,6 +615,7 @@ fn built_chain(
         head,
         SHADER_MAPPING_INFO_TYPE,
         node.as_ptr() as *const c_void,
+        CHAIN_SAMPLER_LABEL,
     )?;
     Some(ChainRebuild {
         head: relink.head,

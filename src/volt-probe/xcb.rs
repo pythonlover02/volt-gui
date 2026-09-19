@@ -14,7 +14,17 @@ use crate::Backend;
 use crate::Handles;
 use crate::WINDOW_EDGE;
 
-const LIBRARIES: [&str; 2] = ["libxcb.so.1", "libxcb.so"];
+const LIB_VERSIONED: &str = "libxcb.so.1";
+const LIB_PLAIN: &str = "libxcb.so";
+const LIBRARIES: [&str; 2] = [LIB_VERSIONED, LIB_PLAIN];
+const SYM_CONNECT: &str = "xcb_connect";
+const SYM_DISCONNECT: &str = "xcb_disconnect";
+const SYM_HAS_ERROR: &str = "xcb_connection_has_error";
+const SYM_GET_SETUP: &str = "xcb_get_setup";
+const SYM_ROOTS_ITERATOR: &str = "xcb_setup_roots_iterator";
+const SYM_GENERATE_ID: &str = "xcb_generate_id";
+const SYM_CREATE_WINDOW: &str = "xcb_create_window";
+const SYM_FLUSH: &str = "xcb_flush";
 const EXT_SURFACE: &str = "VK_KHR_xcb_surface";
 const FN_CREATE_SURFACE: &str = "vkCreateXcbSurfaceKHR";
 const SURFACE_TYPE: i32 = 1000005000;
@@ -108,14 +118,14 @@ static XCB: OnceLock<Option<Xcb>> = OnceLock::new();
 
 fn loaded(library: &Library) -> Option<Xcb> {
     Some(Xcb {
-        connect: library.symbol("xcb_connect")?,
-        disconnect: library.symbol("xcb_disconnect")?,
-        has_error: library.symbol("xcb_connection_has_error")?,
-        get_setup: library.symbol("xcb_get_setup")?,
-        roots_iterator: library.symbol("xcb_setup_roots_iterator")?,
-        generate_id: library.symbol("xcb_generate_id")?,
-        create_window: library.symbol("xcb_create_window")?,
-        flush: library.symbol("xcb_flush")?,
+        connect: library.symbol(SYM_CONNECT)?,
+        disconnect: library.symbol(SYM_DISCONNECT)?,
+        has_error: library.symbol(SYM_HAS_ERROR)?,
+        get_setup: library.symbol(SYM_GET_SETUP)?,
+        roots_iterator: library.symbol(SYM_ROOTS_ITERATOR)?,
+        generate_id: library.symbol(SYM_GENERATE_ID)?,
+        create_window: library.symbol(SYM_CREATE_WINDOW)?,
+        flush: library.symbol(SYM_FLUSH)?,
     })
 }
 

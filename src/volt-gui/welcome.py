@@ -6,10 +6,12 @@ from PySide6.QtWidgets import QStackedWidget
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
 
-from themes import get_standard_button_height
-from themes import get_standard_button_width
+from themes import STANDARD_BUTTON_HEIGHT
+from themes import STANDARD_BUTTON_WIDTH
 from ui import create_simple_sidebar_widget
 from ui import create_tab_content_widget
+from ui import WINDOW_MIN_HEIGHT
+from ui import WINDOW_MIN_WIDTH
 
 
 def get_welcome_settings() -> dict:
@@ -23,36 +25,37 @@ def get_welcome_settings() -> dict:
         "How it Works": {
             "The volt Layer": (
                 ("text", "Every setting in this application is written to a profile file at ~/.config/volt-gui/. The volt Vulkan layer reads that profile when a game starts and rewrites the Vulkan calls the game makes: samplers for texture filtering and mip selection, the swapchain for vsync, image count and compositing, device enumeration for GPU selection, presents for the frame limiter, and pipelines for the rendering toggles."),
-                ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again. The probe runs again on Apply so the lists here stay in step."),
+                ("text", "Settings are read once when a game starts and never change while it runs. Press Apply, then start the game again."),
             ),
             "What it Will Not Do": (
                 ("text", "volt only changes what the game asks Vulkan for. It never draws anything itself, so sharpening, upscaling, frame generation, forced MSAA and overlays are all out of scope. Use MangoHud for an overlay and LACT for clocks and fan curves, or CoreCtrl if you also want CPU controls."),
-                ("text", "It also never turns anything on that the game left off. volt enables no device feature and no extension. Where a setting needs a feature, volt reads what the game asked for and applies the setting only if the game enabled it: that is how Anisotropic Filtering, Sample Shading, Alpha To One and Depth Clamp work, and where the game left the feature clear the setting is ignored and a line is logged. A setting that cannot be reached that way at all stays out, which keeps line width and cubic filtering off the table, and forced wireframe stays out because it is a wallhack. Where a game moves state onto an extension path, volt follows it there: a hook for an extension the game never enabled is simply unreachable."),
+                ("text", "It also never turns anything on that the game left off. volt enables no device feature and no extension. Where a setting needs a feature, volt reads what the game asked for and applies the setting only if the game enabled it: that is how Anisotropic Filtering, Sample Shading, Alpha To One and Depth Clamp work, and where the game left the feature clear the setting is ignored and a line is logged. A setting that cannot be reached that way at all stays out, which keeps cubic filtering off the table, line width stays out because forcing it breaks games either way, and forced wireframe stays out because it is a wallhack. Where a game moves state onto an extension path, volt follows it there: a hook for an extension the game never enabled is simply unreachable."),
             )
         },
         "Settings": {
             "One Value Per Setting": (
                 ("text", "Every setting is a single choice: the value volt forces, or default, which means volt does not touch what the game asked for. There is no range, no ordering between values, and nothing to get backwards."),
-                ("text", "A value volt has no name for still appears in the list, still saves to a profile, and still applies, exactly like a named one."),
+                ("text", "A card offers values core Vulkan 1.0 and VK_KHR_swapchain define and nothing else. A value above that floor is shown in a log line, never offered and never read back from a profile."),
                 ("text", "Where the specification admits only what a query returned, a value your device did not report is not forced. volt keeps the game's own value and logs a warning, so a profile written on another machine never makes a call invalid."),
-                ("text", "Where the specification bounds a value, LOD bias against your device limit and image count against what the surface allows, volt clamps what it passes down. That clamp is correctness rather than a choice, so it is not shown here."),
+                ("text", "Where the specification bounds a value, volt clamps the value it forces rather than the one the game supplied. A forced LOD bias is clamped to your device limit. A forced image count is clamped to what the surface allows, except on a swapchain the game created in a shared present mode, which keeps the single image the specification requires of it. That clamp is correctness rather than a choice, so it is not shown here."),
             ),
             "Where the Lists Come From": (
                 ("text", "Many of the boxes are filled in from your own hardware rather than from a list built into volt-gui. Present modes, image counts and alpha modes come from what the surface reports, the GPU list comes from what the driver enumerates, and anisotropy, mip levels and LOD bias run up to the limits your device gives. A card without the feature behind it holds nothing but default, and so does every device backed card until the probe has run: volt-gui offers no option it has not read."),
-                ("text", "That means a present mode volt has never heard of shows up as soon as your driver supports it. It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
+                ("text", "It also means a profile written on another machine can name something this one cannot do, in which case that setting resets to default and volt-gui tells you which ones."),
                 ("text", "The rest carry fixed lists, because there is nothing to read. Nearest and linear are core Vulkan with no feature and no query behind them, so every driver has both and none of them says so. The Framerate settings have nothing to read at all: a game never tells Vulkan what frame rate it wants, so there is nothing on the device to ask."),
             ),
             "The Three Filter Cards": (
-                ("text", "Three sampler fields, three cards. Nothing overrides anything, and every combination is reachable."),
+                ("text", "Three sampler fields, three cards. Nothing overrides anything. Linear is forced only onto a sampler whose own magnification filter, minification filter or mipmap mode is already linear, so every draw time rule the forced linear triggers is one the sampler's own linear already triggers on the same image."),
                 ("text", "In the order magnification, minification, mipmap:\n\n- retro: nearest, nearest, nearest.\n- bilinear: linear, linear, nearest.\n- trilinear: linear, linear, linear.\n- sharp pixel art without distant shimmer: nearest, linear, linear."),
                 ("text", "Magnification is what you see up close. Minification is most of the screen, and where mipmaps and anisotropic filtering do their work. Mipmap Mode is the blend between levels."),
+                ("text", "An unnormalized, subsampled, image processing or converted sampler keeps every field its own shape restricts, so a setting naming one of those fields leaves it alone and logs a line."),
             ),
             "The Frame Limiter": (
                 ("text", "Frame Limit caps the rate at present time. Offset shifts that cap, Cadence sets which rate the limiter aims at, Method sets when it waits, Pacing sets how, and none of the four does anything until Limit is set."),
                 ("text", "Offset is there for variable refresh displays, which want the cap sitting just under refresh. Pick 144, set the offset to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR."),
                 ("text", "Cadence is the rate the limiter aims at. fixed is your cap and nothing else. smooth paces at the slowest of the last few frames, so the fast frames wait for the slow ones and the cadence comes out even at whatever the machine is holding. dynamic reads exactly what smooth reads and then rounds it down to a quarter step of your cap, so it sits on a set rate rather than following the load. The steps are quarter steps of your cap's frame time, so they sit close together low down and far apart up top: a 60 cap steps 60, 48, 40, 34, 30, while a 240 cap steps 240, 192, 160, 137, 120. Both come from how consoles handle a machine that cannot hold its target, which is picking a rate it can hold and staying there. A console drops resolution to get there and volt cannot touch resolution, so frame handling is the one place the idea fits. A limiter can only make frames later, which is why neither reads the average: a frame slower than the average could never be paced up to it. Both climb back on their own, and neither goes faster than your cap. The trade is frames for evenness: fixed does nothing at all once the machine falls under the cap, so what you get is whatever the machine produced, one frame long and the next short. smooth and dynamic hold the short frames back to match the long ones, which costs you the frames you would have seen and buys you even spacing. dynamic changing step is visible, but it is one change rather than a different frame time every frame. Set fixed if the machine holds the cap, or if you want every frame you can get for the input latency."),
                 ("text", "Cadence and Method are separate boxes because they answer different questions, and any pair of them works together. dynamic with late holds a set rate and still reads input as close to display time as it can."),
-                ("text", "Pacing runs from cheapest to tightest. sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and rechecks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole interval, the steadiest of the four and the only one that keeps a core awake."),
+                ("text", "sleep hands the whole wait to the kernel and costs nothing. sliced sleeps in short steps and rechecks the clock, which corrects for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits the whole interval, the steadiest of the four and the only one that keeps a core awake."),
             ),
             "Every Setting Forces, Bar One": (
                 ("text", "volt writes the value you picked into its own copy of the structure that carries it, so a setting lands whether or not the game consulted a query first. That holds for every card here except one."),
@@ -73,12 +76,12 @@ def get_welcome_settings() -> dict:
                 ("text", "Every setting defaults to \"default\", which means the layer does not touch that value and the application keeps its own choice. A profile with everything on default is a true passthrough."),
             ),
             "Seeing What Applied": (
-                ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied, what the surface or the device turned down, and when it picked up a changed profile."),
+                ("text", "Run the game from a terminal with VOLT_LOG=info and the layer prints what it applied and what the surface or the device turned down."),
                 ("code", "VOLT_LOG=info volt -- ./game", ""),
-                ("text", "Every setting gets a line, naming the value the game asked for and the value volt wrote in its place. No forced value means volt left that setting alone, either because it is default or because the game already asked for what you picked. The forced value is the one volt wrote, so a setting the device clamped shows what landed rather than what you picked."),
-                ("text", "A setting that needs a device feature the game left clear names that feature instead. The Framerate settings have no asked value, since a game never tells Vulkan what frame rate it wants, so they report what volt forced or say the profile did not set them."),
-                ("text", "The GPU line reports the device id as `forced N` when you set a gpu, and `asked N` when you don't."),
-                ("text", "Each setting prints once per device, so 21 lines at most however many samplers, pipelines or swapchains the game creates."),
+                ("text", "Every setting gets a line: either the value the game asked for and the value volt wrote in its place, or the reason the setting did not land. The applied value is the one volt wrote, so a setting the device clamped shows what landed rather than what you picked."),
+                ("text", "A setting that needs a device feature the game left clear names that feature instead. The Framerate settings have no asked value, since a game never tells Vulkan what frame rate it wants, so they report what volt applied or say the profile did not set them."),
+                ("text", "The GPU line reads `asked N, applied M` when you set a gpu: N is the device the game used, M the one your profile picked. With no gpu in the profile it reads `asked N` alone."),
+                ("text", "Each setting's asked and applied line prints once per device however many samplers, pipelines or swapchains the game creates, and a reason line prints each time a value is kept."),
             ),
             "The Probe": (
                 ("text", "volt-gui runs volt-probe under the profile you are editing. It is what fills the setting lists with your hardware. Pressing Apply runs it again so those lists match the values you just saved, and switching profiles runs it again too."),
@@ -97,7 +100,7 @@ def get_welcome_settings() -> dict:
         },
         "Presets": {
             "Presets": (
-                ("text", "Presets fill the profile you have open with a starting point, arranged as a ladder from best looking to fastest:\n\n- Quality: trilinear filtering, a slight sharpening bias, every mip level allowed, 16x anisotropy, smoothed cutout edges, classic vsync, a 4 image swapchain, and precise pacing on an early wait.\n- Balanced: trilinear still, mailbox present for vsync without the latency, 8x anisotropy, sliced pacing.\n- Performance FPS: bilinear, a blurring bias, mailbox present, the swapchain held to 4 images and the cheaper sleep pacing.\n- Performance Low Latency: the same, aimed at input lag instead, with immediate present, a 2 image swapchain, a late wait and spin pacing, the steadiest of the four.\n- Potato FPS: bilinear, anisotropy off, a full step of blurring bias, the top two mips off the table, cutout smoothing off.\n- Potato Low Latency: the same again with immediate present, a 2 image swapchain and a late wait.\n\nNo preset touches Composite Alpha or Clipped Presentation: those depend on your compositor, so they stay yours."),
+                ("text", "Presets fill the profile you have open with a starting point, arranged as a ladder from best looking to fastest:\n\n- Quality: trilinear filtering, a slight sharpening bias, every mip level allowed, 16x anisotropy, classic vsync, a 4 image swapchain, and precise pacing on an early wait.\n- Balanced: trilinear still, mailbox present for vsync without the latency, 8x anisotropy, sliced pacing.\n- Performance FPS: bilinear, a blurring bias, mailbox present, the swapchain held to 4 images and the cheaper sleep pacing.\n- Performance Low Latency: the same, aimed at input lag instead, with immediate present, a 2 image swapchain, a late wait and spin pacing, the steadiest of the four.\n- Potato FPS: bilinear, anisotropy off, a full step of blurring bias, the top two mips off the table, cutout smoothing off.\n- Potato Low Latency: the same again with immediate present, a 2 image swapchain and a late wait.\n\nNo preset sets Composite Alpha or Clipped Presentation: those depend on your compositor, so they go back to default and the choice stays yours."),
                 ("text", "Applying a preset replaces every value in the profile after a confirmation, so anything the preset does not set goes back to default. That includes the frame limit: the right cap depends on your display, so that choice stays yours."),
                 ("text", "A preset can name something your hardware does not offer, mailbox on a surface without it for instance. That setting resets to default and volt-gui says which ones, so the rest of the preset still lands."),
                 ("text", "The filter presets are also the answer to what the three filter cards should be set to. Quality and Balanced are trilinear, the rest are bilinear with hard mip cuts, and every one of them is spelled out card by card in The Three Filter Cards above."),
@@ -114,7 +117,7 @@ def get_welcome_settings() -> dict:
 def create_welcome_window_widget() -> QMainWindow:
     window = QMainWindow()
     window.setWindowTitle("volt-gui Welcome")
-    window.setMinimumSize(620, 380)
+    window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
     central_widget = QWidget()
     main_layout = QVBoxLayout(central_widget)
     main_layout.setContentsMargins(8, 8, 8, 8)
@@ -136,7 +139,7 @@ def create_welcome_window_widget() -> QMainWindow:
     button_layout.setSpacing(8)
     button_layout.setAlignment(Qt.AlignVCenter)
     close_button = QPushButton("Close")
-    close_button.setFixedSize(get_standard_button_width(), get_standard_button_height())
+    close_button.setFixedSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT)
     close_button.clicked.connect(window.close)
     button_layout.addStretch(1)
     button_layout.addWidget(close_button, 0, Qt.AlignVCenter)

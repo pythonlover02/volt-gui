@@ -6,7 +6,7 @@ use std::process::Command;
 use crate::config::config_dir;
 use crate::config::config_path;
 use crate::config::home_dir;
-use crate::config::sanitize_name;
+use crate::config::call_sanitize_name;
 use crate::consts::DEFAULT_CONFIG;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::ENABLE_VALUE;
@@ -21,7 +21,13 @@ use crate::consts::FLATPAK_CONFIG_RO;
 use crate::consts::FLATPAK_CONFIG_RW;
 use crate::consts::FLATPAK_INJECT;
 use crate::consts::ENV_PROBE;
+use crate::consts::EXEC_FAILED;
 use crate::consts::FLATPAK_RUN;
+use crate::consts::FLATPAK_SUFFIX;
+use crate::consts::FLAG_HELP_LONG;
+use crate::consts::FLAG_HELP_SHORT;
+use crate::consts::FLAG_SEPARATOR;
+use crate::consts::LOG_NO_APP_ID;
 use crate::consts::LIB_DIR_32;
 use crate::consts::LIB_DIR_64;
 use crate::consts::PATH_SEP;
@@ -30,16 +36,18 @@ use crate::consts::PROBE_UNSET;
 use crate::consts::USAGE;
 use crate::consts::USER_LIB_REL;
 use crate::env::env_lib_path;
-use crate::logging::init_log_level;
-use crate::logging::log_at;
+use crate::logging::call_init_log_level;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 fn is_help_flag(a: &str) -> bool {
-    a == "--help" || a == "-h"
+    a == FLAG_HELP_LONG || a == FLAG_HELP_SHORT
 }
 
 fn wants_help(args: &[String]) -> bool {
-    args.iter().take_while(|a| **a != "--").any(|a| is_help_flag(a))
+    args.iter()
+        .take_while(|a| **a != FLAG_SEPARATOR)
+        .any(|a| is_help_flag(a))
 }
 
 fn is_probe_flag(a: &str) -> bool {
@@ -55,7 +63,7 @@ fn is_flag(a: &str) -> bool {
 }
 
 fn head_profile(head: &[String]) -> String {
-    sanitize_name(
+    call_sanitize_name(
         head.iter()
             .find(|a| !is_flag(a))
             .map(String::as_str)
@@ -71,7 +79,10 @@ fn probe_value(probe: bool) -> &'static str {
 }
 
 fn split_args(args: &[String]) -> (Vec<String>, Vec<String>) {
-    let pos = args.iter().position(|a| a == "--").unwrap_or(args.len());
+    let pos = args
+        .iter()
+        .position(|a| a == FLAG_SEPARATOR)
+        .unwrap_or(args.len());
     (
         args[..pos].to_vec(),
         args.get(pos + 1..).unwrap_or(&[]).to_vec(),
@@ -79,7 +90,7 @@ fn split_args(args: &[String]) -> (Vec<String>, Vec<String>) {
 }
 
 fn is_flatpak_bin(name: &str) -> bool {
-    name == FLATPAK_CMD || name.ends_with("/flatpak")
+    name == FLATPAK_CMD || name.ends_with(FLATPAK_SUFFIX)
 }
 
 fn is_flatpak_run(cmd: &[String]) -> bool {
@@ -151,7 +162,7 @@ fn build_flatpak_args(
     .concat()
 }
 
-fn write_default_config(path: &PathBuf) {
+fn call_write_default_config(path: &PathBuf) {
     let _ = fs::create_dir_all(config_dir());
     match path.exists() {
         true => (),
@@ -180,7 +191,7 @@ fn lib_path(existing: Option<String>) -> String {
     }
 }
 
-fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
+fn call_exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
     let err = Command::new(&cmd[0])
         .args(&cmd[1..])
         .env(ENV_ENABLE, ENABLE_VALUE)
@@ -188,14 +199,14 @@ fn exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
         .env(ENV_PROBE, probe_value(probe))
         .env(ENV_LIB_PATH, lib_path(env_lib_path()))
         .exec();
-    log_at(LogLevel::Error, &format!("exec failed: {}", err));
+    call_log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
     EXIT_EXEC_FAILED
 }
 
-fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
+fn call_exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     match flatpak_app_id(cmd) {
         None => {
-            log_at(LogLevel::Error, "flatpak run: no app id found");
+            call_log_at(LogLevel::Error, LOG_NO_APP_ID);
             EXIT_USAGE
         }
         Some(app_id) => {
@@ -207,39 +218,39 @@ fn exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
                 &flatpak_trailing(cmd),
             );
             let err = Command::new(FLATPAK_CMD).args(&args).exec();
-            log_at(LogLevel::Error, &format!("exec failed: {}", err));
+            call_log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
             EXIT_EXEC_FAILED
         }
     }
 }
 
-fn launch_cmd(head: &[String], cmd: &[String]) -> i32 {
+fn call_launch_cmd(head: &[String], cmd: &[String]) -> i32 {
     let profile = head_profile(head);
-    write_default_config(&config_path(&profile));
+    call_write_default_config(&config_path(&profile));
     match is_flatpak_run(cmd) {
-        true => exec_flatpak(cmd, &profile, wants_probe(head)),
-        false => exec_native(cmd, &profile, wants_probe(head)),
+        true => call_exec_flatpak(cmd, &profile, wants_probe(head)),
+        false => call_exec_native(cmd, &profile, wants_probe(head)),
     }
 }
 
-fn launch(args: Vec<String>) -> i32 {
+fn call_launch(args: Vec<String>) -> i32 {
     let (head, cmd) = split_args(&args);
     match cmd.is_empty() {
         true => {
             print!("{}", USAGE);
             EXIT_USAGE
         }
-        false => launch_cmd(&head, &cmd),
+        false => call_launch_cmd(&head, &cmd),
     }
 }
 
-pub fn run_launcher(args: Vec<String>) -> i32 {
-    init_log_level();
+pub fn call_run_launcher(args: Vec<String>) -> i32 {
+    call_init_log_level();
     match wants_help(&args) {
         true => {
             print!("{}", USAGE);
             EXIT_OK
         }
-        false => launch(args),
+        false => call_launch(args),
     }
 }

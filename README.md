@@ -80,6 +80,8 @@ volt-gui runs `volt-probe` under the profile you are editing. For each backend i
 volt --probe myprofile -- volt-probe
 ```
 
+It exits 0 on success, 1 where the instance or the device could not be created, and 2 where the device lists the portability subset and the instance support that extension depends on is missing. The layer records device facts at enumeration, so the device-backed cards fill either way.
+
 It opens X11 and Wayland, each through a library loaded at runtime, so a machine missing one reports the other and a machine missing both leaves those settings on `default`. This only affects present modes, image counts and alpha modes. The file carries one section per backend that opened, and the card offers the union with every value naming the backends that reported it: `mailbox (xcb, wayland)`, `immediate (xcb)`. The tag is a label only, profiles store the value. Games may open gamescope or a Flatpak surface instead, and where the game's surface refuses a value the layer handles it at runtime: image count is clamped against the real surface, and a rejected present or alpha mode leaves the game's value with a warning.
 
 ### GPU
@@ -90,7 +92,7 @@ This is the only setting volt cannot force. Nothing in Vulkan names the device a
 
 ### Display
 
-**VSync / Present Mode** `immediate` off, `mailbox` low-latency vsync, `fifo` classic vsync, `fifo_relaxed` tears below refresh. Modes you ruled out are hidden from the game, so its own vsync menu can't offer them.
+**VSync / Present Mode** `immediate` off, `mailbox` low-latency vsync, `fifo` classic vsync, `fifo_relaxed` tears below refresh. Only these four are offered or forced; the ones you ruled out are hidden from the game's own vsync menu, and a mode an extension defines is left where the driver put it.
 
 **Swapchain Images** frames in flight. More lets the game run ahead of the GPU, smoothing delivery at the cost of input lag. Fewer holds it closer to the display. This is the anti-lag setting.
 
@@ -106,19 +108,21 @@ This is the only setting volt cannot force. Nothing in Vulkan names the device a
 
 **Mipmap Mode** hard cut between mip levels, or a blend.
 
-Three sampler fields, three settings, so every combination is reachable. Retro is `nearest`/`nearest`/`nearest`. Bilinear is `linear`/`linear`/`nearest`. Trilinear is `linear`/`linear`/`linear`. Sharp pixel art without distant shimmer is `nearest`/`linear`/`linear`, which no named mode ever offered.
+An unnormalized, subsampled, image-processing or converted sampler keeps every field its shape restricts, so a setting naming one of those fields leaves it alone and logs a line.
 
-**Anisotropic Filtering** off up to whatever your GPU reports. volt never enables `samplerAnisotropy`; where the game left it off the setting is ignored and logged. Nearly every game enables it.
+Three sampler fields, three settings. `nearest` and `linear` are core with no query behind them, so `linear` is forced only where the sampler's own magnification filter, minification filter or mipmap mode already uses linear; otherwise that setting leaves the sampler alone and logs a line. Retro is `nearest`/`nearest`/`nearest`. Bilinear is `linear`/`linear`/`nearest`. Trilinear is `linear`/`linear`/`linear`.
+
+**Anisotropic Filtering** `off` up to whatever your GPU reports. volt never enables `samplerAnisotropy`; where the game left it off the setting is ignored and logged. Nearly every game enables it.
 
 **LOD Bias** shift mipmap selection sharper or blurrier.
 
-**Mip Floor / Mip Ceiling** lowest and highest mip levels samplers may use. A ceiling below the floor is swapped rather than dropped.
+**Mip Floor / Mip Ceiling** lowest and highest mip levels samplers may use. A forced bound that would cross the value the other field holds is dropped rather than swapped, and logs a line.
 
 ### Rendering
 
 **Sample Shading** shade at sample rate inside MSAA targets to cut shimmer. volt never enables `sampleRateShading`; most deferred renderers never ask for it.
 
-**Alpha To Coverage** turns fragment alpha into coverage. Softens cutout edges on foliage and fences. Only does something where the game already renders to MSAA.
+**Alpha To Coverage** turns it off, whatever the game asked for. volt never forces it on: on needs the fragment shader to write alpha at location 0, and volt never reads a shader. Only does something where the game already renders to MSAA.
 
 **Alpha To One** force fragment alpha to 1 after the shader. volt never enables the feature.
 
@@ -155,14 +159,14 @@ The layer reads `~/.config/volt-gui/<profile>.toml` once at startup and rewrites
 | Tab | Where the layer acts |
 |-----|----------------------|
 | GPU | `vkEnumeratePhysicalDevices`, `vkEnumeratePhysicalDeviceGroups(KHR)` |
-| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR` |
-| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV` |
-| Rendering | `vkCreateGraphicsPipelines`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
+| Display | `vkGetPhysicalDeviceSurfacePresentModesKHR`, `...SurfaceCapabilities(2)KHR`, `vkCreateSwapchainKHR`, `vkCreateSharedSwapchainsKHR`, `vkQueuePresentKHR` |
+| Textures | `vkCreateSampler`, `vkWriteSamplerDescriptorsEXT`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines`, `vkCreateShadersEXT`, `vkCreateRayTracingPipelines(KHR/NV)`, `vkGetPipelineIndirectMemoryRequirementsNV`, `vkGetPipelineKeyKHR`, `vkCreatePipelineBinariesKHR` |
+| Rendering | `vkCreateGraphicsPipelines`, `vkGetPipelineKeyKHR`, `vkCreatePipelineBinariesKHR`, `vkCmdSetAlphaToCoverageEnableEXT`, `vkCmdSetAlphaToOneEnableEXT`, `vkCmdSetDepthClampEnableEXT` |
 | Framerate | `vkQueuePresentKHR` |
 
 Device creation is read, never modified. volt learns which features the game enabled so feature-gated settings apply only where the game asked, and enables nothing itself.
 
-Every setting is hooked on each path that reaches it. `2`/`EXT` query variants, device groups, shared swapchains, inline sampler writes and dynamic alpha-to-coverage get the same treatment as the core calls. Present mode lists carried in a `pNext` chain are filtered in place too.
+Every setting is hooked on each path that reaches it. `2`/`EXT` query variants, device groups, shared swapchains, inline sampler writes and dynamic alpha-to-coverage get the same treatment as the core calls. A present mode list the driver fills is filtered in place; a list the game supplies at swapchain creation is rebuilt as volt's own copy holding the forced mode, and the mode named at present is rebuilt to match.
 
 An entry point for an extension the game never enabled is unreachable, and the layer only returns a hook when the call resolves further down the chain.
 
@@ -358,7 +362,7 @@ volt -- flatpak run com.example.Game
 
 The launch command for the selected profile is shown next to the Apply button, ready to copy.
 
-Profile names must be non-empty printable ASCII with no path separator and no `..`. Anything else falls back to default with a warning. The launcher writes a commented profile on first use.
+Profile names must be non-empty graphic ASCII with no space, no path separator, no `..` and no null byte. Anything else falls back to default with a warning. The launcher writes a commented profile on first use.
 
 To see what applied:
 
@@ -373,28 +377,31 @@ volt wrote in its place.
 
 ```
 [volt] gpu device: asked 2
-[volt] present_mode: asked fifo, forced mailbox
-[volt] image_count: asked 3
-[volt] mag_filter: asked linear, forced nearest
-[volt] anisotropy: asked off, forced 16
-[volt] depth_clamp: asked off; the application did not enable depthClamp
-[volt] frame_limit: forced 60
+[volt] present_mode: asked fifo, applied mailbox
+[volt] image_count: asked 3, applied 3
+[volt] mag_filter: asked linear, applied nearest
+[volt] anisotropy: the application did not enable samplerAnisotropy
+[volt] depth_clamp: the application did not enable depthClamp
+[volt] frame_limit: applied 60
 [volt] frame_pacing: the profile did not set it
 ```
 
-No forced value means volt left that setting alone, either because it is
-`default` or because the game already asked for what you picked. The forced
-value is the one volt wrote, so a setting the device clamped shows what
-landed rather than what the profile says.
+Every setting line names the setting first, then either `asked A, applied B`
+or the reason the setting did not land. The applied value is the one volt
+wrote, so a setting the device clamped shows what landed rather than what
+the profile says.
 
 The five Framerate settings have no asked value, since a game never tells
-Vulkan what frame rate it wants. They report what volt forced, or say the
+Vulkan what frame rate it wants. They report what volt applied, or say the
 profile did not set them.
 
-The GPU line reports the device id as `forced N` when the profile sets a gpu, and `asked N` when it does not.
+The GPU line reads `asked N, applied M` when the profile sets a gpu: N is
+the device the game used, M the profile's pick. With no gpu in the profile
+it reads `asked N` alone.
 
-Each setting prints once per device, so 21 lines at most however many
-samplers, pipelines or swapchains the game creates.
+Each setting's asked and applied line prints once per device however many
+samplers, pipelines or swapchains the game creates, and a reason line prints
+each time a value is kept.
 
 ## Environment Variables
 
@@ -476,7 +483,7 @@ Without the grant the layer still loads, it just finds no profile and leaves eve
 
 **Profiles** are TOML files in `~/.config/volt-gui/`, one per configuration. Create and switch from the GUI, the tray, or `volt <name> -- ...`. Switching saves the one you were on and restarts the probe.
 
-**Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. Frame limit, composite alpha and clipped presentation are left alone since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
+**Presets** fill the active profile with curated values, from Quality (trilinear, 16x anisotropy, blended mips, classic vsync) down to Potato Low Latency (bilinear, anisotropy off, hard mip cuts, immediate present, 2 images). A preset writes every value, so anything it doesn't set goes back to default. No preset sets frame limit, composite alpha or clipped presentation, since those depend on your display. A preset naming something your hardware lacks resets that one to default and says which.
 
 **Options** holds volt-gui's own preferences, not anything the layer reads: theme, transparency, display backend, scale, start maximised or in tray, tray icon, welcome window. They save as you change them and take effect on restart. One instance at a time.
 

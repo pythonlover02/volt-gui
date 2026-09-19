@@ -4,11 +4,16 @@ use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 
 use crate::consts::DEFAULT_LOG_LEVEL;
+use crate::consts::LEVEL_WORD_ERROR;
+use crate::consts::LEVEL_WORD_INFO;
+use crate::consts::LEVEL_WORD_OFF;
+use crate::consts::LINE_END;
 use crate::consts::LOG_FD;
 use crate::consts::LOG_LEVEL_ERROR;
 use crate::consts::LOG_LEVEL_INFO;
 use crate::consts::LOG_LEVEL_OFF;
 use crate::consts::LOG_LEVEL_WARN;
+use crate::consts::LOG_PREFIX;
 use crate::env::env_log_level;
 
 pub(crate) enum LogLevel {
@@ -32,9 +37,9 @@ pub(crate) fn level_num(l: &LogLevel) -> i32 {
 
 fn parse_level(s: &str) -> LogLevel {
     match s {
-        "off" => LogLevel::Off,
-        "error" => LogLevel::Error,
-        "info" => LogLevel::Info,
+        LEVEL_WORD_OFF => LogLevel::Off,
+        LEVEL_WORD_ERROR => LogLevel::Error,
+        LEVEL_WORD_INFO => LogLevel::Info,
         _ => LogLevel::Warn,
     }
 }
@@ -51,14 +56,14 @@ pub(crate) fn info_wanted() -> bool {
     should_emit(level_num(&LogLevel::Info), LEVEL.load(Ordering::Relaxed))
 }
 
-pub(crate) fn log_at(level: LogLevel, msg: &str) {
+pub(crate) fn call_log_at(level: LogLevel, msg: &str) {
     match should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
-        true => call_write_log(&format!("[volt] {}\n", msg)),
+        true => call_write_log(&[LOG_PREFIX, msg, LINE_END].concat()),
         false => (),
     }
 }
 
-pub(crate) fn init_log_level() {
+pub(crate) fn call_init_log_level() {
     match LEVEL_SET.swap(true, Ordering::Relaxed) {
         true => (),
         false => LEVEL.store(

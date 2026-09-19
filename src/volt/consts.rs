@@ -1,5 +1,4 @@
-pub(crate) const LAYER_NAME: &str = "VK_LAYER_VOLT_settings";
-pub(crate) const LAYER_DESC: &str = "Driver style Vulkan settings layer for Linux.";
+use ash::vk;
 
 pub(crate) const ENABLE_VALUE: &str = "1";
 pub(crate) const DEFAULT_PROFILE: &str = "default";
@@ -33,7 +32,22 @@ pub(crate) const PROBE_ON: &str = "on";
 pub(crate) const PROBE_OFF: &str = "off";
 pub(crate) const PROBE_UNSET: &str = "";
 pub(crate) const PROBE_WRITE_INFO: &str = "probe written to the config directory";
-pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps its built in lists";
+pub(crate) const PROBE_FAIL_WARN: &str = "probe write failed, the interface keeps the lists it last read";
+pub(crate) const PROBE_PAIR_OPEN: &str = " = \"";
+pub(crate) const PROBE_PAIR_CLOSE: &str = "\"\n";
+pub(crate) const PROBE_KEY_DEVICE_INDEX: &str = "device_index";
+pub(crate) const PROBE_KEY_DEVICE_NAMES: &str = "device_names";
+pub(crate) const PROBE_KEY_MAX_ANISOTROPY: &str = "max_anisotropy";
+pub(crate) const PROBE_KEY_MAX_LOD_BIAS: &str = "max_lod_bias";
+pub(crate) const PROBE_KEY_MAX_LOD_LEVEL: &str = "max_lod_level";
+pub(crate) const PROBE_KEY_SAMPLER_ANISOTROPY: &str = "sampler_anisotropy";
+pub(crate) const PROBE_KEY_SAMPLE_RATE_SHADING: &str = "sample_rate_shading";
+pub(crate) const PROBE_KEY_ALPHA_TO_ONE: &str = "alpha_to_one";
+pub(crate) const PROBE_KEY_DEPTH_CLAMP: &str = "depth_clamp";
+pub(crate) const PROBE_KEY_PRESENT_MODES: &str = "present_modes";
+pub(crate) const PROBE_KEY_COMPOSITE_ALPHAS: &str = "composite_alphas";
+pub(crate) const PROBE_KEY_MIN_IMAGE_COUNT: &str = "min_image_count";
+pub(crate) const PROBE_KEY_MAX_IMAGE_COUNT: &str = "max_image_count";
 
 pub(crate) const FLATPAK_CMD: &str = "flatpak";
 pub(crate) const FLATPAK_RUN: &str = "run";
@@ -64,9 +78,13 @@ pub(crate) const SHADING_MAX: f32 = 1.0;
 pub(crate) const LAYER_IFACE_VERSION: u32 = 2;
 pub(crate) const LAYER_LINK_INFO: i32 = 0;
 pub(crate) const LAYER_DATA_CALLBACK: i32 = 1;
+pub(crate) const LAYER_NEGOTIATE_INTERFACE_STRUCT: i32 = 1;
+pub(crate) const LOADER_INSTANCE_CREATE_INFO_TYPE: u32 = 47;
+pub(crate) const LOADER_DEVICE_CREATE_INFO_TYPE: u32 = 48;
 
 pub(crate) const DEVICE_GROUP_SIZE: usize = 32;
 pub(crate) const DEVICE_GROUP_PROPERTIES_TYPE: u32 = 1000070000;
+pub(crate) const DEVICE_GROUP_DEVICE_CREATE_INFO_TYPE: u32 = 1000070001;
 pub(crate) const DEVICE_FEATURES_2_TYPE: u32 = 1000059000;
 pub(crate) const MODE_COMPATIBILITY_TYPE: u32 = 1000274002;
 pub(crate) const LATENCY_CAPABILITIES_TYPE: u32 = 1000505008;
@@ -76,6 +94,72 @@ pub(crate) const MODE_LIST_TYPES: [u32; 2] = [
 ];
 
 pub(crate) const SHADER_MAPPING_INFO_TYPE: u32 = 1000135006;
+pub(crate) const SAMPLER_YCBCR_CONVERSION_INFO_TYPE: u32 = 1000156001;
+pub(crate) const SAMPLER_SUBSAMPLED_BIT: u32 = 1;
+pub(crate) const SAMPLER_IMAGE_PROCESSING_BIT: u32 = 16;
+pub(crate) const SAMPLER_SHAPE_REASON: &str = "the sampler's own shape restricts it, keeping the application value";
+pub(crate) const MIP_CROSS_REASON: &str = "the forced value would cross the other bound, keeping the application value";
+pub(crate) const LINEAR_REASON: &str = "linear is forced only where the sampler already uses linear, keeping the application value";
+pub(crate) const CUBIC_REASON: &str = "anisotropy is never enabled beside a cubic filter, keeping the application value";
+pub(crate) const PORTABILITY_REASON: &str = "the application enabled the portability subset, keeping the application value";
+pub(crate) const EXT_PORTABILITY_SUBSET: &str = "VK_KHR_portability_subset";
+pub(crate) const EXT_MIXED_SAMPLES: &str = "VK_NV_framebuffer_mixed_samples";
+
+pub(crate) const LOG_DEVICE_REGISTERED: &str = "vk device registered";
+pub(crate) const LOG_INSTANCE_REGISTERED: &str = "vk instance registered";
+pub(crate) const LOG_SWAPCHAIN_CREATED: &str = "swapchain created";
+pub(crate) const LOG_QUEUE_UNREGISTERED: &str = "GetDeviceQueue on unregistered device";
+pub(crate) const LOG_QUEUE_2_UNREGISTERED: &str = "GetDeviceQueue2 on unregistered device";
+pub(crate) const LOG_NO_APP_ID: &str = "flatpak run: no app id found";
+pub(crate) const LOG_INVALID_PROFILE: &str = "invalid profile name, using default profile";
+pub(crate) const CHAIN_SAMPLER_LABEL: &str = "sampler";
+pub(crate) const KEY_DOT: &str = ".";
+pub(crate) const UNREAD_OPEN: &str = " names \"";
+pub(crate) const UNREAD_CLOSE: &str = "\", which is not a value this build can read: that setting was left alone";
+pub(crate) const PARSE_FAILED_OPEN: &str = "config parse failed: ";
+pub(crate) const PARSE_FAILED_CLOSE: &str = ", using defaults";
+pub(crate) const UNREAD_PROFILE_CLOSE: &str = ", every setting left alone";
+pub(crate) const EXEC_FAILED: &str = "exec failed: ";
+pub(crate) const LOG_PREFIX: &str = "[volt] ";
+pub(crate) const LINE_END: &str = "\n";
+pub(crate) const NO_FLAGS: u32 = 0;
+pub(crate) const NO_IMAGE_LIMIT: u32 = 0;
+pub(crate) const UNSET_API_VERSION: u32 = 0;
+pub(crate) const SINGLE_DEVICE: usize = 1;
+pub(crate) const FIRST_DEVICE: u32 = 1;
+
+pub(crate) const KEY_DEVICE: &str = "device";
+pub(crate) const KEY_PRESENT_MODE: &str = "present_mode";
+pub(crate) const KEY_IMAGE_COUNT: &str = "image_count";
+pub(crate) const KEY_COMPOSITE_ALPHA: &str = "composite_alpha";
+pub(crate) const KEY_CLIPPED: &str = "clipped";
+pub(crate) const KEY_MAG_FILTER: &str = "mag_filter";
+pub(crate) const KEY_MIN_FILTER: &str = "min_filter";
+pub(crate) const KEY_MIPMAP_MODE: &str = "mipmap_mode";
+pub(crate) const KEY_ANISOTROPY: &str = "anisotropy";
+pub(crate) const KEY_LOD_BIAS: &str = "lod_bias";
+pub(crate) const KEY_MIP_FLOOR: &str = "mip_floor";
+pub(crate) const KEY_MIP_CEILING: &str = "mip_ceiling";
+pub(crate) const KEY_SAMPLE_SHADING: &str = "sample_shading";
+pub(crate) const KEY_ALPHA_TO_COVERAGE: &str = "alpha_to_coverage";
+pub(crate) const KEY_ALPHA_TO_ONE: &str = "alpha_to_one";
+pub(crate) const KEY_DEPTH_CLAMP: &str = "depth_clamp";
+pub(crate) const KEY_FRAME_LIMIT: &str = "frame_limit";
+pub(crate) const KEY_FRAME_LIMIT_OFFSET: &str = "frame_limit_offset";
+pub(crate) const KEY_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
+pub(crate) const KEY_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
+pub(crate) const KEY_FRAME_PACING: &str = "frame_pacing";
+
+pub(crate) const NAME_DEFAULT: &str = "default";
+pub(crate) const NAME_EMPTY: &str = "";
+pub(crate) const FLAG_HELP_LONG: &str = "--help";
+pub(crate) const FLAG_HELP_SHORT: &str = "-h";
+pub(crate) const FLAG_SEPARATOR: &str = "--";
+pub(crate) const FLATPAK_SUFFIX: &str = "/flatpak";
+pub(crate) const LEVEL_WORD_OFF: &str = "off";
+pub(crate) const LEVEL_WORD_ERROR: &str = "error";
+pub(crate) const LEVEL_WORD_INFO: &str = "info";
+pub(crate) const LEVEL_WORD_WARN: &str = "warn";
 pub(crate) const SHADER_GROUPS_TYPE: u32 = 1000277002;
 
 pub(crate) const SOURCE_CONSTANT_OFFSET: i32 = 0;
@@ -117,21 +201,48 @@ pub(crate) const PIPELINE_RENDERING_TYPE: u32 = 1000044002;
 pub(crate) const PIPELINE_REPRESENTATIVE_TYPE: u32 = 1000166001;
 pub(crate) const RENDERING_ATTACHMENT_LOCATION_TYPE: u32 = 1000232001;
 pub(crate) const RENDERING_INPUT_ATTACHMENT_TYPE: u32 = 1000232002;
+pub(crate) const PIPELINE_CREATE_INFO_KHR_TYPE: u32 = 1000483007;
+pub(crate) const GRAPHICS_PIPELINE_CREATE_INFO_TYPE: u32 = 28;
+pub(crate) const COMPUTE_PIPELINE_CREATE_INFO_TYPE: u32 = 29;
+pub(crate) const RAY_TRACING_PIPELINE_CREATE_INFO_KHR_TYPE: u32 = 1000150015;
+pub(crate) const FN_GET_PIPELINE_KEY: &str = "vkGetPipelineKeyKHR";
+pub(crate) const FN_CREATE_PIPELINE_BINARIES: &str = "vkCreatePipelineBinariesKHR";
+pub(crate) const EXT_PIPELINE_BINARY: &str = "VK_KHR_pipeline_binary";
+pub(crate) const BINARY_INFO_LOG: &str = "pipeline: a create info naming pipeline binaries was rebuilt like any other";
+pub(crate) const WRAPPED_UNDECLARED_LOG: &str = "pipeline: the wrapped create info is one this build does not declare, leaving the setting alone";
 
-pub(crate) const CHAIN_NODE_WARN: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
+pub(crate) const CHAIN_NODE_REASON: &str = "a node in the chain is one this build does not declare, leaving the setting alone";
 pub(crate) const SWAPCHAIN_MODE_LIST_TYPE: u32 = 1000275002;
+pub(crate) const SURFACE_PRESENT_MODE_TYPE: u32 = 1000274000;
+pub(crate) const SURFACE_INFO_2_TYPE: u32 = 1000119000;
+pub(crate) const SURFACE_CAPABILITIES_2_TYPE: u32 = 1000119001;
+pub(crate) const SWAPCHAIN_PRESENT_MODE_INFO_TYPE: u32 = 1000275003;
+pub(crate) const DEVICE_GROUP_PRESENT_INFO_TYPE: u32 = 1000060011;
+pub(crate) const DISPLAY_PRESENT_INFO_TYPE: u32 = 1000003000;
+pub(crate) const FRAME_BOUNDARY_TYPE: u32 = 1000375001;
+pub(crate) const FRAME_BOUNDARY_TENSORS_TYPE: u32 = 1000460023;
+pub(crate) const PRESENT_ID_2_TYPE: u32 = 1000479001;
+pub(crate) const PRESENT_ID_TYPE: u32 = 1000294000;
+pub(crate) const PRESENT_REGIONS_TYPE: u32 = 1000084000;
+pub(crate) const PRESENT_TIMES_GOOGLE_TYPE: u32 = 1000092000;
+pub(crate) const PRESENT_TIMINGS_TYPE: u32 = 1000208003;
+pub(crate) const SET_PRESENT_CONFIG_TYPE: u32 = 1000613000;
+pub(crate) const SWAPCHAIN_PRESENT_FENCE_TYPE: u32 = 1000275001;
+pub(crate) const EXT_SURFACE_MAINTENANCE_1: &str = "VK_KHR_surface_maintenance1";
+pub(crate) const EXT_SURFACE_MAINTENANCE_1_EXT: &str = "VK_EXT_surface_maintenance1";
 
 pub(crate) const PRESENT_UNKNOWN_PREFIX: &str = "present mode ";
 pub(crate) const ALPHA_UNKNOWN_PREFIX: &str = "composite alpha ";
 
-pub(crate) const FILTER_NEAREST: u32 = 0;
-pub(crate) const FILTER_LINEAR: u32 = 1;
+pub(crate) const FILTER_NEAREST: i32 = 0;
+pub(crate) const FILTER_LINEAR: i32 = 1;
+pub(crate) const FILTER_CUBIC: i32 = 1000015000;
 
-pub(crate) const MIPMAP_NEAREST: u32 = 0;
-pub(crate) const MIPMAP_LINEAR: u32 = 1;
+pub(crate) const MIPMAP_NEAREST: i32 = 0;
+pub(crate) const MIPMAP_LINEAR: i32 = 1;
 
-pub(crate) const TOGGLE_OFF: u32 = 0;
-pub(crate) const TOGGLE_ON: u32 = 1;
+pub(crate) const TOGGLE_OFF: vk::Bool32 = vk::FALSE;
+pub(crate) const TOGGLE_ON: vk::Bool32 = vk::TRUE;
 
 pub(crate) const TEXT_NEAREST: &str = "nearest";
 pub(crate) const TEXT_LINEAR: &str = "linear";
@@ -152,26 +263,29 @@ pub(crate) const PACING_PRECISE: &str = "precise";
 pub(crate) const PACING_SPIN: &str = "spin";
 
 pub(crate) const SETTINGS_FROZEN_INFO: &str = "settings loaded and frozen for the life of the process";
-pub(crate) const PRESENT_MISS_WARN: &str = "the surface does not support the present mode setting, keeping application choice";
-pub(crate) const PRESENT_EMPTY_WARN: &str = "present mode selection matched no supported mode, keeping every mode";
+pub(crate) const PRESENT_MISS_WARN: &str = "present_mode: the surface does not support it, keeping application choice";
+pub(crate) const PRESENT_LIST_REASON: &str = "the surface could not confirm the forced mode for the chained mode list, keeping the application value";
+pub(crate) const PRESENT_TIE_REASON: &str = "the application set swapchain flags or a scaling node, keeping the application value";
+pub(crate) const PRESENT_ABOVE_FLOOR_REASON: &str = "the application picked a mode an extension defines, keeping the application value";
+pub(crate) const COUNT_SHARED_REASON: &str = "the application picked a shared present mode, which keeps a single image";
+pub(crate) const PRESENT_EMPTY_WARN: &str = "present_mode: the choice matched no supported mode, keeping every mode";
 
-pub(crate) const PRESENT_EXTENDED_INFO: &str = "this present mode comes from an extension and only exists where the application enabled it";
-pub(crate) const ALPHA_MISS_WARN: &str = "the surface does not support the composite alpha setting, keeping application choice";
+pub(crate) const ALPHA_MISS_WARN: &str = "composite_alpha: the surface does not support it, keeping application choice";
 pub(crate) const UNOWNED_QUEUE_ERROR: &str = "present on a queue with no registered device";
 pub(crate) const UNOWNED_BUFFER_ERROR: &str = "dynamic state on a command buffer with no registered device";
 
-pub(crate) const GPU_EMPTY_WARN: &str = "gpu selection matched no device, keeping every device";
-pub(crate) const GROUP_EMPTY_WARN: &str = "gpu selection matched no device group, keeping every group";
-pub(crate) const GPU_MISS_WARN: &str = "gpu selection did not take, the application kept the device it picked";
-pub(crate) const ALPHA_OPAQUE_INFO: &str = "opaque composite alpha skips compositor blending";
+pub(crate) const GPU_EMPTY_WARN: &str = "gpu device: the choice matched no device, keeping every device";
+pub(crate) const GROUP_EMPTY_WARN: &str = "gpu device: the choice matched no device group, keeping every group";
+pub(crate) const GPU_MISS_WARN: &str = "gpu device: the choice did not take, the application kept the device it picked";
+pub(crate) const ALPHA_OPAQUE_INFO: &str = "composite_alpha: opaque skips compositor blending";
 
 pub(crate) const REPORT_MARK: &str = ": ";
 pub(crate) const REPORT_SEP: &str = ", ";
-pub(crate) const REPORT_NOTE: &str = "; ";
 pub(crate) const REPORT_ASKED: &str = "asked ";
-pub(crate) const REPORT_FORCED: &str = "forced ";
+pub(crate) const REPORT_APPLIED: &str = "applied ";
 pub(crate) const NOTE_NOT_ENABLED: &str = "the application did not enable ";
 pub(crate) const NOTE_NOT_SET: &str = "the profile did not set it";
+pub(crate) const NOTE_MIXED_SAMPLES: &str = "the application enabled mixed framebuffer samples, so only off is forced";
 
 pub(crate) const FEATURE_ANISOTROPY: &str = "samplerAnisotropy";
 pub(crate) const FEATURE_SHADING: &str = "sampleRateShading";
@@ -200,13 +314,7 @@ pub(crate) const SETTING_FRAME_LIMIT_CADENCE: &str = "frame_limit_cadence";
 pub(crate) const SETTING_FRAME_LIMIT_METHOD: &str = "frame_limit_method";
 pub(crate) const SETTING_FRAME_PACING: &str = "frame_pacing";
 
-pub(crate) const NULL_OK: [&str; 5] = [
-    "vkGetInstanceProcAddr",
-    "vkCreateInstance",
-    "vkEnumerateInstanceVersion",
-    "vkEnumerateInstanceExtensionProperties",
-    "vkEnumerateInstanceLayerProperties",
-];
+pub(crate) const NULL_OK: [&str; 2] = ["vkGetInstanceProcAddr", "vkCreateInstance"];
 
 pub(crate) const USAGE: &str = "usage: volt [--probe] [PROFILE] -- COMMAND [ARGS...]\n  volt -- CMD               run CMD with the default profile (~/.config/volt-gui/default.toml)\n  volt NAME -- CMD          run CMD with profile ~/.config/volt-gui/NAME.toml\n  volt --probe NAME -- CMD  the same, and record what this device supports\n\nsettings are read once when the application starts and never change while it\nruns: edit the profile, then start the application again\n";
 
@@ -235,6 +343,84 @@ pub(crate) const FN_PIPELINE_INDIRECT_MEMORY: &str = "vkGetPipelineIndirectMemor
 
 pub(crate) const TAG_XCB: &str = "xcb";
 pub(crate) const TAG_WAYLAND: &str = "wayland";
+
+pub(crate) const FN_GET_INSTANCE_PROC_ADDR: &str = "vkGetInstanceProcAddr";
+pub(crate) const FN_GET_DEVICE_PROC_ADDR: &str = "vkGetDeviceProcAddr";
+pub(crate) const FN_CREATE_INSTANCE: &str = "vkCreateInstance";
+pub(crate) const FN_DESTROY_INSTANCE: &str = "vkDestroyInstance";
+pub(crate) const FN_CREATE_DEVICE: &str = "vkCreateDevice";
+pub(crate) const FN_DESTROY_DEVICE: &str = "vkDestroyDevice";
+pub(crate) const FN_ENUMERATE_DEVICES: &str = "vkEnumeratePhysicalDevices";
+pub(crate) const FN_CREATE_GRAPHICS_PIPELINES: &str = "vkCreateGraphicsPipelines";
+pub(crate) const FN_CREATE_SAMPLER: &str = "vkCreateSampler";
+pub(crate) const FN_ALLOCATE_COMMAND_BUFFERS: &str = "vkAllocateCommandBuffers";
+pub(crate) const FN_FREE_COMMAND_BUFFERS: &str = "vkFreeCommandBuffers";
+pub(crate) const FN_DESTROY_COMMAND_POOL: &str = "vkDestroyCommandPool";
+pub(crate) const FN_DEVICE_QUEUE: &str = "vkGetDeviceQueue";
+pub(crate) const FN_SURFACE_PRESENT_MODES: &str = "vkGetPhysicalDeviceSurfacePresentModesKHR";
+pub(crate) const FN_SURFACE_CAPS: &str = "vkGetPhysicalDeviceSurfaceCapabilitiesKHR";
+
+pub(crate) const EXT_SURFACE: &str = "VK_KHR_surface";
+pub(crate) const EXT_SWAPCHAIN: &str = "VK_KHR_swapchain";
+pub(crate) const EXT_DISPLAY_SWAPCHAIN: &str = "VK_KHR_display_swapchain";
+pub(crate) const EXT_DESCRIPTOR_HEAP: &str = "VK_EXT_descriptor_heap";
+pub(crate) const EXT_SHADER_OBJECT: &str = "VK_EXT_shader_object";
+pub(crate) const EXT_RAY_TRACING_PIPELINE: &str = "VK_KHR_ray_tracing_pipeline";
+pub(crate) const EXT_NV_RAY_TRACING: &str = "VK_NV_ray_tracing";
+pub(crate) const EXT_NV_GENERATED_COMPUTE: &str = "VK_NV_device_generated_commands_compute";
+pub(crate) const EXT_DYNAMIC_STATE_3: &str = "VK_EXT_extended_dynamic_state3";
+pub(crate) const EXT_DEVICE_GROUP_CREATION: &str = "VK_KHR_device_group_creation";
+pub(crate) const EXT_GET_SURFACE_CAPS_2: &str = "VK_KHR_get_surface_capabilities2";
+pub(crate) const EXT_XCB_SURFACE: &str = "VK_KHR_xcb_surface";
+pub(crate) const EXT_XLIB_SURFACE: &str = "VK_KHR_xlib_surface";
+pub(crate) const EXT_WAYLAND_SURFACE: &str = "VK_KHR_wayland_surface";
+
+pub(crate) enum Provider {
+    Version(u32),
+    Ext(&'static str),
+}
+
+pub(crate) const HOOK_PROVIDERS: &[(&str, Provider)] = &[
+    (FN_SURFACE_PRESENT_MODES, Provider::Ext(EXT_SURFACE)),
+    (FN_SURFACE_CAPS, Provider::Ext(EXT_SURFACE)),
+    (FN_DESTROY_SURFACE, Provider::Ext(EXT_SURFACE)),
+    (FN_SURFACE_CAPS_2, Provider::Ext(EXT_GET_SURFACE_CAPS_2)),
+    (FN_DEVICE_GROUPS, Provider::Version(vk::API_VERSION_1_1)),
+    (FN_DEVICE_GROUPS_KHR, Provider::Ext(EXT_DEVICE_GROUP_CREATION)),
+    (FN_CREATE_XCB_SURFACE, Provider::Ext(EXT_XCB_SURFACE)),
+    (FN_CREATE_XLIB_SURFACE, Provider::Ext(EXT_XLIB_SURFACE)),
+    (FN_CREATE_WAYLAND_SURFACE, Provider::Ext(EXT_WAYLAND_SURFACE)),
+    (FN_CREATE_SWAPCHAIN, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_DESTROY_SWAPCHAIN, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_QUEUE_PRESENT, Provider::Ext(EXT_SWAPCHAIN)),
+    (FN_DEVICE_QUEUE_2, Provider::Version(vk::API_VERSION_1_1)),
+    (FN_SHARED_SWAPCHAINS, Provider::Ext(EXT_DISPLAY_SWAPCHAIN)),
+    (FN_WRITE_SAMPLERS, Provider::Ext(EXT_DESCRIPTOR_HEAP)),
+    (FN_CREATE_SHADERS, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_CREATE_RAY_TRACING_KHR, Provider::Ext(EXT_RAY_TRACING_PIPELINE)),
+    (FN_CREATE_RAY_TRACING_NV, Provider::Ext(EXT_NV_RAY_TRACING)),
+    (FN_PIPELINE_INDIRECT_MEMORY, Provider::Ext(EXT_NV_GENERATED_COMPUTE)),
+    (FN_SET_ALPHA_COVERAGE, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_ALPHA_COVERAGE, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_SET_ALPHA_ONE, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_ALPHA_ONE, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_DYNAMIC_STATE_3)),
+    (FN_SET_DEPTH_CLAMP, Provider::Ext(EXT_SHADER_OBJECT)),
+    (FN_GET_PIPELINE_KEY, Provider::Ext(EXT_PIPELINE_BINARY)),
+    (FN_CREATE_PIPELINE_BINARIES, Provider::Ext(EXT_PIPELINE_BINARY)),
+];
+
+pub(crate) const CORE_10_DEVICE_HOOKS: [&str; 9] = [
+    FN_GET_DEVICE_PROC_ADDR,
+    FN_DESTROY_DEVICE,
+    FN_CREATE_GRAPHICS_PIPELINES,
+    FN_CREATE_COMPUTE_PIPELINES,
+    FN_CREATE_SAMPLER,
+    FN_ALLOCATE_COMMAND_BUFFERS,
+    FN_FREE_COMMAND_BUFFERS,
+    FN_DESTROY_COMMAND_POOL,
+    FN_DEVICE_QUEUE,
+];
 
 pub(crate) const SURFACE_CREATORS: [(&str, &str); 3] = [
     (FN_CREATE_XCB_SURFACE, TAG_XCB),
@@ -280,12 +466,12 @@ pub(crate) const DEFAULT_CONFIG: &str = r#"# volt profile
 # every setting is one value: the value volt forces, or "default", which
 # keeps whatever the application asked for. there is no range and no order
 #
-# a value volt has no name for is written the way the interface shows it,
-# and forces exactly like a named one
+# a value volt has no name for is never read from a profile
 #
-# anisotropy and sample_shading need a device feature the application itself
-# enabled. volt never enables one: where the application left the feature
-# clear the setting is ignored and a line is logged
+# anisotropy, sample_shading, alpha_to_one and depth_clamp need a device
+# feature the application itself enabled. volt never enables one: where the
+# application left the feature clear the setting is ignored and a line is
+# logged
 #
 # a forced value the device did not report is not forced: volt keeps the
 # application's own value and logs a warning

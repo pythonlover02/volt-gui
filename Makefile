@@ -41,7 +41,7 @@ STATE_DIR    := /var/lib/volt
 MANIFEST     := VkLayer_volt.json
 DESKTOP_FILE := volt-gui.desktop
 ICON_FILE    := volt-gui.png
-ICON_SOURCE  := images/1.png
+ICON_SOURCE  := images/icon.png
 
 VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
 TRIPLE_64 := x86_64-unknown-linux-gnu

@@ -1,12 +1,12 @@
 use std::ffi::c_void;
 use std::mem;
 use std::ptr;
-use std::sync::RwLock;
 
 use ash::vk;
 
+use crate::config::parse_float;
 use crate::config::parse_settings;
-use crate::config::sanitize_name;
+use crate::config::sanitized_name;
 use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FEATURE_ANISOTROPY;
@@ -17,17 +17,20 @@ use crate::consts::SETTING_ANISOTROPY;
 use crate::consts::SETTING_FRAME_LIMIT;
 use crate::consts::SETTING_PRESENT_MODE;
 use crate::consts::TEXT_LINEAR;
+use crate::consts::TEXT_NEAREST;
 use crate::consts::TOGGLE_OFF;
 use crate::consts::TOGGLE_ON;
 use crate::consts::SOURCE_PUSH_INDEX;
 use crate::consts::SOURCE_SHADER_RECORD_INDEX;
 use crate::consts::SWAPCHAIN_COUNTER_TYPE;
 use crate::consts::SWAPCHAIN_MODE_LIST_TYPE;
-use crate::instance::call_relinked_chain;
 use crate::instance::copied_node;
+use crate::instance::relinked_chain;
 use crate::instance::VkChainNode;
 use crate::instance::VkDescriptorSetAndBindingMappingEXT;
 use crate::instance::VkSwapchainCounterCreateInfoEXT;
+use crate::instance::provider_on;
+use crate::layer::negotiated_version;
 use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
@@ -43,31 +46,30 @@ use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
 use crate::ranks::present_parse;
 use crate::ranks::present_semantic;
-use crate::report::call_claim;
-use crate::report::call_forget;
+use crate::ranks::AlphaFacts;
+use crate::ranks::PresentFacts;
 use crate::report::feature_note;
 use crate::report::filter_text;
-use crate::report::forced_text;
+use crate::report::applied_text;
 use crate::report::number_text;
 use crate::report::report_line;
-use crate::report::ReportMap;
 use crate::sampler::embedded_sampler;
-use crate::swapchain::present_filtered;
+use crate::swapchain::present_narrowed;
 
-const UNKNOWN_MODE: u32 = 4242;
+const UNKNOWN_MODE: i32 = 4242;
 const UNKNOWN_ALPHA: u32 = 16;
-const FIFO_MODE: u32 = 2;
-const SHARED_MODE: u32 = 1000111000;
+const FIFO_MODE: i32 = 2;
+const SHARED_MODE: i32 = 1000111000;
 const OPAQUE_ALPHA: u32 = 1;
-const NEAREST_FILTER: u32 = 0;
-const LINEAR_FILTER: u32 = 1;
+const NEAREST_FILTER: i32 = 0;
+const LINEAR_FILTER: i32 = 1;
 const FILTER_PROFILE: &str = "[textures]\nmag_filter = \"nearest\"\nmin_filter = \"linear\"\n";
 const ALPHA_ONE_PROFILE: &str = "[rendering]\nalpha_to_one = \"on\"\n";
 const CLAMP_PROFILE: &str = "[rendering]\ndepth_clamp = \"off\"\n";
 const INHERIT_ALPHA: u32 = 8;
 const UNNAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"present mode 4242\"\n";
 const NAMED_MODE_PROFILE: &str = "[display]\npresent_mode = \"fifo\"\n";
-const LIST_EMPTY_WARN: &str = "list emptied by the choice, restoring";
+
 const LIMIT_START_NS: u64 = 10_000;
 const LIMIT_INTERVAL_NS: u64 = 1_000;
 const OTHER_INTERVAL_NS: u64 = 2_000;
@@ -95,16 +97,14 @@ const ASKED_MODE: &str = "fifo";
 const FORCED_MODE: &str = "mailbox";
 const ASKED_ANISO: &str = "off";
 const FORCED_LIMIT: &str = "60";
-const ASKED_LINE: &str = "present_mode: asked fifo";
-const BOTH_LINE: &str = "present_mode: asked fifo, forced mailbox";
-const FORCED_LINE: &str = "frame_limit: forced 60";
+const SAME_LINE: &str = "present_mode: asked fifo, applied fifo";
+const BOTH_LINE: &str = "present_mode: asked fifo, applied mailbox";
+const APPLIED_LINE: &str = "frame_limit: applied 60";
 const UNSET_LINE: &str = "frame_limit: the profile did not set it";
-const BLOCKED_LINE: &str = "anisotropy: asked off; the application did not enable samplerAnisotropy";
+const BLOCKED_LINE: &str = "anisotropy: the application did not enable samplerAnisotropy";
 const ANISO_SIXTEEN: f32 = 16.0;
 const ANISO_SIXTEEN_TEXT: &str = "16";
 const BIAS_DOWN_TEXT: &str = "-0.6";
-const OWNER_ONE: u64 = 1;
-const OWNER_TWO: u64 = 2;
 const SURFACE_TAG: &str = "wayland";
 const SURFACE_PRESENT: [&str; 2] = ["mailbox", "fifo"];
 const SURFACE_ALPHA: [&str; 1] = ["opaque"];
@@ -114,85 +114,183 @@ const SURFACE_SECTION: &str = "[wayland]\npresent_modes = \"mailbox;fifo\"\ncomp
 const UNKNOWN_CHAIN_TYPE: u32 = 424242;
 const SOURCE_PUSH_DATA: i32 = 5;
 const NO_COUNTERS: u32 = 0;
-const MAILBOX_VALUE: u32 = 1;
+const MAILBOX_VALUE: i32 = 1;
 const DEFAULT_NAME_MIXED: &str = "Default";
 const RESERVED_NAME_MIXED: &str = "Probe";
 const PLAIN_NAME: &str = "myprofile";
+const CORE_ONE_ONE: u32 = 4198400;
+const CORE_ONE_ZERO: u32 = 4194304;
+const SURFACE_EXT_NAME: &str = "VK_KHR_surface";
+const LOADER_OFFERS_LOW: u32 = 1;
+const LOADER_OFFERS_HIGH: u32 = 5;
+const LAYER_WANTS: u32 = 2;
+const NAN_TEXT: &str = "NaN";
+const INF_TEXT: &str = "inf";
+const NEG_INF_TEXT: &str = "-inf";
+const FINITE_TEXT: &str = "1.5";
+const FINITE_VALUE: f32 = 1.5;
+const LIST_FIRST: i32 = 1;
+const LIST_SECOND: i32 = 2;
+const LIST_THIRD: i32 = 3;
+const LIST_MISSING: i32 = 9;
+const QUEUE_2_COMMAND: &str = "vkGetDeviceQueue2";
+const SURFACE_CAPS_COMMAND: &str = "vkGetPhysicalDeviceSurfaceCapabilitiesKHR";
+const BIAS_DOWN: f32 = -0.6;
 
 #[test]
 fn reads_one_spelling_of_the_default_profile_name() {
-    assert_eq!(sanitize_name(DEFAULT_NAME_MIXED), DEFAULT_PROFILE);
-    assert_eq!(sanitize_name(RESERVED_NAME_MIXED), DEFAULT_PROFILE);
-    assert_eq!(sanitize_name(PLAIN_NAME), PLAIN_NAME);
+    assert_eq!(sanitized_name(DEFAULT_NAME_MIXED), Some(DEFAULT_PROFILE.into()));
+    assert_eq!(sanitized_name(RESERVED_NAME_MIXED), None);
+    assert_eq!(sanitized_name(PLAIN_NAME), Some(PLAIN_NAME.into()));
+}
+
+#[test]
+fn hands_a_hook_out_where_any_one_provider_is_on() {
+    let none: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let surface: std::collections::HashSet<String> =
+        std::iter::once(SURFACE_EXT_NAME.to_string()).collect();
+    assert!(provider_on(CORE_ONE_ONE, &none, QUEUE_2_COMMAND));
+    assert!(!provider_on(CORE_ONE_ZERO, &none, QUEUE_2_COMMAND));
+    assert!(provider_on(CORE_ONE_ZERO, &surface, SURFACE_CAPS_COMMAND));
+    assert!(!provider_on(CORE_ONE_ZERO, &none, SURFACE_CAPS_COMMAND));
+}
+
+#[test]
+fn negotiation_fails_where_the_loader_offers_less_than_the_layer_needs() {
+    assert_eq!(negotiated_version(LOADER_OFFERS_LOW, LAYER_WANTS), None);
+}
+
+#[test]
+fn negotiation_takes_the_lower_of_the_two_interface_versions() {
+    assert_eq!(negotiated_version(LOADER_OFFERS_HIGH, LAYER_WANTS), Some(LAYER_WANTS));
+    assert_eq!(negotiated_version(LAYER_WANTS, LAYER_WANTS), Some(LAYER_WANTS));
+}
+
+#[test]
+fn a_number_that_is_not_finite_is_not_a_value() {
+    assert_eq!(parse_float(NAN_TEXT), None);
+    assert_eq!(parse_float(INF_TEXT), None);
+    assert_eq!(parse_float(NEG_INF_TEXT), None);
+    assert_eq!(parse_float(FINITE_TEXT), Some(FINITE_VALUE));
 }
 
 #[test]
 fn keeps_the_application_value_when_nothing_is_forced() {
-    assert_eq!(forced(None, 3), 3);
-    assert_eq!(forced(Some(2), 3), 2);
+    assert_eq!(forced(None, LIST_THIRD), LIST_THIRD);
+    assert_eq!(forced(Some(LIST_SECOND), LIST_THIRD), LIST_SECOND);
 }
 
 #[test]
 fn restores_a_list_the_choice_emptied() {
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 3, LIST_EMPTY_WARN), vec![1, 2, 3]);
-    assert_eq!(kept(vec![1, 2, 3], |value: &i32| *value > 1, LIST_EMPTY_WARN), vec![2, 3]);
+    assert_eq!(
+        kept(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], |value: &i32| *value > LIST_THIRD).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
+    assert_eq!(
+        kept(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], |value: &i32| *value > LIST_FIRST).items,
+        vec![LIST_SECOND, LIST_THIRD]
+    );
 }
 
 #[test]
 fn keeps_only_what_the_choice_names() {
-    assert_eq!(filtered(vec![1, 2, 3], Some(2), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![2]);
-    assert_eq!(filtered(vec![1, 2, 3], None, |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
-    assert_eq!(filtered(vec![1, 2, 3], Some(9), |v: &i32| Some(*v), LIST_EMPTY_WARN), vec![1, 2, 3]);
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], Some(LIST_SECOND), |v: &i32| Some(*v)).items,
+        vec![LIST_SECOND]
+    );
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], None, |v: &i32| Some(*v)).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
+    assert_eq!(
+        filtered(vec![LIST_FIRST, LIST_SECOND, LIST_THIRD], Some(LIST_MISSING), |v: &i32| Some(*v)).items,
+        vec![LIST_FIRST, LIST_SECOND, LIST_THIRD]
+    );
 }
 
 #[test]
-fn round_trips_a_present_mode_through_its_name() {
-    assert_eq!(present_parse(&present_display(FIFO_MODE)), Some(FIFO_MODE));
-    assert_eq!(present_parse(&present_display(UNKNOWN_MODE)), Some(UNKNOWN_MODE));
+fn round_trips_a_floor_present_mode_through_its_name() {
+    let mode = vk::PresentModeKHR::from_raw(FIFO_MODE);
+    assert_eq!(present_parse(&present_display(mode)), Some(mode));
+}
+
+#[test]
+fn never_reads_a_present_mode_above_the_floor_back_from_a_profile() {
+    let mode = vk::PresentModeKHR::from_raw(UNKNOWN_MODE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(present_parse(&present_display(mode)), None);
+    assert_eq!(present_parse(&present_display(shared)), None);
 }
 
 #[test]
 fn round_trips_a_composite_alpha_through_its_name() {
-    assert_eq!(alpha_parse(&alpha_display(OPAQUE_ALPHA)), Some(OPAQUE_ALPHA));
-    assert_eq!(alpha_parse(&alpha_display(UNKNOWN_ALPHA)), Some(UNKNOWN_ALPHA));
+    let alpha = vk::CompositeAlphaFlagsKHR::from_raw(OPAQUE_ALPHA);
+    assert_eq!(alpha_parse(&alpha_display(alpha)), Some(alpha));
 }
 
+#[test]
+fn never_reads_a_composite_alpha_volt_has_no_name_for() {
+    let alpha = vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA);
+    assert_eq!(alpha_parse(&alpha_display(alpha)), None);
+}
 
 #[test]
 fn gives_each_enum_its_own_unknown_prefix() {
-    assert_ne!(present_display(UNKNOWN_MODE), alpha_display(UNKNOWN_MODE));
+    assert_ne!(
+        present_display(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)),
+        alpha_display(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_MODE as u32))
+    );
 }
 
 #[test]
 fn groups_an_unnamed_value_under_nothing() {
-    assert!(present_semantic(UNKNOWN_MODE).is_none());
-    assert!(alpha_semantic(UNKNOWN_ALPHA).is_none());
+    assert_eq!(present_semantic(vk::PresentModeKHR::from_raw(UNKNOWN_MODE)), None);
+    assert_eq!(alpha_semantic(vk::CompositeAlphaFlagsKHR::from_raw(UNKNOWN_ALPHA)), None);
 }
 
 #[test]
 fn reads_the_facts_a_setting_branches_on() {
-    assert_eq!(alpha_semantic(OPAQUE_ALPHA).map(|facts| facts.blends), Some(false));
-    assert_eq!(alpha_semantic(INHERIT_ALPHA).map(|facts| facts.blends), Some(true));
-    assert_eq!(present_semantic(FIFO_MODE).map(|facts| facts.extended), Some(false));
-    assert_eq!(present_semantic(SHARED_MODE).map(|facts| facts.extended), Some(true));
+    let opaque = vk::CompositeAlphaFlagsKHR::from_raw(OPAQUE_ALPHA);
+    let inherit = vk::CompositeAlphaFlagsKHR::from_raw(INHERIT_ALPHA);
+    let fifo = vk::PresentModeKHR::from_raw(FIFO_MODE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(alpha_semantic(opaque), Some(AlphaFacts { blends: false }));
+    assert_eq!(alpha_semantic(inherit), Some(AlphaFacts { blends: true }));
+    assert_eq!(
+        present_semantic(fifo),
+        Some(PresentFacts { floor: true, shared: false })
+    );
+    assert_eq!(
+        present_semantic(shared),
+        Some(PresentFacts { floor: false, shared: true })
+    );
 }
 
 #[test]
-fn forces_a_value_volt_has_no_name_for() {
-    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).present_mode, Some(UNKNOWN_MODE));
-    assert_eq!(parse_settings(NAMED_MODE_PROFILE).present_mode, Some(FIFO_MODE));
+fn leaves_a_value_above_the_floor_at_default() {
+    assert_eq!(parse_settings(UNNAMED_MODE_PROFILE).settings.present_mode, None);
+    assert_eq!(
+        parse_settings(NAMED_MODE_PROFILE).settings.present_mode,
+        Some(vk::PresentModeKHR::from_raw(FIFO_MODE))
+    );
 }
 
 #[test]
 fn reads_the_two_feature_gated_toggles_from_a_profile() {
-    assert_eq!(parse_settings(ALPHA_ONE_PROFILE).alpha_to_one, Some(TOGGLE_ON));
-    assert_eq!(parse_settings(CLAMP_PROFILE).depth_clamp, Some(TOGGLE_OFF));
+    assert_eq!(parse_settings(ALPHA_ONE_PROFILE).settings.alpha_to_one, Some(TOGGLE_ON));
+    assert_eq!(parse_settings(CLAMP_PROFILE).settings.depth_clamp, Some(TOGGLE_OFF));
 }
 
 #[test]
 fn reads_each_sampler_filter_on_its_own() {
-    assert_eq!(parse_settings(FILTER_PROFILE).mag_filter, Some(NEAREST_FILTER));
-    assert_eq!(parse_settings(FILTER_PROFILE).min_filter, Some(LINEAR_FILTER));
+    assert_eq!(
+        parse_settings(FILTER_PROFILE).settings.mag_filter,
+        Some(vk::Filter::from_raw(NEAREST_FILTER))
+    );
+    assert_eq!(
+        parse_settings(FILTER_PROFILE).settings.min_filter,
+        Some(vk::Filter::from_raw(LINEAR_FILTER))
+    );
 }
 
 #[test]
@@ -336,13 +434,13 @@ fn never_shifts_a_cap_below_one_frame_a_second() {
 
 #[test]
 fn reads_a_frame_limit_offset_from_a_profile() {
-    assert_eq!(parse_settings(OFFSET_PROFILE).frame_limit_offset, Some(OFFSET_DOWN));
+    assert_eq!(parse_settings(OFFSET_PROFILE).settings.frame_limit_offset, Some(OFFSET_DOWN));
 }
 
 #[test]
 fn reads_a_frame_limit_cadence_from_a_profile() {
-    assert_eq!(parse_settings(FIXED_PROFILE).cadence, Some(CadenceChoice::Fixed));
-    assert_eq!(parse_settings(DYNAMIC_PROFILE).cadence, Some(CadenceChoice::Dynamic));
+    assert_eq!(parse_settings(FIXED_PROFILE).settings.cadence, Some(CadenceChoice::Fixed));
+    assert_eq!(parse_settings(DYNAMIC_PROFILE).settings.cadence, Some(CadenceChoice::Dynamic));
 }
 
 #[test]
@@ -497,10 +595,15 @@ fn a_hitch_cannot_set_the_peak_past_the_spike_limit() {
 }
 
 #[test]
-fn writes_only_the_parts_a_setting_line_has() {
+fn writes_a_setting_line_in_either_shape() {
     assert_eq!(
-        report_line(SETTING_PRESENT_MODE, Some(ASKED_MODE.into()), None, None),
-        ASKED_LINE
+        report_line(
+            SETTING_PRESENT_MODE,
+            Some(ASKED_MODE.into()),
+            Some(ASKED_MODE.into()),
+            None,
+        ),
+        SAME_LINE
     );
     assert_eq!(
         report_line(
@@ -513,7 +616,7 @@ fn writes_only_the_parts_a_setting_line_has() {
     );
     assert_eq!(
         report_line(SETTING_FRAME_LIMIT, None, Some(FORCED_LIMIT.into()), None),
-        FORCED_LINE
+        APPLIED_LINE
     );
     assert_eq!(
         report_line(SETTING_FRAME_LIMIT, None, None, Some(NOTE_NOT_SET.into())),
@@ -523,7 +626,7 @@ fn writes_only_the_parts_a_setting_line_has() {
         report_line(
             SETTING_ANISOTROPY,
             Some(ASKED_ANISO.into()),
-            None,
+            Some(ASKED_ANISO.into()),
             feature_note(true, false, FEATURE_ANISOTROPY),
         ),
         BLOCKED_LINE
@@ -531,19 +634,11 @@ fn writes_only_the_parts_a_setting_line_has() {
 }
 
 #[test]
-fn names_a_forced_value_only_where_the_profile_set_one() {
-    assert_eq!(
-        forced_text(true, NEAREST_FILTER, NEAREST_FILTER, filter_text),
-        None
-    );
-    assert_eq!(
-        forced_text(true, NEAREST_FILTER, LINEAR_FILTER, filter_text),
-        Some(TEXT_LINEAR.into())
-    );
-    assert_eq!(
-        forced_text(false, NEAREST_FILTER, LINEAR_FILTER, filter_text),
-        None
-    );
+fn names_the_applied_value_wherever_the_profile_set_one() {
+    let nearest = vk::Filter::from_raw(NEAREST_FILTER);
+    let linear = vk::Filter::from_raw(LINEAR_FILTER);
+    assert_eq!(applied_text(nearest, filter_text), TEXT_NEAREST.to_string());
+    assert_eq!(applied_text(linear, filter_text), TEXT_LINEAR.to_string());
 }
 
 #[test]
@@ -556,19 +651,7 @@ fn notes_a_feature_only_where_the_profile_set_the_setting() {
 #[test]
 fn writes_a_number_the_way_a_profile_writes_it() {
     assert_eq!(number_text(ANISO_SIXTEEN), ANISO_SIXTEEN_TEXT);
-    assert_eq!(number_text(OFFSET_DOWN / 10.0), BIAS_DOWN_TEXT);
-}
-
-#[test]
-fn reports_a_setting_once_per_device_until_the_device_dies() {
-    let store: RwLock<Option<ReportMap>> = RwLock::new(None);
-    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(!call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(call_claim(&store, OWNER_ONE, SETTING_ANISOTROPY));
-    assert!(call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
-    call_forget(&store, OWNER_ONE);
-    assert!(call_claim(&store, OWNER_ONE, SETTING_PRESENT_MODE));
-    assert!(!call_claim(&store, OWNER_TWO, SETTING_PRESENT_MODE));
+    assert_eq!(number_text(BIAS_DOWN), BIAS_DOWN_TEXT);
 }
 
 fn chain_node(s_type: u32, next: *mut c_void) -> VkChainNode {
@@ -612,7 +695,7 @@ fn chains_its_own_copy_in_front_of_the_replacement() {
         surface_counters: NO_COUNTERS,
     };
     let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
-    let built = call_relinked_chain(
+    let built = relinked_chain(
         &front as *const VkSwapchainCounterCreateInfoEXT as *const c_void,
         SWAPCHAIN_MODE_LIST_TYPE,
         &replacement as *const VkChainNode as *const c_void,
@@ -641,7 +724,7 @@ fn passes_the_chain_down_when_a_node_in_front_is_undeclared() {
         &mut target as *mut VkChainNode as *mut c_void,
     );
     let replacement = chain_node(SWAPCHAIN_MODE_LIST_TYPE, ptr::null_mut());
-    assert!(call_relinked_chain(
+    assert!(relinked_chain(
         &front as *const VkChainNode as *const c_void,
         SWAPCHAIN_MODE_LIST_TYPE,
         &replacement as *const VkChainNode as *const c_void,
@@ -662,17 +745,33 @@ fn reads_the_sampler_only_where_the_selector_names_one() {
 
 #[test]
 fn narrows_a_chained_mode_list_to_the_choice() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
     assert_eq!(
-        present_filtered(
-            vec![vk::PresentModeKHR::FIFO, vk::PresentModeKHR::MAILBOX],
-            Some(MAILBOX_VALUE),
-        ),
-        vec![vk::PresentModeKHR::MAILBOX]
+        present_narrowed(vec![vk::PresentModeKHR::FIFO, mailbox], Some(mailbox)).items,
+        vec![mailbox]
     );
     assert_eq!(
-        present_filtered(vec![vk::PresentModeKHR::FIFO], Some(MAILBOX_VALUE)),
+        present_narrowed(vec![vk::PresentModeKHR::FIFO], Some(mailbox)).items,
         vec![vk::PresentModeKHR::FIFO]
     );
+}
+
+#[test]
+fn leaves_a_mode_above_the_floor_where_it_was() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    assert_eq!(
+        present_narrowed(vec![vk::PresentModeKHR::FIFO, mailbox, shared], Some(mailbox)).items,
+        vec![mailbox, shared]
+    );
+}
+
+#[test]
+fn restores_a_list_where_no_floor_mode_survives_beside_one_above_it() {
+    let mailbox = vk::PresentModeKHR::from_raw(MAILBOX_VALUE);
+    let shared = vk::PresentModeKHR::from_raw(SHARED_MODE);
+    let modes = vec![vk::PresentModeKHR::FIFO, shared];
+    assert_eq!(present_narrowed(modes.clone(), Some(mailbox)).items, modes);
 }
 
 #[test]

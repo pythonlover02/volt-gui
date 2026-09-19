@@ -15,7 +15,7 @@ from probe import present_options
 from probe import shading_options
 
 
-APP_VERSION: Final[str] = "2.3.1"
+APP_VERSION: Final[str] = "2.4.0"
 APP_AUTHOR: Final[str] = "pythonlover02"
 APP_LICENSE: Final[str] = "GPL 3.0 License"
 APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alternative"
@@ -40,7 +40,7 @@ SETTINGS_DB: Final[dict] = {
         "present_mode": {
             "section": "display",
             "label": "VSync / Present Mode",
-            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. Every other mode is hidden from the game, so its own vsync menu cannot offer one you ruled out. A mode the surface lacks falls back to the game's own choice with a warning.",
+            "description": "How finished frames reach the screen. immediate turns vsync off, mailbox is low latency vsync, fifo is classic vsync, fifo_relaxed tears only below refresh. Only these four are offered or forced; a mode an extension defines is left wherever the driver reported it. A mode the surface lacks falls back to the game's own choice with a warning.",
             "options": (DEFAULT_VALUE,),
         },
         "image_count": {
@@ -90,7 +90,7 @@ SETTINGS_DB: Final[dict] = {
         "frame_pacing": {
             "section": "framerate",
             "label": "Frame Pacing",
-            "description": "How the limiter waits, cheapest to tightest. sleep hands the whole wait to the kernel. sliced sleeps in short steps and re-checks the clock, correcting for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits throughout, the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
+            "description": "How the limiter waits. sleep hands the whole wait to the kernel. sliced sleeps in short steps and re-checks the clock, correcting for the kernel waking late. precise sleeps most of the interval then busy waits half a millisecond. spin busy waits throughout, the steadiest and the only one that keeps a core awake. Only does something when Frame Limit is set.",
             "options": (DEFAULT_VALUE, "sleep", "sliced", "precise", "spin"),
         },
     },
@@ -98,19 +98,19 @@ SETTINGS_DB: Final[dict] = {
         "mag_filter": {
             "section": "textures",
             "label": "Magnification Filter",
-            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. This is the one filter a still screenshot shows you. Core Vulkan, so the list never changes.",
+            "description": "How a texture is sampled when it is drawn larger than its own size, which is anything close to the camera. nearest gives sharp unfiltered pixels, linear smooths between them. linear is forced only onto a sampler already using linear somewhere; otherwise that sampler is left alone with a line in the log. This is the one filter a still screenshot shows you. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "min_filter": {
             "section": "textures",
             "label": "Minification Filter",
-            "description": "How a texture is sampled when it is drawn smaller than its own size, which is most of the screen. nearest takes one texel and shimmers as the camera moves. linear averages and settles, and is where mipmaps and anisotropic filtering do their work. Core Vulkan, so the list never changes.",
+            "description": "How a texture is sampled when it is drawn smaller than its own size, which is most of the screen. nearest takes one texel and shimmers as the camera moves. linear averages and settles, and is where mipmaps and anisotropic filtering do their work. linear is forced only onto a sampler already using linear somewhere; otherwise that sampler is left alone with a line in the log. Core Vulkan, so the list never changes.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "mipmap_mode": {
             "section": "textures",
             "label": "Mipmap Mode",
-            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, which shows as a band on the ground. linear blends across them, the third linear in trilinear. Core Vulkan, so the list never changes. Only affects textures that have mips.",
+            "description": "How samplers move between mip levels. nearest cuts hard from one mip to the next, which shows as a band on the ground. linear blends across them, the third linear in trilinear, and is forced only onto a sampler already using linear somewhere. Core Vulkan, so the list never changes. Only affects textures that have mips.",
             "options": (DEFAULT_VALUE, "nearest", "linear"),
         },
         "anisotropy": {
@@ -122,7 +122,7 @@ SETTINGS_DB: Final[dict] = {
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports.",
+            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports, up to 4 either way.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_floor": {
@@ -134,7 +134,7 @@ SETTINGS_DB: Final[dict] = {
         "mip_ceiling": {
             "section": "textures",
             "label": "Mip Ceiling",
-            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor, and a ceiling that lands below the floor is swapped with it rather than dropped.",
+            "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor. A forced bound that would cross the value the other field holds is dropped, with a line in the log.",
             "options": (DEFAULT_VALUE,),
         },
     },
@@ -148,8 +148,8 @@ SETTINGS_DB: Final[dict] = {
         "alpha_to_coverage": {
             "section": "rendering",
             "label": "Alpha To Coverage",
-            "description": "Turn fragment alpha into coverage, which softens cutout edges on foliage and fences. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
-            "options": (DEFAULT_VALUE, "on", "off"),
+            "description": "Turn fragment alpha to coverage off, whatever the game asked for. volt never forces it on: on requires the fragment shader to write alpha at location 0 and volt never reads a shader. Core Vulkan, so the list never changes. Only does something where the game already renders to an MSAA target.",
+            "options": (DEFAULT_VALUE, "off"),
         },
         "alpha_to_one": {
             "section": "rendering",
@@ -219,18 +219,6 @@ OPTIONS_DB: Final[dict] = {
 }
 
 
-def find_settings_for_tab(tab_name: str) -> dict:
-    return SETTINGS_DB.get(tab_name, {})
-
-
-def get_setting_label(tab_name: str, setting_key: str) -> str:
-    return SETTINGS_DB[tab_name][setting_key]["label"]
-
-
-def get_setting_description(tab_name: str, setting_key: str) -> str:
-    return SETTINGS_DB[tab_name][setting_key]["description"]
-
-
 OPTION_BUILDERS: Final[dict] = {
     "device": gpu_options,
     "present_mode": present_options,
@@ -248,6 +236,26 @@ OPTION_BUILDERS: Final[dict] = {
 }
 
 
+ACCENT_COLORS: Final[dict] = {
+    "amd": ("#E31937", "#FF2D4A", "#B81430"),
+    "intel": ("#0068B5", "#1A8CFF", "#004D87"),
+    "nvidia": ("#76B900", "#8ED11A", "#5A8F00"),
+}
+DEFAULT_ACCENT: Final[tuple] = ("#80dbcb", "#9ae4d8", "#66b0a2")
+
+
+def find_settings_for_tab(tab_name: str) -> dict:
+    return SETTINGS_DB.get(tab_name, {})
+
+
+def get_setting_label(tab_name: str, setting_key: str) -> str:
+    return SETTINGS_DB[tab_name][setting_key]["label"]
+
+
+def get_setting_description(tab_name: str, setting_key: str) -> str:
+    return SETTINGS_DB[tab_name][setting_key]["description"]
+
+
 def _static_options(tab_name: str, setting_key: str) -> tuple:
     return plain_pairs(SETTINGS_DB[tab_name][setting_key]["options"])
 
@@ -260,7 +268,7 @@ def find_setting_options(tab_name: str, setting_key: str, data: dict) -> tuple:
             return ((DEFAULT_VALUE, DEFAULT_VALUE),) + builder(data)
 
 
-def get_setting_options(tab_name: str, setting_key: str) -> tuple:
+def call_setting_options(tab_name: str, setting_key: str) -> tuple:
     return find_setting_options(tab_name, setting_key, call_read_probe())
 
 
@@ -272,12 +280,12 @@ def build_widget_key(tab_name: str, setting_key: str) -> str:
     return tab_name + ":" + setting_key
 
 
-def find_cards_for_tab(tab_name: str) -> tuple:
+def call_cards_for_tab(tab_name: str) -> tuple:
     return tuple(
         (build_widget_key(tab_name, setting_key),
          get_setting_label(tab_name, setting_key),
          get_setting_description(tab_name, setting_key),
-         get_setting_options(tab_name, setting_key))
+         call_setting_options(tab_name, setting_key))
         for setting_key in find_settings_for_tab(tab_name))
 
 
@@ -288,7 +296,7 @@ def _tab_option_sources(tab_name: str, data: dict) -> tuple:
         for setting_key in find_settings_for_tab(tab_name))
 
 
-def find_option_sources() -> tuple:
+def call_option_sources() -> tuple:
     data = call_read_probe()
     return tuple(
         entry
@@ -338,15 +346,7 @@ def resolve_option_value(option_key: str, raw_value: str) -> str:
 
 
 def get_accent_colors(theme_name: str) -> tuple:
-    match theme_name:
-        case "amd":
-            return ("#E31937", "#FF2D4A", "#B81430")
-        case "intel":
-            return ("#0068B5", "#1A8CFF", "#004D87")
-        case "nvidia":
-            return ("#76B900", "#8ED11A", "#5A8F00")
-        case _:
-            return ("#80dbcb", "#9ae4d8", "#66b0a2")
+    return ACCENT_COLORS.get(theme_name, DEFAULT_ACCENT)
 
 
 def get_about_data() -> dict:

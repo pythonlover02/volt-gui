@@ -1,3 +1,5 @@
+from functools import partial
+from typing import Any
 from typing import Final
 
 from database import DEFAULT_VALUE
@@ -21,7 +23,6 @@ PRESET_OVERRIDES: Final[dict] = {
         "Textures:anisotropy": "16",
         "Textures:lod_bias": "-0.6",
         "Textures:mip_floor": "0",
-        "Rendering:alpha_to_coverage": "on",
     },
     "Balanced": {
         "Display:present_mode": "mailbox",
@@ -102,7 +103,7 @@ def build_preset_values(preset_name: str) -> dict:
         **PRESET_OVERRIDES.get(preset_name, {})}
 
 
-def build_preset_combo_items(combo_widget) -> None:
+def process_preset_combo_items(combo_widget: Any) -> None:
     combo_widget.blockSignals(True)
     combo_widget.clear()
     combo_widget.addItem(get_preset_placeholder_label())
@@ -113,12 +114,18 @@ def build_preset_combo_items(combo_widget) -> None:
     return None
 
 
+def _widget_dropped(widget_collection: dict, item: tuple) -> bool:
+    widget_key, setting_value = item
+    match widget_collection.get(widget_key):
+        case None:
+            return False
+        case widget:
+            return not process_widget_value_update(widget, setting_value)
+
+
 def _preset_dropped(widget_collection: dict, values: dict) -> tuple:
-    return tuple(
-        widget_key
-        for widget_key, setting_value in values.items()
-        if widget_collection.get(widget_key) is not None
-        and not process_widget_value_update(widget_collection[widget_key], setting_value))
+    dropped = filter(partial(_widget_dropped, widget_collection), values.items())
+    return tuple(widget_key for widget_key, _ in dropped)
 
 
 def process_preset_apply(widget_collection: dict, preset_name: str) -> tuple:

@@ -6,7 +6,23 @@ use std::sync::Mutex;
 use ash::vk;
 
 use crate::config::config_dir;
+use crate::consts::LINE_END;
 use crate::consts::PROBE_FAIL_WARN;
+use crate::consts::PROBE_KEY_ALPHA_TO_ONE;
+use crate::consts::PROBE_KEY_COMPOSITE_ALPHAS;
+use crate::consts::PROBE_KEY_DEPTH_CLAMP;
+use crate::consts::PROBE_KEY_DEVICE_INDEX;
+use crate::consts::PROBE_KEY_DEVICE_NAMES;
+use crate::consts::PROBE_KEY_MAX_ANISOTROPY;
+use crate::consts::PROBE_KEY_MAX_IMAGE_COUNT;
+use crate::consts::PROBE_KEY_MAX_LOD_BIAS;
+use crate::consts::PROBE_KEY_MAX_LOD_LEVEL;
+use crate::consts::PROBE_KEY_MIN_IMAGE_COUNT;
+use crate::consts::PROBE_KEY_PRESENT_MODES;
+use crate::consts::PROBE_KEY_SAMPLER_ANISOTROPY;
+use crate::consts::PROBE_KEY_SAMPLE_RATE_SHADING;
+use crate::consts::PROBE_PAIR_CLOSE;
+use crate::consts::PROBE_PAIR_OPEN;
 use crate::consts::PROBE_FILE;
 use crate::consts::PROBE_OFF;
 use crate::consts::PROBE_ON;
@@ -17,13 +33,15 @@ use crate::consts::PROBE_SEP;
 use crate::consts::PROBE_TEMP;
 use crate::consts::PROBE_WRITE_INFO;
 use crate::device::DeviceCaps;
-use crate::instance::all_devices;
+use crate::instance::call_all_devices;
 use crate::instance::device_index;
 use crate::instance::VkInstState;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
+use crate::ranks::alpha_semantic;
 use crate::ranks::present_display;
+use crate::ranks::present_semantic;
 
 pub(crate) struct DeviceFacts {
     pub(crate) index: u32,
@@ -64,7 +82,7 @@ fn unique_sorted(mut values: Vec<u32>) -> Vec<u32> {
     values
 }
 
-fn device_features(
+fn call_device_features(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
 ) -> vk::PhysicalDeviceFeatures {
@@ -75,20 +93,22 @@ fn feature_held(flag: vk::Bool32) -> bool {
     flag == vk::TRUE
 }
 
-fn device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
+fn call_device_name(inst: &VkInstState, phys: vk::PhysicalDevice) -> String {
     let props = unsafe { inst.instance.get_physical_device_properties(phys) };
     unsafe { CStr::from_ptr(props.device_name.as_ptr()) }
         .to_string_lossy()
         .to_lowercase()
 }
 
-fn device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
-    all.iter().map(|p| device_name(inst, *p)).collect()
+fn call_device_names(inst: &VkInstState, all: &[vk::PhysicalDevice]) -> Vec<String> {
+    all.iter().map(|p| call_device_name(inst, *p)).collect()
 }
 
 fn present_names(supported: &[vk::PresentModeKHR]) -> Vec<String> {
     unique_sorted(supported.iter().map(|m| m.as_raw() as u32).collect())
         .into_iter()
+        .map(|raw| vk::PresentModeKHR::from_raw(raw as i32))
+        .filter(|mode| present_semantic(*mode).is_some_and(|facts| facts.floor))
         .map(present_display)
         .collect()
 }
@@ -101,7 +121,12 @@ fn set_bits(mask: u32) -> Vec<u32> {
 }
 
 fn alpha_names(mask: u32) -> Vec<String> {
-    set_bits(mask).into_iter().map(alpha_display).collect()
+    set_bits(mask)
+        .into_iter()
+        .map(vk::CompositeAlphaFlagsKHR::from_raw)
+        .filter(|bit| alpha_semantic(*bit).is_some())
+        .map(alpha_display)
+        .collect()
 }
 
 fn joined(items: &[String]) -> String {
@@ -116,23 +141,23 @@ fn flag_text(value: bool) -> &'static str {
 }
 
 fn pair(key: &str, value: &str) -> String {
-    format!("{} = \"{}\"\n", key, value)
+    [key, PROBE_PAIR_OPEN, value, PROBE_PAIR_CLOSE].concat()
 }
 
 fn section_head(tag: &str) -> String {
-    format!("{}{}{}\n", PROBE_SECTION_OPEN, tag, PROBE_SECTION_CLOSE)
+    [PROBE_SECTION_OPEN, tag, PROBE_SECTION_CLOSE, LINE_END].concat()
 }
 
-pub(crate) fn build_device(
+pub(crate) fn call_build_device(
     inst: &VkInstState,
     phys: vk::PhysicalDevice,
     caps: &DeviceCaps,
 ) -> DeviceFacts {
-    let all = all_devices(inst);
-    let features = device_features(inst, phys);
+    let all = call_all_devices(inst);
+    let features = call_device_features(inst, phys);
     DeviceFacts {
         index: device_index(&all, phys),
-        names: device_names(inst, &all),
+        names: call_device_names(inst, &all),
         max_anisotropy: caps.max_anisotropy,
         max_lod_bias: caps.max_lod_bias,
         max_lod_level: caps.max_lod_level,
@@ -158,16 +183,16 @@ pub(crate) fn build_surface(
 fn render_device(d: &DeviceFacts) -> String {
     [
         PROBE_SECTION.to_string(),
-        "\n".to_string(),
-        pair("device_index", &d.index.to_string()),
-        pair("device_names", &joined(&d.names)),
-        pair("max_anisotropy", &d.max_anisotropy.to_string()),
-        pair("max_lod_bias", &d.max_lod_bias.to_string()),
-        pair("max_lod_level", &d.max_lod_level.to_string()),
-        pair("sampler_anisotropy", flag_text(d.anisotropy)),
-        pair("sample_rate_shading", flag_text(d.shading)),
-        pair("alpha_to_one", flag_text(d.alpha_one)),
-        pair("depth_clamp", flag_text(d.clamp)),
+        LINE_END.to_string(),
+        pair(PROBE_KEY_DEVICE_INDEX, &d.index.to_string()),
+        pair(PROBE_KEY_DEVICE_NAMES, &joined(&d.names)),
+        pair(PROBE_KEY_MAX_ANISOTROPY, &d.max_anisotropy.to_string()),
+        pair(PROBE_KEY_MAX_LOD_BIAS, &d.max_lod_bias.to_string()),
+        pair(PROBE_KEY_MAX_LOD_LEVEL, &d.max_lod_level.to_string()),
+        pair(PROBE_KEY_SAMPLER_ANISOTROPY, flag_text(d.anisotropy)),
+        pair(PROBE_KEY_SAMPLE_RATE_SHADING, flag_text(d.shading)),
+        pair(PROBE_KEY_ALPHA_TO_ONE, flag_text(d.alpha_one)),
+        pair(PROBE_KEY_DEPTH_CLAMP, flag_text(d.clamp)),
     ]
     .concat()
 }
@@ -175,10 +200,10 @@ fn render_device(d: &DeviceFacts) -> String {
 pub(crate) fn render_surface(tag: &str, s: &SurfaceFacts) -> String {
     [
         section_head(tag),
-        pair("present_modes", &joined(&s.present)),
-        pair("composite_alphas", &joined(&s.alphas)),
-        pair("min_image_count", &s.min_images.to_string()),
-        pair("max_image_count", &s.max_images.to_string()),
+        pair(PROBE_KEY_PRESENT_MODES, &joined(&s.present)),
+        pair(PROBE_KEY_COMPOSITE_ALPHAS, &joined(&s.alphas)),
+        pair(PROBE_KEY_MIN_IMAGE_COUNT, &s.min_images.to_string()),
+        pair(PROBE_KEY_MAX_IMAGE_COUNT, &s.max_images.to_string()),
     ]
     .concat()
 }
@@ -198,7 +223,7 @@ fn render_sections(state: &ProbeState) -> Vec<String> {
 }
 
 fn render(state: &ProbeState) -> String {
-    render_sections(state).join("\n")
+    render_sections(state).join(LINE_END)
 }
 
 fn call_unchanged(path: &PathBuf, text: &str) -> bool {
@@ -210,8 +235,8 @@ fn call_unchanged(path: &PathBuf, text: &str) -> bool {
 fn call_replace_file(text: &str) {
     let temp = config_dir().join(PROBE_TEMP);
     match fs::write(&temp, text).and_then(|()| fs::rename(&temp, config_dir().join(PROBE_FILE))) {
-        Ok(()) => log_at(LogLevel::Info, PROBE_WRITE_INFO),
-        Err(_) => log_at(LogLevel::Warn, PROBE_FAIL_WARN),
+        Ok(()) => call_log_at(LogLevel::Info, PROBE_WRITE_INFO),
+        Err(_) => call_log_at(LogLevel::Warn, PROBE_FAIL_WARN),
     }
 }
 

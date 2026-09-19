@@ -34,6 +34,7 @@ use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
 use crate::lists::forced;
+use crate::swapchain::rebuilt_present;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Timeline {
@@ -43,7 +44,7 @@ pub(crate) struct Timeline {
     pub(crate) peak: u64,
 }
 
-type TimelineMap = HashMap<u64, Timeline>;
+type TimelineMap = HashMap<(u64, u64), Timeline>;
 
 static EPOCH: OnceLock<Instant> = OnceLock::new();
 static TIMELINES: Mutex<Option<TimelineMap>> = Mutex::new(None);
@@ -211,18 +212,20 @@ fn call_wait_until(target: u64, pacing: PacingChoice) {
     }
 }
 
-fn call_present_key(info: *const vk::PresentInfoKHR<'_>) -> u64 {
-    unsafe { (*(*info).p_swapchains).as_raw() }
+fn present_keys(info: *const vk::PresentInfoKHR<'_>) -> Vec<u64> {
+    (0..unsafe { (*info).swapchain_count } as usize)
+        .map(|at| unsafe { (*(*info).p_swapchains.add(at)).as_raw() })
+        .collect()
 }
 
-fn call_stored(map: &mut TimelineMap, key: u64, next: Timeline) -> u64 {
+fn call_stored(map: &mut TimelineMap, key: (u64, u64), next: Timeline) -> u64 {
     map.insert(key, next);
     next.target
 }
 
 fn call_advanced_in(
     map: &mut TimelineMap,
-    key: u64,
+    key: (u64, u64),
     interval: u64,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
@@ -241,7 +244,7 @@ fn call_advanced_in(
 }
 
 fn call_frame_target(
-    key: u64,
+    key: (u64, u64),
     interval: u64,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
@@ -258,15 +261,29 @@ fn call_frame_target(
     }
 }
 
+fn call_latest_target(
+    dev: u64,
+    keys: Vec<u64>,
+    interval: u64,
+    method: Option<MethodChoice>,
+    cadence: Option<CadenceChoice>,
+) -> u64 {
+    keys.into_iter()
+        .map(|key| call_frame_target((dev, key), interval, method, cadence))
+        .max()
+        .unwrap_or_else(call_now_ns)
+}
+
 fn call_limit_to(
-    key: u64,
+    dev: u64,
+    keys: Vec<u64>,
     fps: f32,
     pacing: PacingChoice,
     method: Option<MethodChoice>,
     cadence: Option<CadenceChoice>,
 ) {
     call_wait_until(
-        call_frame_target(key, target_interval_ns(fps), method, cadence),
+        call_latest_target(dev, keys, target_interval_ns(fps), method, cadence),
         pacing,
     );
 }
@@ -295,14 +312,16 @@ fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
         .map(|fps| shifted_fps(fps, s.frame_limit_offset))
 }
 
-pub(crate) fn maybe_limit_frame(
+pub(crate) fn call_limit_frame(
     stage: LimitStage,
     s: &Settings,
+    dev: u64,
     info: *const vk::PresentInfoKHR<'_>,
 ) {
     match limit_fps(s, stage) {
         Some(fps) => call_limit_to(
-            call_present_key(info),
+            dev,
+            present_keys(info),
             fps,
             pacing_or_default(s.pacing),
             s.limit_method,
@@ -312,11 +331,22 @@ pub(crate) fn maybe_limit_frame(
     }
 }
 
-pub(crate) fn call_forget_timeline(sc: vk::SwapchainKHR) {
+pub(crate) fn call_forget_timeline(dev: u64, sc: vk::SwapchainKHR) {
     match TIMELINES.lock() {
         Ok(mut guard) => {
-            guard.get_or_insert_with(HashMap::new).remove(&sc.as_raw());
+            guard
+                .get_or_insert_with(HashMap::new)
+                .remove(&(dev, sc.as_raw()));
         }
+        Err(_) => (),
+    }
+}
+
+pub(crate) fn call_forget_device_timelines(dev: u64) {
+    match TIMELINES.lock() {
+        Ok(mut guard) => guard
+            .get_or_insert_with(HashMap::new)
+            .retain(|(owner, _), _| *owner != dev),
         Err(_) => (),
     }
 }
@@ -326,5 +356,8 @@ pub(crate) fn call_present_frame(
     queue: vk::Queue,
     info: *const vk::PresentInfoKHR<'_>,
 ) -> vk::Result {
-    unsafe { (dev.swap_fp.queue_present_khr)(queue, info) }
+    match rebuilt_present(dev.device.handle().as_raw(), unsafe { &*info }) {
+        Some(built) => unsafe { (dev.swap_fp.queue_present_khr)(queue, &built.info) },
+        None => unsafe { (dev.swap_fp.queue_present_khr)(queue, info) },
+    }
 }

@@ -20,5 +20,5 @@ mod launcher;
 #[cfg(test)]
 mod checks;
 
-pub use env::process_args;
-pub use launcher::run_launcher;
+pub use env::launch_args;
+pub use launcher::call_run_launcher;
