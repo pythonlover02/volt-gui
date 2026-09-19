@@ -25,17 +25,18 @@ use crate::logging::info_wanted;
 use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
-type ReportMap = HashMap<u64, HashSet<&'static str>>;
+type ReportKey = (&'static str, Option<String>, Option<String>);
+type ReportMap = HashMap<u64, HashSet<ReportKey>>;
 
 static REPORTS: RwLock<Option<ReportMap>> = RwLock::new(None);
 
-fn call_claim_report(owner: u64, name: &'static str) -> bool {
+fn call_claim_report(owner: u64, key: ReportKey) -> bool {
     match REPORTS.write() {
         Ok(mut guard) => guard
             .get_or_insert_with(HashMap::new)
             .entry(owner)
             .or_insert_with(HashSet::new)
-            .insert(name),
+            .insert(key),
         Err(_) => false,
     }
 }
@@ -124,27 +125,24 @@ pub(crate) fn call_report_value<T: Copy>(
     text: fn(T) -> String,
     note: Option<String>,
 ) {
-    match call_claim_report(owner, name) {
-        true => call_report_setting(
-            name,
-            Some(text(asked)),
-            Some(applied_text(held, text)),
-            note,
-        ),
+    let asked_text = text(asked);
+    let held_text = applied_text(held, text);
+    match call_claim_report(owner, (name, Some(asked_text.clone()), Some(held_text.clone()))) {
+        true => call_report_setting(name, Some(asked_text), Some(held_text), note),
         false => (),
     }
 }
 
 pub(crate) fn call_report_choice(owner: u64, name: &'static str, forced: Option<String>) {
     let note = missing_note(&forced);
-    match call_claim_report(owner, name) {
+    match call_claim_report(owner, (name, None, forced.clone())) {
         true => call_report_setting(name, None, forced, note),
         false => (),
     }
 }
 
 pub(crate) fn call_report_reading(owner: u64, name: &'static str, asked: String) {
-    match call_claim_report(owner, name) {
+    match call_claim_report(owner, (name, Some(asked.clone()), None)) {
         true => call_report_setting(name, Some(asked), None, None),
         false => (),
     }
