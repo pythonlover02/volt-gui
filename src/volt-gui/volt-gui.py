@@ -88,6 +88,7 @@ WINDOW_OPACITY: Final[float] = 0.95
 WINDOW_OPAQUE: Final[float] = 1.0
 WELCOME_DELAY_MS: Final[int] = 100
 SHOW_DELAY_MS: Final[int] = 0
+TRAY_ICON_NAME: Final[str] = "volt-gui"
 PREVIEW_BIN: Final[str] = "volt"
 PREVIEW_TARGET: Final[str] = "volt-probe"
 PREVIEW_POLL_MS: Final[int] = 750
@@ -450,7 +451,7 @@ def create_system_tray_widget(main_window: QMainWindow) -> None:
             return None
         case True:
             main_window.tray_icon = QSystemTrayIcon(main_window)
-            main_window.tray_icon.setIcon(QIcon.fromTheme("preferences-system"))
+            main_window.tray_icon.setIcon(QIcon.fromTheme(TRAY_ICON_NAME))
             menu = QMenu()
             menu.addAction(QAction("Show", main_window, triggered=lambda: process_window_show(main_window)))
             main_window.profile_submenu = QMenu(SUBMENU_TITLE, menu)
