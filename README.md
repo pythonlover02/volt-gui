@@ -1,5 +1,7 @@
 > [!NOTE]
 > Bug reports and pull requests are welcome, but please understand that development happens in my free time and progress may be slow at times. The project is still maintained even if the last commit was made a while ago.
+>
+> Also English isn't my first language. I mainly speak Spanish (and some Portuguese), so I usually write the docs in Spanish, run them through a translator, and then edit the result. Some parts may sound a bit stiff or unnatural because of that. If anything is unclear, feel free to open an issue and I'll fix it.
 
 # volt-gui
 
