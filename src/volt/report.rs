@@ -22,7 +22,7 @@ use crate::consts::TEXT_OFF;
 use crate::consts::TEXT_ON;
 use crate::consts::TOGGLE_ON;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 type ReportMap = HashMap<u64, HashSet<&'static str>>;
@@ -95,7 +95,7 @@ pub(crate) fn call_report_setting(
     forced: Option<String>,
     note: Option<String>,
 ) {
-    log_at(LogLevel::Info, &report_line(name, asked, forced, note));
+    call_log_at(LogLevel::Info, &report_line(name, asked, forced, note));
 }
 
 pub(crate) fn feature_note(set: bool, held: bool, feature: &str) -> Option<String> {

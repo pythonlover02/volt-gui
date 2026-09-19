@@ -56,14 +56,14 @@ pub(crate) fn info_wanted() -> bool {
     should_emit(level_num(&LogLevel::Info), LEVEL.load(Ordering::Relaxed))
 }
 
-pub(crate) fn log_at(level: LogLevel, msg: &str) {
+pub(crate) fn call_log_at(level: LogLevel, msg: &str) {
     match should_emit(level_num(&level), LEVEL.load(Ordering::Relaxed)) {
         true => call_write_log(&[LOG_PREFIX, msg, LINE_END].concat()),
         false => (),
     }
 }
 
-pub(crate) fn init_log_level() {
+pub(crate) fn call_init_log_level() {
     match LEVEL_SET.swap(true, Ordering::Relaxed) {
         true => (),
         false => LEVEL.store(

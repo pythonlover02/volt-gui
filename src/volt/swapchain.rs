@@ -66,7 +66,7 @@ use crate::lists::forced;
 use crate::lists::untouched;
 use crate::lists::Narrowed;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::present::cadence_display;
 use crate::present::method_display;
@@ -144,7 +144,7 @@ fn supported_mode(
 }
 
 fn logged_mode_miss(original: vk::PresentModeKHR) -> vk::PresentModeKHR {
-    log_at(LogLevel::Warn, PRESENT_MISS_WARN);
+    call_log_at(LogLevel::Warn, PRESENT_MISS_WARN);
     original
 }
 
@@ -194,7 +194,7 @@ fn pick_present_mode(
 }
 
 fn logged_alpha_miss(original: vk::CompositeAlphaFlagsKHR) -> vk::CompositeAlphaFlagsKHR {
-    log_at(LogLevel::Warn, ALPHA_MISS_WARN);
+    call_log_at(LogLevel::Warn, ALPHA_MISS_WARN);
     original
 }
 
@@ -298,7 +298,7 @@ fn clamped_caps(
 
 fn call_log_blending(blends: bool) {
     match blends {
-        false => log_at(LogLevel::Info, ALPHA_OPAQUE_INFO),
+        false => call_log_at(LogLevel::Info, ALPHA_OPAQUE_INFO),
         true => (),
     }
 }
@@ -718,7 +718,7 @@ fn call_compatible(
 fn call_created_swapchain(created: vk::Result) -> vk::Result {
     match created {
         vk::Result::SUCCESS => {
-            log_at(LogLevel::Info, LOG_SWAPCHAIN_CREATED);
+            call_log_at(LogLevel::Info, LOG_SWAPCHAIN_CREATED);
             vk::Result::SUCCESS
         }
         e => e,

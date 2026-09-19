@@ -48,7 +48,7 @@ use crate::instance::VkRayTracingPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoNV;
 use crate::instance::VkShaderCreateInfoEXT;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::report::call_report_value;
 use crate::report::feature_note;
@@ -732,7 +732,7 @@ pub(crate) fn call_set_alpha_coverage(
 ) {
     match owner {
         Some(d) => call_forward_coverage(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 
@@ -755,7 +755,7 @@ pub(crate) fn call_set_alpha_one(
 ) {
     match owner {
         Some(d) => call_forward_alpha_one(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 
@@ -778,7 +778,7 @@ pub(crate) fn call_set_depth_clamp(
 ) {
     match owner {
         Some(d) => call_forward_clamp(&d, buffer, enable),
-        None => log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
+        None => call_log_at(LogLevel::Error, UNOWNED_BUFFER_ERROR),
     }
 }
 
@@ -871,7 +871,7 @@ fn names_binaries(p_next: *const c_void) -> bool {
 
 fn call_binary_line(named: bool) {
     match named {
-        true => log_at(LogLevel::Info, BINARY_INFO_LOG),
+        true => call_log_at(LogLevel::Info, BINARY_INFO_LOG),
         false => (),
     }
 }
@@ -888,7 +888,7 @@ fn wrapped_kind(inner: *const c_void) -> u32 {
 }
 
 fn call_undeclared_wrapped() {
-    log_at(LogLevel::Warn, WRAPPED_UNDECLARED_LOG);
+    call_log_at(LogLevel::Warn, WRAPPED_UNDECLARED_LOG);
 }
 
 fn call_undeclared_run<F>(node: *const VkPipelineCreateInfoKHR, run: F) -> vk::Result

@@ -56,7 +56,7 @@ use crate::instance::VkInstState;
 use crate::instance::VkPhysicalDeviceFeatures2;
 use crate::instance::VkLayerLinkInfo;
 use crate::logging::info_wanted;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::present::call_forget_device_timelines;
 use crate::probe::call_build_device;
@@ -395,7 +395,7 @@ fn asked_group(ci: *const vk::DeviceCreateInfo<'_>, all: &[vk::PhysicalDevice]) 
 fn call_gpu_missed(ids: &[u32], chosen: u32) {
     match ids.contains(&chosen) {
         true => (),
-        false => log_at(LogLevel::Warn, GPU_MISS_WARN),
+        false => call_log_at(LogLevel::Warn, GPU_MISS_WARN),
     }
 }
 
@@ -497,7 +497,7 @@ fn call_register_device(
     );
     call_probe_device(inst, phys, &caps);
     call_report_gpu(inst, phys, ci, handle);
-    log_at(LogLevel::Info, LOG_DEVICE_REGISTERED);
+    call_log_at(LogLevel::Info, LOG_DEVICE_REGISTERED);
 }
 
 fn call_invoke_create_device(

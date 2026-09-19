@@ -98,8 +98,8 @@ use crate::instance::VkRayTracingPipelineCreateInfoKHR;
 use crate::instance::VkRayTracingPipelineCreateInfoNV;
 use crate::instance::VkShaderCreateInfoEXT;
 use crate::instance::VkSurfaceCapabilities2;
-use crate::logging::init_log_level;
-use crate::logging::log_at;
+use crate::logging::call_init_log_level;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::pipeline::call_create_compute_pipelines;
 use crate::pipeline::call_create_pipeline_binaries;
@@ -380,7 +380,7 @@ fn call_chain_destroy_instance(gipa: vk::PFN_vkGetInstanceProcAddr, inst: vk::In
 }
 
 fn call_unowned_present() -> vk::Result {
-    log_at(LogLevel::Error, UNOWNED_QUEUE_ERROR);
+    call_log_at(LogLevel::Error, UNOWNED_QUEUE_ERROR);
     vk::Result::ERROR_INITIALIZATION_FAILED
 }
 
@@ -436,7 +436,7 @@ extern "system" fn volt_GetDeviceQueue(dev: vk::Device, qfam: u32, qidx: u32, ou
             call_queue_dev_put(q.as_raw(), dev.as_raw());
             unsafe { *out = q };
         }
-        None => log_at(LogLevel::Warn, LOG_QUEUE_UNREGISTERED),
+        None => call_log_at(LogLevel::Warn, LOG_QUEUE_UNREGISTERED),
     }
 }
 
@@ -448,7 +448,7 @@ extern "system" fn volt_GetDeviceQueue2(dev: vk::Device, info: *const c_void, ou
             call_register_queue(&d, dev, q);
             call_queue_dev_put(q.as_raw(), dev.as_raw());
         }
-        None => log_at(LogLevel::Warn, LOG_QUEUE_2_UNREGISTERED),
+        None => call_log_at(LogLevel::Warn, LOG_QUEUE_2_UNREGISTERED),
     }
 }
 
@@ -479,7 +479,7 @@ extern "system" fn vkCreateInstance(
     alloc: *const vk::AllocationCallbacks<'_>,
     out: *mut vk::Instance,
 ) -> vk::Result {
-    init_log_level();
+    call_init_log_level();
     call_real_create_instance(
         call_advance_chain(chain_layer_info(
             unsafe { (*ci).p_next },

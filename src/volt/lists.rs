@@ -1,4 +1,4 @@
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 pub(crate) struct Narrowed<T> {
@@ -51,7 +51,7 @@ where
 
 fn call_warn_restored(restored: bool, warn: &str) {
     match restored {
-        true => log_at(LogLevel::Warn, warn),
+        true => call_log_at(LogLevel::Warn, warn),
         false => (),
     }
 }

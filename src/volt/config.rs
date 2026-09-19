@@ -76,8 +76,8 @@ use crate::consts::UNREAD_OPEN;
 use crate::consts::UNREAD_PROFILE_CLOSE;
 use crate::env::env_config_name;
 use crate::env::env_home;
-use crate::logging::init_log_level;
-use crate::logging::log_at;
+use crate::logging::call_init_log_level;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_parse;
 use crate::ranks::present_parse;
@@ -326,14 +326,14 @@ pub(crate) fn call_sanitize_name(raw: &str) -> String {
     match sanitized_name(raw) {
         Some(name) => name,
         None => {
-            log_at(LogLevel::Warn, LOG_INVALID_PROFILE);
+            call_log_at(LogLevel::Warn, LOG_INVALID_PROFILE);
             DEFAULT_PROFILE.into()
         }
     }
 }
 
 fn call_fallback_home() -> String {
-    log_at(LogLevel::Warn, HOME_UNSET_WARN);
+    call_log_at(LogLevel::Warn, HOME_UNSET_WARN);
     HOME_FALLBACK.into()
 }
 
@@ -364,7 +364,7 @@ fn call_logged_settings(parsed: Parsed) -> Settings {
     parsed
         .warnings
         .iter()
-        .for_each(|warning| log_at(LogLevel::Warn, warning));
+        .for_each(|warning| call_log_at(LogLevel::Warn, warning));
     parsed.settings
 }
 
@@ -372,7 +372,7 @@ fn call_read_config(path: &PathBuf) -> Settings {
     match fs::read_to_string(path) {
         Ok(text) => call_logged_settings(parse_settings(&text)),
         Err(e) => {
-            log_at(
+            call_log_at(
                 LogLevel::Warn,
                 &[
                     path.display().to_string().as_str(),
@@ -388,9 +388,9 @@ fn call_read_config(path: &PathBuf) -> Settings {
 }
 
 fn call_load_settings() -> Settings {
-    init_log_level();
+    call_init_log_level();
     let loaded = call_read_config(&config_path(&profile_name()));
-    log_at(LogLevel::Info, SETTINGS_FROZEN_INFO);
+    call_log_at(LogLevel::Info, SETTINGS_FROZEN_INFO);
     loaded
 }
 

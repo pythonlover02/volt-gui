@@ -36,7 +36,7 @@ use crate::device::DeviceCaps;
 use crate::instance::call_all_devices;
 use crate::instance::device_index;
 use crate::instance::VkInstState;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 use crate::ranks::alpha_display;
 use crate::ranks::alpha_semantic;
@@ -235,8 +235,8 @@ fn call_unchanged(path: &PathBuf, text: &str) -> bool {
 fn call_replace_file(text: &str) {
     let temp = config_dir().join(PROBE_TEMP);
     match fs::write(&temp, text).and_then(|()| fs::rename(&temp, config_dir().join(PROBE_FILE))) {
-        Ok(()) => log_at(LogLevel::Info, PROBE_WRITE_INFO),
-        Err(_) => log_at(LogLevel::Warn, PROBE_FAIL_WARN),
+        Ok(()) => call_log_at(LogLevel::Info, PROBE_WRITE_INFO),
+        Err(_) => call_log_at(LogLevel::Warn, PROBE_FAIL_WARN),
     }
 }
 

@@ -36,8 +36,8 @@ use crate::consts::PROBE_UNSET;
 use crate::consts::USAGE;
 use crate::consts::USER_LIB_REL;
 use crate::env::env_lib_path;
-use crate::logging::init_log_level;
-use crate::logging::log_at;
+use crate::logging::call_init_log_level;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 fn is_help_flag(a: &str) -> bool {
@@ -199,14 +199,14 @@ fn call_exec_native(cmd: &[String], profile: &str, probe: bool) -> i32 {
         .env(ENV_PROBE, probe_value(probe))
         .env(ENV_LIB_PATH, lib_path(env_lib_path()))
         .exec();
-    log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
+    call_log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
     EXIT_EXEC_FAILED
 }
 
 fn call_exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
     match flatpak_app_id(cmd) {
         None => {
-            log_at(LogLevel::Error, LOG_NO_APP_ID);
+            call_log_at(LogLevel::Error, LOG_NO_APP_ID);
             EXIT_USAGE
         }
         Some(app_id) => {
@@ -218,7 +218,7 @@ fn call_exec_flatpak(cmd: &[String], profile: &str, probe: bool) -> i32 {
                 &flatpak_trailing(cmd),
             );
             let err = Command::new(FLATPAK_CMD).args(&args).exec();
-            log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
+            call_log_at(LogLevel::Error, &[EXEC_FAILED, err.to_string().as_str()].concat());
             EXIT_EXEC_FAILED
         }
     }
@@ -245,7 +245,7 @@ fn call_launch(args: Vec<String>) -> i32 {
 }
 
 pub fn call_run_launcher(args: Vec<String>) -> i32 {
-    init_log_level();
+    call_init_log_level();
     match wants_help(&args) {
         true => {
             print!("{}", USAGE);

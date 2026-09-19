@@ -81,7 +81,7 @@ use crate::lists::filtered;
 use crate::lists::kept;
 use crate::probe::call_build_device;
 use crate::probe::call_record_device;
-use crate::logging::log_at;
+use crate::logging::call_log_at;
 use crate::logging::LogLevel;
 
 pub(crate) type PfnSurfaceCaps2 = unsafe extern "system" fn(
@@ -1295,7 +1295,7 @@ pub(crate) fn call_relinked_chain(
     match relinked_chain(head, target, replacement) {
         Some(built) => Some(built),
         None => {
-            log_at(
+            call_log_at(
                 LogLevel::Warn,
                 &format!("{}: {}", setting, CHAIN_NODE_REASON),
             );
@@ -1556,7 +1556,7 @@ fn call_register_instance(
     };
     call_probe_devices(&state);
     call_insts_put(handle.as_raw(), state);
-    log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
+    call_log_at(LogLevel::Info, LOG_INSTANCE_REGISTERED);
 }
 
 fn call_invoke_create_instance(
