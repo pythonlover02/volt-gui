@@ -25,6 +25,13 @@ DEFAULT_PROFILE: Final[str] = "default"
 
 PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate")
 ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
+TENTH: Final[float] = 0.1
+TENTH_DIGITS: Final[int] = 1
+SCALE_FIRST_TENTH: Final[int] = 6
+SCALE_LAST_TENTH: Final[int] = 30
+SCALE_VALUES: Final[tuple] = tuple(
+    str(round(tenth * TENTH, TENTH_DIGITS))
+    for tenth in range(SCALE_FIRST_TENTH, SCALE_LAST_TENTH + 1))
 
 
 SETTINGS_DB: Final[dict] = {
@@ -110,19 +117,19 @@ SETTINGS_DB: Final[dict] = {
         "anisotropy": {
             "section": "textures",
             "label": "Anisotropic Filtering",
-            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs in steps of two up to what your GPU reports. volt never enables the feature: where the game left it off the setting is ignored and a line is logged. Nearly every game asks for it.",
+            "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs up to what your GPU reports. volt never enables the feature: where the game left it off the setting is ignored and a line is logged. Nearly every game asks for it.",
             "options": (DEFAULT_VALUE,),
         },
         "lod_bias": {
             "section": "textures",
             "label": "LOD Bias",
-            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.2 across the range your GPU reports, up to 4 either way.",
+            "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.1 across the range your GPU reports, up to 4 either way.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_floor": {
             "section": "textures",
             "label": "Mip Floor",
-            "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs in steps of two up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
+            "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_ceiling": {
@@ -181,8 +188,8 @@ OPTIONS_DB: Final[dict] = {
     },
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
-        "description": "UI scaling multiplier, in steps of 0.2. default is 1.0. Takes effect on program restart.",
-        "options": (DEFAULT_VALUE, "0.6", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0", "2.2", "2.4", "2.6", "2.8", "3.0"),
+        "description": "UI scaling multiplier, in steps of 0.1. default is 1.0. Takes effect on program restart.",
+        "options": (DEFAULT_VALUE,) + SCALE_VALUES,
         "fallback": "1.0",
     },
     "start_window_maximized": {

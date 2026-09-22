@@ -17,9 +17,9 @@ TAG_CLOSE: Final[str] = ")"
 
 MS_PER_S: Final[float] = 1000.0
 FRAMETIME_DIGITS: Final[int] = 1
-WHOLE_STEP: Final[int] = 2
-FRACTION_STEP: Final[float] = 0.20
-FRACTION_DIGITS: Final[int] = 2
+ANISO_FIRST: Final[int] = 2
+FRACTION_STEP: Final[float] = 0.1
+FRACTION_DIGITS: Final[int] = 1
 COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
 SHADING_CEILING: Final[float] = 1.0
@@ -161,12 +161,8 @@ def frametime_pairs(values: tuple) -> tuple:
     return tuple((v, _frametime_label(v)) for v in values)
 
 
-def _first_step(low: int) -> int:
-    return low + (low % WHOLE_STEP)
-
-
 def _whole_values(low: int, high: int) -> tuple:
-    return tuple(str(v) for v in range(_first_step(low), high + 1, WHOLE_STEP))
+    return tuple(str(v) for v in range(low, high + 1))
 
 
 def _fraction_values(low: int, high: int) -> tuple:
@@ -208,7 +204,7 @@ def _aniso_ladder(limit: Optional[float]) -> tuple:
             return ()
         case value:
             return ((OFF_VALUE, OFF_VALUE),) + plain_pairs(
-                _whole_values(WHOLE_STEP, int(value)))
+                _whole_values(ANISO_FIRST, int(value)))
 
 
 def aniso_options(data: tuple) -> tuple:
