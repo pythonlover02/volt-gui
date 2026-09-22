@@ -94,7 +94,7 @@ def get_welcome_settings() -> dict:
         "Profiles": {
             "Profiles": (
                 ("text", "Create profiles to switch between configurations per game.\n\n1. Press New in the bottom bar.\n2. Configure and Apply settings.\n3. Launch the game with that profile name, or switch profiles from the System Tray."),
-                ("text", "The launch command shown next to the Apply button always matches the selected profile and can be copied directly into Steam."),
+                ("text", "The launch command shown at the top of the window always matches the selected profile and can be copied directly into Steam."),
             )
         },
         "Presets": {
