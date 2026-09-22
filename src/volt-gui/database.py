@@ -25,6 +25,10 @@ DEFAULT_PROFILE: Final[str] = "default"
 
 PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate")
 ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
+FRAME_LIMIT_FIRST: Final[int] = 1
+FRAME_LIMIT_LAST: Final[int] = 1000
+FRAME_LIMIT_VALUES: Final[tuple] = tuple(
+    str(fps) for fps in range(FRAME_LIMIT_FIRST, FRAME_LIMIT_LAST + 1))
 TENTH: Final[float] = 0.1
 TENTH_DIGITS: Final[int] = 1
 SCALE_FIRST_TENTH: Final[int] = 6
@@ -74,7 +78,7 @@ SETTINGS_DB: Final[dict] = {
             "section": "framerate",
             "label": "Frame Limit",
             "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. Past about 500 the interval is shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
-            "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
+            "options": (DEFAULT_VALUE,),
         },
         "frame_limit_cadence": {
             "section": "framerate",
@@ -232,8 +236,7 @@ OPTION_BUILDERS: Final[dict] = {
     "sample_shading": shading_options,
     "alpha_to_one": alpha_one_options,
     "depth_clamp": clamp_options,
-    "frame_limit": lambda _: frametime_pairs(
-        SETTINGS_DB["Framerate"]["frame_limit"]["options"][1:]),
+    "frame_limit": lambda _: frametime_pairs(FRAME_LIMIT_VALUES),
 }
 
 
