@@ -13,8 +13,6 @@ use crate::consts::CADENCE_DYNAMIC;
 use crate::consts::CADENCE_FIXED;
 use crate::consts::CADENCE_SMOOTH;
 use crate::consts::CadenceChoice;
-use crate::consts::FRAME_LIMIT_MIN;
-use crate::consts::FRAME_LIMIT_OFFSET_NONE;
 use crate::consts::LimitStage;
 use crate::consts::METHOD_EARLY;
 use crate::consts::METHOD_LATE;
@@ -33,7 +31,6 @@ use crate::consts::SLICE_MARGIN_NS;
 use crate::consts::SLICE_STEP_NS;
 use crate::consts::SPIN_MARGIN_NS;
 use crate::device::VkDevState;
-use crate::lists::forced;
 use crate::swapchain::rebuilt_present;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -302,14 +299,9 @@ fn stage_wanted(method: Option<MethodChoice>) -> LimitStage {
     }
 }
 
-pub(crate) fn shifted_fps(fps: f32, offset: Option<f32>) -> f32 {
-    (fps + forced(offset, FRAME_LIMIT_OFFSET_NONE)).max(FRAME_LIMIT_MIN)
-}
-
 fn limit_fps(s: &Settings, stage: LimitStage) -> Option<f32> {
     s.frame_limit
         .filter(|_| stage_wanted(s.limit_method) == stage)
-        .map(|fps| shifted_fps(fps, s.frame_limit_offset))
 }
 
 pub(crate) fn call_limit_frame(

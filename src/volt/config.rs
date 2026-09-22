@@ -14,7 +14,6 @@ use crate::consts::FILTER_LINEAR;
 use crate::consts::FILTER_NEAREST;
 use crate::consts::FIRST_DEVICE;
 use crate::consts::FRAME_LIMIT_MIN;
-use crate::consts::FRAME_LIMIT_OFFSET_MAX;
 use crate::consts::HOME_FALLBACK;
 use crate::consts::KEY_ALPHA_TO_COVERAGE;
 use crate::consts::KEY_ALPHA_TO_ONE;
@@ -27,7 +26,6 @@ use crate::consts::KEY_DEVICE;
 use crate::consts::KEY_FRAME_LIMIT;
 use crate::consts::KEY_FRAME_LIMIT_CADENCE;
 use crate::consts::KEY_FRAME_LIMIT_METHOD;
-use crate::consts::KEY_FRAME_LIMIT_OFFSET;
 use crate::consts::KEY_FRAME_PACING;
 use crate::consts::KEY_IMAGE_COUNT;
 use crate::consts::KEY_LOD_BIAS;
@@ -101,7 +99,6 @@ pub(crate) struct Settings {
     pub(crate) alpha_to_one: Option<vk::Bool32>,
     pub(crate) depth_clamp: Option<vk::Bool32>,
     pub(crate) frame_limit: Option<f32>,
-    pub(crate) frame_limit_offset: Option<f32>,
     pub(crate) cadence: Option<CadenceChoice>,
     pub(crate) limit_method: Option<MethodChoice>,
     pub(crate) pacing: Option<PacingChoice>,
@@ -178,10 +175,6 @@ fn parse_shading(text: &str) -> Option<f32> {
 
 fn parse_limit(text: &str) -> Option<f32> {
     parse_float(text).filter(|v| *v >= FRAME_LIMIT_MIN)
-}
-
-fn parse_offset(text: &str) -> Option<f32> {
-    parse_float(text).filter(|v| v.abs() <= FRAME_LIMIT_OFFSET_MAX)
 }
 
 fn parse_gpu(text: &str) -> Option<u32> {
@@ -284,7 +277,6 @@ pub(crate) fn parse_settings(text: &str) -> Parsed {
         alpha_to_one: field(&doc, &mut warnings, SECTION_RENDERING, KEY_ALPHA_TO_ONE, parse_toggle),
         depth_clamp: field(&doc, &mut warnings, SECTION_RENDERING, KEY_DEPTH_CLAMP, parse_toggle),
         frame_limit: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT, parse_limit),
-        frame_limit_offset: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_OFFSET, parse_offset),
         cadence: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_CADENCE, parse_cadence),
         limit_method: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_LIMIT_METHOD, parse_method),
         pacing: field(&doc, &mut warnings, SECTION_FRAMERATE, KEY_FRAME_PACING, parse_pacing),

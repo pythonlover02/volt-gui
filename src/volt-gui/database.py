@@ -69,12 +69,6 @@ SETTINGS_DB: Final[dict] = {
             "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. Past about 500 the interval is shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
             "options": (DEFAULT_VALUE, "20", "24", "30", "36", "40", "45", "48", "50", "60", "72", "75", "90", "100", "120", "144", "165", "180", "240", "300", "360", "540", "600", "720", "900", "1000"),
         },
-        "frame_limit_offset": {
-            "section": "framerate",
-            "label": "Frame Limit Offset",
-            "description": "Shift the frame limit up or down, in steps of two. VRR displays want the cap sitting just under refresh: pick 144, set this to -6, and you land on 138. volt does not read your refresh rate and never shifts a cap by itself, since most displays are not VRR. Only does something when Frame Limit is set.",
-            "options": (DEFAULT_VALUE, "-20", "-18", "-16", "-14", "-12", "-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20"),
-        },
         "frame_limit_cadence": {
             "section": "framerate",
             "label": "Frame Limit Cadence",

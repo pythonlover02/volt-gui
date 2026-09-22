@@ -30,7 +30,6 @@ use crate::consts::SETTING_COMPOSITE_ALPHA;
 use crate::consts::SETTING_FRAME_LIMIT;
 use crate::consts::SETTING_FRAME_LIMIT_CADENCE;
 use crate::consts::SETTING_FRAME_LIMIT_METHOD;
-use crate::consts::SETTING_FRAME_LIMIT_OFFSET;
 use crate::consts::SETTING_FRAME_PACING;
 use crate::consts::SETTING_IMAGE_COUNT;
 use crate::consts::SETTING_PRESENT_MODE;
@@ -371,11 +370,6 @@ fn call_report_display(
 
 fn call_report_framerate(owner: u64, s: &Settings) {
     call_report_choice(owner, SETTING_FRAME_LIMIT, s.frame_limit.map(number_text));
-    call_report_choice(
-        owner,
-        SETTING_FRAME_LIMIT_OFFSET,
-        s.frame_limit_offset.map(number_text),
-    );
     call_report_choice(
         owner,
         SETTING_FRAME_LIMIT_CADENCE,

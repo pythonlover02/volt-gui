@@ -10,7 +10,6 @@ use crate::config::sanitized_name;
 use crate::consts::CadenceChoice;
 use crate::consts::DEFAULT_PROFILE;
 use crate::consts::FEATURE_ANISOTROPY;
-use crate::consts::FRAME_LIMIT_MIN;
 use crate::consts::MethodChoice;
 use crate::consts::NOTE_NOT_SET;
 use crate::consts::SETTING_ANISOTROPY;
@@ -35,7 +34,6 @@ use crate::lists::filtered;
 use crate::lists::forced;
 use crate::lists::kept;
 use crate::present::advanced;
-use crate::present::shifted_fps;
 use crate::present::target_interval_ns;
 use crate::present::Timeline;
 use crate::probe::render_surface;
@@ -77,11 +75,6 @@ const LATE_NS: u64 = 100;
 const LATE_FRAME_NS: u64 = 1_500;
 const TWO_HUNDRED_FPS: f32 = 200.0;
 const TWO_HUNDRED_FPS_NS: u64 = 5_000_000;
-const OFFSET_DOWN: f32 = -6.0;
-const OFFSET_MIN: f32 = -10.0;
-const REFRESH_FPS: f32 = 144.0;
-const UNDER_REFRESH_FPS: f32 = 138.0;
-const OFFSET_PROFILE: &str = "[framerate]\nframe_limit_offset = \"-6\"\n";
 const FIXED_PROFILE: &str = "[framerate]\nframe_limit_cadence = \"fixed\"\n";
 const DYNAMIC_PROFILE: &str = "[framerate]\nframe_limit_cadence = \"dynamic\"\n";
 const PEAK_START_NS: u64 = 2_000;
@@ -419,22 +412,6 @@ fn restarts_the_timeline_when_the_frame_limit_changes() {
             peak: OTHER_INTERVAL_NS,
         }
     );
-}
-
-#[test]
-fn shifts_the_frame_limit_by_the_offset() {
-    assert_eq!(shifted_fps(REFRESH_FPS, Some(OFFSET_DOWN)), UNDER_REFRESH_FPS);
-    assert_eq!(shifted_fps(REFRESH_FPS, None), REFRESH_FPS);
-}
-
-#[test]
-fn never_shifts_a_cap_below_one_frame_a_second() {
-    assert_eq!(shifted_fps(FRAME_LIMIT_MIN, Some(OFFSET_MIN)), FRAME_LIMIT_MIN);
-}
-
-#[test]
-fn reads_a_frame_limit_offset_from_a_profile() {
-    assert_eq!(parse_settings(OFFSET_PROFILE).settings.frame_limit_offset, Some(OFFSET_DOWN));
 }
 
 #[test]

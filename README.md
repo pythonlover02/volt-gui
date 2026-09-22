@@ -56,7 +56,7 @@ Flatpak games need some extra work, see [Flatpak](#flatpak).
 
 ## Settings
 
-21 settings across 5 tabs. Every one defaults to `default`, which leaves the game's own choice alone. A profile with everything on default does nothing.
+20 settings across 5 tabs. Every one defaults to `default`, which leaves the game's own choice alone. A profile with everything on default does nothing.
 
 Each setting is a single value. No ranges, no ordering, nothing to get backwards.
 
@@ -66,7 +66,7 @@ Each setting is a single value. No ranges, no ordering, nothing to get backwards
 | Display | `[display]` | 4 | present mode, image count, compositing, clipping |
 | Textures | `[textures]` | 7 | filtering, mips, anisotropy, LOD |
 | Rendering | `[rendering]` | 4 | sample shading, alpha to coverage, alpha to one, depth clamp |
-| Framerate | `[framerate]` | 5 | limit, offset, cadence, method, pacing |
+| Framerate | `[framerate]` | 4 | limit, cadence, method, pacing |
 
 Most option lists are read from your hardware, not from a table in volt-gui. Present modes, image counts, alpha modes, GPU names, anisotropy, mip levels and LOD bias all come from a probe of your own device. A setting your hardware lacks holds only `default`.
 
@@ -132,11 +132,9 @@ Three sampler fields, three settings. `nearest` and `linear` are core with no qu
 
 ### Framerate
 
-Most limiters give you a cap and a method. volt gives you five settings. Nothing else on Linux covers all five.
+Most limiters give you a cap and a method. volt gives you four settings. Nothing else on Linux covers all four.
 
 **Frame Limit** cap at present time. Deadlines follow a fixed timeline rather than the last present, so scheduler jitter doesn't drift you below the rate you asked for. A frame that misses its deadline by more than one interval is released at once and the timeline reanchors from there, instead of waiting out the rest of the interval it already missed. Kept per swapchain.
-
-**Frame Limit Offset** shift the cap by -20 to 20 in steps of two. VRR displays want the cap just under refresh: pick 144, set -6, land on 138. volt never shifts a cap on its own since most displays aren't VRR.
 
 **Frame Limit Cadence** which rate the limiter paces at.
 
@@ -393,7 +391,7 @@ or the reason the setting did not land. The applied value is the one volt
 wrote, so a setting the device clamped shows what landed rather than what
 the profile says.
 
-The five Framerate settings have no asked value, since a game never tells
+The four Framerate settings have no asked value, since a game never tells
 Vulkan what frame rate it wants. They report what volt applied, or say the
 profile did not set them.
 
