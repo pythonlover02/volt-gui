@@ -88,6 +88,7 @@ WINDOW_OPAQUE: Final[float] = 1.0
 WELCOME_DELAY_MS: Final[int] = 100
 SHOW_DELAY_MS: Final[int] = 0
 TRAY_ICON_NAME: Final[str] = "volt-gui"
+NOTIFICATION_TITLE: Final[str] = "volt-gui"
 PREVIEW_BIN: Final[str] = "volt"
 PREVIEW_TARGET: Final[str] = "volt-probe"
 PREVIEW_POLL_MS: Final[int] = 750
@@ -364,10 +365,10 @@ def process_new_profile_save(main_window: QMainWindow) -> None:
             process_profile_selector_restore(main_window)
             process_launch_line_update(main_window)
             process_tray_menu_update(main_window)
-            process_notification_display(main_window, "Profile '" + profile_name.strip() + "' created.", False)
+            process_notification_display(main_window, "Profile '" + profile_name.strip() + "' created.")
             return None
         case (True, False):
-            process_notification_display(main_window, "Profile name invalid or already exists.", True)
+            process_notification_display(main_window, "Profile name invalid or already exists.")
             return None
         case _:
             return None
@@ -376,7 +377,7 @@ def process_new_profile_save(main_window: QMainWindow) -> None:
 def process_current_profile_delete(main_window: QMainWindow) -> None:
     match main_window.current_profile == DEFAULT_PROFILE:
         case True:
-            process_notification_display(main_window, "Cannot delete default profile.", True)
+            process_notification_display(main_window, "Cannot delete default profile.")
             return None
         case False:
             match process_yes_no_dialog(main_window, "Delete Profile", "Delete profile '" + main_window.current_profile + "'?"):
@@ -392,7 +393,7 @@ def process_current_profile_delete(main_window: QMainWindow) -> None:
                         process_profile_widget_load(main_window.all_widgets, DEFAULT_PROFILE))
                     process_launch_line_update(main_window)
                     process_tray_menu_update(main_window)
-                    process_notification_display(main_window, "Profile deleted.", False)
+                    process_notification_display(main_window, "Profile deleted.")
                     return None
 
 
@@ -408,7 +409,7 @@ def process_preset_combo_change(main_window: QMainWindow, selected_text: str) ->
                 case True:
                     dropped = process_preset_apply(main_window.all_widgets, selected_text)
                     process_profile_save(main_window.all_widgets, main_window.current_profile)
-                    process_notification_display(main_window, "Preset '" + selected_text + "' applied to profile '" + main_window.current_profile + "'.", False)
+                    process_notification_display(main_window, "Preset '" + selected_text + "' applied to profile '" + main_window.current_profile + "'.")
                     process_dropped_notice(main_window, dropped)
                 case False:
                     pass
@@ -489,12 +490,13 @@ def process_profile_apply_from_tray(main_window: QMainWindow, profile_name: str)
     return None
 
 
-def process_notification_display(main_window: QMainWindow, notification_message: str, is_error: bool) -> None:
-    match is_error:
-        case True:
-            QMessageBox.warning(main_window, "volt-gui", notification_message)
-        case False:
-            QMessageBox.information(main_window, "volt-gui", notification_message)
+def process_notification_display(main_window: QMainWindow, notification_message: str) -> None:
+    dialog = QMessageBox(main_window)
+    dialog.setWindowTitle(NOTIFICATION_TITLE)
+    dialog.setText(notification_message)
+    dialog.setIcon(QMessageBox.NoIcon)
+    dialog.setStandardButtons(QMessageBox.Ok)
+    dialog.exec()
     return None
 
 
@@ -617,7 +619,7 @@ def process_probe_failure(main_window: QMainWindow) -> None:
             return None
         case False:
             main_window.probe_error_shown = True
-            process_notification_display(main_window, PROBE_FAILED_ERROR, True)
+            process_notification_display(main_window, PROBE_FAILED_ERROR)
             return None
 
 
@@ -662,8 +664,7 @@ def process_dropped_notice(main_window: QMainWindow, dropped: tuple) -> None:
                 main_window,
                 "This device cannot provide "
                 + ", ".join(key.split(":")[-1].split(".")[-1] for key in dropped)
-                + ", reset to default.",
-                True)
+                + ", reset to default.")
             return None
 
 
@@ -693,7 +694,7 @@ def process_all_settings_apply(main_window: QMainWindow) -> None:
     process_application_options_save(main_window)
     process_profile_save(main_window.all_widgets, main_window.current_profile)
     process_preview_start(main_window)
-    process_notification_display(main_window, "Profile '" + main_window.current_profile + "' saved. Start a game again to pick it up.", False)
+    process_notification_display(main_window, "Profile '" + main_window.current_profile + "' saved. Start a game again to pick it up.")
     return None
 
 
