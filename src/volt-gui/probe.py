@@ -2,6 +2,8 @@ import os
 
 from functools import partial
 from functools import reduce
+from math import ceil
+from math import floor
 from pathlib import Path
 from typing import Final
 from typing import Optional
@@ -18,8 +20,8 @@ TAG_CLOSE: Final[str] = ")"
 MS_PER_S: Final[float] = 1000.0
 FRAMETIME_DIGITS: Final[int] = 1
 ANISO_FIRST: Final[int] = 2
-FRACTION_STEP: Final[float] = 0.1
-FRACTION_DIGITS: Final[int] = 1
+UNIT_EPSILON: Final[float] = 1e-9
+STEP_DIGITS: Final[int] = 6
 COUNT_SPAN: Final[int] = 6
 BIAS_CEILING: Final[float] = 4.0
 SHADING_CEILING: Final[float] = 1.0
@@ -161,18 +163,26 @@ def frametime_pairs(values: tuple) -> tuple:
     return tuple((v, _frametime_label(v)) for v in values)
 
 
-def _whole_values(low: int, high: int) -> tuple:
-    return tuple(str(v) for v in range(low, high + 1))
+def _low_units(low: float, step: float) -> int:
+    return ceil(low / step - UNIT_EPSILON)
 
 
-def _fraction_values(low: int, high: int) -> tuple:
+def _high_units(high: float, step: float) -> int:
+    return floor(high / step + UNIT_EPSILON)
+
+
+def _step_text(units: int, step: float) -> str:
+    match step:
+        case int():
+            return str(units * step)
+        case _:
+            return str(round(units * step, STEP_DIGITS))
+
+
+def stepped_values(low: float, high: float, step: float) -> tuple:
     return tuple(
-        str(round(v * FRACTION_STEP, FRACTION_DIGITS))
-        for v in range(low, high + 1))
-
-
-def _span_of(limit: float) -> int:
-    return int(limit / FRACTION_STEP)
+        _step_text(units, step)
+        for units in range(_low_units(low, step), _high_units(high, step) + 1))
 
 
 def _non_empty(entry: tuple) -> bool:
@@ -198,21 +208,21 @@ def gpu_options(data: tuple) -> tuple:
         for at, name in enumerate(probe_list(probe_device(data), "device_names")))
 
 
-def _aniso_ladder(limit: Optional[float]) -> tuple:
+def _aniso_ladder(limit: Optional[float], step: float) -> tuple:
     match limit:
         case None:
             return ()
         case value:
             return ((OFF_VALUE, OFF_VALUE),) + plain_pairs(
-                _whole_values(ANISO_FIRST, int(value)))
+                stepped_values(ANISO_FIRST, value, step))
 
 
-def aniso_options(data: tuple) -> tuple:
+def aniso_options(data: tuple, step: float) -> tuple:
     match probe_flag(probe_device(data), "sampler_anisotropy"):
         case False:
             return ()
         case True:
-            return _aniso_ladder(probe_number(probe_device(data), "max_anisotropy"))
+            return _aniso_ladder(probe_number(probe_device(data), "max_anisotropy"), step)
 
 
 def _toggle_ladder(held: bool) -> tuple:
@@ -231,13 +241,13 @@ def clamp_options(data: tuple) -> tuple:
     return _toggle_ladder(probe_flag(probe_device(data), "depth_clamp"))
 
 
-def shading_options(data: tuple) -> tuple:
+def shading_options(data: tuple, step: float) -> tuple:
     match probe_flag(probe_device(data), "sample_rate_shading"):
         case False:
             return ()
         case True:
             return ((OFF_VALUE, OFF_VALUE),) + plain_pairs(
-                _fraction_values(1, _span_of(SHADING_CEILING)))
+                stepped_values(step, SHADING_CEILING, step))
 
 
 def _count_ceiling(low: int, high: int) -> int:
@@ -248,49 +258,50 @@ def _count_ceiling(low: int, high: int) -> int:
             return high
 
 
-def _count_values(low: Optional[float], high: Optional[float]) -> tuple:
+def _count_values(low: Optional[float], high: Optional[float], step: float) -> tuple:
     match (low, high):
         case (None, _) | (_, None):
             return ()
         case (start, stop):
-            return _whole_values(int(start), _count_ceiling(int(start), int(stop)))
+            return stepped_values(int(start), _count_ceiling(int(start), int(stop)), step)
 
 
-def _count_sources(data: tuple) -> tuple:
+def _count_sources(data: tuple, step: float) -> tuple:
     return tuple(filter(_non_empty, (
         (n, _count_values(
             probe_number(v, "min_image_count"),
-            probe_number(v, "max_image_count")))
+            probe_number(v, "max_image_count"),
+            step))
         for n, v in probe_surfaces(data))))
 
 
-def image_count_options(data: tuple) -> tuple:
-    return tagged_count_pairs(_count_sources(data))
+def image_count_options(data: tuple, step: float) -> tuple:
+    return tagged_count_pairs(_count_sources(data, step))
 
 
-def _mip_values(limit: Optional[float]) -> tuple:
+def _mip_values(limit: Optional[float], step: float) -> tuple:
     match limit:
         case None:
             return ()
         case value:
-            return plain_pairs(_whole_values(0, int(value)))
+            return plain_pairs(stepped_values(0, value, step))
 
 
-def mip_options(data: tuple) -> tuple:
-    return _mip_values(probe_number(probe_device(data), "max_lod_level"))
+def mip_options(data: tuple, step: float) -> tuple:
+    return _mip_values(probe_number(probe_device(data), "max_lod_level"), step)
 
 
-def _bias_ladder(span: int) -> tuple:
-    return plain_pairs(_fraction_values(-span, span))
+def _bias_ladder(span: float, step: float) -> tuple:
+    return plain_pairs(stepped_values(-span, span, step))
 
 
-def _bias_values(limit: Optional[float]) -> tuple:
+def _bias_values(limit: Optional[float], step: float) -> tuple:
     match limit:
         case None:
             return ()
         case value:
-            return _bias_ladder(_span_of(min(value, BIAS_CEILING)))
+            return _bias_ladder(min(value, BIAS_CEILING), step)
 
 
-def lod_bias_options(data: tuple) -> tuple:
-    return _bias_values(probe_number(probe_device(data), "max_lod_bias"))
+def lod_bias_options(data: tuple, step: float) -> tuple:
+    return _bias_values(probe_number(probe_device(data), "max_lod_bias"), step)

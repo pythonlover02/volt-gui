@@ -13,6 +13,7 @@ from probe import mip_options
 from probe import plain_pairs
 from probe import present_options
 from probe import shading_options
+from probe import stepped_values
 
 
 APP_VERSION: Final[str] = "2.4.1"
@@ -27,15 +28,9 @@ PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framer
 ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
 FRAME_LIMIT_FIRST: Final[int] = 1
 FRAME_LIMIT_LAST: Final[int] = 1000
-FRAME_LIMIT_VALUES: Final[tuple] = tuple(
-    str(fps) for fps in range(FRAME_LIMIT_FIRST, FRAME_LIMIT_LAST + 1))
-TENTH: Final[float] = 0.1
-TENTH_DIGITS: Final[int] = 1
-SCALE_FIRST_TENTH: Final[int] = 6
-SCALE_LAST_TENTH: Final[int] = 30
-SCALE_VALUES: Final[tuple] = tuple(
-    str(round(tenth * TENTH, TENTH_DIGITS))
-    for tenth in range(SCALE_FIRST_TENTH, SCALE_LAST_TENTH + 1))
+SCALE_LOW: Final[float] = 0.6
+SCALE_HIGH: Final[float] = 3.0
+SCALE_STEP: Final[float] = 0.1
 
 
 SETTINGS_DB: Final[dict] = {
@@ -56,6 +51,7 @@ SETTINGS_DB: Final[dict] = {
         },
         "image_count": {
             "section": "display",
+            "step": 1,
             "label": "Swapchain Images",
             "description": "How many images the swapchain holds, which is the frames in flight control and the closest thing here to an anti-lag setting. More lets the game run further ahead of the GPU, smoothing frame delivery and costing input lag. Fewer holds it closer to the display. The list is what this surface allows.",
             "options": (DEFAULT_VALUE,),
@@ -76,6 +72,7 @@ SETTINGS_DB: Final[dict] = {
     "Framerate": {
         "frame_limit": {
             "section": "framerate",
+            "step": 1,
             "label": "Frame Limit",
             "description": "Cap the frame rate at present time, shown with the frame budget each rate gives you. Past about 500 the interval is shorter than the kernel wakes reliably, so sleep pacing drifts above the cap and holding the rate needs sliced, precise or spin.",
             "options": (DEFAULT_VALUE,),
@@ -120,24 +117,28 @@ SETTINGS_DB: Final[dict] = {
         },
         "anisotropy": {
             "section": "textures",
+            "step": 1,
             "label": "Anisotropic Filtering",
             "description": "Sharpen textures viewed at steep angles. Higher values look better at a small cost. The list runs up to what your GPU reports. volt never enables the feature: where the game left it off the setting is ignored and a line is logged. Nearly every game asks for it.",
             "options": (DEFAULT_VALUE,),
         },
         "lod_bias": {
             "section": "textures",
+            "step": 0.1,
             "label": "LOD Bias",
             "description": "Shift mipmap selection. Negative sharpens at the cost of shimmer, positive blurs but renders faster. A negative bias is the nearest volt gets to sharpening. The list runs in steps of 0.1 across the range your GPU reports, up to 4 either way.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_floor": {
             "section": "textures",
+            "step": 1,
             "label": "Mip Floor",
             "description": "The lowest mip level samplers may use, called minimum LOD in Vulkan. Raising it forces smaller mips everywhere, trading detail for speed. The list runs up to the largest image your GPU can address, and a level past the last mip a texture has simply lands on that last mip.",
             "options": (DEFAULT_VALUE,),
         },
         "mip_ceiling": {
             "section": "textures",
+            "step": 1,
             "label": "Mip Ceiling",
             "description": "The highest mip level samplers may use, called maximum LOD in Vulkan. Lowering it keeps distant textures sharper than the game intended. The list matches Mip Floor. A forced bound that would cross the value the other field holds is dropped, with a line in the log.",
             "options": (DEFAULT_VALUE,),
@@ -146,6 +147,7 @@ SETTINGS_DB: Final[dict] = {
     "Rendering": {
         "sample_shading": {
             "section": "rendering",
+            "step": 0.1,
             "label": "Sample Shading",
             "description": "Shade at sample rate inside MSAA render targets to reduce shimmer. The value is the smallest fraction of samples shaded, and off counts as zero. volt never enables the feature: most modern renderers are deferred and never ask, and where the game left it off the setting is ignored and a line is logged.",
             "options": (DEFAULT_VALUE,),
@@ -193,7 +195,7 @@ OPTIONS_DB: Final[dict] = {
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
         "description": "UI scaling multiplier, in steps of 0.1. default is 1.0. Takes effect on program restart.",
-        "options": (DEFAULT_VALUE,) + SCALE_VALUES,
+        "options": (DEFAULT_VALUE,) + stepped_values(SCALE_LOW, SCALE_HIGH, SCALE_STEP),
         "fallback": "1.0",
     },
     "start_window_maximized": {
@@ -227,16 +229,24 @@ OPTIONS_DB: Final[dict] = {
 OPTION_BUILDERS: Final[dict] = {
     "device": gpu_options,
     "present_mode": present_options,
-    "image_count": image_count_options,
     "composite_alpha": alpha_options,
+    "alpha_to_one": alpha_one_options,
+    "depth_clamp": clamp_options,
+}
+
+
+def _frame_limit_options(data: tuple, step: float) -> tuple:
+    return frametime_pairs(stepped_values(FRAME_LIMIT_FIRST, FRAME_LIMIT_LAST, step))
+
+
+STEPPED_BUILDERS: Final[dict] = {
+    "image_count": image_count_options,
     "anisotropy": aniso_options,
     "lod_bias": lod_bias_options,
     "mip_floor": mip_options,
     "mip_ceiling": mip_options,
     "sample_shading": shading_options,
-    "alpha_to_one": alpha_one_options,
-    "depth_clamp": clamp_options,
-    "frame_limit": lambda _: frametime_pairs(FRAME_LIMIT_VALUES),
+    "frame_limit": _frame_limit_options,
 }
 
 
@@ -264,11 +274,18 @@ def _static_options(tab_name: str, setting_key: str) -> tuple:
     return plain_pairs(SETTINGS_DB[tab_name][setting_key]["options"])
 
 
+def get_setting_step(tab_name: str, setting_key: str) -> float:
+    return SETTINGS_DB[tab_name][setting_key]["step"]
+
+
 def find_setting_options(tab_name: str, setting_key: str, data: dict) -> tuple:
-    match OPTION_BUILDERS.get(setting_key):
-        case None:
+    match (OPTION_BUILDERS.get(setting_key), STEPPED_BUILDERS.get(setting_key)):
+        case (None, None):
             return _static_options(tab_name, setting_key)
-        case builder:
+        case (None, stepped):
+            return ((DEFAULT_VALUE, DEFAULT_VALUE),) + stepped(
+                data, get_setting_step(tab_name, setting_key))
+        case (builder, _):
             return ((DEFAULT_VALUE, DEFAULT_VALUE),) + builder(data)
 
 
