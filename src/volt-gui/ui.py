@@ -15,7 +15,6 @@ from PySide6.QtGui import QPaintEvent
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QComboBox
 from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from PySide6.QtWidgets import QHBoxLayout
@@ -64,11 +63,6 @@ def process_combo_wheel_ignore(wheel_event: QWheelEvent) -> None:
     return None
 
 
-def process_combo_wheel_block(combo: QComboBox) -> None:
-    combo.wheelEvent = process_combo_wheel_ignore
-    return None
-
-
 def build_tick_stride(count: int, width: int) -> int:
     return next(
         (stride for stride in SLIDER_TICK_STRIDES
@@ -92,12 +86,15 @@ class StopSlider(QWidget):
     def __init__(self, options: tuple) -> None:
         super().__init__()
         self.stops = ()
+        self.pressed_index = 0
         self.setProperty("cardRow", True)
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setPageStep(SLIDER_PAGE_STEP)
         self.slider.setFocusPolicy(Qt.ClickFocus)
         self.slider.wheelEvent = process_combo_wheel_ignore
         self.slider.valueChanged.connect(self._process_value_change)
+        self.slider.sliderPressed.connect(self._process_press)
+        self.slider.sliderReleased.connect(self._process_release)
         self.ticks = QWidget()
         self.ticks.setProperty("cardRow", True)
         self.ticks.setFixedHeight(SLIDER_TICK_HEIGHT)
@@ -172,8 +169,24 @@ class StopSlider(QWidget):
 
     def _process_value_change(self, index: int) -> None:
         self.value_label.setText(self.currentText())
-        self.currentTextChanged.emit(self.currentText())
+        match self.slider.isSliderDown():
+            case True:
+                return None
+            case False:
+                self.currentTextChanged.emit(self.currentText())
+                return None
+
+    def _process_press(self) -> None:
+        self.pressed_index = self.slider.value()
         return None
+
+    def _process_release(self) -> None:
+        match self.slider.value() == self.pressed_index:
+            case True:
+                return None
+            case False:
+                self.currentTextChanged.emit(self.currentText())
+                return None
 
     def _process_ticks_paint(self, paint_event: QPaintEvent) -> None:
         painter = QPainter(self.ticks)

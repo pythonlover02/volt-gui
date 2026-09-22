@@ -106,10 +106,9 @@ def build_preset_values(preset_name: str) -> dict:
 def process_preset_combo_items(combo_widget: Any) -> None:
     combo_widget.blockSignals(True)
     combo_widget.clear()
-    combo_widget.addItem(get_preset_placeholder_label())
-    combo_widget.insertSeparator(combo_widget.count())
+    combo_widget.addItem(get_preset_placeholder_label(), get_preset_placeholder_label())
     for preset_name in get_preset_names():
-        combo_widget.addItem(preset_name)
+        combo_widget.addItem(preset_name, preset_name)
     combo_widget.blockSignals(False)
     return None
 
