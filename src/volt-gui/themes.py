@@ -75,16 +75,6 @@ QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; b
 QLineEdit:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
 QLineEdit:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
 QLineEdit:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
-QComboBox {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: transparent; selection-color: {text_primary}; min-width: 60px; border-radius: 6px; }}
-QComboBox:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QComboBox:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QComboBox:on {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QComboBox:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
-QComboBox::drop-down {{ subcontrol-origin: padding; subcontrol-position: top right; width: 20px; border: none; background-color: transparent; }}
-QComboBox QAbstractItemView {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; outline: none; padding: 4px 0px; selection-background-color: {background_lighter}; selection-color: {text_primary}; border-radius: 6px; }}
-QComboBox QAbstractItemView::item {{ padding: 6px 12px; border: none; margin: 0px; background-color: {background}; }}
-QComboBox QAbstractItemView::item:hover {{ background-color: {surface}; color: {text_primary}; }}
-QComboBox QAbstractItemView::item:selected {{ background-color: {background_lighter}; color: {text_primary}; }}
 QMenu {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 6px; border-radius: 6px; }}
 QMenu::item {{ padding: 6px 20px; border: none; border-left: 3px solid transparent; margin: 1px 0px; border-radius: 4px; }}
 QMenu::item:selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
