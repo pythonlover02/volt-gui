@@ -6,8 +6,12 @@ from PySide6.QtCore import QEasingCurve
 from PySide6.QtCore import QPropertyAnimation
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColor
 from PySide6.QtGui import QCursor
 from PySide6.QtGui import QFont
+from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPaintEvent
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QApplication
@@ -16,12 +20,12 @@ from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from PySide6.QtWidgets import QHBoxLayout
 from PySide6.QtWidgets import QLabel
-from PySide6.QtWidgets import QListView
 from PySide6.QtWidgets import QListWidget
 from PySide6.QtWidgets import QListWidgetItem
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtWidgets import QScrollArea
 from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSlider
 from PySide6.QtWidgets import QStackedWidget
 from PySide6.QtWidgets import QTextEdit
 from PySide6.QtWidgets import QVBoxLayout
@@ -29,17 +33,25 @@ from PySide6.QtWidgets import QWidget
 
 from database import APP_VERSION
 from database import call_cards_for_tab
+from themes import BASE_COLORS
+from themes import SLIDER_HANDLE_WIDTH
 from themes import STANDARD_BUTTON_HEIGHT
 
 
 SIDEBAR_WIDTH: Final[int] = 200
 HEADER_VERTICAL_MARGIN: Final[int] = 14
 COPY_BUTTON_WIDTH: Final[int] = 70
-COMBO_MINIMUM_WIDTH: Final[int] = 104
 WINDOW_MIN_WIDTH: Final[int] = 620
 WINDOW_MIN_HEIGHT: Final[int] = 380
 COPY_RESET_MS: Final[int] = 1000
 COPY_FADE_MS: Final[int] = 200
+SLIDER_SPACING: Final[int] = 2
+SLIDER_PAGE_STEP: Final[int] = 1
+SLIDER_TICK_HEIGHT: Final[int] = 5
+SLIDER_TICK_GAP: Final[int] = 6
+SLIDER_TICK_STRIDES: Final[tuple] = (1, 2, 5, 10, 25, 50, 100, 250, 500, 1000)
+SLIDER_TICK_COLOR: Final[str] = "text_disabled"
+STYLE_SLIDER_VALUE: Final[str] = "font-weight: 500; font-size: 10pt;"
 STYLE_DIVIDER: Final[str] = "QFrame { background-color: #262626; border: none; }"
 STYLE_DESCRIPTION: Final[str] = "color: #585858; font-size: 9pt;"
 STYLE_CODE_LABEL: Final[str] = "color: #585858; font-size: 9pt; margin-top: 4px;"
@@ -57,17 +69,123 @@ def process_combo_wheel_block(combo: QComboBox) -> None:
     return None
 
 
-def create_combo_widget(options: tuple) -> QComboBox:
-    combo = QComboBox()
-    combo.setView(QListView())
-    combo.setFixedHeight(STANDARD_BUTTON_HEIGHT)
-    combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    combo.setFocusPolicy(Qt.ClickFocus)
-    process_combo_wheel_block(combo)
-    for value, label in options:
-        combo.addItem(label, value)
-    combo.setCurrentIndex(0)
-    return combo
+def build_tick_stride(count: int, width: int) -> int:
+    return next(
+        (stride for stride in SLIDER_TICK_STRIDES
+         if stride * (width - SLIDER_HANDLE_WIDTH) >= SLIDER_TICK_GAP * (count - 1)),
+        SLIDER_TICK_STRIDES[-1])
+
+
+def build_tick_positions(count: int, width: int) -> tuple:
+    match count > 1 and width > SLIDER_HANDLE_WIDTH:
+        case False:
+            return ()
+        case True:
+            return tuple(
+                round(SLIDER_HANDLE_WIDTH // 2 + at * (width - SLIDER_HANDLE_WIDTH) / (count - 1))
+                for at in range(0, count, build_tick_stride(count, width)))
+
+
+class StopSlider(QWidget):
+    currentTextChanged = Signal(str)
+
+    def __init__(self, options: tuple) -> None:
+        super().__init__()
+        self.stops = ()
+        self.setProperty("cardRow", True)
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setPageStep(SLIDER_PAGE_STEP)
+        self.slider.setFocusPolicy(Qt.ClickFocus)
+        self.slider.wheelEvent = process_combo_wheel_ignore
+        self.slider.valueChanged.connect(self._process_value_change)
+        self.ticks = QWidget()
+        self.ticks.setProperty("cardRow", True)
+        self.ticks.setFixedHeight(SLIDER_TICK_HEIGHT)
+        self.ticks.paintEvent = self._process_ticks_paint
+        self.value_label = QLabel()
+        self.value_label.setStyleSheet(STYLE_SLIDER_VALUE)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SLIDER_SPACING)
+        layout.addWidget(self.slider)
+        layout.addWidget(self.ticks)
+        layout.addWidget(self.value_label)
+        for value, label in options:
+            self.addItem(label, value)
+        self.setCurrentIndex(0)
+
+    def _stop_at(self, index: int) -> Optional[tuple]:
+        match 0 <= index < len(self.stops):
+            case True:
+                return self.stops[index]
+            case False:
+                return None
+
+    def currentData(self) -> Optional[str]:
+        match self._stop_at(self.slider.value()):
+            case None:
+                return None
+            case (value, _):
+                return value
+
+    def currentText(self) -> str:
+        match self._stop_at(self.slider.value()):
+            case None:
+                return ""
+            case (_, label):
+                return label
+
+    def findData(self, value: str) -> int:
+        return next((at for at, stop in enumerate(self.stops) if stop[0] == value), -1)
+
+    def findText(self, text: str) -> int:
+        return next((at for at, stop in enumerate(self.stops) if stop[1] == text), -1)
+
+    def setCurrentIndex(self, index: int) -> None:
+        self.slider.setValue(index)
+        return None
+
+    def setCurrentText(self, text: str) -> None:
+        match self.findText(text):
+            case -1:
+                return None
+            case index:
+                self.setCurrentIndex(index)
+                return None
+
+    def clear(self) -> None:
+        self.stops = ()
+        self.slider.setRange(0, 0)
+        self._process_stops_change()
+        return None
+
+    def addItem(self, label: str, value: str) -> None:
+        self.stops = self.stops + ((value, label),)
+        self.slider.setRange(0, len(self.stops) - 1)
+        self._process_stops_change()
+        return None
+
+    def _process_stops_change(self) -> None:
+        self.value_label.setText(self.currentText())
+        self.ticks.update()
+        return None
+
+    def _process_value_change(self, index: int) -> None:
+        self.value_label.setText(self.currentText())
+        self.currentTextChanged.emit(self.currentText())
+        return None
+
+    def _process_ticks_paint(self, paint_event: QPaintEvent) -> None:
+        painter = QPainter(self.ticks)
+        painter.setPen(QColor(BASE_COLORS[SLIDER_TICK_COLOR]))
+        for position in build_tick_positions(len(self.stops), self.ticks.width()):
+            painter.drawLine(position, 0, position, SLIDER_TICK_HEIGHT)
+        painter.end()
+        return None
+
+
+def create_slider_widget(options: tuple) -> StopSlider:
+    return StopSlider(options)
 
 
 def create_divider_widget() -> QFrame:
@@ -93,9 +211,8 @@ def create_setting_card_widget(label_text: str, description_text: str, options: 
     title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
     title_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
     card_layout.addWidget(title_label)
-    input_widget = create_combo_widget(options)
+    input_widget = create_slider_widget(options)
     input_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-    input_widget.setMinimumWidth(COMBO_MINIMUM_WIDTH)
     card_layout.addWidget(input_widget)
     description_label = QLabel(description_text)
     description_label.setWordWrap(True)

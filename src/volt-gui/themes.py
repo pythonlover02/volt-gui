@@ -9,6 +9,8 @@ from database import get_accent_colors
 
 STANDARD_BUTTON_WIDTH: Final[int] = 90
 STANDARD_BUTTON_HEIGHT: Final[int] = 36
+SLIDER_HANDLE_WIDTH: Final[int] = 14
+SLIDER_GROOVE_HEIGHT: Final[int] = 6
 BASE_COLORS: Final[dict] = {
     "background": "#161616",
     "background_darker": "#0e0e0e",
@@ -102,6 +104,28 @@ QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; 
 """
 
 
+def get_style_slider_template() -> str:
+    return """
+QSlider {{ background-color: transparent; border: none; min-height: {handle_width}px; }}
+QSlider::groove:horizontal {{ background-color: {surface}; height: {groove_height}px; border: none; border-radius: {groove_radius}px; }}
+QSlider::sub-page:horizontal {{ background-color: {accent}; border: none; border-radius: {groove_radius}px; }}
+QSlider::add-page:horizontal {{ background-color: {surface}; border: none; border-radius: {groove_radius}px; }}
+QSlider::handle:horizontal {{ background-color: {text_primary}; width: {handle_width}px; margin: -{handle_margin}px 0px; border: none; border-radius: {handle_radius}px; }}
+QSlider::handle:horizontal:hover {{ background-color: {accent_hover}; }}
+QSlider::handle:horizontal:pressed {{ background-color: {accent_pressed}; }}
+"""
+
+
+def build_slider_metrics() -> dict:
+    return {
+        "handle_width": SLIDER_HANDLE_WIDTH,
+        "handle_radius": SLIDER_HANDLE_WIDTH // 2,
+        "handle_margin": (SLIDER_HANDLE_WIDTH - SLIDER_GROOVE_HEIGHT) // 2,
+        "groove_height": SLIDER_GROOVE_HEIGHT,
+        "groove_radius": SLIDER_GROOVE_HEIGHT // 2,
+    }
+
+
 def build_theme_colors(theme_name: str) -> dict:
     return {
         **BASE_COLORS,
@@ -130,6 +154,8 @@ def process_theme_application(application_instance: Optional[QApplication], them
             return None
         case app:
             color_map = build_theme_colors(theme_name)
-            app.setStyleSheet(get_style_stylesheet_template().format(**color_map))
+            app.setStyleSheet(
+                (get_style_stylesheet_template() + get_style_slider_template()).format(
+                    **color_map, **build_slider_metrics()))
             app.setPalette(process_disabled_roles(build_palette(color_map), color_map))
             return None

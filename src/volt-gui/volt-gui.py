@@ -60,7 +60,7 @@ from themes import STANDARD_BUTTON_HEIGHT
 from themes import STANDARD_BUTTON_WIDTH
 from themes import process_theme_application
 from ui import create_code_block_widget
-from ui import create_combo_widget
+from ui import create_slider_widget
 from ui import create_scrollable_content_area
 from ui import create_tab_content_widget
 from ui import create_sidebar_container_widget
@@ -272,14 +272,14 @@ def create_options_tab_widget() -> dict:
         title_label = QLabel(get_option_label(option_key))
         title_label.setStyleSheet("font-weight: 500; font-size: 11pt;")
         card_layout.addWidget(title_label)
-        combo = create_combo_widget(get_option_options(option_key))
-        card_layout.addWidget(combo)
+        slider = create_slider_widget(get_option_options(option_key))
+        card_layout.addWidget(slider)
         description_label = QLabel(get_option_description(option_key))
         description_label.setWordWrap(True)
         description_label.setStyleSheet(STYLE_DESCRIPTION)
         card_layout.addWidget(description_label)
         content_layout.addWidget(card)
-        options_widgets[option_key] = combo
+        options_widgets[option_key] = slider
     main_layout.addWidget(create_scrollable_content_area(container_widget), 1)
     return {"tab": widget, "widgets": options_widgets}
 
