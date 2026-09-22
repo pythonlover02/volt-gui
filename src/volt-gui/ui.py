@@ -53,8 +53,8 @@ SLIDER_TICK_STRIDES: Final[tuple] = (1, 2, 5, 10, 25, 50, 100, 250, 500, 1000)
 SLIDER_TICK_COLOR: Final[str] = "text_disabled"
 STYLE_SLIDER_VALUE: Final[str] = "font-weight: 500; font-size: 10pt;"
 STYLE_DIVIDER: Final[str] = "QFrame { background-color: #262626; border: none; }"
-STYLE_DESCRIPTION: Final[str] = "color: #585858; font-size: 9pt;"
-STYLE_CODE_LABEL: Final[str] = "color: #585858; font-size: 9pt; margin-top: 4px;"
+STYLE_DESCRIPTION: Final[str] = "color: #9A9A9A; font-size: 9pt;"
+STYLE_CODE_LABEL: Final[str] = "color: #9A9A9A; font-size: 9pt; margin-top: 4px;"
 STYLE_VERSION_LABEL: Final[str] = "font-size: 8pt; color: #9A9A9A; background: transparent;"
 STYLE_CODE_EDIT: Final[str] = "QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
 
