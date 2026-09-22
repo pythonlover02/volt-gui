@@ -99,6 +99,7 @@ QFrame[settingCard="true"]:hover {{ border: none; border-left: 3px solid {accent
 QInputDialog {{ background-color: {background}; }}
 QInputDialog QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; min-height: 36px; max-height: 36px; selection-background-color: {accent}; border-radius: 6px; }}
 QInputDialog QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
+QDialogButtonBox {{ dialogbuttonbox-buttons-have-icons: 0; }}
 QMessageBox {{ background-color: {background}; }}
 QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
 """
