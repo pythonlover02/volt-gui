@@ -30,7 +30,6 @@ FRAME_LIMIT_FIRST: Final[int] = 1
 FRAME_LIMIT_LAST: Final[int] = 1000
 SCALE_LOW: Final[float] = 0.8
 SCALE_HIGH: Final[float] = 2.0
-SCALE_STEP: Final[float] = 0.1
 
 
 SETTINGS_DB: Final[dict] = {
@@ -195,7 +194,8 @@ OPTIONS_DB: Final[dict] = {
     "interface_scale_factor": {
         "label": "Interface Scale Factor",
         "description": "UI scaling multiplier, in steps of 0.1. default is 1.0. Takes effect on program restart.",
-        "options": (DEFAULT_VALUE,) + stepped_values(SCALE_LOW, SCALE_HIGH, SCALE_STEP),
+        "step": 0.1,
+        "options": (DEFAULT_VALUE,),
         "fallback": "1.0",
     },
     "start_window_maximized": {
@@ -247,6 +247,15 @@ STEPPED_BUILDERS: Final[dict] = {
     "mip_ceiling": mip_options,
     "sample_shading": shading_options,
     "frame_limit": _frame_limit_options,
+}
+
+
+def _scale_options(step: float) -> tuple:
+    return stepped_values(SCALE_LOW, SCALE_HIGH, step)
+
+
+STEPPED_OPTIONS: Final[dict] = {
+    "interface_scale_factor": _scale_options,
 }
 
 
@@ -342,8 +351,17 @@ def get_option_description(option_key: str) -> str:
     return OPTIONS_DB[option_key]["description"]
 
 
+def get_option_step(option_key: str) -> float:
+    return OPTIONS_DB[option_key]["step"]
+
+
 def get_option_options(option_key: str) -> tuple:
-    return plain_pairs(OPTIONS_DB[option_key]["options"])
+    match STEPPED_OPTIONS.get(option_key):
+        case None:
+            return plain_pairs(OPTIONS_DB[option_key]["options"])
+        case stepped:
+            return plain_pairs(
+                OPTIONS_DB[option_key]["options"] + stepped(get_option_step(option_key)))
 
 
 def get_option_default_value(option_key: str) -> str:
