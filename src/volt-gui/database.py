@@ -28,8 +28,8 @@ PROFILE_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framer
 ALL_TABS: Final[tuple] = ("GPU", "Display", "Textures", "Rendering", "Framerate", "Options", "About")
 FRAME_LIMIT_FIRST: Final[int] = 1
 FRAME_LIMIT_LAST: Final[int] = 1000
-SCALE_LOW: Final[float] = 0.6
-SCALE_HIGH: Final[float] = 3.0
+SCALE_LOW: Final[float] = 0.8
+SCALE_HIGH: Final[float] = 2.0
 SCALE_STEP: Final[float] = 0.1
 
 
