@@ -58,7 +58,7 @@ STYLE_VERSION_LABEL: Final[str] = "font-size: 8pt; color: #9A9A9A; background: t
 STYLE_CODE_EDIT: Final[str] = "QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
 
 
-def process_combo_wheel_ignore(wheel_event: QWheelEvent) -> None:
+def process_wheel_ignore(wheel_event: QWheelEvent) -> None:
     wheel_event.ignore()
     return None
 
@@ -91,7 +91,7 @@ class StopSlider(QWidget):
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setPageStep(SLIDER_PAGE_STEP)
         self.slider.setFocusPolicy(Qt.ClickFocus)
-        self.slider.wheelEvent = process_combo_wheel_ignore
+        self.slider.wheelEvent = process_wheel_ignore
         self.slider.valueChanged.connect(self._process_value_change)
         self.slider.sliderPressed.connect(self._process_press)
         self.slider.sliderReleased.connect(self._process_release)
