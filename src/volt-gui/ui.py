@@ -90,7 +90,7 @@ class StopSlider(QWidget):
         self.setProperty("cardRow", True)
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setPageStep(SLIDER_PAGE_STEP)
-        self.slider.setFocusPolicy(Qt.ClickFocus)
+        self.slider.setFocusPolicy(Qt.NoFocus)
         self.slider.wheelEvent = process_wheel_ignore
         self.slider.valueChanged.connect(self._process_value_change)
         self.slider.sliderPressed.connect(self._process_press)

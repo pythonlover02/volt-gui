@@ -850,7 +850,6 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
     preset_slider = create_slider_widget(())
     preset_slider.setMinimumWidth(SELECTOR_MIN_WIDTH)
     preset_slider.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-    preset_slider.slider.setFocusPolicy(Qt.NoFocus)
     window.preset_selector = preset_slider
     process_preset_combo_items(preset_slider)
     profile_slider = create_slider_widget(())
