@@ -16,7 +16,7 @@ from probe import shading_options
 from probe import stepped_values
 
 
-APP_VERSION: Final[str] = "2.4.1"
+APP_VERSION: Final[str] = "2.4.2"
 APP_AUTHOR: Final[str] = "pythonlover02"
 APP_LICENSE: Final[str] = "GPL 3.0 License"
 APP_DESCRIPTION: Final[str] = "My AMD Adrenaline / NVIDIA Settings Linux Alternative"
