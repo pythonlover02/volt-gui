@@ -746,7 +746,12 @@ def process_welcome_show(main_window: QMainWindow) -> None:
             main_window.welcome_window = create_welcome_window_widget()
         case False:
             pass
-    main_window.welcome_window.show()
+    main_window.welcome_window.setWindowOpacity(main_window.windowOpacity())
+    match main_window.start_maximized:
+        case True:
+            main_window.welcome_window.showMaximized()
+        case False:
+            main_window.welcome_window.show()
     main_window.welcome_window.activateWindow()
     main_window.welcome_window.raise_()
     return None
@@ -892,7 +897,7 @@ def create_main_window_widget(singleton_socket: Optional[socket.socket]) -> QMai
             QApplication.instance().setQuitOnLastWindowClosed(not window.use_system_tray)
         case True:
             pass
-    match window.show_welcome:
+    match window.show_welcome and not (window.start_minimized and window.use_system_tray):
         case True:
             QTimer.singleShot(WELCOME_DELAY_MS, lambda: process_welcome_show(window))
         case False:
