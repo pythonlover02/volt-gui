@@ -9,6 +9,8 @@ Control panel for Vulkan games on Linux. Settings are applied by **volt**, an im
 
 Vulkan 1.0+. The layer requests nothing beyond VK_KHR_swapchain, so behaviour never splits between drivers.
 
+volt-gui originally carried kernel settings too. To keep both projects easier to ship and maintain, and each with one objective, they were split: volt stays a Vulkan control panel, and the kernel side now lives in [ohm-gui](https://github.com/pythonlover02/ohm-gui).
+
 ![](/images/1.png)
 ![](/images/2.png)
 ![](/images/3.png)
