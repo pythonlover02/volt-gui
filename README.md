@@ -180,7 +180,7 @@ volt-gui is the PySide6 front end. Apply just saves the profile. No elevated per
 |-----------|-------------|
 | Layer | Vulkan 1.0+ with `VK_KHR_swapchain`, Linux x86_64 (plus i686 for 32-bit games) |
 | Build | Rust 1.85.1+ with rustup, GNU make 4.3+ |
-| 32-bit layer | `gcc-multilib`, `libc6-dev-i386` |
+| 32-bit layer | 32-bit glibc and libgcc development files |
 | GUI | Python 3.10+, PySide6 |
 | Flatpak bundles | `flatpak`, `ostree` |
 | Container release | `podman` or `docker` |
