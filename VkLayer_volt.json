@@ -6,7 +6,7 @@
         "library_path": "libvolt.so",
         "api_version": "1.0.0",
         "implementation_version": "1",
-        "description": "Driver style Vulkan settings layer for Linux.",
+        "description": "My AMD Adrenaline / NVIDIA Settings Linux Alternative",
         "functions": {
             "vkNegotiateLoaderLayerInterfaceVersion": "vkNegotiateLoaderLayerInterfaceVersion"
         },
