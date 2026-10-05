@@ -55,7 +55,7 @@ STYLE_DIVIDER: Final[str] = "QFrame { background-color: #262626; border: none; }
 STYLE_DESCRIPTION: Final[str] = "color: #9A9A9A; font-size: 9pt;"
 STYLE_CODE_LABEL: Final[str] = "color: #9A9A9A; font-size: 9pt; margin-top: 4px;"
 STYLE_VERSION_LABEL: Final[str] = "font-size: 8pt; color: #9A9A9A; background: transparent;"
-STYLE_CODE_EDIT: Final[str] = "QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; border-radius: 6px; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
+STYLE_CODE_EDIT: Final[str] = "QTextEdit { background-color: #1e1e1e; color: #C0C0C0; border: none; border-left: 3px solid transparent; padding: 8px 12px; selection-background-color: #505050; } QTextEdit:hover { border: none; border-left: 3px solid palette(highlight); }"
 
 
 def process_wheel_ignore(wheel_event: QWheelEvent) -> None:
@@ -257,7 +257,7 @@ def process_copy_button_action(copy_button: QPushButton, clipboard_text: str) ->
 
 
 def build_copy_button_stylesheet(button_width: int, button_height: int) -> str:
-    return "QPushButton { min-width: " + str(button_width) + "px; max-width: " + str(button_width) + "px; min-height: " + str(button_height) + "px; max-height: " + str(button_height) + "px; padding: 0px; font-size: 10pt; font-weight: bold; border: none; border-left: 3px solid transparent; border-radius: 6px; } QPushButton:hover { border: none; border-left: 3px solid palette(highlight); border-radius: 6px; }"
+    return "QPushButton { min-width: " + str(button_width) + "px; max-width: " + str(button_width) + "px; min-height: " + str(button_height) + "px; max-height: " + str(button_height) + "px; padding: 0px; font-size: 10pt; font-weight: bold; border: none; border-left: 3px solid transparent; } QPushButton:hover { border: none; border-left: 3px solid palette(highlight); }"
 
 
 def create_code_block_widget(code_text: str) -> QFrame:

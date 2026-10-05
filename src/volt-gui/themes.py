@@ -51,7 +51,6 @@ def get_style_palette_disabled_roles() -> tuple:
     )
 
 
-
 def get_style_stylesheet_template() -> str:
     return """
 QWidget {{ background-color: {background}; color: {text_primary}; font-size: 10pt; font-family: "Segoe UI", "SF Pro Display", sans-serif; border: none; }}
@@ -62,46 +61,46 @@ QWidget[scrollContainer="true"], QWidget[buttonContainer="true"], QWidget[cardRo
 QWidget[buttonContainer="true"] {{ background-color: {background}; }}
 QMainWindow {{ background-color: {background}; border: none; }}
 QScrollBar:vertical {{ background-color: {background}; width: 6px; margin: 0px; border: none; }}
-QScrollBar::handle:vertical {{ background-color: {surface}; min-height: 40px; margin: 2px; border-radius: 3px; }}
+QScrollBar::handle:vertical {{ background-color: {surface}; min-height: 40px; margin: 2px; }}
 QScrollBar::handle:vertical:hover {{ background-color: {accent}; }}
 QScrollBar::handle:vertical:pressed {{ background-color: {accent_pressed}; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ background: none; height: 0px; border: none; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: transparent; }}
-QPushButton {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; outline: none; padding: 0px 14px; font-weight: 500; border-radius: 6px; }}
-QPushButton:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
-QPushButton:hover {{ background-color: {background_lighter}; color: {text_primary}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QPushButton:pressed {{ background-color: {accent_pressed}; color: white; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: {accent}; border-radius: 6px; }}
-QLineEdit:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QLineEdit:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
-QLineEdit:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
-QMenu {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 6px; border-radius: 6px; }}
-QMenu::item {{ padding: 6px 20px; border: none; border-left: 3px solid transparent; margin: 1px 0px; border-radius: 4px; }}
+QPushButton {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; outline: none; padding: 0px 14px; font-weight: 500; }}
+QPushButton:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; }}
+QPushButton:hover {{ background-color: {background_lighter}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
+QPushButton:pressed {{ background-color: {accent_pressed}; color: white; border: none; border-left: 3px solid {accent}; }}
+QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; selection-background-color: {accent}; }}
+QLineEdit:hover {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; }}
+QLineEdit:focus {{ background-color: {background_lighter}; border: none; border-left: 3px solid {accent}; }}
+QLineEdit:disabled {{ background-color: {background_darker}; color: {text_disabled}; border: none; border-left: 3px solid transparent; }}
+QMenu {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 6px; }}
+QMenu::item {{ padding: 6px 20px; border: none; border-left: 3px solid transparent; margin: 1px 0px; }}
 QMenu::item:selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
 QMenu::separator {{ height: 1px; background-color: {surface}; margin: 6px 0px; }}
-QToolTip {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 8px 12px; font-size: 10pt; border-radius: 6px; }}
+QToolTip {{ background-color: {background}; color: {text_primary}; border: none; border-left: 3px solid {accent}; padding: 8px 12px; font-size: 10pt; }}
 QListWidget {{ background-color: {background}; border: none; outline: none; padding: 0px; }}
-QListWidget::item {{ background-color: transparent; color: {text_secondary}; border: none; border-left: 3px solid transparent; padding: 8px 14px; margin: 1px 4px; border-radius: 6px; }}
+QListWidget::item {{ background-color: transparent; color: {text_secondary}; border: none; border-left: 3px solid transparent; padding: 8px 14px; margin: 1px 4px; }}
 QListWidget::item:selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent}; }}
 QListWidget::item:hover:!selected {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid {accent_hover}; }}
-QFrame[settingCard="true"] {{ background-color: {card_background}; border: none; border-left: 3px solid transparent; border-radius: 6px; }}
-QFrame[settingCard="true"]:hover {{ border: none; border-left: 3px solid {accent}; border-radius: 6px; }}
+QFrame[settingCard="true"] {{ background-color: {card_background}; border: none; border-left: 3px solid transparent; }}
+QFrame[settingCard="true"]:hover {{ border: none; border-left: 3px solid {accent}; }}
 QInputDialog {{ background-color: {background}; }}
-QInputDialog QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; min-height: 36px; max-height: 36px; selection-background-color: {accent}; border-radius: 6px; }}
-QInputDialog QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
+QInputDialog QLineEdit {{ background-color: {surface}; color: {text_primary}; border: none; border-left: 3px solid transparent; padding: 0px 12px; min-height: 36px; max-height: 36px; selection-background-color: {accent}; }}
+QInputDialog QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; }}
 QDialogButtonBox {{ dialogbuttonbox-buttons-have-icons: 0; }}
 QMessageBox {{ background-color: {background}; }}
-QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; border-radius: 6px; }}
+QMessageBox QPushButton {{ min-width: 90px; min-height: 36px; max-height: 36px; padding: 0px 12px; }}
 """
 
 
 def get_style_slider_template() -> str:
     return """
 QSlider {{ background-color: transparent; border: none; min-height: {handle_width}px; }}
-QSlider::groove:horizontal {{ background-color: {surface}; height: {groove_height}px; border: none; border-radius: {groove_radius}px; }}
-QSlider::sub-page:horizontal {{ background-color: {accent}; border: none; border-radius: {groove_radius}px; }}
-QSlider::add-page:horizontal {{ background-color: {surface}; border: none; border-radius: {groove_radius}px; }}
-QSlider::handle:horizontal {{ background-color: {text_primary}; width: {handle_width}px; margin: -{handle_margin}px 0px; border: none; border-radius: {handle_radius}px; }}
+QSlider::groove:horizontal {{ background-color: {surface}; height: {groove_height}px; border: none; }}
+QSlider::sub-page:horizontal {{ background-color: {accent}; border: none; }}
+QSlider::add-page:horizontal {{ background-color: {surface}; border: none; }}
+QSlider::handle:horizontal {{ background-color: {text_primary}; width: {handle_width}px; margin: -{handle_margin}px 0px; border: none; }}
 QSlider::handle:horizontal:hover {{ background-color: {accent_hover}; }}
 QSlider::handle:horizontal:pressed {{ background-color: {accent_pressed}; }}
 """
@@ -110,10 +109,8 @@ QSlider::handle:horizontal:pressed {{ background-color: {accent_pressed}; }}
 def build_slider_metrics() -> dict:
     return {
         "handle_width": SLIDER_HANDLE_WIDTH,
-        "handle_radius": SLIDER_HANDLE_WIDTH // 2,
         "handle_margin": (SLIDER_HANDLE_WIDTH - SLIDER_GROOVE_HEIGHT) // 2,
         "groove_height": SLIDER_GROOVE_HEIGHT,
-        "groove_radius": SLIDER_GROOVE_HEIGHT // 2,
     }
 
 
