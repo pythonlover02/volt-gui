@@ -1,5 +1,5 @@
 > [!NOTE]
-> Bug reports and pull requests are welcome, but please understand that development happens in my free time and progress may be slow at times. The project is still maintained even if the last commit was made a while ago.
+> Bug reports and pull requests are welcome, but please understand that I'm currently on my exam period for this year of my career, and I've also joined an indie dev group to create a retro style racing game, this on top of my usual work. This means that my current FOSS projects are at a halt even if they are my hobby, and I expect to retake them in 1-3 months. The projects are not abandoned, development will resume once things calm down.
 >
 > Also English isn't my first language. I mainly speak Spanish (and some Portuguese), so I usually write the docs in Spanish, run them through a translator, and then edit the result. Some parts may sound a bit stiff or unnatural because of that. If anything is unclear, feel free to open an issue and I'll fix it.
 
